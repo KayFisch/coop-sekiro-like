@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://4pqund3nukl7"]
+
+[ext_resource type="Script" uid="uid://80kl10p8d3vr" path="res://player.gd" id="1_wtcfe"]
+[ext_resource type="Script" uid="uid://cegm7tvwnu1b3" path="res://boss.gd" id="2_0e48y"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ttan1"]
+size = Vector2(40, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_a0i8i"]
+size = Vector2(80, 80)
+
+[node name="Node2D" type="Node2D" unique_id=813130242]
+
+[node name="player" type="CharacterBody2D" parent="." unique_id=343083861 groups=["players"]]
+position = Vector2(259, 279)
+collision_mask = 2
+script = ExtResource("1_wtcfe")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="player" unique_id=1288084270]
+position = Vector2(0, 40)
+shape = SubResource("RectangleShape2D_ttan1")
+
+[node name="ColorRect" type="ColorRect" parent="player" unique_id=1075129037]
+offset_left = -20.0
+offset_top = 20.0
+offset_right = 20.0
+offset_bottom = 60.0
+color = Color(0.15940446, 0, 0.99325293, 1)
+
+[node name="player2" type="CharacterBody2D" parent="." unique_id=1889433364 groups=["players"]]
+position = Vector2(787, 276)
+collision_mask = 2
+script = ExtResource("1_wtcfe")
+player_id = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="player2" unique_id=1406274173]
+position = Vector2(0, 38)
+shape = SubResource("RectangleShape2D_ttan1")
+
+[node name="ColorRect" type="ColorRect" parent="player2" unique_id=1689072613]
+offset_left = -20.0
+offset_top = 18.0
+offset_right = 20.0
+offset_bottom = 58.0
+color = Color(0, 1, 0, 1)
+
+[node name="Boss" type="CharacterBody2D" parent="." unique_id=1859516552]
+position = Vector2(515, 249)
+collision_layer = 3
+collision_mask = 3
+script = ExtResource("2_0e48y")
+
+[node name="ColorRect" type="ColorRect" parent="Boss" unique_id=1346919686]
+offset_left = -38.0
+offset_top = 29.0
+offset_right = 42.0
+offset_bottom = 109.0
+color = Color(1, 0, 0, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boss" unique_id=988877266]
+position = Vector2(2, 69)
+shape = SubResource("RectangleShape2D_a0i8i")
