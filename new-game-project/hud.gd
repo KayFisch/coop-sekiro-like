@@ -14,7 +14,7 @@ const SYNC_HOT_COLOR = Color(1.0, 0.85, 0.3)
 const SYNC_MAX_COLOR = Color(1.0, 0.4, 0.9)
 const BOSS_COLOR = Color(0.9, 0.2, 0.25)
 
-var _rows: Array = []  # one Dictionary per player: player, pips, status, color
+var _rows: Array = []  # one Dictionary per player: player, pips, status
 var _sync_fill: ColorRect
 var _sync_mult: Label
 var _boss_fill: ColorRect
@@ -39,17 +39,14 @@ func _ready():
 
 
 func _process(_delta):
-	var blink = fmod(Time.get_ticks_msec() / 1000.0, 0.3) < 0.15
 	for row in _rows:
 		var p = row.player
 		if not is_instance_valid(p):
 			continue
+		# Each pip is one hit; chip damage empties half a pip.
 		for i in row.pips.size():
-			row.pips[i].color = row.color if i < p.hp else EMPTY_COLOR
-		if p.is_downed:
-			row.status.text = "BLEEDING OUT %.1fs" % p.bleed_timer
-			row.status.modulate = Color.RED if blink else Color.WHITE
-		elif p.is_grabbed:
+			row.pips[i].size.x = PIP_SIZE.x * clampf(p.hp - i, 0.0, 1.0)
+		if p.is_grabbed:
 			row.status.text = "GRABBED!"
 			row.status.modulate = Color(1.0, 0.6, 0.2)
 		else:
@@ -80,11 +77,14 @@ func _build_player_rows(root):
 		var p = players[i]
 		var y = 12.0 + i * 24.0
 		_label(root, Vector2(16, y - 3), "P%d" % p.player_id)
-		var pips = []
-		for j in p.MAX_HP:
-			pips.append(_rect(root, Vector2(48 + j * (PIP_SIZE.x + PIP_GAP), y), PIP_SIZE, EMPTY_COLOR))
-		var status = _label(root, Vector2(48 + p.MAX_HP * (PIP_SIZE.x + PIP_GAP) + 6, y - 3), "")
-		_rows.append({"player": p, "pips": pips, "status": status, "color": p.body_color})
+		var pips = []  # the fill rects; each sits on an empty background rect
+		var pip_count = int(p.MAX_HP)
+		for j in pip_count:
+			var pos = Vector2(48 + j * (PIP_SIZE.x + PIP_GAP), y)
+			_rect(root, pos, PIP_SIZE, EMPTY_COLOR)
+			pips.append(_rect(root, pos, PIP_SIZE, p.body_color))
+		var status = _label(root, Vector2(48 + pip_count * (PIP_SIZE.x + PIP_GAP) + 6, y - 3), "")
+		_rows.append({"player": p, "pips": pips, "status": status})
 
 
 func _build_sync_bar(root):
@@ -109,8 +109,8 @@ func _build_boss_bar(root):
 
 func _build_controls_hint(root):
 	var hint = Label.new()
-	hint.text = "P1: WASD move · Space jump/parry · Q dash · S drop      " \
-		+ "P2: Arrows move · Shift jump/parry · E dash · Down drop"
+	hint.text = "P1: A/D move · W jump · Q/E dash · Space attack · L-Ctrl block/parry · S drop      " \
+		+ "P2 (pad): stick move · A jump · LB/RB dash · X attack · RT block/parry"
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.modulate = Color(1, 1, 1, 0.6)
 	hint.anchor_top = 1.0

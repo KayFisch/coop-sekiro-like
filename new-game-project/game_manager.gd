@@ -1,19 +1,22 @@
 extends Node
 ## Autoload singleton: owns the shared sync meter, the overall game state,
-## revival wiring between players, and restart logic.
+## and restart logic.
 
 signal sync_changed(value, multiplier)
 signal state_changed(new_state)
-signal revival_triggered(player)
 
 enum GameState { PLAYING, GAME_OVER, VICTORY }
 
 const SYNC_MAX = 100.0
 const SYNC_START = 0.0
 const SYNC_RELAY_GAIN = 25.0
-const SYNC_GRAB_BREAK_GAIN = 10.0
-const SYNC_FAILED_PARRY_LOSS = 10.0
-const SYNC_DAMAGE_LOSS = 8.0
+const SYNC_GRAB_DODGE_GAIN = 15.0
+const SYNC_GRAND_SLASH_GAIN = 40.0
+const SYNC_SHOCKWAVE_PARRY_GAIN = 8.0
+const SYNC_DOUBLE_COUNTER_GAIN = 30.0
+const SYNC_SINGLE_COUNTER_GAIN = 15.0
+const SYNC_BLOCK_LOSS = 5.0
+const SYNC_HIT_LOSS = 10.0
 
 var sync_value = SYNC_START
 var state = GameState.PLAYING
@@ -51,16 +54,17 @@ func register_player(player):
 	players.append(player)
 	player.tree_exiting.connect(func(): players.erase(player))
 	player.damaged.connect(_on_player_damaged)
-	player.player_downed.connect(_on_player_downed)
-	player.bled_out.connect(_on_player_bled_out)
+	player.blocked.connect(_on_player_blocked)
+	player.died.connect(_on_player_died)
 
 
 func register_boss(new_boss):
 	boss = new_boss
-	boss.parry_success.connect(_on_parry_success)
-	boss.parry_failed.connect(_on_parry_failed)
 	boss.relay_completed.connect(change_sync.bind(SYNC_RELAY_GAIN))
-	boss.grab_broken.connect(change_sync.bind(SYNC_GRAB_BREAK_GAIN))
+	boss.grab_dodged.connect(change_sync.bind(SYNC_GRAB_DODGE_GAIN))
+	boss.grand_slash_parried.connect(change_sync.bind(SYNC_GRAND_SLASH_GAIN))
+	boss.shockwave_parried.connect(_on_shockwave_parried)
+	boss.counterattack_landed.connect(_on_counterattack_landed)
 	boss.defeated.connect(_end_game.bind(GameState.VICTORY))
 
 
@@ -84,28 +88,22 @@ func _end_game(new_state):
 	state_changed.emit(state)
 
 
-func _on_parry_success(player, _kind):
-	# Any successful parry by the survivor pulls a bleeding-out partner back up.
-	for other in players:
-		if other != player and other.is_downed:
-			other.revive()
-			revival_triggered.emit(other)
-
-
-func _on_parry_failed(_player):
-	change_sync(-SYNC_FAILED_PARRY_LOSS)
-
-
+# A failed parry is just a hit taken, so it costs the same.
 func _on_player_damaged(_player):
-	change_sync(-SYNC_DAMAGE_LOSS)
+	change_sync(-SYNC_HIT_LOSS)
 
 
-func _on_player_downed(player):
-	for other in players:
-		if other != player and other.is_downed:
-			_end_game(GameState.GAME_OVER)
-			return
+func _on_player_blocked(_player):
+	change_sync(-SYNC_BLOCK_LOSS)
 
 
-func _on_player_bled_out(_player):
+func _on_shockwave_parried(_player):
+	change_sync(SYNC_SHOCKWAVE_PARRY_GAIN)
+
+
+func _on_counterattack_landed(both_players):
+	change_sync(SYNC_DOUBLE_COUNTER_GAIN if both_players else SYNC_SINGLE_COUNTER_GAIN)
+
+
+func _on_player_died(_player):
 	_end_game(GameState.GAME_OVER)

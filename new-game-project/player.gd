@@ -1,13 +1,12 @@
 extends CharacterBody2D
 
-signal parry_attempted(player)
 signal health_changed(player, hp)
 signal damaged(player)
-signal player_downed(player)
-signal bled_out(player)
-signal revived(player)
+signal blocked(player)
+signal died(player)
 
 const SPEED = 360.0
+const BLOCK_SPEED_FACTOR = 0.4
 const GRAVITY = 1800.0
 const MAX_FALL_SPEED = 1100.0
 const JUMP_VELOCITY = -700.0
@@ -16,43 +15,60 @@ const JUMP_CUT = 0.5  # releasing jump early keeps this fraction of upward speed
 const DASH_SPEED = 1000.0
 const DASH_TIME = 0.14
 const DASH_COOLDOWN = 0.6
-const MAX_HP = 3
-const BLEED_OUT_TIME = 4.0
+const MAX_HP = 3.0
 const HIT_INVULN_TIME = 0.6
-const REVIVE_INVULN_TIME = 1.0
-const PARRY_LOCKOUT_TIME = 0.25  # pressing early while targeted costs you the start of the window
+const CHIP_INVULN_TIME = 0.2
+const PARRY_WINDOW = 0.2  # block must be pressed at most this long before a boss attack connects
+const PARRY_SPAM_LOCK = 0.3  # a block press this soon after the previous one can't parry
+const DODGE_WINDOW = 0.15  # dash must be pressed at most this long before the grab connects
+const ATTACK_ACTIVE_TIME = 0.15
+const ATTACK_RETURN_TIME = 0.1
+const ATTACK_COOLDOWN = 0.3
+const ATTACK_DAMAGE = 0.5
+const SWING_START_ANGLE = -1.05  # -60 degrees
+const SWING_END_ANGLE = 0.52  # +30 degrees, a 90 degree arc
+const GUARD_ANGLE = -1.3
 const DROP_THROUGH_TIME = 0.3
+const WORLD_LAYER = 1  # floor and walls
 const PLATFORM_LAYER = 4  # one-way platforms live on physics layer 4
 const SWORD_FLASH_TIME = 0.1
-const REVIVE_FLASH_TIME = 0.4
+const DODGE_FLASH_TIME = 0.25
 const CLANG_DURATION = 0.25
 
 @export var player_id: int = 1  # set to 1 or 2 in the inspector
 
 var hp = MAX_HP
-var is_downed = false
 var is_grabbed = false
-var bleed_timer = 0.0
 var facing = 1.0
 var body_color: Color
+var parry_press_time = -100.0  # when the last block press that can still parry happened
+var gathered = 0  # shockwaves parried in the current volley
+
+var _gather_needed = 0  # 0 while no volley is running
+var _gather_failed = false
+var _gather_label: Label
 
 var _air_jumps = 1
 var _dash_dir = 1.0
 var _dash_timer = 0.0
 var _dash_cooldown = 0.0
+var _dash_press_time = -100.0
 var _invuln_timer = 0.0
-var _parry_lockout = 0.0
 var _drop_timer = 0.0
 var _sword_flash = 0.0
-var _revive_flash = 0.0
-var _has_bled_out = false
+var _dodge_flash = 0.0
+var _last_block_press = -100.0
+var _attack_timer = 0.0  # counts down through the swing and its return
+var _attack_cooldown = 0.0
+var _attack_landed = false
+var _is_dead = false
 var _sword_color: Color
-var _boss = null
 var _sfx: AudioStreamPlayer
 
 @onready var body: ColorRect = $ColorRect
 @onready var sword_pivot: Node2D = $SwordPivot
 @onready var sword: ColorRect = $SwordPivot/Sword
+@onready var sword_hitbox: Area2D = $SwordPivot/SwordHitbox
 
 
 func _ready():
@@ -61,9 +77,7 @@ func _ready():
 	if player_id == 2:
 		facing = -1.0
 	_setup_audio()
-	_boss = get_tree().get_first_node_in_group("boss")
-	if _boss:
-		_boss.parry_success.connect(_on_boss_parry_success)
+	_setup_gather_label()
 	GameManager.register_player(self)
 
 
@@ -71,18 +85,20 @@ func _physics_process(delta):
 	_tick_timers(delta)
 	if is_grabbed:
 		velocity = Vector2.ZERO  # the boss carries us
-	elif is_downed:
-		_process_downed(delta)
-		move_and_slide()
 	else:
 		_process_movement(delta)
 		_process_actions()
 		move_and_slide()
+	_process_attack()
 	_update_visuals()
 
 
 func _action(action_name: String) -> String:
 	return "p%d_%s" % [player_id, action_name]
+
+
+func _now() -> float:
+	return Time.get_ticks_msec() / 1000.0
 
 
 func _process_movement(delta):
@@ -96,24 +112,33 @@ func _process_movement(delta):
 		velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
 		return
 
-	velocity.x = direction * SPEED
+	var speed = SPEED * (BLOCK_SPEED_FACTOR if is_blocking() else 1.0)
+	velocity.x = direction * speed
 	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
 	if Input.is_action_just_released(_action("jump")) and velocity.y < 0.0:
 		velocity.y *= JUMP_CUT
 
 
 func _process_actions():
-	# Jump and parry share a key; a press only becomes a parry when the boss has a window open for us.
-	if Input.is_action_just_pressed(_action("parry")) and _try_parry():
-		pass
-	elif Input.is_action_just_pressed(_action("jump")):
+	if Input.is_action_just_pressed(_action("jump")):
 		_jump()
 
-	if Input.is_action_just_pressed(_action("dash")) and _dash_cooldown <= 0.0:
-		_dash_dir = facing
-		_dash_timer = DASH_TIME
-		_dash_cooldown = DASH_COOLDOWN
-		velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
+	# Dashes always go left or right, independent of facing.
+	if Input.is_action_just_pressed(_action("dash_left")):
+		_start_dash(-1.0)
+	elif Input.is_action_just_pressed(_action("dash_right")):
+		_start_dash(1.0)
+
+	if Input.is_action_just_pressed(_action("block")):
+		var now = _now()
+		# Mashing doesn't parry: a press too soon after the previous one isn't a parry attempt.
+		parry_press_time = now if now - _last_block_press >= PARRY_SPAM_LOCK else -100.0
+		_last_block_press = now
+
+	if Input.is_action_just_pressed(_action("attack")) and _attack_cooldown <= 0.0 and not is_blocking():
+		_attack_timer = ATTACK_ACTIVE_TIME + ATTACK_RETURN_TIME
+		_attack_cooldown = ATTACK_COOLDOWN
+		_attack_landed = false
 
 	if Input.is_action_just_pressed(_action("down")) and is_on_floor():
 		set_collision_mask_value(PLATFORM_LAYER, false)
@@ -131,72 +156,127 @@ func _jump():
 	_dash_timer = 0.0  # jumping cancels a dash
 
 
-# Returns true when the press was spent on a parry (successful or locked out).
-func _try_parry() -> bool:
-	if _boss == null or not is_instance_valid(_boss):
-		return false
-	if not _boss.is_parry_window_open(self):
-		if _boss.is_threatening(self):
-			_parry_lockout = PARRY_LOCKOUT_TIME
-		return false
-	if _parry_lockout > 0.0:
-		return true
-	parry_attempted.emit(self)
-	return true
+func _start_dash(direction: float):
+	if _dash_cooldown > 0.0:
+		return
+	_dash_dir = direction
+	_dash_timer = DASH_TIME
+	_dash_cooldown = DASH_COOLDOWN
+	_dash_press_time = _now()
+	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
 
 
-func _process_downed(delta):
-	velocity.x = move_toward(velocity.x, 0.0, 2000.0 * delta)
-	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
-	bleed_timer = maxf(bleed_timer - delta, 0.0)
-	if bleed_timer <= 0.0 and not _has_bled_out:
-		_has_bled_out = true
-		bled_out.emit(self)
+func _process_attack():
+	if _attack_timer <= 0.0 or _attack_landed or _swing_elapsed() >= ATTACK_ACTIVE_TIME:
+		return
+	for hit in sword_hitbox.get_overlapping_bodies():
+		if hit.is_in_group("boss"):
+			_attack_landed = true
+			hit.take_damage(ATTACK_DAMAGE * GameManager.damage_multiplier())
+			return
+
+
+func _swing_elapsed() -> float:
+	return ATTACK_ACTIVE_TIME + ATTACK_RETURN_TIME - _attack_timer
 
 
 func _tick_timers(delta):
 	_dash_timer = maxf(_dash_timer - delta, 0.0)
 	_dash_cooldown = maxf(_dash_cooldown - delta, 0.0)
 	_invuln_timer = maxf(_invuln_timer - delta, 0.0)
-	_parry_lockout = maxf(_parry_lockout - delta, 0.0)
 	_sword_flash = maxf(_sword_flash - delta, 0.0)
-	_revive_flash = maxf(_revive_flash - delta, 0.0)
+	_dodge_flash = maxf(_dodge_flash - delta, 0.0)
+	_attack_timer = maxf(_attack_timer - delta, 0.0)
+	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
 	if _drop_timer > 0.0:
 		_drop_timer -= delta
 		if _drop_timer <= 0.0:
 			set_collision_mask_value(PLATFORM_LAYER, true)
 
 
-func take_damage(amount: int):
-	if is_downed or _invuln_timer > 0.0:
+# --- Defensive queries used by the boss at the moment its hitbox connects ---
+
+func is_blocking() -> bool:
+	return not is_grabbed and Input.is_action_pressed(_action("block"))
+
+
+func is_perfect_parry() -> bool:
+	return not is_grabbed and _now() - parry_press_time <= PARRY_WINDOW
+
+
+func is_dodging_grab() -> bool:
+	return _dash_timer > 0.0 or _now() - _dash_press_time <= DODGE_WINDOW
+
+
+# Standing on the arena floor itself, not on a one-way platform.
+func is_on_main_floor() -> bool:
+	if not is_on_floor():
+		return false
+	for i in get_slide_collision_count():
+		var collision = get_slide_collision(i)
+		var collider = collision.get_collider()
+		if collision.get_normal().y < -0.7 and collider is CollisionObject2D \
+				and collider.get_collision_layer_value(WORLD_LAYER):
+			return true
+	return false
+
+
+# --- Shockwave gathering: all-or-nothing per volley --------------------------
+
+func start_gather(needed: int):
+	gathered = 0
+	_gather_needed = needed
+	_gather_failed = false
+
+
+func add_gather():
+	if not _gather_failed:
+		gathered += 1
+
+
+func fail_gather():
+	gathered = 0
+	_gather_failed = true
+
+
+func has_full_gather() -> bool:
+	return _gather_needed > 0 and not _gather_failed and gathered >= _gather_needed
+
+
+func end_gather():
+	_gather_needed = 0
+	gathered = 0
+	_gather_failed = false
+
+
+func on_perfect_parry(strong: bool):
+	parry_press_time = -100.0  # one press parries one hit
+	_sword_flash = SWORD_FLASH_TIME
+	_play_clang(990.0 if strong else 660.0 * (1.0 if player_id == 1 else 1.33))
+	var cam = get_viewport().get_camera_2d()
+	if cam and cam.has_method("shake"):
+		cam.shake(7.0 if strong else 4.0)
+
+
+func on_grab_dodged():
+	_dodge_flash = DODGE_FLASH_TIME
+
+
+func take_damage(amount: float, knockback = Vector2.ZERO, chip = false):
+	if _is_dead or _invuln_timer > 0.0:
 		return
-	hp = maxi(hp - amount, 0)
-	_invuln_timer = HIT_INVULN_TIME
+	hp = maxf(hp - amount, 0.0)
+	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
 	_dash_timer = 0.0
-	velocity = Vector2(-facing * 250.0, -350.0)
+	velocity = knockback
 	health_changed.emit(self, hp)
-	damaged.emit(self)
-	if hp == 0:
-		_go_down()
-
-
-func _go_down():
-	is_downed = true
-	is_grabbed = false
-	bleed_timer = BLEED_OUT_TIME
-	_has_bled_out = false
-	player_downed.emit(self)
-
-
-func revive():
-	if not is_downed:
-		return
-	is_downed = false
-	hp = 1
-	_invuln_timer = REVIVE_INVULN_TIME
-	_revive_flash = REVIVE_FLASH_TIME
-	health_changed.emit(self, hp)
-	revived.emit(self)
+	if chip:
+		blocked.emit(self)
+	else:
+		damaged.emit(self)
+	if hp <= 0.0:
+		_is_dead = true
+		died.emit(self)
 
 
 func set_grabbed(grabbed: bool):
@@ -205,37 +285,58 @@ func set_grabbed(grabbed: bool):
 	_dash_timer = 0.0
 
 
-func _on_boss_parry_success(player, kind):
-	if player != self:
-		return
-	_sword_flash = SWORD_FLASH_TIME
-	var pitch = 660.0 if player_id == 1 else 880.0
-	if kind == "relay_final":
-		pitch *= 1.5
-	_play_clang(pitch)
-	var cam = get_viewport().get_camera_2d()
-	if cam and cam.has_method("shake"):
-		cam.shake(7.0 if kind == "relay_final" else 4.0)
+func _sword_angle() -> float:
+	if _attack_timer > 0.0:
+		var elapsed = _swing_elapsed()
+		if elapsed < ATTACK_ACTIVE_TIME:
+			return lerpf(SWING_START_ANGLE, SWING_END_ANGLE, elapsed / ATTACK_ACTIVE_TIME)
+		return lerpf(SWING_END_ANGLE, 0.0, (elapsed - ATTACK_ACTIVE_TIME) / ATTACK_RETURN_TIME)
+	if is_blocking():
+		return GUARD_ANGLE
+	return 0.0
 
 
 func _update_visuals():
 	sword_pivot.scale.x = facing
-	sword.visible = not is_downed
+	sword_pivot.rotation = _sword_angle() * facing
 	sword.color = Color.WHITE if _sword_flash > 0.0 else _sword_color
 
 	var color = body_color
-	if is_downed:
-		# Blink faster as the bleed-out timer runs down.
-		var period = lerpf(0.1, 0.35, bleed_timer / BLEED_OUT_TIME)
-		color = Color.RED if fmod(bleed_timer, period) < period * 0.5 else Color(0.35, 0.0, 0.0)
-	elif _revive_flash > 0.0:
-		color = Color(0.4, 1.0, 0.5)
+	if _dodge_flash > 0.0:
+		color = Color(0.5, 1.0, 1.0)
 	elif _dash_timer > 0.0:
 		color = body_color.lightened(0.5)
+	elif is_blocking():
+		color = body_color.darkened(0.35)
 	body.color = color
 
-	var flicker = _invuln_timer > 0.0 and not is_downed and fmod(_invuln_timer, 0.12) < 0.06
+	var flicker = _invuln_timer > 0.0 and fmod(_invuln_timer, 0.12) < 0.06
 	body.modulate.a = 0.4 if flicker else 1.0
+
+	_gather_label.visible = _gather_needed > 0
+	if _gather_label.visible:
+		_gather_label.text = "%d/%d" % [gathered, _gather_needed]
+		if _gather_failed:
+			_gather_label.modulate = Color(0.5, 0.5, 0.5, 0.7)
+		elif has_full_gather():
+			# Counter ready: pulse between the player's color and white.
+			var pulse = 0.5 + 0.5 * sin(_now() * 20.0)
+			_gather_label.modulate = body_color.lerp(Color.WHITE, pulse)
+		else:
+			_gather_label.modulate = body_color.lerp(Color.WHITE, 0.5)
+
+
+func _setup_gather_label():
+	_gather_label = Label.new()
+	_gather_label.size = Vector2(60, 20)
+	_gather_label.position = Vector2(-30, -82)  # above the boss's target marker
+	_gather_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gather_label.add_theme_font_size_override("font_size", 16)
+	_gather_label.add_theme_constant_override("outline_size", 4)
+	_gather_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_gather_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_gather_label.visible = false
+	add_child(_gather_label)
 
 
 func _setup_audio():
@@ -245,7 +346,7 @@ func _setup_audio():
 	_sfx = AudioStreamPlayer.new()
 	_sfx.stream = generator
 	_sfx.volume_db = -4.0
-	# The winning parry pauses the tree; let its clang finish anyway.
+	# A parry that ends the fight pauses the tree; let its clang finish anyway.
 	_sfx.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_sfx)
 

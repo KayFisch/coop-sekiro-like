@@ -23,6 +23,18 @@ size = Vector2(1152, 16)
 [sub_resource type="RectangleShape2D" id="Shape_platform"]
 size = Vector2(180, 16)
 
+[sub_resource type="RectangleShape2D" id="Shape_player_sword"]
+size = Vector2(40, 14)
+
+[sub_resource type="RectangleShape2D" id="Shape_boss_sword"]
+size = Vector2(84, 18)
+
+[sub_resource type="RectangleShape2D" id="Shape_grab"]
+size = Vector2(100, 100)
+
+[sub_resource type="RectangleShape2D" id="Shape_grand_wave"]
+size = Vector2(1104, 16)
+
 [node name="Node2D" type="Node2D" unique_id=813130242]
 
 [node name="Camera2D" type="Camera2D" parent="."]
@@ -169,6 +181,43 @@ color = Color(1, 0, 0, 1)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Boss" unique_id=988877266]
 shape = SubResource("RectangleShape2D_a0i8i")
 
+[node name="SwordPivot" type="Node2D" parent="Boss"]
+
+[node name="Sword" type="ColorRect" parent="Boss/SwordPivot"]
+offset_left = 30.0
+offset_top = -4.0
+offset_right = 110.0
+offset_bottom = 4.0
+mouse_filter = 2
+color = Color(0.7, 0.7, 0.75, 1)
+
+[node name="SwordHitbox" type="Area2D" parent="Boss/SwordPivot"]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boss/SwordPivot/SwordHitbox"]
+position = Vector2(70, 0)
+shape = SubResource("Shape_boss_sword")
+
+[node name="GrabArea" type="Area2D" parent="Boss"]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boss/GrabArea"]
+shape = SubResource("Shape_grab")
+
+[node name="GrandWaveArea" type="Area2D" parent="Boss"]
+top_level = true
+position = Vector2(576, 60)
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boss/GrandWaveArea"]
+shape = SubResource("Shape_grand_wave")
+
 [node name="player" type="CharacterBody2D" parent="." unique_id=343083861 groups=["players"]]
 position = Vector2(300, 560)
 collision_layer = 2
@@ -195,6 +244,15 @@ offset_right = 52.0
 offset_bottom = 0.0
 mouse_filter = 2
 color = Color(0.6, 0.65, 1, 1)
+
+[node name="SwordHitbox" type="Area2D" parent="player/SwordPivot"]
+collision_layer = 0
+collision_mask = 4
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="player/SwordPivot/SwordHitbox"]
+position = Vector2(34, -2)
+shape = SubResource("Shape_player_sword")
 
 [node name="player2" type="CharacterBody2D" parent="." unique_id=1889433364 groups=["players"]]
 position = Vector2(852, 560)
@@ -223,6 +281,15 @@ offset_right = 52.0
 offset_bottom = 0.0
 mouse_filter = 2
 color = Color(0.6, 1, 0.65, 1)
+
+[node name="SwordHitbox" type="Area2D" parent="player2/SwordPivot"]
+collision_layer = 0
+collision_mask = 4
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="player2/SwordPivot/SwordHitbox"]
+position = Vector2(34, -2)
+shape = SubResource("Shape_player_sword")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("3_hud")
