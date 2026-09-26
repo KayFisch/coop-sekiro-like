@@ -15,7 +15,12 @@ const JUMP_CUT = 0.5  # releasing jump early keeps this fraction of upward speed
 const DASH_SPEED = 1000.0
 const DASH_TIME = 0.14
 const DASH_COOLDOWN = 0.6
-const MAX_HP = 3.0
+const MAX_HP = 100.0
+const POTION_CHARGES = 3
+const POTION_HEAL = 50.0
+const DRINK_TIME = 1.5
+const KNOCKBACK_TIME = 0.25  # input can't steer and potions can't be drunk while this runs
+const KNOCKBACK_FRICTION = 1500.0
 const HIT_INVULN_TIME = 0.6
 const CHIP_INVULN_TIME = 0.2
 const PARRY_WINDOW = 0.2  # block must be pressed at most this long before a boss attack connects
@@ -24,7 +29,7 @@ const DODGE_WINDOW = 0.15  # dash must be pressed at most this long before the g
 const ATTACK_ACTIVE_TIME = 0.15
 const ATTACK_RETURN_TIME = 0.1
 const ATTACK_COOLDOWN = 0.3
-const ATTACK_DAMAGE = 0.5
+const ATTACK_DAMAGE = 10.0
 const SWING_START_ANGLE = -1.05  # -60 degrees
 const SWING_END_ANGLE = 0.52  # +30 degrees, a 90 degree arc
 const GUARD_ANGLE = -1.3
@@ -38,6 +43,7 @@ const CLANG_DURATION = 0.25
 @export var player_id: int = 1  # set to 1 or 2 in the inspector
 
 var hp = MAX_HP
+var potions = POTION_CHARGES
 var is_grabbed = false
 var facing = 1.0
 var body_color: Color
@@ -61,6 +67,9 @@ var _last_block_press = -100.0
 var _attack_timer = 0.0  # counts down through the swing and its return
 var _attack_cooldown = 0.0
 var _attack_landed = false
+var _knockback_timer = 0.0
+var _drink_timer = 0.0  # > 0 while drinking a potion
+var _drink_bar: ColorRect
 var _is_dead = false
 var _sword_color: Color
 var _sfx: AudioStreamPlayer
@@ -78,6 +87,7 @@ func _ready():
 		facing = -1.0
 	_setup_audio()
 	_setup_gather_label()
+	_setup_drink_bar()
 	GameManager.register_player(self)
 
 
@@ -85,6 +95,9 @@ func _physics_process(delta):
 	_tick_timers(delta)
 	if is_grabbed:
 		velocity = Vector2.ZERO  # the boss carries us
+	elif is_drinking():
+		_process_drinking(delta)
+		move_and_slide()
 	else:
 		_process_movement(delta)
 		_process_actions()
@@ -112,8 +125,11 @@ func _process_movement(delta):
 		velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
 		return
 
-	var speed = SPEED * (BLOCK_SPEED_FACTOR if is_blocking() else 1.0)
-	velocity.x = direction * speed
+	if _knockback_timer > 0.0:
+		velocity.x = move_toward(velocity.x, 0.0, KNOCKBACK_FRICTION * delta)
+	else:
+		var speed = SPEED * (BLOCK_SPEED_FACTOR if is_blocking() else 1.0)
+		velocity.x = direction * speed
 	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
 	if Input.is_action_just_released(_action("jump")) and velocity.y < 0.0:
 		velocity.y *= JUMP_CUT
@@ -143,6 +159,36 @@ func _process_actions():
 	if Input.is_action_just_pressed(_action("down")) and is_on_floor():
 		set_collision_mask_value(PLATFORM_LAYER, false)
 		_drop_timer = DROP_THROUGH_TIME
+
+	if Input.is_action_just_pressed(_action("potion")) and potions > 0 and _knockback_timer <= 0.0:
+		_drink_timer = DRINK_TIME
+		_dash_timer = 0.0
+		_attack_timer = 0.0
+		velocity.x = 0.0
+
+
+# --- Potions ------------------------------------------------------------------
+
+func is_drinking() -> bool:
+	return _drink_timer > 0.0
+
+
+# Rooted in place while drinking; gravity still applies and hits still land.
+func _process_drinking(delta):
+	velocity.x = 0.0
+	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
+	_drink_timer = maxf(_drink_timer - delta, 0.0)
+	if _drink_timer <= 0.0:
+		potions -= 1
+		hp = minf(hp + POTION_HEAL, MAX_HP)
+		health_changed.emit(self, hp)
+
+
+# An interrupted drink still uses up the charge.
+func _cancel_drink():
+	if is_drinking():
+		_drink_timer = 0.0
+		potions -= 1
 
 
 func _jump():
@@ -188,6 +234,7 @@ func _tick_timers(delta):
 	_dodge_flash = maxf(_dodge_flash - delta, 0.0)
 	_attack_timer = maxf(_attack_timer - delta, 0.0)
 	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
+	_knockback_timer = maxf(_knockback_timer - delta, 0.0)
 	if _drop_timer > 0.0:
 		_drop_timer -= delta
 		if _drop_timer <= 0.0:
@@ -197,11 +244,11 @@ func _tick_timers(delta):
 # --- Defensive queries used by the boss at the moment its hitbox connects ---
 
 func is_blocking() -> bool:
-	return not is_grabbed and Input.is_action_pressed(_action("block"))
+	return not is_grabbed and not is_drinking() and Input.is_action_pressed(_action("block"))
 
 
 func is_perfect_parry() -> bool:
-	return not is_grabbed and _now() - parry_press_time <= PARRY_WINDOW
+	return not is_grabbed and not is_drinking() and _now() - parry_press_time <= PARRY_WINDOW
 
 
 func is_dodging_grab() -> bool:
@@ -268,7 +315,10 @@ func take_damage(amount: float, knockback = Vector2.ZERO, chip = false):
 	hp = maxf(hp - amount, 0.0)
 	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
 	_dash_timer = 0.0
+	_cancel_drink()
 	velocity = knockback
+	if knockback != Vector2.ZERO:
+		_knockback_timer = KNOCKBACK_TIME
 	health_changed.emit(self, hp)
 	if chip:
 		blocked.emit(self)
@@ -283,6 +333,8 @@ func set_grabbed(grabbed: bool):
 	is_grabbed = grabbed
 	velocity = Vector2.ZERO
 	_dash_timer = 0.0
+	if grabbed:
+		_cancel_drink()  # being carried off interrupts the drink like a hit would
 
 
 func _sword_angle() -> float:
@@ -313,6 +365,13 @@ func _update_visuals():
 	var flicker = _invuln_timer > 0.0 and fmod(_invuln_timer, 0.12) < 0.06
 	body.modulate.a = 0.4 if flicker else 1.0
 
+	# Drinking cue: a timer bar under the feet that shrinks toward the center as the drink finishes.
+	_drink_bar.visible = is_drinking()
+	if _drink_bar.visible:
+		var width = 44.0 * _drink_timer / DRINK_TIME
+		_drink_bar.size.x = width
+		_drink_bar.position.x = -width / 2
+
 	_gather_label.visible = _gather_needed > 0
 	if _gather_label.visible:
 		_gather_label.text = "%d/%d" % [gathered, _gather_needed]
@@ -324,6 +383,16 @@ func _update_visuals():
 			_gather_label.modulate = body_color.lerp(Color.WHITE, pulse)
 		else:
 			_gather_label.modulate = body_color.lerp(Color.WHITE, 0.5)
+
+
+func _setup_drink_bar():
+	_drink_bar = ColorRect.new()
+	_drink_bar.size = Vector2(44, 5)
+	_drink_bar.position = Vector2(-22, 24)
+	_drink_bar.color = Color(0.4, 1.0, 0.55)
+	_drink_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_drink_bar.visible = false
+	add_child(_drink_bar)
 
 
 func _setup_gather_label():

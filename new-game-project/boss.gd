@@ -18,13 +18,13 @@ enum Phase { NONE, SWORD_APPROACH, SWORD_SWING, RELAY_BOUNCE, GRAB_WINDUP, GRAB_
 # Shockwave slashes fire on a fixed metronome, independent of projectile travel.
 const SHOCKWAVE_SLASH_INTERVAL = 0.8
 
-const MAX_HP = 20.0
+const MAX_HP = 1000.0
 const ARENA_LEFT = 24.0
 const ARENA_RIGHT = 1128.0
 const ARENA_FLOOR_Y = 600.0
 
-const SWORD_DAMAGE = 1.0
-const CHIP_DAMAGE = 0.5
+const SWORD_DAMAGE = 25.0
+const CHIP_DAMAGE = 12.0  # sword blocked; also a blocked grand slash
 const SWORD_APPROACH_TIME = 0.25
 const RELAY_APPROACH_TIME = 0.3  # the second leg may have to cross the arena
 const SWORD_SWING_TIME = 0.15
@@ -36,14 +36,14 @@ const GRAB_TELEGRAPH_TIME = 0.9
 const GRAB_WINDUP_TIME = 0.25  # red crouch before the lunge, so even point-blank grabs can be read
 const GRAB_REACH_TIME = 0.6
 const GRAB_HOLD_TIME = 0.5
-const GRAB_DAMAGE = 2.0
+const GRAB_DAMAGE = 40.0
 const TUMBLE_TIME = 0.8
 
 const SLAM_TELEGRAPH_TIME = 1.1
 const SLAM_RISE_HEIGHT = 170.0
 const SLAM_FALL_TIME = 0.1
 const SLAM_ACTIVE_TIME = 0.3
-const SLAM_DAMAGE = 1.0
+const SLAM_DAMAGE = 25.0
 
 # Center charge: the telegraph for both the grand slash and the shockwave slashes.
 const CENTER_CHARGE_TIME = 1.2
@@ -54,16 +54,16 @@ const GRAND_RISE_TIME = 0.35
 const GRAND_EXTEND_TIME = 0.35
 const GRAND_WAVE_SPEED = 700.0  # px/s downward, so higher players are hit earlier
 const GRAND_SYNC_WINDOW = 0.2  # after the first parry, the second must land within this
-const GRAND_DAMAGE = 1.0
+const GRAND_DAMAGE = 35.0
 const GRAND_STAGGER_TIME = 2.5
 
 const SHOCKWAVE_SLASH_COUNT = 6  # alternating P1, P2, ... so 3 each
 const SHOCKWAVE_SPEED = 650.0
 const SHOCKWAVE_SIZE = Vector2(14, 70)
-const SHOCKWAVE_DAMAGE = 0.5
+const SHOCKWAVE_DAMAGE = 20.0  # halved when blocked
 const SHOCKWAVE_WAIT_TIME = 1.0
 const COUNTER_TRAVEL_TIME = 0.5  # every counter takes this long, so simultaneous ones land together
-const COUNTER_DAMAGE = 2.0  # both players countering deal double this in total
+const COUNTER_DAMAGE = 40.0  # both players countering deal double this in total
 const COUNTER_STAGGER_TIME = 2.0
 
 # Sword angles in radians, for a boss facing right (mirrored when facing left).
