@@ -85,6 +85,7 @@ func _end_game(new_state):
 		return
 	state = new_state
 	get_tree().paused = true
+	Sfx.play("victory" if state == GameState.VICTORY else "game_over")
 	state_changed.emit(state)
 
 

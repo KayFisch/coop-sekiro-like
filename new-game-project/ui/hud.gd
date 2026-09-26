@@ -14,9 +14,9 @@ const HP_BG_COLOR = Color(0.3, 0.04, 0.06)
 const HP_COLOR = Color(1.0, 0.15, 0.2)
 const POTION_COLOR = Color(0.35, 0.95, 0.55)
 const POTION_USED_COLOR = Color(0.3, 0.3, 0.33)
-const SYNC_COLOR = Color(0.3, 0.8, 1.0)
-const SYNC_HOT_COLOR = Color(1.0, 0.85, 0.3)
-const SYNC_MAX_COLOR = Color(1.0, 0.4, 0.9)
+const SYNC_LOW_COLOR = Color(0.45, 0.45, 0.48)  # the gold bar starts out grey...
+const SYNC_HIGH_COLOR = Color(1.0, 0.78, 0.2)  # ...and warms to gold as sync fills
+const SEPARATOR_COLOR = Color(1, 1, 1, 0.2)
 
 var _rows: Array = []  # one Dictionary per player: player, fill, hp_label, potions, status
 var _sync_fill: ColorRect
@@ -65,15 +65,11 @@ func _process(_delta):
 
 	var sync = GameManager.sync_value
 	var mult = GameManager.damage_multiplier()
-	_sync_fill.size.x = SYNC_BAR_WIDTH * sync / GameManager.SYNC_MAX
-	if mult >= 2.0:
-		_sync_fill.color = SYNC_MAX_COLOR
-	elif mult > 1.0:
-		_sync_fill.color = SYNC_HOT_COLOR
-	else:
-		_sync_fill.color = SYNC_COLOR
+	var fraction = sync / GameManager.SYNC_MAX
+	_sync_fill.size.x = SYNC_BAR_WIDTH * fraction
+	_sync_fill.color = SYNC_LOW_COLOR.lerp(SYNC_HIGH_COLOR, fraction)
 	_sync_mult.text = "x%.1f" % mult
-	_sync_mult.modulate = _sync_fill.color if mult > 1.0 else Color.WHITE
+	_sync_mult.modulate = SYNC_HIGH_COLOR if mult > 1.0 else Color.WHITE
 
 	var boss = GameManager.boss
 	if is_instance_valid(boss):
@@ -100,6 +96,9 @@ func _build_player_rows(root):
 			x += POTION_SIZE + POTION_GAP
 		var status = _label(root, Vector2(x + 4, y - 3), "")
 		_rows.append({"player": p, "fill": fill, "hp_label": hp_label, "potions": potions, "status": status})
+		if i < players.size() - 1:
+			# Thin divider between this player's row and the next.
+			_rect(root, Vector2(16, y + PLAYER_BAR_HEIGHT + 4), Vector2(x + 60 - 16, 1), SEPARATOR_COLOR)
 
 
 func _build_sync_bar(root):
@@ -107,7 +106,7 @@ func _build_sync_bar(root):
 	var box = _anchored_box(root, 0.5, -width / 2, width / 2)
 	_label(box, Vector2(0, 0), "SYNC")
 	_rect(box, Vector2(0, 24), Vector2(SYNC_BAR_WIDTH, BAR_HEIGHT), BAR_BG_COLOR)
-	_sync_fill = _rect(box, Vector2(0, 24), Vector2(0, BAR_HEIGHT), SYNC_COLOR)
+	_sync_fill = _rect(box, Vector2(0, 24), Vector2(0, BAR_HEIGHT), SYNC_LOW_COLOR)
 	# Threshold ticks for the 1.5x and 2x multipliers.
 	for threshold in [75.0, 95.0]:
 		var x = SYNC_BAR_WIDTH * threshold / GameManager.SYNC_MAX

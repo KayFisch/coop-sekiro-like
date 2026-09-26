@@ -1,0 +1,191 @@
+[gd_scene format=3 uid="uid://4pqund3nukl7"]
+
+[ext_resource type="Script" uid="uid://cerd7p55i2ogi" path="res://core/camera_shake.gd" id="1_cam"]
+[ext_resource type="PackedScene" path="res://actors/bosses/cubus_maximus/cubus_maximus.tscn" id="2_cubus"]
+[ext_resource type="PackedScene" path="res://actors/player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://ui/hud.tscn" id="4_hud"]
+
+[sub_resource type="RectangleShape2D" id="Shape_floor"]
+size = Vector2(1152, 48)
+
+[sub_resource type="RectangleShape2D" id="Shape_wall"]
+size = Vector2(24, 648)
+
+[sub_resource type="RectangleShape2D" id="Shape_ceiling"]
+size = Vector2(1152, 16)
+
+[sub_resource type="RectangleShape2D" id="Shape_platform"]
+size = Vector2(180, 16)
+
+[sub_resource type="Shader" id="Shader_bg_gradient"]
+code = "shader_type canvas_item;
+
+uniform vec4 top_color : source_color = vec4(0.02, 0.02, 0.035, 1.0);
+uniform vec4 bottom_color : source_color = vec4(0.12, 0.12, 0.14, 1.0);
+
+void fragment() {
+	COLOR = mix(top_color, bottom_color, UV.y);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="Material_bg_gradient"]
+shader = SubResource("Shader_bg_gradient")
+
+[node name="Arena" type="Node2D"]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(576, 324)
+script = ExtResource("1_cam")
+
+[node name="Stage" type="Node2D" parent="."]
+
+[node name="Background" type="ColorRect" parent="Stage"]
+material = SubResource("Material_bg_gradient")
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
+
+[node name="Floor" type="StaticBody2D" parent="Stage"]
+position = Vector2(576, 624)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="ColorRect" type="ColorRect" parent="Stage/Floor"]
+offset_left = -576.0
+offset_top = -24.0
+offset_right = 576.0
+offset_bottom = 24.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="LeftWall" type="StaticBody2D" parent="Stage"]
+position = Vector2(12, 324)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/LeftWall"]
+shape = SubResource("Shape_wall")
+
+[node name="ColorRect" type="ColorRect" parent="Stage/LeftWall"]
+offset_left = -12.0
+offset_top = -324.0
+offset_right = 12.0
+offset_bottom = 324.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="RightWall" type="StaticBody2D" parent="Stage"]
+position = Vector2(1140, 324)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/RightWall"]
+shape = SubResource("Shape_wall")
+
+[node name="ColorRect" type="ColorRect" parent="Stage/RightWall"]
+offset_left = -12.0
+offset_top = -324.0
+offset_right = 12.0
+offset_bottom = 324.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="Ceiling" type="StaticBody2D" parent="Stage"]
+position = Vector2(576, 8)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/Ceiling"]
+shape = SubResource("Shape_ceiling")
+
+[node name="ColorRect" type="ColorRect" parent="Stage/Ceiling"]
+offset_left = -576.0
+offset_top = -8.0
+offset_right = 576.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="PlatformLeft" type="StaticBody2D" parent="Stage"]
+position = Vector2(290, 480)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/PlatformLeft"]
+shape = SubResource("Shape_platform")
+one_way_collision = true
+
+[node name="ColorRect" type="ColorRect" parent="Stage/PlatformLeft"]
+offset_left = -90.0
+offset_top = -8.0
+offset_right = 90.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(0.27, 0.27, 0.3, 1)
+
+[node name="TopEdge" type="ColorRect" parent="Stage/PlatformLeft"]
+offset_left = -90.0
+offset_top = -8.0
+offset_right = 90.0
+offset_bottom = -6.0
+mouse_filter = 2
+color = Color(0.85, 0.87, 0.95, 1)
+
+[node name="PlatformMiddle" type="StaticBody2D" parent="Stage"]
+position = Vector2(576, 370)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/PlatformMiddle"]
+shape = SubResource("Shape_platform")
+one_way_collision = true
+
+[node name="ColorRect" type="ColorRect" parent="Stage/PlatformMiddle"]
+offset_left = -90.0
+offset_top = -8.0
+offset_right = 90.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(0.27, 0.27, 0.3, 1)
+
+[node name="TopEdge" type="ColorRect" parent="Stage/PlatformMiddle"]
+offset_left = -90.0
+offset_top = -8.0
+offset_right = 90.0
+offset_bottom = -6.0
+mouse_filter = 2
+color = Color(0.85, 0.87, 0.95, 1)
+
+[node name="PlatformRight" type="StaticBody2D" parent="Stage"]
+position = Vector2(862, 480)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/PlatformRight"]
+shape = SubResource("Shape_platform")
+one_way_collision = true
+
+[node name="ColorRect" type="ColorRect" parent="Stage/PlatformRight"]
+offset_left = -90.0
+offset_top = -8.0
+offset_right = 90.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(0.27, 0.27, 0.3, 1)
+
+[node name="TopEdge" type="ColorRect" parent="Stage/PlatformRight"]
+offset_left = -90.0
+offset_top = -8.0
+offset_right = 90.0
+offset_bottom = -6.0
+mouse_filter = 2
+color = Color(0.85, 0.87, 0.95, 1)
+
+[node name="CubusMaximus" parent="." instance=ExtResource("2_cubus")]
+position = Vector2(576, 560)
+
+[node name="Player1" parent="." instance=ExtResource("3_player")]
+position = Vector2(300, 560)
+
+[node name="Player2" parent="." instance=ExtResource("3_player")]
+position = Vector2(852, 560)
+player_id = 2
+player_color = Color(1, 0.55, 0.15, 1)
+sword_color = Color(1, 0.8, 0.55, 1)
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]

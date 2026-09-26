@@ -32,19 +32,28 @@ const ATTACK_COOLDOWN = 0.3
 const ATTACK_DAMAGE = 10.0
 const SWING_START_ANGLE = -1.05  # -60 degrees
 const SWING_END_ANGLE = 0.52  # +30 degrees, a 90 degree arc
-const GUARD_ANGLE = -1.3
+const GUARD_ANGLE = -1.571  # sword held upright...
+const GUARD_OFFSET = Vector2(24, 30)  # ...in front of the body (x mirrors with facing)
 const DROP_THROUGH_TIME = 0.3
 const WORLD_LAYER = 1  # floor and walls
 const PLATFORM_LAYER = 4  # one-way platforms live on physics layer 4
 const SWORD_FLASH_TIME = 0.1
 const DODGE_FLASH_TIME = 0.25
-const CLANG_DURATION = 0.25
+const HURT_FLASH_TIME = 0.5  # three 0.1s white flashes with 0.1s gaps
+const IDLE_BOB_HEIGHT = 3.0
+const IDLE_BOB_HZ = 0.6
+const DASH_STRETCH = Vector2(1.3, 0.7)
+const DASH_STRETCH_TIME = 0.1
+const DRINK_ORB_SIZE = 14.0
 
 @export var player_id: int = 1  # set to 1 or 2 in the inspector
+@export var player_color = Color(0.25, 0.5, 1)  # body; P1 blue, P2 orange
+@export var sword_color = Color(0.62, 0.8, 1)  # a lighter shade of the body color
 
 var hp = MAX_HP
 var potions = POTION_CHARGES
 var is_grabbed = false
+var is_clashing = false  # holding the boss's grand slash back, locked in place
 var facing = 1.0
 var body_color: Color
 var parry_press_time = -100.0  # when the last block press that can still parry happened
@@ -70,9 +79,14 @@ var _attack_landed = false
 var _knockback_timer = 0.0
 var _drink_timer = 0.0  # > 0 while drinking a potion
 var _drink_bar: ColorRect
+var _drink_orb: Panel
+var _drink_sound = null  # Sfx handle, cut short if the drink is interrupted
+var _hurt_flash = 0.0
+var _bob_time = 0.0
+var _body_rest = Vector2.ZERO
+var _stretch_tween: Tween
 var _is_dead = false
 var _sword_color: Color
-var _sfx: AudioStreamPlayer
 
 @onready var body: ColorRect = $ColorRect
 @onready var sword_pivot: Node2D = $SwordPivot
@@ -81,11 +95,14 @@ var _sfx: AudioStreamPlayer
 
 
 func _ready():
-	body_color = body.color
-	_sword_color = sword.color
+	body.color = player_color
+	sword.color = sword_color
+	body_color = player_color
+	_sword_color = sword_color
 	if player_id == 2:
 		facing = -1.0
-	_setup_audio()
+	_body_rest = body.position
+	body.pivot_offset = body.size / 2  # stretch around the center
 	_setup_gather_label()
 	_setup_drink_bar()
 	GameManager.register_player(self)
@@ -93,8 +110,8 @@ func _ready():
 
 func _physics_process(delta):
 	_tick_timers(delta)
-	if is_grabbed:
-		velocity = Vector2.ZERO  # the boss carries us
+	if is_grabbed or is_clashing:
+		velocity = Vector2.ZERO  # carried by the boss, or braced holding him back
 	elif is_drinking():
 		_process_drinking(delta)
 		move_and_slide()
@@ -155,6 +172,7 @@ func _process_actions():
 		_attack_timer = ATTACK_ACTIVE_TIME + ATTACK_RETURN_TIME
 		_attack_cooldown = ATTACK_COOLDOWN
 		_attack_landed = false
+		Sfx.play("slash", -4.0)
 
 	if Input.is_action_just_pressed(_action("down")) and is_on_floor():
 		set_collision_mask_value(PLATFORM_LAYER, false)
@@ -165,6 +183,7 @@ func _process_actions():
 		_dash_timer = 0.0
 		_attack_timer = 0.0
 		velocity.x = 0.0
+		_drink_sound = Sfx.play("drink", -3.0)  # same length as the drink
 
 
 # --- Potions ------------------------------------------------------------------
@@ -189,6 +208,7 @@ func _cancel_drink():
 	if is_drinking():
 		_drink_timer = 0.0
 		potions -= 1
+		Sfx.stop(_drink_sound)
 
 
 func _jump():
@@ -210,6 +230,13 @@ func _start_dash(direction: float):
 	_dash_cooldown = DASH_COOLDOWN
 	_dash_press_time = _now()
 	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
+	# Squash-and-stretch: snap wide and short, then spring back.
+	if _stretch_tween:
+		_stretch_tween.kill()
+	body.scale = DASH_STRETCH
+	_stretch_tween = create_tween()
+	_stretch_tween.tween_property(body, "scale", Vector2.ONE, DASH_STRETCH_TIME) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _process_attack():
@@ -232,6 +259,7 @@ func _tick_timers(delta):
 	_invuln_timer = maxf(_invuln_timer - delta, 0.0)
 	_sword_flash = maxf(_sword_flash - delta, 0.0)
 	_dodge_flash = maxf(_dodge_flash - delta, 0.0)
+	_hurt_flash = maxf(_hurt_flash - delta, 0.0)
 	_attack_timer = maxf(_attack_timer - delta, 0.0)
 	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
 	_knockback_timer = maxf(_knockback_timer - delta, 0.0)
@@ -299,7 +327,7 @@ func end_gather():
 func on_perfect_parry(strong: bool):
 	parry_press_time = -100.0  # one press parries one hit
 	_sword_flash = SWORD_FLASH_TIME
-	_play_clang(990.0 if strong else 660.0 * (1.0 if player_id == 1 else 1.33))
+	Sfx.play("parry_strong" if strong else "parry")
 	var cam = get_viewport().get_camera_2d()
 	if cam and cam.has_method("shake"):
 		cam.shake(7.0 if strong else 4.0)
@@ -316,9 +344,16 @@ func take_damage(amount: float, knockback = Vector2.ZERO, chip = false):
 	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
 	_dash_timer = 0.0
 	_cancel_drink()
+	_hurt_flash = HURT_FLASH_TIME
 	velocity = knockback
+	if chip:
+		Sfx.play("chip")
+	else:
+		Sfx.play("hurt")
 	if knockback != Vector2.ZERO:
 		_knockback_timer = KNOCKBACK_TIME
+		if not chip:
+			Sfx.play_delayed("knockback", 0.06, -4.0)  # the tumble, just behind the impact
 	health_changed.emit(self, hp)
 	if chip:
 		blocked.emit(self)
@@ -337,7 +372,21 @@ func set_grabbed(grabbed: bool):
 		_cancel_drink()  # being carried off interrupts the drink like a hit would
 
 
+func set_clashing(clashing: bool):
+	is_clashing = clashing
+	velocity = Vector2.ZERO
+	_dash_timer = 0.0
+	_attack_timer = 0.0
+
+
+func apply_knockback(push: Vector2):
+	velocity = push
+	_knockback_timer = KNOCKBACK_TIME
+
+
 func _sword_angle() -> float:
+	if is_clashing:
+		return 0.0  # held flat overhead against the boss's blade
 	if _attack_timer > 0.0:
 		var elapsed = _swing_elapsed()
 		if elapsed < ATTACK_ACTIVE_TIME:
@@ -349,28 +398,54 @@ func _sword_angle() -> float:
 
 
 func _update_visuals():
+	# Idle bob while standing still on the ground; ease back to rest otherwise.
+	var bob = 0.0
+	if is_on_floor() and absf(velocity.x) < 1.0 and not is_grabbed:
+		_bob_time += get_physics_process_delta_time()
+		# Rises from rest and back, never dipping into the floor.
+		bob = -IDLE_BOB_HEIGHT * (0.5 - 0.5 * cos(_bob_time * TAU * IDLE_BOB_HZ))
+	else:
+		_bob_time = 0.0
+	body.position.y = lerpf(body.position.y, _body_rest.y + bob, 0.3)
+	# Straining to hold the boss back: tremble.
+	body.position.x = _body_rest.x + (randf_range(-2.0, 2.0) if is_clashing else 0.0)
+
+	# Guard pose: sword upright in front of the body while blocking, flat overhead in a clash;
+	# otherwise held at the side.
+	var sword_offset = Vector2(0.0, body.position.y - _body_rest.y)
+	if is_clashing:
+		sword_offset = Vector2(-38.0 * facing, -28.0)
+	elif is_blocking() and _attack_timer <= 0.0:
+		sword_offset = Vector2(GUARD_OFFSET.x * facing, GUARD_OFFSET.y)
+	sword_pivot.position = sword_pivot.position.lerp(sword_offset, 0.4)
 	sword_pivot.scale.x = facing
 	sword_pivot.rotation = _sword_angle() * facing
 	sword.color = Color.WHITE if _sword_flash > 0.0 else _sword_color
 
 	var color = body_color
-	if _dodge_flash > 0.0:
+	if _hurt_flash > 0.0 and fmod(HURT_FLASH_TIME - _hurt_flash, 0.2) < 0.1:
+		color = Color.WHITE
+	elif _dodge_flash > 0.0:
 		color = Color(0.5, 1.0, 1.0)
 	elif _dash_timer > 0.0:
 		color = body_color.lightened(0.5)
+	elif is_clashing:
+		color = body_color.lerp(Color(1.0, 0.8, 0.3), 0.35 + 0.25 * sin(_now() * 30.0))
 	elif is_blocking():
-		color = body_color.darkened(0.35)
+		color = body_color.darkened(0.3)
 	body.color = color
 
-	var flicker = _invuln_timer > 0.0 and fmod(_invuln_timer, 0.12) < 0.06
-	body.modulate.a = 0.4 if flicker else 1.0
-
-	# Drinking cue: a timer bar under the feet that shrinks toward the center as the drink finishes.
+	# Drinking cues: a bar under the feet and an orb over the head, both shrinking with the timer.
+	var drink_left = _drink_timer / DRINK_TIME
 	_drink_bar.visible = is_drinking()
-	if _drink_bar.visible:
-		var width = 44.0 * _drink_timer / DRINK_TIME
+	_drink_orb.visible = is_drinking()
+	if is_drinking():
+		var width = 44.0 * drink_left
 		_drink_bar.size.x = width
 		_drink_bar.position.x = -width / 2
+		var d = maxf(DRINK_ORB_SIZE * drink_left, 2.0)
+		_drink_orb.size = Vector2(d, d)
+		_drink_orb.position = Vector2(-d / 2, -40.0 - d / 2)
 
 	_gather_label.visible = _gather_needed > 0
 	if _gather_label.visible:
@@ -394,6 +469,15 @@ func _setup_drink_bar():
 	_drink_bar.visible = false
 	add_child(_drink_bar)
 
+	var style = StyleBoxFlat.new()
+	style.bg_color = _drink_bar.color
+	style.set_corner_radius_all(int(DRINK_ORB_SIZE))  # clamps to a circle at any size
+	_drink_orb = Panel.new()
+	_drink_orb.add_theme_stylebox_override("panel", style)
+	_drink_orb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_drink_orb.visible = false
+	add_child(_drink_orb)
+
 
 func _setup_gather_label():
 	_gather_label = Label.new()
@@ -406,38 +490,3 @@ func _setup_gather_label():
 	_gather_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_gather_label.visible = false
 	add_child(_gather_label)
-
-
-func _setup_audio():
-	var generator = AudioStreamGenerator.new()
-	generator.mix_rate = 22050.0
-	generator.buffer_length = 0.5
-	_sfx = AudioStreamPlayer.new()
-	_sfx.stream = generator
-	_sfx.volume_db = -4.0
-	# A parry that ends the fight pauses the tree; let its clang finish anyway.
-	_sfx.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(_sfx)
-
-
-# Synthesized metallic clang: a click transient plus a few inharmonic partials with fast decay.
-func _play_clang(pitch: float):
-	_sfx.stop()
-	_sfx.play()
-	var playback = _sfx.get_stream_playback() as AudioStreamGeneratorPlayback
-	if playback == null:
-		return
-	var rate = _sfx.stream.mix_rate
-	var frame_count = mini(int(rate * CLANG_DURATION), playback.get_frames_available())
-	var frames = PackedVector2Array()
-	frames.resize(frame_count)
-	for i in frame_count:
-		var t = i / rate
-		var sample = sin(TAU * pitch * t) * 0.5 \
-			+ sin(TAU * pitch * 2.76 * t) * 0.3 \
-			+ sin(TAU * pitch * 5.4 * t) * 0.2 * exp(-t * 40.0)
-		sample *= exp(-t * 16.0)
-		if t < 0.004:
-			sample += randf_range(-1.0, 1.0) * 0.6
-		frames[i] = Vector2.ONE * sample * 0.5
-	playback.push_buffer(frames)
