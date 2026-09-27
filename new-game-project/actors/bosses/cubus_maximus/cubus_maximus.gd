@@ -20,7 +20,7 @@ const MAX_HP = 1000.0
 # How often each attack is picked, relative to the others: 2 is twice as likely as 1, and
 # 0 (or leaving an attack out) disables it.
 const ATTACK_WEIGHTS = {
-	"SWORD_RELAY": 2.0,
+	"SWORD_RELAY": 1.0,
 	"GRAB": 1.0,
 	"GROUND_SLAM": 1.0,
 	"GRAND_SLASH": 1.0,
@@ -30,7 +30,10 @@ const ATTACK_WEIGHTS = {
 # Attacks that may come twice in a row; the rest never repeat back to back.
 const REPEATABLE_ATTACKS = ["SWORD_RELAY"]
 # For testing: set to an attack's name (e.g. "TRIPLE_SLASH") to use only that attack.
-const TEST_ONLY_ATTACK = ""
+const TEST_ONLY_ATTACK = "SWORD_RELAY"
+# For testing: 1 or 2 makes him target only that player (attacks aimed at both still hit the
+# other, who can't lose health). 0 targets both players as normal.
+const TEST_ONLY_TARGET = 2
 
 const SWORD_REACH = 110.0  # blade tip distance from the pivot at scale 1 (see the scene)
 
@@ -64,6 +67,10 @@ func get_attack_weights() -> Dictionary:
 	if TEST_ONLY_ATTACK != "":
 		return {TEST_ONLY_ATTACK: 1.0}
 	return ATTACK_WEIGHTS
+
+
+func get_forced_target_id() -> int:
+	return TEST_ONLY_TARGET
 
 
 func get_repeatable_attacks() -> Array:

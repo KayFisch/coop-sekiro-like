@@ -15,8 +15,8 @@ enum State { IDLE, TELEGRAPH, ATTACKING, RECOVER, STAGGER }
 
 # --- Tuning (shared by every boss) ---
 const FIRST_ATTACK_DELAY = 2.0  # grace period at the start of the fight
-const IDLE_PAUSE_MIN = 0.8  # pause between attacks, picked at random in this range
-const IDLE_PAUSE_MAX = 1.4
+const IDLE_PAUSE_MIN = 0.25  # pause between attacks, picked at random in this range
+const IDLE_PAUSE_MAX = 0.5
 const STAGGER_RECOVER_TIME = 0.6  # getting back up after a stagger, before the idle pause
 
 const ARENA_LEFT = 24.0
@@ -43,6 +43,12 @@ const COLOR_STAGGER = Color(0.55, 0.55, 0.62)
 const COLOR_DEAD = Color(0.25, 0.25, 0.3)
 const COLOR_SWORD = Color(0.8, 0.82, 0.86)  # silver
 
+# Hands: two small blocks, a fifth of the body's size, gripping the sword's hilt unless an
+# attack takes them over (hands_free).
+const HAND_SIZE_RATIO = 0.2
+const HAND_GRIPS = [0.075, 0.275]  # where each hand holds the sword, as a fraction of its length
+const HAND_DARKEN = 0.25  # hands are the body's color, a bit darker
+
 var state = State.IDLE
 var timer = FIRST_ATTACK_DELAY
 var target_player = null
@@ -54,11 +60,14 @@ var facing = 1.0
 var sword_scale = Vector2.ONE
 var anim_time = 0.0
 var body_rest = Vector2.ZERO
+var hands: Array = []  # [ColorRect, ColorRect]
+var hands_free = false  # true while an attack places the hands itself (see place_hand())
 
 var _last_attack: Attack = null
 var _tumbling = false
 var _stagger_knock = Vector2.ZERO
 var _marker: ColorRect
+var _pop_tween: Tween
 
 @onready var body: ColorRect = $ColorRect
 @onready var glow: ColorRect = $Glow
@@ -80,6 +89,12 @@ func get_attack_pool() -> Array:
 # Relative odds per attack name (see get_attack_name()); 0, or a missing name, disables it.
 func get_attack_weights() -> Dictionary:
 	return {}
+
+
+# For testing: a player_id (1 or 2) makes the boss target only that player and leaves the
+# other unable to lose health. 0 targets both as normal.
+func get_forced_target_id() -> int:
+	return 0
 
 
 # Attack names that may be picked twice in a row.
@@ -131,6 +146,16 @@ func _ready():
 	_marker.visible = false
 	_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_marker)
+
+	for i in 2:
+		var hand = ColorRect.new()
+		hand.size = body.size * HAND_SIZE_RATIO
+		hand.pivot_offset = hand.size / 2
+		hand.top_level = true
+		hand.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(hand)
+		hands.append(hand)
+	_update_hands()
 
 	attack_pool = get_attack_pool()
 	for attack in attack_pool:
@@ -194,10 +219,18 @@ func _physics_process(delta):
 	# Telegraphs pulse the body's alpha between 0.7 and 1.0 at 3 Hz.
 	body.modulate.a = 0.85 + 0.15 * sin(anim_time * TAU * 3.0) if state == State.TELEGRAPH else 1.0
 	_update_marker()
+	_update_hands()
 
 
 func _choose_target():
 	var players = get_players()
+	var forced_id = get_forced_target_id()
+	if forced_id != 0:
+		# Testing: only this player is targeted; the other still gets hit by attacks aimed at
+		# both, but loses no health.
+		for p in players:
+			p.invincible = p.player_id != forced_id
+		players = players.filter(func(p): return p.player_id == forced_id)
 	if players.size() > 0:
 		target_player = players[randi() % players.size()]
 	else:
@@ -257,6 +290,7 @@ func _enter_recover(duration: float, finished_attack: Attack = null):
 	if finished_attack:
 		finished_attack.cleanup()
 	reset_sword()
+	_reset_body_shape()
 
 
 func _enter_stagger(finished_attack: Attack, duration: float, tumble: bool, knock: Vector2):
@@ -269,6 +303,7 @@ func _enter_stagger(finished_attack: Attack, duration: float, tumble: bool, knoc
 	glow.color.a = 0.0
 	finished_attack.cleanup()
 	reset_sword()
+	_reset_body_shape()
 	Sfx.play("stagger", -2.0)
 
 
@@ -297,7 +332,12 @@ func _die():
 	body.rotation = 0.0
 	glow.color.a = 0.0
 	reset_sword()
+	if _pop_tween:
+		_pop_tween.kill()
+	body.scale = Vector2.ONE
 	_marker.visible = false
+	hands_free = false
+	_update_hands()
 	defeated.emit()
 
 
@@ -343,6 +383,58 @@ func reset_sword():
 func set_sword_angle(angle: float):
 	sword_pivot.scale = Vector2(sword_scale.x * facing, sword_scale.y)
 	sword_pivot.rotation = angle * facing
+
+
+# Puts a hand's center at a world position (for attacks that set hands_free).
+func place_hand(index: int, center: Vector2, angle = 0.0):
+	var hand = hands[index]
+	hand.global_position = center - hand.size / 2
+	hand.rotation = angle
+
+
+# Hands follow the sword's hilt through every swing, unless an attack has taken them over.
+func _update_hands():
+	for hand in hands:
+		hand.color = body.color.darkened(HAND_DARKEN)
+	if hands_free:
+		return
+	var hilt = sword.position.x
+	var length = sword.size.x
+	var blade_y = sword.position.y + sword.size.y / 2
+	for i in hands.size():
+		var grip = sword_pivot.to_global(Vector2(hilt + length * HAND_GRIPS[i], blade_y))
+		place_hand(i, grip, sword_pivot.rotation)
+
+
+# --- Squash and stretch (the Sekiro-style read: a slow, loaded anticipation, then a snap) ---
+
+# Holds the body squashed or stretched, bottom kept in place (e.g. crouching to spring).
+# x_offset leans the body sideways (e.g. rearing back from the target).
+func squash_body(amount: Vector2, x_offset = 0.0):
+	if _pop_tween:
+		_pop_tween.kill()
+		_pop_tween = null
+	body.scale = amount
+	body.position = body_rest + Vector2(x_offset, body.size.y * (1.0 - amount.y) / 2.0)
+
+
+# The spring lets go (or an impact lands): snap to `shape`, then settle back to normal.
+func pop_body(shape: Vector2, duration = 0.2):
+	if _pop_tween:
+		_pop_tween.kill()
+	body.position = body_rest
+	_pop_tween = create_tween()
+	_pop_tween.tween_property(body, "scale", shape, duration * 0.3) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_pop_tween.tween_property(body, "scale", Vector2.ONE, duration * 0.7) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+# Back to the normal shape, unless a pop is still settling on its own.
+func _reset_body_shape():
+	if _pop_tween and _pop_tween.is_running():
+		return
+	body.scale = Vector2.ONE
 
 
 func set_glow(color: Color, alpha: float):

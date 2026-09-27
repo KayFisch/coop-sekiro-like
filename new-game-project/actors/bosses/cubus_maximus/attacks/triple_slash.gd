@@ -16,6 +16,11 @@ enum Phase { NONE, APPROACH, STABS, CLASH }
 const TRIPLE_SLASH_INTERVAL = 0.25  # between stab contacts
 const TELEGRAPH_TIME = 1.0  # seconds of warning before the lunge
 const APPROACH_TIME = 0.25  # the lunge to the target
+const APPROACH_POWER = 2.2  # the lunge starts slow and arrives fast (1 = constant speed)
+const CROUCH_SQUASH = Vector2(1.15, 0.85)  # coiled low at the end of the telegraph
+const REAR_BACK = 10.0  # leaning away from the target during the telegraph
+const LUNGE_STRETCH = Vector2(1.3, 0.8)
+const THRUST_POWER = 2.0  # each stab accelerates out to full extension
 const STRIKE_DISTANCE = 70.0  # how far from the target he stops to stab
 const TRACKING = 0.25  # how hard he follows a moving target between stabs (0..1 per frame)
 const STAB_COUNT = 3
@@ -24,7 +29,7 @@ const STAB_DAMAGE = 12.0
 const HIT_STAGGER_TIME = 0.3  # the target can't act; longer than the interval, so the chain lands
 const CLASH_TIME = 0.6  # the partner's opening after all three stabs are parried
 const CLASH_STAGGER_TIME = 1.2  # when the partner lands the hit
-const RECOVER_TIME = 0.8  # any stab missed, or the clash ran out
+const RECOVER_TIME = 0.45  # any stab missed, or the clash ran out
 
 const COLOR = Color.YELLOW
 const COLOR_CLASH = Color(1.0, 0.95, 0.6)
@@ -63,9 +68,10 @@ func get_telegraph_duration() -> float:
 func update_telegraph(progress: float):
 	boss.face(boss.target_player.global_position.x)
 	_pose_sword(progress, boss.SWORD_REST_ANGLE, 1.0)
-	# Quiver harder as the strike approaches, like the relay.
+	# Coil low and rear back from the target, quivering harder as the strike approaches.
+	var coil = ease(progress, 1.6)
 	var shake = 3.0 * progress
-	boss.body.position = boss.body_rest + Vector2(randf_range(-shake, shake), 0.0)
+	boss.squash_body(Vector2.ONE.lerp(CROUCH_SQUASH, coil), -boss.facing * REAR_BACK * coil + randf_range(-shake, shake))
 	boss.set_glow(COLOR, 0.25)
 
 
@@ -77,6 +83,7 @@ func execute():
 	_lunge_side = signf(boss.global_position.x - boss.target_player.global_position.x)
 	if _lunge_side == 0.0:
 		_lunge_side = 1.0
+	boss.pop_body(LUNGE_STRETCH, 0.25)
 
 
 func update(delta: float):
@@ -84,7 +91,7 @@ func update(delta: float):
 	match phase:
 		Phase.APPROACH:
 			var t = 1.0 - clampf(timer / APPROACH_TIME, 0.0, 1.0)
-			boss.global_position = _lunge_from.lerp(_strike_point(), ease(t, 0.4))
+			boss.global_position = _lunge_from.lerp(_strike_point(), pow(t, APPROACH_POWER))
 			boss.face(boss.target_player.global_position.x)
 			# Hold the sword back, then bring it around to point at the target for the first stab.
 			var turn = clampf((t - 0.6) / 0.4, 0.0, 1.0)
@@ -99,7 +106,7 @@ func update(delta: float):
 			# Stay on the target through the whole chain.
 			boss.global_position = boss.global_position.lerp(_strike_point(), TRACKING)
 			boss.face(boss.target_player.global_position.x)
-			var extend = clampf(_stab_time / STAB_EXTEND_TIME, 0.0, 1.0)
+			var extend = pow(clampf(_stab_time / STAB_EXTEND_TIME, 0.0, 1.0), THRUST_POWER)
 			var retract = clampf((_stab_time - STAB_EXTEND_TIME) / (TRIPLE_SLASH_INTERVAL - STAB_EXTEND_TIME), 0.0, 1.0)
 			boss.sword_scale.x = lerpf(lerpf(RETRACTED_SCALE, EXTENDED_SCALE, extend), RETRACTED_SCALE, retract)
 			boss.set_sword_angle(0.0)

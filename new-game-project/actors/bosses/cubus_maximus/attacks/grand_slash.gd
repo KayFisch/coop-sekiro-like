@@ -3,24 +3,34 @@ extends Attack
 ## Blue center charge -> red. Cubus Maximus rises over the arena's center and lunges straight
 ## down. Players parry him directly: the first parry only holds him in a clash, and the
 ## partner's parry during that window overpowers him (damage + stagger). If the partner
-## doesn't make it, he breaks free, drives his sword into the center, and a red, unblockable
-## shockwave ring expands from the impact.
+## doesn't make it, he breaks free, drives his sword into the center, and a red shockwave ring
+## expands from the impact. The ring can't be blocked, parried, dashed through or outrun: it
+## sweeps the whole arena and hits every player.
 
 signal grand_slash_parried
 
-enum Phase { NONE, GRAND_RISE, GRAND_DIVE, GRAND_CLASH, GRAND_IMPACT }
+enum Phase { NONE, GRAND_RISE, GRAND_HANG, GRAND_DIVE, GRAND_CLASH, GRAND_IMPACT }
 
 # --- Tuning ---
 const TELEGRAPH_TIME = 1.2  # the center charge
 const SWORD_SCALE = 1.5  # sword size at the end of the wind-up
 const TOP_Y = 90.0  # height at the top of the rise
 const RISE_TIME = 0.35
-const DIVE_SPEED = 750.0  # the downward lunge the players parry
+# At the top: a moment's hang, coiling (squashed), creeping up, before the drop.
+const HANG_TIME = 0.2
+const HANG_CREEP = 12.0
+const HANG_SQUASH = Vector2(1.2, 0.8)
+const DIVE_STRETCH = Vector2(0.8, 1.3)
+const IMPACT_SQUASH = Vector2(1.4, 0.6)
+# The dive the players parry: slow off the top, accelerating. With these it takes about as long
+# as the old constant 750 px/s dive, but arrives much faster.
+const DIVE_START_SPEED = 150.0
+const DIVE_ACCEL = 2600.0
 const DIVE_DAMAGE = 35.0
 const DIVE_KNOCKBACK = 350.0
 const BLOCKED_DAMAGE = 12.0
 const BLOCKED_KNOCKBACK = 200.0
-const JOIN_WINDOW = 0.75  # after the first parry holds him, the partner has this long to parry too
+const JOIN_WINDOW = 0.4  # after the first parry holds him, the partner has this long to parry too
 const COUNTER_DAMAGE = 80.0  # both players overpowered him (x the sync multiplier)
 const COUNTER_STAGGER_TIME = 1.5
 const COUNTER_KNOCK = Vector2(0, -900)  # overpowered: thrown back up off the lunge
@@ -29,10 +39,8 @@ const BREAK_FREE_KNOCKBACK = Vector2(450.0, -300.0)  # the holder, thrown aside;
 const RING_DAMAGE = 35.0
 const RING_KNOCKBACK = Vector2(400.0, -300.0)  # x points away from the impact
 const RING_SPEED = 650.0
-const RING_MAX_RADIUS = 520.0  # the far corners of the arena are out of reach
 const RING_WIDTH = 14.0
-const RING_HIT_MARGIN = 20.0  # how far off the ring's line still counts as a hit
-const RECOVER_TIME = 0.8  # after the ring finishes
+const RECOVER_TIME = 0.45  # after the ring finishes
 
 const COLOR = Color(0.25, 0.45, 1.0)
 const COLOR_CLASH = Color(1.0, 0.78, 0.2)  # held by one player: partner, join in!
@@ -41,13 +49,15 @@ const COLOR_OVERPOWER = Color(1.0, 1.0, 0.85)  # both players together
 var ring: Node2D  # the failure shockwave
 
 var _rise_from = Vector2.ZERO
-var _dive_speed = DIVE_SPEED
+var _dive_speed = DIVE_START_SPEED
+var _dive_accel = DIVE_ACCEL  # 0 once he breaks free (a straight, fast finish)
 var _resolved: Array = []  # players the lunge has already dealt with
 var _holder = null  # the player holding Cubus Maximus in the clash
 var _helper = null  # the partner who has to come and parry
 var _clash_bar: ColorRect
 var _spark_timer = 0.0
 var _ring_hit: Array = []
+var _ring_max_radius = 0.0  # far enough to reach the arena's top corners
 var _drone = null  # Sfx handles
 var _grind = null
 
@@ -89,9 +99,18 @@ func update(delta: float):
 			boss.global_position = _rise_from.lerp(Vector2(boss.home_position.x, TOP_Y), ease(t, 0.5))
 			boss.set_sword_angle(lerpf(boss.SWORD_RAISED_ANGLE, PI / 2, t))
 			if timer <= 0.0:
+				phase = Phase.GRAND_HANG
+				timer = HANG_TIME
+
+		Phase.GRAND_HANG:
+			var h = 1.0 - clampf(timer / HANG_TIME, 0.0, 1.0)
+			boss.global_position.y = TOP_Y - HANG_CREEP * ease(h, 0.6)
+			boss.squash_body(Vector2.ONE.lerp(HANG_SQUASH, ease(h, 0.6)))
+			if timer <= 0.0:
 				_start_dive()
 
 		Phase.GRAND_DIVE:
+			_dive_speed += _dive_accel * delta
 			boss.global_position.y += _dive_speed * delta
 			# The players parry Cubus Maximus himself: his blade or his body reaching them.
 			for p in _contacts():
@@ -134,7 +153,9 @@ func cleanup():
 
 func _start_dive():
 	phase = Phase.GRAND_DIVE
-	_dive_speed = DIVE_SPEED
+	_dive_speed = DIVE_START_SPEED
+	_dive_accel = DIVE_ACCEL
+	boss.pop_body(DIVE_STRETCH, 0.3)
 	_resolved.clear()
 	_holder = null
 	_helper = null
@@ -261,12 +282,14 @@ func _break_free():
 	boss.set_glow(boss.COLOR_EXECUTE, 0.4)
 	phase = Phase.GRAND_DIVE
 	_dive_speed = BREAK_FREE_SPEED
+	_dive_accel = 0.0
 
 
 # --- Failure: the sword hits the center and a red shockwave ring expands ---
 
 func _impact():
 	boss.global_position.y = _dive_end_y()
+	boss.pop_body(IMPACT_SQUASH, 0.3)
 	phase = Phase.GRAND_IMPACT
 	Sfx.stop(_drone)
 	_drone = null
@@ -275,24 +298,25 @@ func _impact():
 	var center = Vector2(boss.global_position.x, boss.ARENA_FLOOR_Y)
 	_spawn_sparks(center, 24, boss.COLOR_EXECUTE)
 	_ring_hit.clear()
-	ring = _make_ring(center, boss.COLOR_EXECUTE, true)
+	_ring_max_radius = maxf(center.distance_to(Vector2(boss.ARENA_LEFT, 0.0)),
+		center.distance_to(Vector2(boss.ARENA_RIGHT, 0.0)))
+	ring =_make_ring(center, boss.COLOR_EXECUTE, true)
 
 
 func _update_ring(delta: float):
 	var radius = ring.get_meta("radius") + RING_SPEED * delta
 	ring.set_meta("radius", radius)
 	ring.queue_redraw()
-	# Unblockable: blocking and parrying do nothing. Only distance or a well-timed dash through it.
+	# Unavoidable: every player the ring has swept past is hit once, wherever they are and
+	# whatever they're doing. Blocking, parrying, dashing and leftover invulnerability don't help.
 	for p in players:
 		if p in _ring_hit:
 			continue
-		var d = p.global_position.distance_to(ring.global_position)
-		if absf(d - radius) <= RING_WIDTH / 2.0 + RING_HIT_MARGIN:
+		if p.global_position.distance_to(ring.global_position) <= radius:
 			_ring_hit.append(p)
-			if not p.is_dodging_grab():
-				var out = (p.global_position - ring.global_position).normalized()
-				p.take_damage(RING_DAMAGE, Vector2(out.x * RING_KNOCKBACK.x, RING_KNOCKBACK.y))
-	if radius >= RING_MAX_RADIUS:
+			var out = (p.global_position - ring.global_position).normalized()
+			p.take_damage(RING_DAMAGE, Vector2(out.x * RING_KNOCKBACK.x, RING_KNOCKBACK.y), false, true)
+	if radius >= _ring_max_radius:
 		finish(RECOVER_TIME)
 
 

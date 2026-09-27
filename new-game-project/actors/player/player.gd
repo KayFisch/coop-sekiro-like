@@ -23,9 +23,14 @@ const KNOCKBACK_TIME = 0.25  # input can't steer and potions can't be drunk whil
 const KNOCKBACK_FRICTION = 1500.0
 const HIT_INVULN_TIME = 0.6
 const CHIP_INVULN_TIME = 0.2
-const PARRY_WINDOW = 0.2  # block must be pressed at most this long before a boss attack connects
+# PARRY WINDOW (every boss attack), Sekiro-style: a block press opens a window of this length,
+# and a hit connecting inside it is a perfect parry. So the press must come at most this long
+# *before* contact; pressing after the hit has landed is too late. Raise for easier parries.
+const PARRY_TOLERANCE = 0.10
+# DODGE WINDOW (the grab), same idea: a dash press opens a window of this length, and the
+# boss's hands shutting inside it is a clean dodge. Press at most this long before they shut.
+const DODGE_TOLERANCE = 0.1
 const PARRY_SPAM_LOCK = 0.3  # a block press this soon after the previous one can't parry
-const DODGE_WINDOW = 0.15  # dash must be pressed at most this long before the grab connects
 const ATTACK_ACTIVE_TIME = 0.15
 const ATTACK_RETURN_TIME = 0.1
 const ATTACK_COOLDOWN = 0.3
@@ -45,6 +50,18 @@ const IDLE_BOB_HZ = 0.6
 const DASH_STRETCH = Vector2(1.3, 0.7)
 const DASH_STRETCH_TIME = 0.1
 const DRINK_ORB_SIZE = 14.0
+# Tumbling: thrown by the boss, bouncing and sliding with no control until it settles.
+const TUMBLE_MAX_TIME = 1.4
+const TUMBLE_BOUNCE = 0.4  # fraction of speed kept off each floor or wall bounce
+const TUMBLE_MIN_BOUNCE_SPEED = 220.0  # softer landings don't bounce, they slide
+const TUMBLE_FRICTION = 700.0  # sliding along the floor
+const TUMBLE_SETTLE_SPEED = 30.0  # sliding slower than this ends the tumble
+const TUMBLE_SPIN = 0.012  # body rotation per pixel travelled sideways
+const TUMBLE_IMPACT_SHAKE = 10.0
+# Hands: same proportions as the boss's (a fifth of the body, gripping the hilt).
+const HAND_SIZE_RATIO = 0.2
+const HAND_GRIPS = [0.075, 0.275]  # where each hand holds the sword, as a fraction of its length
+const HAND_DARKEN = 0.25
 
 @export var player_id: int = 1  # set to 1 or 2 in the inspector
 @export var player_color = Color(0.25, 0.5, 1)  # body; P1 blue, P2 orange
@@ -54,6 +71,7 @@ var hp = MAX_HP
 var potions = POTION_CHARGES
 var is_grabbed = false
 var is_clashing = false  # blades locked with the boss, held in place
+var invincible = false  # testing: hits still land (flash, knockback) but take no health
 var facing = 1.0
 var body_color: Color
 var parry_press_time = -100.0  # when the last block press that can still parry happened
@@ -78,6 +96,8 @@ var _attack_cooldown = 0.0
 var _attack_landed = false
 var _knockback_timer = 0.0
 var _stagger_timer = 0.0  # > 0 while reeling from a hit: no movement, no input
+var _tumble_timer = 0.0  # > 0 while tumbling (see tumble())
+var _tumble_damage = 0.0  # dealt when the tumble first hits the floor; 0 once dealt
 var _clash_overhead = true  # grand slash clash: sword flat overhead; otherwise level, at the boss
 var _drink_timer = 0.0  # > 0 while drinking a potion
 var _drink_bar: ColorRect
@@ -89,6 +109,7 @@ var _body_rest = Vector2.ZERO
 var _stretch_tween: Tween
 var _is_dead = false
 var _sword_color: Color
+var _hands: Array = []  # [ColorRect, ColorRect]
 
 @onready var body: ColorRect = $ColorRect
 @onready var sword_pivot: Node2D = $SwordPivot
@@ -107,6 +128,7 @@ func _ready():
 	body.pivot_offset = body.size / 2  # stretch around the center
 	_setup_gather_label()
 	_setup_drink_bar()
+	_setup_hands()
 	GameManager.register_player(self)
 
 
@@ -114,6 +136,8 @@ func _physics_process(delta):
 	_tick_timers(delta)
 	if is_grabbed or is_clashing:
 		velocity = Vector2.ZERO  # carried by the boss, or braced holding him back
+	elif is_tumbling():
+		_process_tumble(delta)
 	elif is_staggered():
 		velocity.x = 0.0
 		velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
@@ -279,21 +303,21 @@ func _tick_timers(delta):
 # --- Defensive queries used by the boss at the moment its hitbox connects ---
 
 func is_blocking() -> bool:
-	return not is_grabbed and not is_drinking() and not is_staggered() \
+	return not is_grabbed and not is_drinking() and not is_staggered() and not is_tumbling() \
 		and Input.is_action_pressed(_action("block"))
 
 
 func is_perfect_parry() -> bool:
-	return not is_grabbed and not is_drinking() and not is_staggered() \
-		and _now() - parry_press_time <= PARRY_WINDOW
+	return not is_grabbed and not is_drinking() and not is_staggered() and not is_tumbling() \
+		and _now() - parry_press_time <= PARRY_TOLERANCE
 
 
 func is_staggered() -> bool:
 	return _stagger_timer > 0.0
 
 
-func is_dodging_grab() -> bool:
-	return _dash_timer > 0.0 or _now() - _dash_press_time <= DODGE_WINDOW
+func is_perfect_dodge() -> bool:
+	return not is_grabbed and _now() - _dash_press_time <= DODGE_TOLERANCE
 
 
 # Standing on the arena floor itself, not on a one-way platform.
@@ -355,7 +379,8 @@ func on_grab_dodged():
 func take_damage(amount: float, knockback = Vector2.ZERO, chip = false, ignore_invuln = false):
 	if _is_dead or (_invuln_timer > 0.0 and not ignore_invuln):
 		return
-	hp = maxf(hp - amount, 0.0)
+	if not invincible:
+		hp = maxf(hp - amount, 0.0)
 	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
 	_dash_timer = 0.0
 	_cancel_drink()
@@ -406,6 +431,50 @@ func set_clashing(clashing: bool, overhead = true):
 func apply_knockback(push: Vector2):
 	velocity = push
 	_knockback_timer = KNOCKBACK_TIME
+
+
+# Thrown: flies, bounces off the floor and walls and slides to a stop, with no control until it
+# settles. impact_damage (if any) lands when the floor is first hit.
+func tumble(launch: Vector2, impact_damage = 0.0):
+	velocity = launch
+	_tumble_timer = TUMBLE_MAX_TIME
+	_tumble_damage = impact_damage
+	_dash_timer = 0.0
+	_attack_timer = 0.0
+	_knockback_timer = 0.0
+	_cancel_drink()
+
+
+func is_tumbling() -> bool:
+	return _tumble_timer > 0.0
+
+
+func _process_tumble(delta):
+	_tumble_timer = maxf(_tumble_timer - delta, 0.0)
+	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
+	if is_on_floor():
+		velocity.x = move_toward(velocity.x, 0.0, TUMBLE_FRICTION * delta)
+	var before = velocity
+	move_and_slide()
+	body.rotation += before.x * delta * TUMBLE_SPIN
+
+	var hit_floor = is_on_floor() and before.y > 0.0
+	if hit_floor and before.y >= TUMBLE_MIN_BOUNCE_SPEED:
+		velocity = Vector2(before.x, -before.y * TUMBLE_BOUNCE)
+	if is_on_wall():
+		velocity.x = -before.x * TUMBLE_BOUNCE
+	if hit_floor and _tumble_damage > 0.0:
+		var damage = _tumble_damage
+		_tumble_damage = 0.0
+		take_damage(damage, velocity, false, true)  # keeps the bounce going
+		var cam = get_viewport().get_camera_2d()
+		if cam and cam.has_method("shake"):
+			cam.shake(TUMBLE_IMPACT_SHAKE)
+
+	var settled = is_on_floor() and velocity.y >= 0.0 and absf(velocity.x) < TUMBLE_SETTLE_SPEED
+	if settled or _tumble_timer <= 0.0 or _is_dead:
+		_tumble_timer = 0.0
+		body.rotation = 0.0
 
 
 func _sword_angle() -> float:
@@ -460,6 +529,7 @@ func _update_visuals():
 	elif is_blocking():
 		color = body_color.darkened(0.3)
 	body.color = color
+	_update_hands()
 
 	# Drinking cues: a bar under the feet and an orb over the head, both shrinking with the timer.
 	var drink_left = _drink_timer / DRINK_TIME
@@ -503,6 +573,31 @@ func _setup_drink_bar():
 	_drink_orb.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_drink_orb.visible = false
 	add_child(_drink_orb)
+
+
+func _setup_hands():
+	for i in 2:
+		var hand = ColorRect.new()
+		hand.size = body.size * HAND_SIZE_RATIO
+		hand.pivot_offset = hand.size / 2
+		hand.top_level = true
+		hand.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(hand)
+		_hands.append(hand)
+	_update_hands()
+
+
+# The hands grip the hilt and follow every swing and guard.
+func _update_hands():
+	var hilt = sword.position.x
+	var length = sword.size.x
+	var blade_y = sword.position.y + sword.size.y / 2
+	for i in _hands.size():
+		var hand = _hands[i]
+		var grip = sword_pivot.to_global(Vector2(hilt + length * HAND_GRIPS[i], blade_y))
+		hand.global_position = grip - hand.size / 2
+		hand.rotation = sword_pivot.rotation
+		hand.color = body.color.darkened(HAND_DARKEN)
 
 
 func _setup_gather_label():

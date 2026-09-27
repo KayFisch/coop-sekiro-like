@@ -12,7 +12,7 @@ enum Phase { NONE, VOLLEY, VOLLEY_WAIT, COUNTER_TRAVEL }
 
 # --- Tuning ---
 const TELEGRAPH_TIME = 1.2  # the center charge
-const SLASH_INTERVAL = 0.8  # the metronome: seconds between slashes, independent of travel
+const SLASH_INTERVAL = 0.2  # the metronome: seconds between slashes, independent of travel
 const SLASH_COUNT = 6  # alternating P1, P2, ... so 3 each
 const WAVE_SPEED = 650.0
 const WAVE_SIZE = Vector2(14, 70)
@@ -24,10 +24,15 @@ const WAIT_TIME = 1.0  # after the last slash, before the counters launch
 const COUNTER_TRAVEL_TIME = 0.5  # every counter takes this long, so simultaneous ones land together
 const COUNTER_DAMAGE = 40.0  # per counter (x the sync multiplier); both together deal double
 const COUNTER_STAGGER_TIME = 2.0  # only when both players counter
-const RECOVER_TIME = 0.8  # no counter, or only one
+const RECOVER_TIME = 0.45  # no counter, or only one
 
 const COLOR = Color(1.0, 0.15, 0.15)
-const SLASH_ANIM_TIME = 0.15  # the boss's sword swing on each slash (visual)
+# Each slash's swing: between beats the sword winds back up past overhead and holds there; the
+# last SNAP_TIME before each beat it whips down, and the shockwave leaves on the beat.
+const SNAP_TIME = 0.06
+const SNAP_POWER = 2.0  # the whip accelerates into the release (1 = constant speed)
+const WOUND_EXTRA = 0.35  # radians past the raised angle when fully wound up
+const SLASH_POP = Vector2(1.12, 0.9)  # a small body jolt on each release
 
 var projectiles: Array = []  # Dictionaries: node, target, dir, hum
 
@@ -35,7 +40,7 @@ var _order: Array = []  # players in slash order
 var _index = 0
 var _counters: Array = []  # Dictionaries: node, from
 var _counter_both = false
-var _slash_anim = 0.0
+var _wait_elapsed = 0.0
 
 
 func get_attack_name() -> String:
@@ -54,9 +59,14 @@ func uses_center_charge() -> bool:
 	return true
 
 
+func update_telegraph(progress: float):
+	# Winding the sword up over the charge.
+	boss.set_sword_angle(lerpf(boss.SWORD_REST_ANGLE, _wound_angle(), ease(progress, 1.5)))
+
+
 func execute():
 	phase = Phase.VOLLEY
-	timer = 0.0  # first slash right on the downbeat
+	timer = SNAP_TIME  # the first slash's whip, then on the metronome
 	_index = 0
 	_order = players.duplicate()
 	_order.sort_custom(func(a, b): return a.player_id < b.player_id)
@@ -71,19 +81,24 @@ func update(delta: float):
 		Phase.VOLLEY:
 			boss.hover()
 			_update_projectiles(delta)
-			_update_slash_anim()
 			if timer <= 0.0:
 				_slash()
 				if _index >= SLASH_COUNT:
 					phase = Phase.VOLLEY_WAIT
 					timer = WAIT_TIME
+					_wait_elapsed = 0.0
 				else:
 					timer += SLASH_INTERVAL  # metronome: keep the beat exact
+			if phase == Phase.VOLLEY:
+				_pose_slash()
 
 		Phase.VOLLEY_WAIT:
 			boss.hover()
 			_update_projectiles(delta)
-			_update_slash_anim()
+			# Follow-through, then easing the sword back down to rest.
+			_wait_elapsed += delta
+			var settle = clampf(_wait_elapsed / 0.4, 0.0, 1.0)
+			boss.set_sword_angle(lerpf(boss.SWORD_FOLLOW_ANGLE, boss.SWORD_REST_ANGLE, ease(settle, -2.0)))
 			if timer <= 0.0:
 				_launch_counters()
 
@@ -121,14 +136,25 @@ func _slash():
 	_index += 1
 	boss.target_player = target
 	boss.face(target.global_position.x)
-	_slash_anim = SLASH_ANIM_TIME
+	boss.pop_body(SLASH_POP, 0.12)
 	_fire_shockwave(target)
 
 
-func _update_slash_anim():
-	_slash_anim = maxf(_slash_anim - boss.get_physics_process_delta_time(), 0.0)
-	boss.set_sword_angle(lerpf(boss.SWORD_RAISED_ANGLE, boss.SWORD_FOLLOW_ANGLE,
-		1.0 - _slash_anim / SLASH_ANIM_TIME))
+func _wound_angle() -> float:
+	return boss.SWORD_RAISED_ANGLE - WOUND_EXTRA
+
+
+# The sword against the metronome: whipping down in the last SNAP_TIME before each beat,
+# otherwise winding back up from the follow-through (quickly at first, then holding).
+func _pose_slash():
+	if timer <= SNAP_TIME:
+		var snap = pow(1.0 - clampf(timer / SNAP_TIME, 0.0, 1.0), SNAP_POWER)
+		boss.set_sword_angle(lerpf(_wound_angle(), boss.SWORD_FOLLOW_ANGLE, snap))
+	else:
+		var since = SLASH_INTERVAL - timer  # time since the last release
+		var windup = clampf(since / (SLASH_INTERVAL - SNAP_TIME), 0.0, 1.0)
+		var from = boss.SWORD_FOLLOW_ANGLE if _index > 0 else _wound_angle()
+		boss.set_sword_angle(lerpf(from, _wound_angle(), ease(windup, 0.4)))
 
 
 func _fire_shockwave(target):
