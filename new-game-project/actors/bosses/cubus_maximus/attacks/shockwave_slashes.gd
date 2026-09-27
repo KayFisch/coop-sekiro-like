@@ -10,16 +10,24 @@ signal counterattack_landed(both_players)
 
 enum Phase { NONE, VOLLEY, VOLLEY_WAIT, COUNTER_TRAVEL }
 
-# Slashes fire on a fixed metronome, independent of projectile travel.
-const SLASH_INTERVAL = 0.8
+# --- Tuning ---
+const TELEGRAPH_TIME = 1.2  # the center charge
+const SLASH_INTERVAL = 0.8  # the metronome: seconds between slashes, independent of travel
+const SLASH_COUNT = 6  # alternating P1, P2, ... so 3 each
+const WAVE_SPEED = 650.0
+const WAVE_SIZE = Vector2(14, 70)
+const WAVE_DAMAGE = 20.0
+const WAVE_KNOCKBACK = 250.0
+const BLOCKED_DAMAGE = 10.0
+const BLOCKED_KNOCKBACK = 150.0
+const WAIT_TIME = 1.0  # after the last slash, before the counters launch
+const COUNTER_TRAVEL_TIME = 0.5  # every counter takes this long, so simultaneous ones land together
+const COUNTER_DAMAGE = 40.0  # per counter (x the sync multiplier); both together deal double
+const COUNTER_STAGGER_TIME = 2.0  # only when both players counter
+const RECOVER_TIME = 0.8  # no counter, or only one
 
 const COLOR = Color(1.0, 0.15, 0.15)
-const SLASH_COUNT = 6  # alternating P1, P2, ... so 3 each
-const SPEED = 650.0
-const SIZE = Vector2(14, 70)
-const WAIT_TIME = 1.0
-const COUNTER_TRAVEL_TIME = 0.5  # every counter takes this long, so simultaneous ones land together
-const COUNTER_STAGGER_TIME = 2.0
+const SLASH_ANIM_TIME = 0.15  # the boss's sword swing on each slash (visual)
 
 var projectiles: Array = []  # Dictionaries: node, target, dir, hum
 
@@ -39,7 +47,7 @@ func get_telegraph_color() -> Color:
 
 
 func get_telegraph_duration() -> float:
-	return boss.CENTER_CHARGE_TIME
+	return TELEGRAPH_TIME
 
 
 func uses_center_charge() -> bool:
@@ -113,20 +121,20 @@ func _slash():
 	_index += 1
 	boss.target_player = target
 	boss.face(target.global_position.x)
-	_slash_anim = SwordRelay.SWING_TIME
+	_slash_anim = SLASH_ANIM_TIME
 	_fire_shockwave(target)
 
 
 func _update_slash_anim():
 	_slash_anim = maxf(_slash_anim - boss.get_physics_process_delta_time(), 0.0)
 	boss.set_sword_angle(lerpf(boss.SWORD_RAISED_ANGLE, boss.SWORD_FOLLOW_ANGLE,
-		1.0 - _slash_anim / SwordRelay.SWING_TIME))
+		1.0 - _slash_anim / SLASH_ANIM_TIME))
 
 
 func _fire_shockwave(target):
 	# Fired from Cubus Maximus, straight at where the target is right now.
 	var dir = (target.global_position - boss.global_position).normalized()
-	var wave = _make_wave(SIZE, boss.COLOR_EXECUTE)
+	var wave = _make_wave(WAVE_SIZE, boss.COLOR_EXECUTE)
 	wave.global_position = boss.global_position
 	wave.rotation = dir.angle()
 	projectiles.append({"node": wave, "target": target, "dir": dir, "hum": Sfx.play("hum", -6.0)})
@@ -157,7 +165,7 @@ func _make_wave(wave_size: Vector2, color: Color) -> Area2D:
 func _update_projectiles(delta: float):
 	for proj in projectiles.duplicate():
 		var node = proj.node
-		node.global_position += proj.dir * SPEED * delta
+		node.global_position += proj.dir * WAVE_SPEED * delta
 		var pos = node.global_position
 		if proj.target in node.get_overlapping_bodies():
 			_remove_projectile(proj)
@@ -184,9 +192,9 @@ func _contact(player):
 		return
 	player.fail_gather()
 	if player.is_blocking():
-		player.take_damage(boss.SHOCKWAVE_DAMAGE * 0.5, boss.knockback_for(player, 150.0), true)
+		player.take_damage(BLOCKED_DAMAGE, boss.knockback_for(player, BLOCKED_KNOCKBACK), true)
 	else:
-		player.take_damage(boss.SHOCKWAVE_DAMAGE, boss.knockback_for(player, 250.0))
+		player.take_damage(WAVE_DAMAGE, boss.knockback_for(player, WAVE_KNOCKBACK))
 
 
 func _launch_counters():
@@ -197,7 +205,7 @@ func _launch_counters():
 	for p in _order:
 		p.end_gather()
 	if ready.is_empty():
-		finish(0.8)
+		finish(RECOVER_TIME)
 		return
 	_counter_both = ready.size() >= 2
 	# Every counter gets the same travel time, so speed scales with distance and
@@ -218,7 +226,7 @@ func _launch_counters():
 
 func _counters_land():
 	# Read the multiplier before the counter's sync bonus is applied.
-	var damage = boss.COUNTER_DAMAGE * GameManager.damage_multiplier() * (2.0 if _counter_both else 1.0)
+	var damage = COUNTER_DAMAGE * GameManager.damage_multiplier() * (2.0 if _counter_both else 1.0)
 	counterattack_landed.emit(_counter_both)
 	Sfx.play("counter_hit", 2.0 if _counter_both else 0.0)
 	boss.shake(10.0 if _counter_both else 5.0)
@@ -228,4 +236,4 @@ func _counters_land():
 	if _counter_both:
 		finish_with_stagger(COUNTER_STAGGER_TIME)
 	else:
-		finish(0.8)
+		finish(RECOVER_TIME)

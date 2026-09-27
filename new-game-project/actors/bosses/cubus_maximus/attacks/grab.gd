@@ -8,12 +8,20 @@ signal grab_dodged
 
 enum Phase { NONE, GRAB_WINDUP, GRAB_REACH, GRAB_HOLD }
 
-const COLOR = Color(0.62, 0.2, 0.95)
+# --- Tuning ---
 const TELEGRAPH_TIME = 0.9
 const WINDUP_TIME = 0.25  # red crouch before the lunge, so even point-blank grabs can be read
-const REACH_TIME = 0.6
-const HOLD_TIME = 0.5
-const TUMBLE_TIME = 0.8
+const WINDUP_BACKSTEP_SPEED = 80.0  # drifting away from the target during the windup
+const LUNGE_SPEED = 2000.0
+const REACH_TIME = 0.6  # how long the lunge lasts before it whiffs
+const HOLD_TIME = 0.5  # carrying the caught player before the crush
+const DAMAGE = 40.0
+const CRUSH_KNOCKBACK = Vector2(250.0, -450.0)  # x is randomized between -x and x
+const TUMBLE_TIME = 0.8  # his stagger after a dodged grab
+const RECOVER_TIME = 0.8  # after a crush
+const WHIFF_RECOVER_TIME = 0.6
+
+const COLOR = Color(0.62, 0.2, 0.95)
 
 
 func get_attack_name() -> String:
@@ -46,7 +54,7 @@ func update(delta: float):
 	match phase:
 		Phase.GRAB_WINDUP:
 			# Pull back from the target before lunging; the grab hitbox isn't live yet.
-			boss.global_position.x -= boss.facing * 80.0 * delta
+			boss.global_position.x -= boss.facing * WINDUP_BACKSTEP_SPEED * delta
 			if timer <= 0.0:
 				phase = Phase.GRAB_REACH
 				timer = REACH_TIME
@@ -54,7 +62,7 @@ func update(delta: float):
 		Phase.GRAB_REACH:
 			if target:
 				var direction = (target.global_position - boss.global_position).normalized()
-				boss.velocity = direction * boss.attack_speed
+				boss.velocity = direction * LUNGE_SPEED
 				boss.move_and_slide()
 			if target in boss.grab_area.get_overlapping_bodies():
 				if target.is_dodging_grab():
@@ -62,7 +70,7 @@ func update(delta: float):
 				else:
 					_start_hold()
 			elif timer <= 0.0:
-				finish(0.6)  # whiffed
+				finish(WHIFF_RECOVER_TIME)
 
 		Phase.GRAB_HOLD:
 			target.global_position = boss.global_position + Vector2(0.0, -75.0)
@@ -97,9 +105,9 @@ func _start_hold():
 func _crush():
 	var victim = boss.target_player
 	_release()
-	victim.take_damage(boss.GRAB_DAMAGE, Vector2(randf_range(-250.0, 250.0), -450.0))
+	victim.take_damage(DAMAGE, Vector2(randf_range(-CRUSH_KNOCKBACK.x, CRUSH_KNOCKBACK.x), CRUSH_KNOCKBACK.y))
 	boss.shake(10.0)
-	finish(0.8)
+	finish(RECOVER_TIME)
 
 
 func _release():

@@ -57,6 +57,9 @@ func _process(_delta):
 		if p.is_grabbed:
 			row.status.text = "GRABBED!"
 			row.status.modulate = Color(1.0, 0.6, 0.2)
+		elif p.is_staggered():
+			row.status.text = "STAGGERED"
+			row.status.modulate = Color(0.75, 0.75, 0.75)
 		elif p.is_drinking():
 			row.status.text = "DRINKING"
 			row.status.modulate = POTION_COLOR

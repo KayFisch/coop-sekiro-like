@@ -5,18 +5,6 @@
 [ext_resource type="PackedScene" path="res://actors/player/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="4_hud"]
 
-[sub_resource type="RectangleShape2D" id="Shape_floor"]
-size = Vector2(1152, 48)
-
-[sub_resource type="RectangleShape2D" id="Shape_wall"]
-size = Vector2(24, 648)
-
-[sub_resource type="RectangleShape2D" id="Shape_ceiling"]
-size = Vector2(1152, 16)
-
-[sub_resource type="RectangleShape2D" id="Shape_platform"]
-size = Vector2(180, 16)
-
 [sub_resource type="Shader" id="Shader_bg_gradient"]
 code = "shader_type canvas_item;
 
@@ -30,28 +18,42 @@ void fragment() {
 
 [sub_resource type="ShaderMaterial" id="Material_bg_gradient"]
 shader = SubResource("Shader_bg_gradient")
+shader_parameter/top_color = Color(0.02, 0.02, 0.035, 1)
+shader_parameter/bottom_color = Color(0.12, 0.12, 0.14, 1)
 
-[node name="Arena" type="Node2D"]
+[sub_resource type="RectangleShape2D" id="Shape_floor"]
+size = Vector2(1152, 48)
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[sub_resource type="RectangleShape2D" id="Shape_wall"]
+size = Vector2(24, 648)
+
+[sub_resource type="RectangleShape2D" id="Shape_ceiling"]
+size = Vector2(1152, 16)
+
+[sub_resource type="RectangleShape2D" id="Shape_platform"]
+size = Vector2(180, 16)
+
+[node name="Arena" type="Node2D" unique_id=1408042723]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1073259986]
 position = Vector2(576, 324)
 script = ExtResource("1_cam")
 
-[node name="Stage" type="Node2D" parent="."]
+[node name="Stage" type="Node2D" parent="." unique_id=1849464376]
 
-[node name="Background" type="ColorRect" parent="Stage"]
+[node name="Background" type="ColorRect" parent="Stage" unique_id=1999458628]
 material = SubResource("Material_bg_gradient")
 offset_right = 1152.0
 offset_bottom = 648.0
 mouse_filter = 2
 
-[node name="Floor" type="StaticBody2D" parent="Stage"]
+[node name="Floor" type="StaticBody2D" parent="Stage" unique_id=1714735678]
 position = Vector2(576, 624)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/Floor"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/Floor" unique_id=1100250428]
 shape = SubResource("Shape_floor")
 
-[node name="ColorRect" type="ColorRect" parent="Stage/Floor"]
+[node name="ColorRect" type="ColorRect" parent="Stage/Floor" unique_id=678738740]
 offset_left = -576.0
 offset_top = -24.0
 offset_right = 576.0
@@ -59,13 +61,13 @@ offset_bottom = 24.0
 mouse_filter = 2
 color = Color(0.19, 0.19, 0.21, 1)
 
-[node name="LeftWall" type="StaticBody2D" parent="Stage"]
+[node name="LeftWall" type="StaticBody2D" parent="Stage" unique_id=549243551]
 position = Vector2(12, 324)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/LeftWall"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/LeftWall" unique_id=1928523642]
 shape = SubResource("Shape_wall")
 
-[node name="ColorRect" type="ColorRect" parent="Stage/LeftWall"]
+[node name="ColorRect" type="ColorRect" parent="Stage/LeftWall" unique_id=206879883]
 offset_left = -12.0
 offset_top = -324.0
 offset_right = 12.0
@@ -73,13 +75,13 @@ offset_bottom = 324.0
 mouse_filter = 2
 color = Color(0.19, 0.19, 0.21, 1)
 
-[node name="RightWall" type="StaticBody2D" parent="Stage"]
+[node name="RightWall" type="StaticBody2D" parent="Stage" unique_id=825278746]
 position = Vector2(1140, 324)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/RightWall"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/RightWall" unique_id=721476097]
 shape = SubResource("Shape_wall")
 
-[node name="ColorRect" type="ColorRect" parent="Stage/RightWall"]
+[node name="ColorRect" type="ColorRect" parent="Stage/RightWall" unique_id=537213335]
 offset_left = -12.0
 offset_top = -324.0
 offset_right = 12.0
@@ -87,13 +89,13 @@ offset_bottom = 324.0
 mouse_filter = 2
 color = Color(0.19, 0.19, 0.21, 1)
 
-[node name="Ceiling" type="StaticBody2D" parent="Stage"]
+[node name="Ceiling" type="StaticBody2D" parent="Stage" unique_id=768497512]
 position = Vector2(576, 8)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/Ceiling"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/Ceiling" unique_id=1713051818]
 shape = SubResource("Shape_ceiling")
 
-[node name="ColorRect" type="ColorRect" parent="Stage/Ceiling"]
+[node name="ColorRect" type="ColorRect" parent="Stage/Ceiling" unique_id=1694617789]
 offset_left = -576.0
 offset_top = -8.0
 offset_right = 576.0
@@ -101,16 +103,16 @@ offset_bottom = 8.0
 mouse_filter = 2
 color = Color(0.19, 0.19, 0.21, 1)
 
-[node name="PlatformLeft" type="StaticBody2D" parent="Stage"]
+[node name="PlatformLeft" type="StaticBody2D" parent="Stage" unique_id=1040166175]
 position = Vector2(290, 480)
 collision_layer = 8
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/PlatformLeft"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/PlatformLeft" unique_id=392816126]
 shape = SubResource("Shape_platform")
 one_way_collision = true
 
-[node name="ColorRect" type="ColorRect" parent="Stage/PlatformLeft"]
+[node name="ColorRect" type="ColorRect" parent="Stage/PlatformLeft" unique_id=1366394575]
 offset_left = -90.0
 offset_top = -8.0
 offset_right = 90.0
@@ -118,7 +120,7 @@ offset_bottom = 8.0
 mouse_filter = 2
 color = Color(0.27, 0.27, 0.3, 1)
 
-[node name="TopEdge" type="ColorRect" parent="Stage/PlatformLeft"]
+[node name="TopEdge" type="ColorRect" parent="Stage/PlatformLeft" unique_id=604195542]
 offset_left = -90.0
 offset_top = -8.0
 offset_right = 90.0
@@ -126,16 +128,16 @@ offset_bottom = -6.0
 mouse_filter = 2
 color = Color(0.85, 0.87, 0.95, 1)
 
-[node name="PlatformMiddle" type="StaticBody2D" parent="Stage"]
+[node name="PlatformMiddle" type="StaticBody2D" parent="Stage" unique_id=1948210951]
 position = Vector2(576, 370)
 collision_layer = 8
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/PlatformMiddle"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/PlatformMiddle" unique_id=1905583699]
 shape = SubResource("Shape_platform")
 one_way_collision = true
 
-[node name="ColorRect" type="ColorRect" parent="Stage/PlatformMiddle"]
+[node name="ColorRect" type="ColorRect" parent="Stage/PlatformMiddle" unique_id=1546477089]
 offset_left = -90.0
 offset_top = -8.0
 offset_right = 90.0
@@ -143,7 +145,7 @@ offset_bottom = 8.0
 mouse_filter = 2
 color = Color(0.27, 0.27, 0.3, 1)
 
-[node name="TopEdge" type="ColorRect" parent="Stage/PlatformMiddle"]
+[node name="TopEdge" type="ColorRect" parent="Stage/PlatformMiddle" unique_id=241182709]
 offset_left = -90.0
 offset_top = -8.0
 offset_right = 90.0
@@ -151,16 +153,16 @@ offset_bottom = -6.0
 mouse_filter = 2
 color = Color(0.85, 0.87, 0.95, 1)
 
-[node name="PlatformRight" type="StaticBody2D" parent="Stage"]
+[node name="PlatformRight" type="StaticBody2D" parent="Stage" unique_id=1523940147]
 position = Vector2(862, 480)
 collision_layer = 8
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/PlatformRight"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/PlatformRight" unique_id=1223055903]
 shape = SubResource("Shape_platform")
 one_way_collision = true
 
-[node name="ColorRect" type="ColorRect" parent="Stage/PlatformRight"]
+[node name="ColorRect" type="ColorRect" parent="Stage/PlatformRight" unique_id=729953099]
 offset_left = -90.0
 offset_top = -8.0
 offset_right = 90.0
@@ -168,7 +170,7 @@ offset_bottom = 8.0
 mouse_filter = 2
 color = Color(0.27, 0.27, 0.3, 1)
 
-[node name="TopEdge" type="ColorRect" parent="Stage/PlatformRight"]
+[node name="TopEdge" type="ColorRect" parent="Stage/PlatformRight" unique_id=1127304031]
 offset_left = -90.0
 offset_top = -8.0
 offset_right = 90.0
@@ -176,16 +178,16 @@ offset_bottom = -6.0
 mouse_filter = 2
 color = Color(0.85, 0.87, 0.95, 1)
 
-[node name="CubusMaximus" parent="." instance=ExtResource("2_cubus")]
+[node name="CubusMaximus" parent="." unique_id=1983077060 instance=ExtResource("2_cubus")]
 position = Vector2(576, 560)
 
-[node name="Player1" parent="." instance=ExtResource("3_player")]
+[node name="Player1" parent="." unique_id=352935876 instance=ExtResource("3_player")]
 position = Vector2(300, 560)
 
-[node name="Player2" parent="." instance=ExtResource("3_player")]
+[node name="Player2" parent="." unique_id=1985301923 instance=ExtResource("3_player")]
 position = Vector2(852, 560)
 player_id = 2
 player_color = Color(1, 0.55, 0.15, 1)
 sword_color = Color(1, 0.8, 0.55, 1)
 
-[node name="HUD" parent="." instance=ExtResource("4_hud")]
+[node name="HUD" parent="." unique_id=846601969 instance=ExtResource("4_hud")]

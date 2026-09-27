@@ -1,8 +1,8 @@
 class_name CubusMaximus
 extends BaseBoss
 ## Cubus Maximus: the sword-wielding cube. Everything here is specific to him: his health,
-## damage values and sword, and which attacks he uses and how often. The state machine lives
-## in BaseBoss and each attack's logic in attacks/.
+## his sword, and which attacks he uses and how often. The state machine lives in BaseBoss;
+## each attack's logic and its tuning values (damage, timings, ...) live in attacks/.
 
 # Re-emitted from his attacks, for the GameManager (sync meter) and anyone else listening.
 signal relay_completed
@@ -10,25 +10,29 @@ signal grab_dodged
 signal grand_slash_parried
 signal shockwave_parried(player)
 signal counterattack_landed(both_players)
+signal stab_parried(player)
+signal triple_clash_started
+signal triple_clash_countered
 
+# --- Tuning ---
 const MAX_HP = 1000.0
 
-const SWORD_DAMAGE = 25.0
-const CHIP_DAMAGE = 12.0  # a blocked sword hit; also a blocked grand slash lunge
-const GRAB_DAMAGE = 40.0
-const SLAM_DAMAGE = 25.0
-const GRAND_DAMAGE = 35.0  # the grand slash lunge unparried, and its failure shockwave
-const GRAND_COUNTER_DAMAGE = 80.0  # taken when both players overpower the grand slash
-const SHOCKWAVE_DAMAGE = 20.0  # halved when blocked
-const COUNTER_DAMAGE = 40.0  # per shockwave counterattack; both together deal double
+# How often each attack is picked, relative to the others: 2 is twice as likely as 1, and
+# 0 (or leaving an attack out) disables it.
+const ATTACK_WEIGHTS = {
+	"SWORD_RELAY": 2.0,
+	"GRAB": 1.0,
+	"GROUND_SLAM": 1.0,
+	"GRAND_SLASH": 1.0,
+	"SHOCKWAVE_SLASHES": 1.0,
+	"TRIPLE_SLASH": 1.0,
+}
+# Attacks that may come twice in a row; the rest never repeat back to back.
+const REPEATABLE_ATTACKS = ["SWORD_RELAY"]
+# For testing: set to an attack's name (e.g. "TRIPLE_SLASH") to use only that attack.
+const TEST_ONLY_ATTACK = ""
 
 const SWORD_REACH = 110.0  # blade tip distance from the pivot at scale 1 (see the scene)
-const GRAND_SWORD_SCALE = 1.5  # sword size at the end of the grand slash wind-up
-
-@export var telegraph_time = 1  # seconds of warning (sword relay)
-@export var attack_speed = 2000.0  # grab lunge speed
-
-var _last_attack: Attack = null
 
 @onready var sword_hitbox: Area2D = $SwordPivot/SwordHitbox
 @onready var grab_area: Area2D = $GrabArea
@@ -49,14 +53,18 @@ func get_attack_pool() -> Array:
 	var volley = ShockwaveSlashes.new()
 	volley.shockwave_parried.connect(shockwave_parried.emit)
 	volley.counterattack_landed.connect(counterattack_landed.emit)
-	return [relay, grab, slam, grand, volley]
+	var triple = TripleSlash.new()
+	triple.stab_parried.connect(stab_parried.emit)
+	triple.clash_started.connect(triple_clash_started.emit)
+	triple.clash_countered.connect(triple_clash_countered.emit)
+	return [relay, grab, slam, grand, volley, triple]
 
 
-# The sword relay is twice as likely as anything else; nothing but the relay repeats back to back.
-func pick_attack() -> Attack:
-	var relay = attack_pool[0]
-	var options = [relay, relay] + attack_pool.slice(1)
-	if _last_attack != relay:
-		options.erase(_last_attack)
-	_last_attack = options.pick_random()
-	return _last_attack
+func get_attack_weights() -> Dictionary:
+	if TEST_ONLY_ATTACK != "":
+		return {TEST_ONLY_ATTACK: 1.0}
+	return ATTACK_WEIGHTS
+
+
+func get_repeatable_attacks() -> Array:
+	return REPEATABLE_ATTACKS

@@ -6,11 +6,16 @@ extends Attack
 
 enum Phase { NONE, SLAM_FALL, SLAM_IMPACT }
 
-const COLOR = Color(0.2, 0.9, 0.3)
-const TELEGRAPH_TIME = 1.1
+# --- Tuning ---
+const TELEGRAPH_TIME = 1.1  # rising into the air
 const RISE_HEIGHT = 170.0
 const FALL_TIME = 0.1
-const ACTIVE_TIME = 0.3
+const ACTIVE_TIME = 0.3  # how long the floor shockwave can hit after impact
+const DAMAGE = 25.0
+const KNOCKBACK = Vector2(0.0, -350.0)
+const RECOVER_TIME = 0.9
+
+const COLOR = Color(0.2, 0.9, 0.3)
 
 var _fall_from = Vector2.ZERO
 var _hit: Array = []
@@ -57,9 +62,9 @@ func update(delta: float):
 					continue
 				if p.is_on_main_floor():  # one-way platforms are safe
 					_hit.append(p)
-					p.take_damage(boss.SLAM_DAMAGE, Vector2(0.0, -350.0))
+					p.take_damage(DAMAGE, KNOCKBACK)
 			if timer <= 0.0:
-				finish(0.9)
+				finish(RECOVER_TIME)
 
 
 func _impact():

@@ -82,6 +82,11 @@ func get_marker(_telegraphing: bool):
 	return null
 
 
+# Called when a player's sword hit lands on the boss while this attack is executing.
+func on_struck(_player):
+	pass
+
+
 # Removes anything the attack left in the arena and releases anything it holds.
 func cleanup():
 	pass

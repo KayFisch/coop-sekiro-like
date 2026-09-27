@@ -10,20 +10,33 @@ signal grand_slash_parried
 
 enum Phase { NONE, GRAND_RISE, GRAND_DIVE, GRAND_CLASH, GRAND_IMPACT }
 
-const COLOR = Color(0.25, 0.45, 1.0)
-const COLOR_CLASH = Color(1.0, 0.78, 0.2)  # held by one player: partner, join in!
-const COLOR_OVERPOWER = Color(1.0, 1.0, 0.85)  # both players together
-
+# --- Tuning ---
+const TELEGRAPH_TIME = 1.2  # the center charge
+const SWORD_SCALE = 1.5  # sword size at the end of the wind-up
 const TOP_Y = 90.0  # height at the top of the rise
 const RISE_TIME = 0.35
 const DIVE_SPEED = 750.0  # the downward lunge the players parry
-const BREAK_FREE_SPEED = 1400.0  # finishing the lunge after the hold breaks
-const CLASH_TIME = 1.5  # second player's window, starting at the first parry
+const DIVE_DAMAGE = 35.0
+const DIVE_KNOCKBACK = 350.0
+const BLOCKED_DAMAGE = 12.0
+const BLOCKED_KNOCKBACK = 200.0
+const JOIN_WINDOW = 0.75  # after the first parry holds him, the partner has this long to parry too
+const COUNTER_DAMAGE = 80.0  # both players overpowered him (x the sync multiplier)
 const COUNTER_STAGGER_TIME = 1.5
 const COUNTER_KNOCK = Vector2(0, -900)  # overpowered: thrown back up off the lunge
+const BREAK_FREE_SPEED = 1400.0  # finishing the lunge after the join window runs out
+const BREAK_FREE_KNOCKBACK = Vector2(450.0, -300.0)  # the holder, thrown aside; x points away
+const RING_DAMAGE = 35.0
+const RING_KNOCKBACK = Vector2(400.0, -300.0)  # x points away from the impact
 const RING_SPEED = 650.0
 const RING_MAX_RADIUS = 520.0  # the far corners of the arena are out of reach
 const RING_WIDTH = 14.0
+const RING_HIT_MARGIN = 20.0  # how far off the ring's line still counts as a hit
+const RECOVER_TIME = 0.8  # after the ring finishes
+
+const COLOR = Color(0.25, 0.45, 1.0)
+const COLOR_CLASH = Color(1.0, 0.78, 0.2)  # held by one player: partner, join in!
+const COLOR_OVERPOWER = Color(1.0, 1.0, 0.85)  # both players together
 
 var ring: Node2D  # the failure shockwave
 
@@ -48,7 +61,7 @@ func get_telegraph_color() -> Color:
 
 
 func get_telegraph_duration() -> float:
-	return boss.CENTER_CHARGE_TIME
+	return TELEGRAPH_TIME
 
 
 func uses_center_charge() -> bool:
@@ -57,7 +70,7 @@ func uses_center_charge() -> bool:
 
 func update_telegraph(progress: float):
 	# The sword swells and rises as the grand slash winds up.
-	boss.sword_scale = Vector2.ONE * lerpf(1.0, boss.GRAND_SWORD_SCALE, progress)
+	boss.sword_scale = Vector2.ONE * lerpf(1.0, SWORD_SCALE, progress)
 	boss.set_sword_angle(lerpf(boss.SWORD_REST_ANGLE, boss.SWORD_RAISED_ANGLE, progress))
 
 
@@ -147,9 +160,9 @@ func _dive_contact(player):
 	if player.is_perfect_parry():
 		_start_clash(player)
 	elif player.is_blocking():
-		player.take_damage(boss.CHIP_DAMAGE, boss.knockback_for(player, 200.0), true)
+		player.take_damage(BLOCKED_DAMAGE, boss.knockback_for(player, BLOCKED_KNOCKBACK), true)
 	else:
-		player.take_damage(boss.GRAND_DAMAGE, boss.knockback_for(player, 350.0))
+		player.take_damage(DIVE_DAMAGE, boss.knockback_for(player, DIVE_KNOCKBACK))
 		boss.shake(7.0)
 
 
@@ -157,7 +170,7 @@ func _dive_contact(player):
 
 func _start_clash(holder):
 	phase = Phase.GRAND_CLASH
-	timer = CLASH_TIME
+	timer = JOIN_WINDOW
 	_holder = holder
 	_helper = boss.partner_of(holder)
 	holder.on_perfect_parry(false)
@@ -177,7 +190,7 @@ func _start_clash(holder):
 
 
 func _process_clash(delta: float):
-	var left = clampf(timer / CLASH_TIME, 0.0, 1.0)
+	var left = clampf(timer / JOIN_WINDOW, 0.0, 1.0)
 	# Straining against the holder: shaking, flashing gold, throwing sparks.
 	var flash = fmod(boss.anim_time, 0.1) < 0.05
 	boss.body.color = COLOR_CLASH if flash else Color.WHITE
@@ -222,7 +235,7 @@ func _overpowered(helper):
 	parry_success.emit(helper, "grand_overpower")
 	_end_clash()
 	# Read the multiplier before the counter's sync bonus is applied.
-	var damage = boss.GRAND_COUNTER_DAMAGE * GameManager.damage_multiplier()
+	var damage = COUNTER_DAMAGE * GameManager.damage_multiplier()
 	grand_slash_parried.emit()
 	Sfx.play("counter_hit", 3.0)
 	boss.shake(14.0)
@@ -240,7 +253,7 @@ func _break_free():
 	var holder = _holder
 	_end_clash()
 	var side = signf(holder.global_position.x - boss.global_position.x)
-	holder.apply_knockback(Vector2((side if side != 0.0 else 1.0) * 450.0, -300.0))
+	holder.apply_knockback(Vector2((side if side != 0.0 else 1.0) * BREAK_FREE_KNOCKBACK.x, BREAK_FREE_KNOCKBACK.y))
 	Sfx.play("knockback")
 	boss.shake(6.0)
 	_resolved = players.duplicate()  # the lunge is past them now
@@ -274,13 +287,13 @@ func _update_ring(delta: float):
 		if p in _ring_hit:
 			continue
 		var d = p.global_position.distance_to(ring.global_position)
-		if absf(d - radius) <= RING_WIDTH / 2.0 + 20.0:
+		if absf(d - radius) <= RING_WIDTH / 2.0 + RING_HIT_MARGIN:
 			_ring_hit.append(p)
 			if not p.is_dodging_grab():
 				var out = (p.global_position - ring.global_position).normalized()
-				p.take_damage(boss.GRAND_DAMAGE, Vector2(out.x * 400.0, -300.0))
+				p.take_damage(RING_DAMAGE, Vector2(out.x * RING_KNOCKBACK.x, RING_KNOCKBACK.y))
 	if radius >= RING_MAX_RADIUS:
-		finish(0.8)
+		finish(RECOVER_TIME)
 
 
 # --- Effects ---

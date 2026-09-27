@@ -2,7 +2,7 @@ class_name BaseBoss
 extends CharacterBody2D
 ## Shared boss behavior: health, the attack state machine, the stagger, the center-charge
 ## telegraph, and the movement/animation helpers attacks use. A concrete boss supplies its
-## attacks by overriding get_attack_pool() (and optionally pick_attack()).
+## attacks by overriding get_attack_pool(), and how often each comes with get_attack_weights().
 ##
 ## State machine: IDLE -> TELEGRAPH -> ATTACKING -> RECOVER -> IDLE, with STAGGER in place of
 ## RECOVER when an attack ends in a stagger. All attack-specific logic lives in the Attack objects.
@@ -13,12 +13,17 @@ signal defeated
 
 enum State { IDLE, TELEGRAPH, ATTACKING, RECOVER, STAGGER }
 
+# --- Tuning (shared by every boss) ---
+const FIRST_ATTACK_DELAY = 2.0  # grace period at the start of the fight
+const IDLE_PAUSE_MIN = 0.8  # pause between attacks, picked at random in this range
+const IDLE_PAUSE_MAX = 1.4
+const STAGGER_RECOVER_TIME = 0.6  # getting back up after a stagger, before the idle pause
+
 const ARENA_LEFT = 24.0
 const ARENA_RIGHT = 1128.0
 const ARENA_FLOOR_Y = 600.0
 
 # Center charge: attacks that use it fly the boss to mid-arena and pulse their color there.
-const CENTER_CHARGE_TIME = 1.2
 const CENTER_HOVER_HEIGHT = 310.0  # above the boss's floor position
 
 const STAGGER_TILT = 0.087  # radians, about 5 degrees
@@ -39,7 +44,7 @@ const COLOR_DEAD = Color(0.25, 0.25, 0.3)
 const COLOR_SWORD = Color(0.8, 0.82, 0.86)  # silver
 
 var state = State.IDLE
-var timer = 2.0  # grace period before the first attack
+var timer = FIRST_ATTACK_DELAY
 var target_player = null
 var attack_pool: Array = []
 var current_attack: Attack = null
@@ -50,6 +55,7 @@ var sword_scale = Vector2.ONE
 var anim_time = 0.0
 var body_rest = Vector2.ZERO
 
+var _last_attack: Attack = null
 var _tumbling = false
 var _stagger_knock = Vector2.ZERO
 var _marker: ColorRect
@@ -71,8 +77,38 @@ func get_attack_pool() -> Array:
 	return []
 
 
+# Relative odds per attack name (see get_attack_name()); 0, or a missing name, disables it.
+func get_attack_weights() -> Dictionary:
+	return {}
+
+
+# Attack names that may be picked twice in a row.
+func get_repeatable_attacks() -> Array:
+	return []
+
+
+# A weighted random pick. The last attack isn't repeated unless it's repeatable or it's the
+# only one enabled.
 func pick_attack() -> Attack:
-	return attack_pool.pick_random()
+	var weights = get_attack_weights()
+	var options = attack_pool.filter(func(a): return weights.get(a.get_attack_name(), 0.0) > 0.0)
+	if options.is_empty():
+		push_warning("%s: no attack has a weight above 0; picking from all of them." % name)
+		return attack_pool.pick_random()
+	if options.size() > 1 and _last_attack in options \
+			and not _last_attack.get_attack_name() in get_repeatable_attacks():
+		options.erase(_last_attack)
+	var total = 0.0
+	for attack in options:
+		total += weights[attack.get_attack_name()]
+	var roll = randf() * total
+	_last_attack = options.back()
+	for attack in options:
+		roll -= weights[attack.get_attack_name()]
+		if roll < 0.0:
+			_last_attack = attack
+			break
+	return _last_attack
 
 
 # --- Lifecycle ---
@@ -99,6 +135,9 @@ func _ready():
 	attack_pool = get_attack_pool()
 	for attack in attack_pool:
 		attack.parry_success.connect(parry_success.emit)
+	for attack_name in get_attack_weights():
+		if find_attack(attack_name) == null:
+			push_warning("%s: attack weight for unknown attack \"%s\" (typo?)" % [name, attack_name])
 
 	GameManager.register_boss(self)
 
@@ -134,7 +173,7 @@ func _physics_process(delta):
 			global_position = global_position.lerp(home_position, 0.08)
 			if timer <= 0.0:
 				state = State.IDLE
-				timer = randf_range(0.8, 1.4)  # pause before next attack
+				timer = randf_range(IDLE_PAUSE_MIN, IDLE_PAUSE_MAX)
 
 		State.STAGGER:
 			var flash = fmod(anim_time, 0.16) < 0.08
@@ -150,7 +189,7 @@ func _physics_process(delta):
 			else:
 				global_position.y = move_toward(global_position.y, home_position.y, STAGGER_SINK_SPEED * delta)
 			if timer <= 0.0:
-				_enter_recover(0.6)
+				_enter_recover(STAGGER_RECOVER_TIME)
 
 	# Telegraphs pulse the body's alpha between 0.7 and 1.0 at 3 Hz.
 	body.modulate.a = 0.85 + 0.15 * sin(anim_time * TAU * 3.0) if state == State.TELEGRAPH else 1.0
@@ -235,7 +274,8 @@ func _enter_stagger(finished_attack: Attack, duration: float, tumble: bool, knoc
 
 # --- Health ---
 
-func take_damage(amount: float):
+# source: the player whose sword hit landed, if any; the active attack is told about it.
+func take_damage(amount: float, source = null):
 	if hp <= 0.0:
 		return
 	hp = maxf(hp - amount, 0.0)
@@ -244,6 +284,8 @@ func take_damage(amount: float):
 	create_tween().tween_property(body, "scale", Vector2.ONE, 0.2)
 	if hp <= 0.0:
 		_die()
+	elif source and current_attack and state == State.ATTACKING:
+		current_attack.on_struck(source)
 
 
 func _die():

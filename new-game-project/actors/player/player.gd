@@ -53,7 +53,7 @@ const DRINK_ORB_SIZE = 14.0
 var hp = MAX_HP
 var potions = POTION_CHARGES
 var is_grabbed = false
-var is_clashing = false  # holding the boss's grand slash back, locked in place
+var is_clashing = false  # blades locked with the boss, held in place
 var facing = 1.0
 var body_color: Color
 var parry_press_time = -100.0  # when the last block press that can still parry happened
@@ -77,6 +77,8 @@ var _attack_timer = 0.0  # counts down through the swing and its return
 var _attack_cooldown = 0.0
 var _attack_landed = false
 var _knockback_timer = 0.0
+var _stagger_timer = 0.0  # > 0 while reeling from a hit: no movement, no input
+var _clash_overhead = true  # grand slash clash: sword flat overhead; otherwise level, at the boss
 var _drink_timer = 0.0  # > 0 while drinking a potion
 var _drink_bar: ColorRect
 var _drink_orb: Panel
@@ -112,6 +114,10 @@ func _physics_process(delta):
 	_tick_timers(delta)
 	if is_grabbed or is_clashing:
 		velocity = Vector2.ZERO  # carried by the boss, or braced holding him back
+	elif is_staggered():
+		velocity.x = 0.0
+		velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
+		move_and_slide()
 	elif is_drinking():
 		_process_drinking(delta)
 		move_and_slide()
@@ -245,7 +251,7 @@ func _process_attack():
 	for hit in sword_hitbox.get_overlapping_bodies():
 		if hit.is_in_group("boss"):
 			_attack_landed = true
-			hit.take_damage(ATTACK_DAMAGE * GameManager.damage_multiplier())
+			hit.take_damage(ATTACK_DAMAGE * GameManager.damage_multiplier(), self)
 			return
 
 
@@ -263,6 +269,7 @@ func _tick_timers(delta):
 	_attack_timer = maxf(_attack_timer - delta, 0.0)
 	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
 	_knockback_timer = maxf(_knockback_timer - delta, 0.0)
+	_stagger_timer = maxf(_stagger_timer - delta, 0.0)
 	if _drop_timer > 0.0:
 		_drop_timer -= delta
 		if _drop_timer <= 0.0:
@@ -272,11 +279,17 @@ func _tick_timers(delta):
 # --- Defensive queries used by the boss at the moment its hitbox connects ---
 
 func is_blocking() -> bool:
-	return not is_grabbed and not is_drinking() and Input.is_action_pressed(_action("block"))
+	return not is_grabbed and not is_drinking() and not is_staggered() \
+		and Input.is_action_pressed(_action("block"))
 
 
 func is_perfect_parry() -> bool:
-	return not is_grabbed and not is_drinking() and _now() - parry_press_time <= PARRY_WINDOW
+	return not is_grabbed and not is_drinking() and not is_staggered() \
+		and _now() - parry_press_time <= PARRY_WINDOW
+
+
+func is_staggered() -> bool:
+	return _stagger_timer > 0.0
 
 
 func is_dodging_grab() -> bool:
@@ -326,6 +339,7 @@ func end_gather():
 
 func on_perfect_parry(strong: bool):
 	parry_press_time = -100.0  # one press parries one hit
+	_last_block_press = -100.0  # a landed parry isn't mashing: the next press may parry at once
 	_sword_flash = SWORD_FLASH_TIME
 	Sfx.play("parry_strong" if strong else "parry")
 	var cam = get_viewport().get_camera_2d()
@@ -337,8 +351,9 @@ func on_grab_dodged():
 	_dodge_flash = DODGE_FLASH_TIME
 
 
-func take_damage(amount: float, knockback = Vector2.ZERO, chip = false):
-	if _is_dead or _invuln_timer > 0.0:
+# ignore_invuln: for hits chained faster than the post-hit invulnerability (the triple slash).
+func take_damage(amount: float, knockback = Vector2.ZERO, chip = false, ignore_invuln = false):
+	if _is_dead or (_invuln_timer > 0.0 and not ignore_invuln):
 		return
 	hp = maxf(hp - amount, 0.0)
 	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
@@ -372,8 +387,17 @@ func set_grabbed(grabbed: bool):
 		_cancel_drink()  # being carried off interrupts the drink like a hit would
 
 
-func set_clashing(clashing: bool):
+# Reeling from a hit: can't move, block, parry or act until it wears off.
+func stagger(duration: float):
+	_stagger_timer = maxf(_stagger_timer, duration)
+	velocity.x = 0.0
+	_dash_timer = 0.0
+	_attack_timer = 0.0
+
+
+func set_clashing(clashing: bool, overhead = true):
 	is_clashing = clashing
+	_clash_overhead = overhead
 	velocity = Vector2.ZERO
 	_dash_timer = 0.0
 	_attack_timer = 0.0
@@ -386,7 +410,7 @@ func apply_knockback(push: Vector2):
 
 func _sword_angle() -> float:
 	if is_clashing:
-		return 0.0  # held flat overhead against the boss's blade
+		return 0.0  # held flat against the boss's blade
 	if _attack_timer > 0.0:
 		var elapsed = _swing_elapsed()
 		if elapsed < ATTACK_ACTIVE_TIME:
@@ -410,11 +434,11 @@ func _update_visuals():
 	# Straining to hold the boss back: tremble.
 	body.position.x = _body_rest.x + (randf_range(-2.0, 2.0) if is_clashing else 0.0)
 
-	# Guard pose: sword upright in front of the body while blocking, flat overhead in a clash;
-	# otherwise held at the side.
+	# Guard pose: sword upright in front of the body while blocking; in a clash, flat overhead
+	# (grand slash) or level against the boss's blade (triple slash); otherwise held at the side.
 	var sword_offset = Vector2(0.0, body.position.y - _body_rest.y)
 	if is_clashing:
-		sword_offset = Vector2(-38.0 * facing, -28.0)
+		sword_offset = Vector2(-38.0 * facing, -28.0) if _clash_overhead else Vector2(0.0, -4.0)
 	elif is_blocking() and _attack_timer <= 0.0:
 		sword_offset = Vector2(GUARD_OFFSET.x * facing, GUARD_OFFSET.y)
 	sword_pivot.position = sword_pivot.position.lerp(sword_offset, 0.4)
@@ -431,6 +455,8 @@ func _update_visuals():
 		color = body_color.lightened(0.5)
 	elif is_clashing:
 		color = body_color.lerp(Color(1.0, 0.8, 0.3), 0.35 + 0.25 * sin(_now() * 30.0))
+	elif is_staggered():
+		color = body_color.lerp(Color(0.6, 0.6, 0.6), 0.6)
 	elif is_blocking():
 		color = body_color.darkened(0.3)
 	body.color = color

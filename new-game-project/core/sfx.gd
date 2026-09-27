@@ -66,6 +66,7 @@ func _build_sounds():
 	_sounds["parry"] = _clang(1500.0, 0.15)
 	_sounds["parry_strong"] = _clang(2000.0, 0.18)
 	_sounds["slash"] = _whoosh(0.1)
+	_sounds["stab"] = _stab(0.07)
 	_sounds["chip"] = _thud(190.0, 110.0, 0.1, 35.0, 0.2)
 	_sounds["hurt"] = _thud(120.0, 45.0, 0.2, 14.0, 0.5)
 	_sounds["knockback"] = _thud(165.0, 62.0, 0.2, 14.0, 0.5)
@@ -76,6 +77,7 @@ func _build_sounds():
 	_sounds["counter_hit"] = _explosion(0.8)
 	_sounds["grand_drone"] = _drone(0.9)
 	_sounds["clash_grind"] = _grind(1.6)
+	_sounds["clash_hum"] = _clash_hum(0.8)
 	_sounds["grand_impact"] = _with_echo(_explosion(0.8), 0.2, 0.35, 1)
 	_sounds["game_over"] = _notes([440.0, 349.2, 293.7], 0.17, false)
 	_sounds["victory"] = _notes([523.3, 659.3, 784.0, 1046.5], 0.125, true)
@@ -113,6 +115,20 @@ func _whoosh(duration: float) -> PackedVector2Array:
 		fast += lerpf(0.55, 0.12, k) * (randf_range(-1.0, 1.0) - fast)
 		slow += 0.05 * (fast - slow)
 		out[i] = Vector2.ONE * (fast - slow) * sin(PI * k) * 1.1
+	return out
+
+
+# A sharper, shorter whoosh for a stab: brighter noise that snaps in and tails straight off.
+func _stab(duration: float) -> PackedVector2Array:
+	var out = _buffer(duration)
+	var fast = 0.0
+	var slow = 0.0
+	for i in out.size():
+		var k = i / float(out.size())
+		fast += lerpf(0.85, 0.3, k) * (randf_range(-1.0, 1.0) - fast)
+		slow += 0.08 * (fast - slow)
+		var envelope = minf(k / 0.08, 1.0) * pow(1.0 - k, 1.5)
+		out[i] = Vector2.ONE * clampf((fast - slow) * envelope * 1.6, -1.0, 1.0)
 	return out
 
 
@@ -234,6 +250,19 @@ func _grind(duration: float) -> PackedVector2Array:
 			+ sin(TAU * 1310.0 * t) * 0.2 + sin(TAU * 2230.0 * t) * 0.1
 		var s = (noise * 0.7 + metal) * (0.6 + 0.4 * sin(TAU * 14.0 * t))
 		s *= minf(t / 0.03, 1.0) * minf((duration - t) / 0.1, 1.0)
+		out[i] = Vector2.ONE * s * 0.35
+	return out
+
+
+# Blades locked edge to edge: a ringing metallic tone, slowly beating; meant to be stopped early.
+func _clash_hum(duration: float) -> PackedVector2Array:
+	var out = _buffer(duration)
+	for i in out.size():
+		var t = i / MIX_RATE
+		var s = sin(TAU * 660.0 * t) * 0.4 + sin(TAU * 664.0 * t) * 0.3 \
+			+ sin(TAU * 1822.0 * t) * 0.15 + sin(TAU * 2970.0 * t) * 0.08
+		s *= 0.8 + 0.2 * sin(TAU * 11.0 * t)
+		s *= minf(t / 0.01, 1.0) * minf((duration - t) / 0.05, 1.0)
 		out[i] = Vector2.ONE * s * 0.35
 	return out
 

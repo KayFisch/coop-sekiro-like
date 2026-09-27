@@ -15,6 +15,9 @@ const SYNC_GRAND_SLASH_GAIN = 40.0
 const SYNC_SHOCKWAVE_PARRY_GAIN = 8.0
 const SYNC_DOUBLE_COUNTER_GAIN = 30.0
 const SYNC_SINGLE_COUNTER_GAIN = 15.0
+const SYNC_STAB_PARRY_GAIN = 8.0
+const SYNC_TRIPLE_CLASH_GAIN = 10.0  # on top of the three stab parries
+const SYNC_CLASH_COUNTER_GAIN = 20.0
 const SYNC_BLOCK_LOSS = 5.0
 const SYNC_HIT_LOSS = 10.0
 
@@ -65,6 +68,9 @@ func register_boss(new_boss):
 	boss.grand_slash_parried.connect(change_sync.bind(SYNC_GRAND_SLASH_GAIN))
 	boss.shockwave_parried.connect(_on_shockwave_parried)
 	boss.counterattack_landed.connect(_on_counterattack_landed)
+	boss.stab_parried.connect(_on_stab_parried)
+	boss.triple_clash_started.connect(change_sync.bind(SYNC_TRIPLE_CLASH_GAIN))
+	boss.triple_clash_countered.connect(change_sync.bind(SYNC_CLASH_COUNTER_GAIN))
 	boss.defeated.connect(_end_game.bind(GameState.VICTORY))
 
 
@@ -100,6 +106,10 @@ func _on_player_blocked(_player):
 
 func _on_shockwave_parried(_player):
 	change_sync(SYNC_SHOCKWAVE_PARRY_GAIN)
+
+
+func _on_stab_parried(_player):
+	change_sync(SYNC_STAB_PARRY_GAIN)
 
 
 func _on_counterattack_landed(both_players):

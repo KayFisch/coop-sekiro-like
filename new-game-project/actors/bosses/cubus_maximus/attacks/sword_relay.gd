@@ -8,13 +8,24 @@ signal relay_completed
 
 enum Phase { NONE, SWORD_APPROACH, SWORD_SWING, RELAY_BOUNCE }
 
-const COLOR = Color.YELLOW
-const APPROACH_TIME = 0.25
+# --- Tuning ---
+const TELEGRAPH_TIME = 1.0  # seconds of warning before the lunge
+const APPROACH_TIME = 0.25  # lunge to the first target
 const RELAY_APPROACH_TIME = 0.3  # the second leg may have to cross the arena
-const SWING_TIME = 0.15
-const BOUNCE_TIME = 0.2
-const STRIKE_DISTANCE = 70.0
-const STAGGER_TIME = 1.0
+const SWING_TIME = 0.15  # the swing's arc; contact is judged throughout
+const STRIKE_DISTANCE = 70.0  # how far from the target he stops to swing
+const BOUNCE_TIME = 0.2  # knocked back by the first parry before redirecting
+const BOUNCE_VELOCITY = Vector2(700.0, -200.0)  # x points away from the parrying player
+const BOUNCE_DECELERATION = 3500.0
+const HIT_DAMAGE = 25.0
+const HIT_KNOCKBACK = 320.0
+const BLOCKED_DAMAGE = 12.0
+const BLOCKED_KNOCKBACK = 150.0
+const STAGGER_TIME = 1.0  # after a completed relay
+const RECOVER_TIME = 0.8  # after an unparried swing
+const SOLO_RECOVER_TIME = 0.6  # parried, but there's no partner to relay to
+
+const COLOR = Color.YELLOW
 
 var _stage = 0  # 0: first target, 1: redirected at the partner
 var _approach_time = APPROACH_TIME
@@ -34,7 +45,7 @@ func get_telegraph_color() -> Color:
 
 
 func get_telegraph_duration() -> float:
-	return float(boss.telegraph_time)
+	return TELEGRAPH_TIME
 
 
 func update_telegraph(progress: float):
@@ -77,7 +88,7 @@ func update(delta: float):
 
 		Phase.RELAY_BOUNCE:
 			boss.global_position += _bounce_velocity * delta
-			_bounce_velocity = _bounce_velocity.move_toward(Vector2.ZERO, 3500.0 * delta)
+			_bounce_velocity = _bounce_velocity.move_toward(Vector2.ZERO, BOUNCE_DECELERATION * delta)
 			boss.face(boss.target_player.global_position.x)
 			boss.set_sword_angle(boss.SWORD_RAISED_ANGLE)
 			if timer <= 0.0:
@@ -111,27 +122,27 @@ func _resolve_contact(player):
 			_target_parried = true
 		parry_success.emit(player, "relay_final" if _stage == 1 else "relay")
 	elif player.is_blocking():
-		player.take_damage(boss.CHIP_DAMAGE, boss.knockback_for(player, 150.0), true)
+		player.take_damage(BLOCKED_DAMAGE, boss.knockback_for(player, BLOCKED_KNOCKBACK), true)
 	else:
-		player.take_damage(boss.SWORD_DAMAGE, boss.knockback_for(player, 320.0))
+		player.take_damage(HIT_DAMAGE, boss.knockback_for(player, HIT_KNOCKBACK))
 		boss.shake(7.0)
 
 
 func _end_swing():
 	if not _target_parried:
-		finish(0.8)
+		finish(RECOVER_TIME)
 		return
 	if _stage == 0:
 		var partner = boss.partner_of(boss.target_player)
 		if partner == null:
-			finish(0.6)
+			finish(SOLO_RECOVER_TIME)
 			return
 		# Deflected: bounce back and redirect the strike at the partner.
 		_stage = 1
 		boss.target_player = partner
 		phase = Phase.RELAY_BOUNCE
 		timer = BOUNCE_TIME
-		_bounce_velocity = Vector2(_lunge_side * 700.0, -200.0)
+		_bounce_velocity = Vector2(_lunge_side * BOUNCE_VELOCITY.x, BOUNCE_VELOCITY.y)
 		boss.body.color = COLOR
 		boss.sword.color = COLOR
 		boss.set_glow(COLOR, 0.35)
