@@ -1,10 +1,10 @@
-class_name SwordRelay
+class_name JumpAttack
 extends Attack
 ## Yellow -> red. Cubus Maximus leaps at one player and slashes on the way down, landing so
 ## the blade (not his body) sweeps through them. A perfect parry deflects him back into the
 ## air, curving over to leap-slash the partner the same way, and so on, alternating: P1, P2,
-## P1. The final parry completes the relay and knocks him airborne into the arena's middle,
-## staggered.
+## P1. The final parry completes the parry relay and knocks him airborne into the arena's
+## middle, staggered.
 ## Blocking takes chip damage; anything else takes the full hit.
 
 signal relay_completed
@@ -63,7 +63,7 @@ var _launch_from = Vector2.ZERO
 
 
 func get_attack_name() -> String:
-	return "SWORD_RELAY"
+	return "JUMP_ATTACK"
 
 
 func get_telegraph_color() -> Color:
@@ -76,15 +76,20 @@ func get_telegraph_duration() -> float:
 
 func update_telegraph(progress: float):
 	boss.face(boss.target_player.global_position.x)
-	boss.set_sword_angle(lerpf(boss.SWORD_REST_ANGLE, boss.SWORD_RAISED_ANGLE, progress))
-	# Squash down like a loading spring, quivering harder toward the leap.
+	# Squash down like a loading spring, quivering harder toward the leap. The sword's draw-back
+	# rides along: same easing as the squash, pivot sinking and quivering with the body's center.
+	var coil = ease(progress, 1.6)
 	var shake = 3.0 * progress
-	boss.squash_body(Vector2.ONE.lerp(SQUASH, ease(progress, 1.6)), randf_range(-shake, shake))
+	boss.squash_body(Vector2.ONE.lerp(SQUASH, coil), randf_range(-shake, shake))
+	var center = boss.body_center_offset()
+	boss.set_sword_offset(Vector2(center.x * boss.facing, center.y))
+	boss.set_sword_angle(lerpf(boss.SWORD_REST_ANGLE, boss.SWORD_RAISED_ANGLE, coil))
 	boss.set_glow(COLOR, 0.25)
 
 
 func execute():
 	_stage = 0
+	boss.set_sword_offset(Vector2.ZERO)  # the body springs back to its center as he leaps
 	boss.pop_body(LEAP_STRETCH, LEAP_STRETCH_TIME)  # the spring lets go
 	_start_jump(JUMP_TIME, JUMP_HEIGHT)
 

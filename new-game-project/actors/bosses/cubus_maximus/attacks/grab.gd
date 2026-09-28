@@ -4,8 +4,8 @@ extends Attack
 ## them, he lets go of his sword and his hands scoop in from both sides, tracking the target
 ## until they close. It can't be blocked: the target escapes only by dashing (any direction) as
 ## the hands reach them, slipping out of his grasp, which leaves him tumbling.
-## A caught player is lifted overhead as he jumps, carried down, and thrown into the floor for
-## the last stretch, tumbling away toward the side of the arena with more room.
+## A caught player is lifted overhead as he jumps, carried down, and thrown steeply into the
+## floor for the last stretch, bouncing off it toward the side of the arena with more room.
 
 signal grab_dodged
 
@@ -13,8 +13,7 @@ enum Phase { NONE, GRAB_WINDUP, GRAB_CHARGE, GRAB_REACH, GRAB_CLAP, GRAB_LIFT, G
 
 # --- Tuning ---
 const TELEGRAPH_TIME = 0.9
-const WINDUP_TIME = 0.25  # red crouch before the charge
-const WINDUP_SQUASH = Vector2(1.25, 0.75)  # crouched low at the end of the windup
+const WINDUP_TIME = 0.25  # red lean-back before the charge (no crouch: he dashes, not jumps)
 const WINDUP_REAR_BACK = 10.0  # leaning away from the target
 const CHARGE_STRETCH = Vector2(1.3, 0.8)
 # The charge: homing straight at the target until he's close enough to reach for them. It
@@ -29,8 +28,11 @@ const FOLLOW_SPEED = 500.0  # keeping up with the target while the hands close
 # The hands: they start out wide and low and scoop in, tracking the target exactly.
 const CLOSE_TIME = 0.4  # from reaching out until the hands meet the target
 const HAND_OPEN_OFFSET = Vector2(75.0, 18.0)  # from the target's center (x mirrors per hand)
-# (The dodge window is DODGE_TOLERANCE in player.gd: a dash pressed at most that long before
-# the hands shut slips out of the grasp.)
+# The dodge window: a dash slips out of the grasp if pressed from DODGE_TOLERANCE (player.gd)
+# before the dodge is judged, up to the judgment. The judgment comes DODGE_LATE_WINDOW after the
+# hands shut, so the window runs from (DODGE_TOLERANCE - DODGE_LATE_WINDOW) before the hands
+# meet the target to DODGE_LATE_WINDOW after. Raise it if the window feels too early.
+const DODGE_LATE_WINDOW = 0.07
 const CLAP_TIME = 0.12  # the hands snapping shut on empty air after a dodge
 const TUMBLE_TIME = 0.8  # his stagger after a dodged grab
 # The slam: jump up with the target held overhead, come down, throw them the last stretch.
@@ -44,15 +46,26 @@ const THROW_HEIGHT = 45.0  # he lets go this far above his landing spot
 const THROW_SWING_TIME = 0.12  # hands whipping forward and down through the throw
 const THROW_SWING_END = Vector2(70.0, 12.0)  # hands' end point, from his center (x toward the throw)
 const THROW_TILT = 0.2  # his body leans into the throw (radians)
-const THROW_VELOCITY = Vector2(450.0, 1100.0)  # into the floor, toward the roomier side
-const LAND_HOLD_TIME = 0.15  # follow-through pose after landing
+# The thrown player's flight: hurled almost straight down, so they hit the floor fast at a slight
+# angle; only the bounce off the floor carries them away (toward the roomier side). They pass
+# through the one-way platforms; only the floor stops them.
+const THROW_VELOCITY = Vector2(250.0, 1500.0)  # x: sideways, y: down. More x = a flatter angle
+const BOUNCE_SPEED = 450.0  # sideways speed off the floor: how far the bounce carries them
+const BOUNCE_HEIGHT = 90.0  # how high (px) the bounce off the floor lifts them
+const GET_UP_TIME = 0.1  # once they land from the bounce, they're back in control this fast
 const DAMAGE = 40.0  # dealt when the thrown player hits the floor
+const LAND_HOLD_TIME = 0.15  # follow-through pose after landing
+# He stays where he landed, straightening up, until the thrown player is back on their feet,
+# and then this long, before heading back to the middle.
+const RETURN_DELAY = 0.3
+const STRAIGHTEN_SPEED = 1.5  # how fast his throw tilt eases off while he waits (radians/s)
 const RECOVER_TIME = 0.45  # after the slam
 
 const COLOR = Color(0.62, 0.2, 0.95)
 
 var _charge_speed = CHARGE_START_SPEED
 var _reach_time = 0.0  # time since the hands started reaching
+var _shut_point = Vector2.ZERO  # the target's center when the hands shut
 var _clap_point = Vector2.ZERO  # where the hands snap shut after a dodge
 var _clap_from: Array = []  # hand positions when the clap started
 var _held_offset = Vector2.ZERO  # target's offset from him when caught, eased overhead in the lift
@@ -63,6 +76,7 @@ var _throw_side = 1.0
 var _swing_time = -1.0  # time since the throw, < 0 before it
 var _swing_from: Array = []  # hand offsets from him when the throw started
 var _land_time = -1.0  # time since landing, < 0 before it
+var _victim_up_time = 0.0  # time since the thrown player got back up
 
 
 func get_attack_name() -> String:
@@ -96,7 +110,7 @@ func update(delta: float):
 		Phase.GRAB_WINDUP:
 			boss.face(target.global_position.x)
 			var coil = ease(1.0 - clampf(timer / WINDUP_TIME, 0.0, 1.0), 0.6)
-			boss.squash_body(Vector2.ONE.lerp(WINDUP_SQUASH, coil), -boss.facing * WINDUP_REAR_BACK * coil)
+			boss.squash_body(Vector2.ONE, -boss.facing * WINDUP_REAR_BACK * coil)
 			if timer <= 0.0:
 				phase = Phase.GRAB_CHARGE
 				timer = CHARGE_MAX_TIME
@@ -118,10 +132,16 @@ func update(delta: float):
 
 		Phase.GRAB_REACH:
 			_reach_time += delta
-			boss.global_position = boss.global_position.move_toward(_reach_spot(), FOLLOW_SPEED * delta)
-			_place_open_hands(clampf(_reach_time / CLOSE_TIME, 0.0, 1.0))
-			# Judged once, the moment the hands shut.
-			if _reach_time >= CLOSE_TIME:
+			if _reach_time < CLOSE_TIME:
+				# Scooping in, tracking the target.
+				boss.global_position = boss.global_position.move_toward(_reach_spot(), FOLLOW_SPEED * delta)
+				_place_open_hands(_reach_time / CLOSE_TIME, target.global_position)
+				_shut_point = target.global_position
+			else:
+				# Shut where the target was; a late dash slips out from between them.
+				_place_open_hands(1.0, _shut_point)
+			# Judged once, a moment after the hands shut.
+			if _reach_time >= CLOSE_TIME + DODGE_LATE_WINDOW:
 				if target.is_perfect_dodge():
 					_dodged()
 				else:
@@ -151,6 +171,7 @@ func update(delta: float):
 				_fall_from_y = boss.global_position.y
 				_swing_time = -1.0
 				_land_time = -1.0
+				_victim_up_time = 0.0
 				var room_left = boss.global_position.x - boss.ARENA_LEFT
 				var room_right = boss.ARENA_RIGHT - boss.global_position.x
 				_throw_side = 1.0 if room_right >= room_left else -1.0
@@ -190,7 +211,8 @@ func _start_reach():
 	boss.hands_free = true
 	boss.reset_sword()
 	_reach_time = 0.0
-	_place_open_hands(0.0)
+	_shut_point = boss.target_player.global_position
+	_place_open_hands(0.0, _shut_point)
 	boss.shake(2.0)
 
 
@@ -199,15 +221,16 @@ func _hand_side(index: int) -> float:
 	return -1.0 if index == 0 else 1.0
 
 
-# Hands scooping in on the target: wide and low at t = 0, pressed against their sides at t = 1.
-func _place_open_hands(t: float):
+# Hands scooping in on a target centered at `center`: wide and low at t = 0, pressed against
+# their sides at t = 1.
+func _place_open_hands(t: float, center: Vector2):
 	var target = boss.target_player
 	var eased = ease(t, 1.8)  # slow start, snapping shut
 	for i in 2:
 		var side = _hand_side(i)
 		var closed = Vector2(side * (target.body.size.x / 2.0 + boss.hands[i].size.x / 2.0), 0.0)
 		var open = Vector2(side * HAND_OPEN_OFFSET.x, HAND_OPEN_OFFSET.y)
-		boss.place_hand(i, target.global_position + open.lerp(closed, eased), side * 0.4 * (1.0 - eased))
+		boss.place_hand(i, center + open.lerp(closed, eased), side * 0.4 * (1.0 - eased))
 
 
 func _dodged():
@@ -218,7 +241,7 @@ func _dodged():
 	# The hands snap shut on the spot the target just slipped out of.
 	phase = Phase.GRAB_CLAP
 	timer = CLAP_TIME
-	_clap_point = boss.target_player.global_position
+	_clap_point = _shut_point
 	_clap_from = [boss.hands[0].global_position + boss.hands[0].size / 2,
 		boss.hands[1].global_position + boss.hands[1].size / 2]
 
@@ -266,12 +289,14 @@ func _update_slam(delta: float):
 			_throw()
 	else:
 		# The throw: hands whip forward and down, his body leaning into it.
+		var swinging = _swing_time < THROW_SWING_TIME
 		_swing_time += delta
 		var t = ease(clampf(_swing_time / THROW_SWING_TIME, 0.0, 1.0), 0.5)
 		for i in 2:
 			var end = Vector2(_throw_side * THROW_SWING_END.x + _hand_side(i) * 12.0, THROW_SWING_END.y)
 			boss.place_hand(i, boss.global_position + _swing_from[i].lerp(end, t))
-		boss.body.rotation = _throw_side * THROW_TILT * t
+		if swinging:  # afterwards, he straightens up (see below)
+			boss.body.rotation = _throw_side * THROW_TILT * t
 
 	if _land_time < 0.0 and boss.global_position.y >= ground_y:
 		_land_time = 0.0
@@ -280,11 +305,18 @@ func _update_slam(delta: float):
 	elif _land_time >= 0.0:
 		_land_time += delta
 		if _land_time >= LAND_HOLD_TIME and _swing_time >= THROW_SWING_TIME:
-			finish(RECOVER_TIME)
+			# Straighten up and watch the thrown player land before heading back.
+			boss.body.rotation = move_toward(boss.body.rotation, 0.0, STRAIGHTEN_SPEED * delta)
+			if boss.target_player.is_tumbling():
+				_victim_up_time = 0.0
+			else:
+				_victim_up_time += delta
+				if _victim_up_time >= RETURN_DELAY:
+					finish(RECOVER_TIME)
 
 
 # Let go the last stretch down, hurling the target into the floor toward the roomier side.
-# The floor impact (damage, bounce) is handled by the player's tumble.
+# The floor impact (damage, bounce, getting up) is handled by the player's tumble.
 func _throw():
 	var victim = boss.target_player
 	_swing_from = []
@@ -292,7 +324,8 @@ func _throw():
 		_swing_from.append(hand.global_position + hand.size / 2 - boss.global_position)
 	_swing_time = 0.0
 	_release()
-	victim.tumble(Vector2(_throw_side * THROW_VELOCITY.x, THROW_VELOCITY.y), DAMAGE)
+	victim.tumble(Vector2(_throw_side * THROW_VELOCITY.x, THROW_VELOCITY.y), DAMAGE,
+		Vector2(_throw_side * BOUNCE_SPEED, BOUNCE_HEIGHT), GET_UP_TIME)
 	Sfx.play("slash")
 	boss.shake(4.0)
 

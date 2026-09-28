@@ -1,8 +1,8 @@
-class_name TripleSlash
+class_name TripleStab
 extends Attack
-## Yellow -> red. Winds up like the sword relay, but with the sword drawn back behind him,
-## then lunges at one player and stabs three times in quick succession. Each stab must be
-## perfect parried; a stab that lands staggers the target, so every stab after it lands too.
+## Yellow -> red. Leans back and draws the sword straight back, level and a
+## little below his middle, then lunges at one player and stabs three times in quick
+## succession, thrusting the blade straight out like a spear. Each stab must be perfect parried; a stab that lands staggers the target, so every stab after it lands too.
 ## Parry all three and the target locks blades with him: a short clash in which the partner
 ## can strike him into a stagger.
 
@@ -13,15 +13,14 @@ signal clash_countered
 enum Phase { NONE, APPROACH, STABS, CLASH }
 
 # --- Tuning ---
-const TRIPLE_SLASH_INTERVAL = 0.25  # between stab contacts
+const STAB_INTERVAL = 0.25  # between stab contacts
 const TELEGRAPH_TIME = 1.0  # seconds of warning before the lunge
 const APPROACH_TIME = 0.25  # the lunge to the target
 const APPROACH_POWER = 2.2  # the lunge starts slow and arrives fast (1 = constant speed)
-const CROUCH_SQUASH = Vector2(1.15, 0.85)  # coiled low at the end of the telegraph
-const REAR_BACK = 10.0  # leaning away from the target during the telegraph
+const REAR_BACK = 10.0  # leaning away from the target during the telegraph (no crouch: it's a dash)
 const LUNGE_STRETCH = Vector2(1.3, 0.8)
 const THRUST_POWER = 2.0  # each stab accelerates out to full extension
-const STRIKE_DISTANCE = 70.0  # how far from the target he stops to stab
+const STRIKE_DISTANCE = 70.0  # how far from the target he stops to stab (center to center)
 const TRACKING = 0.25  # how hard he follows a moving target between stabs (0..1 per frame)
 const STAB_COUNT = 3
 const STAB_EXTEND_TIME = 0.06  # thrust out; the stab connects at full extension
@@ -35,11 +34,12 @@ const COLOR = Color.YELLOW
 const COLOR_CLASH = Color(1.0, 0.95, 0.6)
 const CLASH_BAR_WIDTH = 80.0
 
-# Sword pose, for a boss facing right: drawn back behind him, low (the relay raises it overhead).
-const DRAWN_BACK_ANGLE = PI - 0.35
-const UNDERSWING_PULL = 0.65  # the blade pulls in as it passes under him, clear of the floor
-const RETRACTED_SCALE = 0.6  # blade pulled in between stabs
-const EXTENDED_SCALE = 1.25  # blade at full thrust
+# Sword poses: where its pivot sits, relative to his center, for a boss facing right. The blade
+# stays level, pointing at the target, and slides back and forth like a spear. y > 0 is below
+# his middle (the stab height lines up with the player's center when they're both grounded).
+const DRAWN_BACK_OFFSET = Vector2(-45.0, 14.0)  # pulled back at the end of the windup
+const RETRACTED_OFFSET = Vector2(-20.0, 14.0)  # pulled back between stabs
+const THRUST_OFFSET = Vector2(25.0, 14.0)  # full extension, when the stab connects
 
 var _lunge_from = Vector2.ZERO
 var _lunge_side = 1.0
@@ -54,7 +54,7 @@ var _hum = null  # Sfx handle
 
 
 func get_attack_name() -> String:
-	return "TRIPLE_SLASH"
+	return "TRIPLE_STAB"
 
 
 func get_telegraph_color() -> Color:
@@ -67,11 +67,14 @@ func get_telegraph_duration() -> float:
 
 func update_telegraph(progress: float):
 	boss.face(boss.target_player.global_position.x)
-	_pose_sword(progress, boss.SWORD_REST_ANGLE, 1.0)
-	# Coil low and rear back from the target, quivering harder as the strike approaches.
-	var coil = ease(progress, 1.6)
+	# Level the blade and draw it straight back, quickly, then hold it there under tension.
+	var draw = ease(progress, 0.4)
+	boss.set_sword_offset(Vector2.ZERO.lerp(DRAWN_BACK_OFFSET, draw))
+	boss.set_sword_angle(lerpf(boss.SWORD_REST_ANGLE, 0.0, draw))
+	# Rear back from the target, quivering harder as the strike approaches.
+	var lean = ease(progress, 1.6)
 	var shake = 3.0 * progress
-	boss.squash_body(Vector2.ONE.lerp(CROUCH_SQUASH, coil), -boss.facing * REAR_BACK * coil + randf_range(-shake, shake))
+	boss.squash_body(Vector2.ONE, -boss.facing * REAR_BACK * lean + randf_range(-shake, shake))
 	boss.set_glow(COLOR, 0.25)
 
 
@@ -93,9 +96,9 @@ func update(delta: float):
 			var t = 1.0 - clampf(timer / APPROACH_TIME, 0.0, 1.0)
 			boss.global_position = _lunge_from.lerp(_strike_point(), pow(t, APPROACH_POWER))
 			boss.face(boss.target_player.global_position.x)
-			# Hold the sword back, then bring it around to point at the target for the first stab.
-			var turn = clampf((t - 0.6) / 0.4, 0.0, 1.0)
-			_pose_sword(1.0 - turn, 0.0, RETRACTED_SCALE)
+			# The sword stays drawn back through the lunge; the first stab thrusts from there.
+			boss.set_sword_offset(DRAWN_BACK_OFFSET)
+			boss.set_sword_angle(0.0)
 			if timer <= 0.0:
 				phase = Phase.STABS
 				_stab = 0
@@ -106,17 +109,19 @@ func update(delta: float):
 			# Stay on the target through the whole chain.
 			boss.global_position = boss.global_position.lerp(_strike_point(), TRACKING)
 			boss.face(boss.target_player.global_position.x)
+			# Thrust out from where the blade is pulled back to, then pull back for the next one.
 			var extend = pow(clampf(_stab_time / STAB_EXTEND_TIME, 0.0, 1.0), THRUST_POWER)
-			var retract = clampf((_stab_time - STAB_EXTEND_TIME) / (TRIPLE_SLASH_INTERVAL - STAB_EXTEND_TIME), 0.0, 1.0)
-			boss.sword_scale.x = lerpf(lerpf(RETRACTED_SCALE, EXTENDED_SCALE, extend), RETRACTED_SCALE, retract)
+			var retract = ease(clampf((_stab_time - STAB_EXTEND_TIME) / (STAB_INTERVAL - STAB_EXTEND_TIME), 0.0, 1.0), 0.5)
+			var from = DRAWN_BACK_OFFSET if _stab == 0 else RETRACTED_OFFSET
+			boss.set_sword_offset(from.lerp(THRUST_OFFSET, extend).lerp(RETRACTED_OFFSET, retract))
 			boss.set_sword_angle(0.0)
 			if not _contact_done and _stab_time >= STAB_EXTEND_TIME:
 				_contact_done = true
 				_stab_contact(boss.target_player)
-			if _stab_time >= TRIPLE_SLASH_INTERVAL:
+			if _stab_time >= STAB_INTERVAL:
 				_stab += 1
 				if _stab < STAB_COUNT:
-					_start_stab(_stab_time - TRIPLE_SLASH_INTERVAL)  # carry the remainder: keep the beat exact
+					_start_stab(_stab_time - STAB_INTERVAL)  # carry the remainder: keep the beat exact
 				elif _parried == STAB_COUNT:
 					_start_clash()
 				else:
@@ -152,17 +157,14 @@ func cleanup():
 	_helper = null
 
 
-# Swings the sword between from_angle (back = 0) and drawn back behind him (back = 1), low.
-func _pose_sword(back: float, from_angle: float, from_scale: float):
-	boss.sword_scale.x = lerpf(from_scale, 1.0, back) * (1.0 - UNDERSWING_PULL * sin(PI * back))
-	boss.set_sword_angle(lerpf(from_angle, DRAWN_BACK_ANGLE, back))
-
-
 # --- The stabs ---
 
-# Where Cubus Maximus stands to stab the target, on the side he lunged in from.
+# Where Cubus Maximus stands to stab the target, on the side he lunged in from. Bottoms level
+# with each other (he's taller than the player), so he stands on the floor rather than in it.
 func _strike_point() -> Vector2:
-	return boss.target_player.global_position + Vector2(_lunge_side * STRIKE_DISTANCE, 0.0)
+	var target = boss.target_player
+	var height_gap = (boss.body.size.y - target.body.size.y) / 2.0
+	return target.global_position + Vector2(_lunge_side * STRIKE_DISTANCE, -height_gap)
 
 
 func _start_stab(elapsed: float):
@@ -179,7 +181,7 @@ func _stab_contact(target):
 	elif target.is_perfect_parry():
 		_parried += 1
 		target.on_perfect_parry(_stab == STAB_COUNT - 1)
-		parry_success.emit(target, "triple_slash")
+		parry_success.emit(target, "triple_stab")
 		stab_parried.emit(target)
 		boss.shake(3.0)
 	else:
@@ -202,7 +204,7 @@ func _start_clash():
 	var side = signf(boss.global_position.x - _holder.global_position.x)
 	_holder.facing = side if side != 0.0 else 1.0
 	_holder.set_clashing(true, false)
-	boss.sword_scale.x = 1.0
+	boss.set_sword_offset(RETRACTED_OFFSET)
 	boss.set_sword_angle(0.0)
 	boss.shake(6.0)
 	clash_started.emit()

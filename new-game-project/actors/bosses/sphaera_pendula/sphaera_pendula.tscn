@@ -1,0 +1,63 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://actors/bosses/sphaera_pendula/sphaera_pendula.gd" id="1_sphaera"]
+
+[sub_resource type="Shader" id="Shader_disc"]
+code = "shader_type canvas_item;
+
+// Cuts the rect down to the disc inscribed in it; softness (in UV units) feathers the edge.
+uniform float softness = 0.02;
+
+void fragment() {
+	float d = distance(UV, vec2(0.5));
+	COLOR.a *= 1.0 - smoothstep(0.5 - softness, 0.5, d);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="Material_disc"]
+shader = SubResource("Shader_disc")
+shader_parameter/softness = 0.02
+
+[sub_resource type="ShaderMaterial" id="Material_glow"]
+shader = SubResource("Shader_disc")
+shader_parameter/softness = 0.4
+
+[sub_resource type="CircleShape2D" id="Shape_body"]
+radius = 44.0
+
+[node name="SphaeraPendula" type="CharacterBody2D" groups=["boss"]]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("1_sphaera")
+
+[node name="Chain" type="Node2D" parent="."]
+top_level = true
+
+[node name="Glow" type="ColorRect" parent="."]
+material = SubResource("Material_glow")
+offset_left = -76.0
+offset_top = -76.0
+offset_right = 76.0
+offset_bottom = 76.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="ColorRect" type="ColorRect" parent="."]
+material = SubResource("Material_disc")
+offset_left = -44.0
+offset_top = -44.0
+offset_right = 44.0
+offset_bottom = 44.0
+mouse_filter = 2
+color = Color(0.27, 0.27, 0.3, 1)
+
+[node name="Eye" type="ColorRect" parent="ColorRect"]
+offset_left = 28.0
+offset_top = 40.0
+offset_right = 60.0
+offset_bottom = 48.0
+mouse_filter = 2
+color = Color(1, 0.92, 0.7, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Shape_body")

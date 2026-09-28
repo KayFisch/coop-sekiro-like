@@ -3,11 +3,14 @@ extends CharacterBody2D
 ## Shared boss behavior: health, the attack state machine, the stagger, the center-charge
 ## telegraph, and the movement/animation helpers attacks use. A concrete boss supplies its
 ## attacks by overriding get_attack_pool(), and how often each comes with get_attack_weights().
+## Anything beyond the body (a sword, hands, a chain) belongs to the concrete boss, which poses
+## it through the pose hooks (reset_pose(), tint_weapon(), _update_pose()).
 ##
 ## State machine: IDLE -> TELEGRAPH -> ATTACKING -> RECOVER -> IDLE, with STAGGER in place of
 ## RECOVER when an attack ends in a stagger. All attack-specific logic lives in the Attack objects.
 
 signal parry_success(player, kind)  # forwarded from whichever attack produced it
+signal sync_event(kind)  # a coordinated success; GameManager turns it into sync (see SYNC_GAINS)
 signal health_changed(hp, max_hp)
 signal defeated
 
@@ -32,22 +35,10 @@ const KNOCK_MIN_Y = 90.0  # a knocked-back stagger never carries the boss above 
 const KNOCK_DECELERATION = 2400.0
 const STAGGER_SINK_SPEED = 900.0
 
-# Sword angles in radians, for a boss facing right (mirrored when facing left).
-const SWORD_REST_ANGLE = 0.3  # low guard; steeper would clip through the floor
-const SWORD_RAISED_ANGLE = -1.9
-const SWORD_FOLLOW_ANGLE = 0.7
-
 const COLOR_IDLE = Color(0.27, 0.27, 0.3)
 const COLOR_EXECUTE = Color.RED
 const COLOR_STAGGER = Color(0.55, 0.55, 0.62)
 const COLOR_DEAD = Color(0.25, 0.25, 0.3)
-const COLOR_SWORD = Color(0.8, 0.82, 0.86)  # silver
-
-# Hands: two small blocks, a fifth of the body's size, gripping the sword's hilt unless an
-# attack takes them over (hands_free).
-const HAND_SIZE_RATIO = 0.2
-const HAND_GRIPS = [0.075, 0.275]  # where each hand holds the sword, as a fraction of its length
-const HAND_DARKEN = 0.25  # hands are the body's color, a bit darker
 
 var state = State.IDLE
 var timer = FIRST_ATTACK_DELAY
@@ -57,11 +48,8 @@ var current_attack: Attack = null
 var hp = 0.0
 var home_position = Vector2.ZERO
 var facing = 1.0
-var sword_scale = Vector2.ONE
 var anim_time = 0.0
 var body_rest = Vector2.ZERO
-var hands: Array = []  # [ColorRect, ColorRect]
-var hands_free = false  # true while an attack places the hands itself (see place_hand())
 
 var _last_attack: Attack = null
 var _tumbling = false
@@ -71,14 +59,17 @@ var _pop_tween: Tween
 
 @onready var body: ColorRect = $ColorRect
 @onready var glow: ColorRect = $Glow
-@onready var sword_pivot: Node2D = $SwordPivot
-@onready var sword: ColorRect = $SwordPivot/Sword
 
 
 # --- Overridden by concrete bosses ---
 
 func get_max_hp() -> float:
 	return 100.0
+
+
+# Shown over the boss health bar.
+func get_display_name() -> String:
+	return "BOSS"
 
 
 # Fresh Attack instances this boss can use. Called once, in _ready().
@@ -126,6 +117,55 @@ func pick_attack() -> Attack:
 	return _last_attack
 
 
+# --- Pose hooks: a boss with a sword, hands or a chain poses them here ---
+
+# Called once in _ready(), before the first reset_pose().
+func _setup_pose():
+	pass
+
+
+# Back to the resting pose: after every attack and stagger, and on death.
+func reset_pose():
+	pass
+
+
+# The telegraph and execute colors, for whatever the boss carries (the body is colored already).
+func tint_weapon(_color: Color):
+	pass
+
+
+# Called every physics frame, after the state machine.
+func _update_pose():
+	pass
+
+
+# Where the center charge floats.
+func hover_point() -> Vector2:
+	return Vector2(home_position.x, home_position.y - CENTER_HOVER_HEIGHT)
+
+
+# Movement between attacks: drifting home while idle and recovering, and the stagger's rocking.
+func _idle_motion(_delta: float):
+	global_position = global_position.lerp(home_position, 0.05)
+
+
+func _recover_motion(_delta: float):
+	global_position = global_position.lerp(home_position, 0.08)
+
+
+func _stagger_motion(delta: float):
+	# Rock back and forth; a dodged grab's tumble rocks harder.
+	var tilt = TUMBLE_TILT if _tumbling else STAGGER_TILT
+	body.rotation = tilt * sin(anim_time * 12.0)
+	# A knock (the overpowered grand slash) carries the boss off first, then it sinks home.
+	if _stagger_knock != Vector2.ZERO:
+		global_position += _stagger_knock * delta
+		global_position.y = clampf(global_position.y, KNOCK_MIN_Y, ARENA_FLOOR_Y)
+		_stagger_knock = _stagger_knock.move_toward(Vector2.ZERO, KNOCK_DECELERATION * delta)
+	else:
+		global_position.y = move_toward(global_position.y, home_position.y, STAGGER_SINK_SPEED * delta)
+
+
 # --- Lifecycle ---
 
 func _ready():
@@ -135,7 +175,8 @@ func _ready():
 	body.pivot_offset = body.size / 2
 	body.color = COLOR_IDLE
 	glow.color.a = 0.0
-	reset_sword()
+	_setup_pose()
+	reset_pose()
 
 	# Diamond floating over whichever player is being targeted.
 	_marker = ColorRect.new()
@@ -146,16 +187,7 @@ func _ready():
 	_marker.visible = false
 	_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_marker)
-
-	for i in 2:
-		var hand = ColorRect.new()
-		hand.size = body.size * HAND_SIZE_RATIO
-		hand.pivot_offset = hand.size / 2
-		hand.top_level = true
-		hand.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(hand)
-		hands.append(hand)
-	_update_hands()
+	_update_pose()
 
 	attack_pool = get_attack_pool()
 	for attack in attack_pool:
@@ -175,7 +207,7 @@ func _physics_process(delta):
 
 	match state:
 		State.IDLE:
-			global_position = global_position.lerp(home_position, 0.05)
+			_idle_motion(delta)
 			if timer <= 0.0:
 				_choose_target()
 				if target_player == null:
@@ -195,7 +227,7 @@ func _physics_process(delta):
 				_finish_attack()
 
 		State.RECOVER:
-			global_position = global_position.lerp(home_position, 0.08)
+			_recover_motion(delta)
 			if timer <= 0.0:
 				state = State.IDLE
 				timer = randf_range(IDLE_PAUSE_MIN, IDLE_PAUSE_MAX)
@@ -203,23 +235,14 @@ func _physics_process(delta):
 		State.STAGGER:
 			var flash = fmod(anim_time, 0.16) < 0.08
 			body.color = COLOR_STAGGER if flash else COLOR_IDLE
-			# Rock back and forth; a dodged grab's tumble rocks harder.
-			var tilt = TUMBLE_TILT if _tumbling else STAGGER_TILT
-			body.rotation = tilt * sin(anim_time * 12.0)
-			# A knock (the overpowered grand slash) carries the boss off first, then it sinks home.
-			if _stagger_knock != Vector2.ZERO:
-				global_position += _stagger_knock * delta
-				global_position.y = clampf(global_position.y, KNOCK_MIN_Y, ARENA_FLOOR_Y)
-				_stagger_knock = _stagger_knock.move_toward(Vector2.ZERO, KNOCK_DECELERATION * delta)
-			else:
-				global_position.y = move_toward(global_position.y, home_position.y, STAGGER_SINK_SPEED * delta)
+			_stagger_motion(delta)
 			if timer <= 0.0:
 				_enter_recover(STAGGER_RECOVER_TIME)
 
 	# Telegraphs pulse the body's alpha between 0.7 and 1.0 at 3 Hz.
 	body.modulate.a = 0.85 + 0.15 * sin(anim_time * TAU * 3.0) if state == State.TELEGRAPH else 1.0
 	_update_marker()
-	_update_hands()
+	_update_pose()
 
 
 func _choose_target():
@@ -243,7 +266,7 @@ func _begin_telegraph(attack: Attack):
 	state = State.TELEGRAPH
 	timer = attack.get_telegraph_duration()
 	body.color = attack.get_telegraph_color()
-	sword.color = attack.get_telegraph_color()
+	tint_weapon(attack.get_telegraph_color())
 
 
 func _process_telegraph():
@@ -255,7 +278,7 @@ func _process_telegraph():
 		var pulse = 0.5 + 0.5 * sin(anim_time * 16.0)
 		body.color = charge.lerp(Color.WHITE, 0.35 * pulse)
 		body.rotation = TAU * progress
-		sword.color = charge
+		tint_weapon(charge)
 		set_glow(charge, 0.25 + 0.35 * pulse * progress)
 	current_attack.update_telegraph(progress)
 
@@ -265,7 +288,7 @@ func _begin_attack():
 	body.position = body_rest
 	body.rotation = 0.0
 	body.color = COLOR_EXECUTE
-	sword.color = COLOR_EXECUTE
+	tint_weapon(COLOR_EXECUTE)
 	set_glow(COLOR_EXECUTE, 0.3)
 	current_attack.execute()
 
@@ -289,7 +312,7 @@ func _enter_recover(duration: float, finished_attack: Attack = null):
 	glow.color.a = 0.0
 	if finished_attack:
 		finished_attack.cleanup()
-	reset_sword()
+	reset_pose()
 	_reset_body_shape()
 
 
@@ -302,7 +325,7 @@ func _enter_stagger(finished_attack: Attack, duration: float, tumble: bool, knoc
 	body.position = body_rest
 	glow.color.a = 0.0
 	finished_attack.cleanup()
-	reset_sword()
+	reset_pose()
 	_reset_body_shape()
 	Sfx.play("stagger", -2.0)
 
@@ -331,13 +354,12 @@ func _die():
 	body.position = body_rest
 	body.rotation = 0.0
 	glow.color.a = 0.0
-	reset_sword()
+	reset_pose()
 	if _pop_tween:
 		_pop_tween.kill()
 	body.scale = Vector2.ONE
 	_marker.visible = false
-	hands_free = false
-	_update_hands()
+	_update_pose()
 	defeated.emit()
 
 
@@ -361,9 +383,9 @@ func find_attack(attack_name: String) -> Attack:
 	return null
 
 
-# Floats over the arena's center with a gentle bob.
+# Floats over the arena's center (hover_point()) with a gentle bob.
 func hover():
-	var center = Vector2(home_position.x, home_position.y - CENTER_HOVER_HEIGHT)
+	var center = hover_point()
 	center.y += sin(anim_time * 3.0) * 8.0
 	global_position = global_position.lerp(center, 0.1)
 
@@ -374,36 +396,9 @@ func face(x: float):
 		facing = side
 
 
-func reset_sword():
-	sword_scale = Vector2.ONE
-	sword.color = COLOR_SWORD
-	set_sword_angle(SWORD_REST_ANGLE)
-
-
-func set_sword_angle(angle: float):
-	sword_pivot.scale = Vector2(sword_scale.x * facing, sword_scale.y)
-	sword_pivot.rotation = angle * facing
-
-
-# Puts a hand's center at a world position (for attacks that set hands_free).
-func place_hand(index: int, center: Vector2, angle = 0.0):
-	var hand = hands[index]
-	hand.global_position = center - hand.size / 2
-	hand.rotation = angle
-
-
-# Hands follow the sword's hilt through every swing, unless an attack has taken them over.
-func _update_hands():
-	for hand in hands:
-		hand.color = body.color.darkened(HAND_DARKEN)
-	if hands_free:
-		return
-	var hilt = sword.position.x
-	var length = sword.size.x
-	var blade_y = sword.position.y + sword.size.y / 2
-	for i in hands.size():
-		var grip = sword_pivot.to_global(Vector2(hilt + length * HAND_GRIPS[i], blade_y))
-		place_hand(i, grip, sword_pivot.rotation)
+# How far the squash_body() pose has moved the body's center from rest (unmirrored).
+func body_center_offset() -> Vector2:
+	return body.position - body_rest
 
 
 # --- Squash and stretch (the Sekiro-style read: a slow, loaded anticipation, then a snap) ---

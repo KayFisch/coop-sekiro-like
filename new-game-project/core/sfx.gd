@@ -79,6 +79,10 @@ func _build_sounds():
 	_sounds["clash_grind"] = _grind(1.6)
 	_sounds["clash_hum"] = _clash_hum(0.8)
 	_sounds["grand_impact"] = _with_echo(_explosion(0.8), 0.2, 0.35, 1)
+	_sounds["launch"] = _rise(0.25)
+	_sounds["swing"] = _whoosh(0.35)  # Sphaera Pendula's heavy swings
+	_sounds["chain"] = _grind(0.3)  # chains paying out and snapping taut
+	_sounds["thunk"] = _thud(90.0, 38.0, 0.35, 8.0, 0.6)  # the sphere landing on a pan
 	_sounds["game_over"] = _notes([440.0, 349.2, 293.7], 0.17, false)
 	_sounds["victory"] = _notes([523.3, 659.3, 784.0, 1046.5], 0.125, true)
 

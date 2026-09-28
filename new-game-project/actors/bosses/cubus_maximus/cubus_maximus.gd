@@ -1,18 +1,8 @@
 class_name CubusMaximus
 extends BaseBoss
 ## Cubus Maximus: the sword-wielding cube. Everything here is specific to him: his health,
-## his sword, and which attacks he uses and how often. The state machine lives in BaseBoss;
-## each attack's logic and its tuning values (damage, timings, ...) live in attacks/.
-
-# Re-emitted from his attacks, for the GameManager (sync meter) and anyone else listening.
-signal relay_completed
-signal grab_dodged
-signal grand_slash_parried
-signal shockwave_parried(player)
-signal counterattack_landed(both_players)
-signal stab_parried(player)
-signal triple_clash_started
-signal triple_clash_countered
+## his sword and hands, and which attacks he uses and how often. The state machine lives in
+## BaseBoss; each attack's logic and its tuning values (damage, timings, ...) live in attacks/.
 
 # --- Tuning ---
 const MAX_HP = 1000.0
@@ -20,23 +10,41 @@ const MAX_HP = 1000.0
 # How often each attack is picked, relative to the others: 2 is twice as likely as 1, and
 # 0 (or leaving an attack out) disables it.
 const ATTACK_WEIGHTS = {
-	"SWORD_RELAY": 1.0,
+	"JUMP_ATTACK": 1.0,
 	"GRAB": 1.0,
 	"GROUND_SLAM": 1.0,
 	"GRAND_SLASH": 1.0,
 	"SHOCKWAVE_SLASHES": 1.0,
-	"TRIPLE_SLASH": 1.0,
+	"TRIPLE_STAB": 1.0,
 }
 # Attacks that may come twice in a row; the rest never repeat back to back.
-const REPEATABLE_ATTACKS = ["SWORD_RELAY"]
-# For testing: set to an attack's name (e.g. "TRIPLE_SLASH") to use only that attack.
-const TEST_ONLY_ATTACK = "SWORD_RELAY"
+const REPEATABLE_ATTACKS = ["JUMP_ATTACK"]
+# For testing: set to an attack's name (e.g. "TRIPLE_STAB") to use only that attack.
+const TEST_ONLY_ATTACK = "GROUND_SLAM"
 # For testing: 1 or 2 makes him target only that player (attacks aimed at both still hit the
 # other, who can't lose health). 0 targets both players as normal.
 const TEST_ONLY_TARGET = 2
 
 const SWORD_REACH = 110.0  # blade tip distance from the pivot at scale 1 (see the scene)
 
+# Sword angles in radians, for a boss facing right (mirrored when facing left).
+const SWORD_REST_ANGLE = 0.3  # low guard; steeper would clip through the floor
+const SWORD_RAISED_ANGLE = -1.9
+const SWORD_FOLLOW_ANGLE = 0.7
+const COLOR_SWORD = Color(0.8, 0.82, 0.86)  # silver
+
+# Hands: two small blocks, a fifth of the body's size, gripping the sword's hilt unless an
+# attack takes them over (hands_free).
+const HAND_SIZE_RATIO = 0.2
+const HAND_GRIPS = [0.075, 0.275]  # where each hand holds the sword, as a fraction of its length
+const HAND_DARKEN = 0.25  # hands are the body's color, a bit darker
+
+var sword_scale = Vector2.ONE
+var hands: Array = []  # [ColorRect, ColorRect]
+var hands_free = false  # true while an attack places the hands itself (see place_hand())
+
+@onready var sword_pivot: Node2D = $SwordPivot
+@onready var sword: ColorRect = $SwordPivot/Sword
 @onready var sword_hitbox: Area2D = $SwordPivot/SwordHitbox
 @onready var grab_area: Area2D = $GrabArea
 
@@ -45,22 +53,27 @@ func get_max_hp() -> float:
 	return MAX_HP
 
 
+func get_display_name() -> String:
+	return "CUBUS MAXIMUS"
+
+
 func get_attack_pool() -> Array:
-	var relay = SwordRelay.new()
-	relay.relay_completed.connect(relay_completed.emit)
+	var jump = JumpAttack.new()
+	jump.relay_completed.connect(sync_event.emit.bind("relay_completed"))
 	var grab = Grab.new()
-	grab.grab_dodged.connect(grab_dodged.emit)
+	grab.grab_dodged.connect(sync_event.emit.bind("grab_dodged"))
 	var slam = GroundSlam.new()
 	var grand = GrandSlash.new()
-	grand.grand_slash_parried.connect(grand_slash_parried.emit)
+	grand.grand_slash_parried.connect(sync_event.emit.bind("grand_slash_parried"))
 	var volley = ShockwaveSlashes.new()
-	volley.shockwave_parried.connect(shockwave_parried.emit)
-	volley.counterattack_landed.connect(counterattack_landed.emit)
-	var triple = TripleSlash.new()
-	triple.stab_parried.connect(stab_parried.emit)
-	triple.clash_started.connect(triple_clash_started.emit)
-	triple.clash_countered.connect(triple_clash_countered.emit)
-	return [relay, grab, slam, grand, volley, triple]
+	volley.shockwave_parried.connect(func(_player): sync_event.emit("shockwave_parried"))
+	volley.counterattack_landed.connect(func(both_players):
+		sync_event.emit("double_counter" if both_players else "single_counter"))
+	var triple = TripleStab.new()
+	triple.stab_parried.connect(func(_player): sync_event.emit("stab_parried"))
+	triple.clash_started.connect(sync_event.emit.bind("triple_clash"))
+	triple.clash_countered.connect(sync_event.emit.bind("clash_countered"))
+	return [jump, grab, slam, grand, volley, triple]
 
 
 func get_attack_weights() -> Dictionary:
@@ -75,3 +88,72 @@ func get_forced_target_id() -> int:
 
 func get_repeatable_attacks() -> Array:
 	return REPEATABLE_ATTACKS
+
+
+# --- Sword and hands ---
+
+func _setup_pose():
+	for i in 2:
+		var hand = ColorRect.new()
+		hand.size = body.size * HAND_SIZE_RATIO
+		hand.pivot_offset = hand.size / 2
+		hand.top_level = true
+		hand.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(hand)
+		hands.append(hand)
+
+
+func reset_pose():
+	reset_sword()
+
+
+func tint_weapon(color: Color):
+	sword.color = color
+
+
+func _update_pose():
+	_update_hands()
+
+
+func _die():
+	hands_free = false
+	super()
+
+
+func reset_sword():
+	sword_scale = Vector2.ONE
+	sword.color = COLOR_SWORD
+	set_sword_offset(Vector2.ZERO)
+	set_sword_angle(SWORD_REST_ANGLE)
+
+
+func set_sword_angle(angle: float):
+	sword_pivot.scale = Vector2(sword_scale.x * facing, sword_scale.y)
+	sword_pivot.rotation = angle * facing
+
+
+# Moves the sword's pivot away from his center, for a boss facing right (mirrored when facing
+# left), e.g. drawing it back before a thrust.
+func set_sword_offset(offset: Vector2):
+	sword_pivot.position = Vector2(offset.x * facing, offset.y)
+
+
+# Puts a hand's center at a world position (for attacks that set hands_free).
+func place_hand(index: int, center: Vector2, angle = 0.0):
+	var hand = hands[index]
+	hand.global_position = center - hand.size / 2
+	hand.rotation = angle
+
+
+# Hands follow the sword's hilt through every swing, unless an attack has taken them over.
+func _update_hands():
+	for hand in hands:
+		hand.color = body.color.darkened(HAND_DARKEN)
+	if hands_free:
+		return
+	var hilt = sword.position.x
+	var length = sword.size.x
+	var blade_y = sword.position.y + sword.size.y / 2
+	for i in hands.size():
+		var grip = sword_pivot.to_global(Vector2(hilt + length * HAND_GRIPS[i], blade_y))
+		place_hand(i, grip, sword_pivot.rotation)

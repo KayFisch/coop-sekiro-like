@@ -1,23 +1,43 @@
 extends Node
-## Autoload singleton: owns the shared sync meter, the overall game state,
-## and restart logic.
+## Autoload singleton: owns the shared sync meter, the overall game state, restart logic and
+## switching between fights.
 
 signal sync_changed(value, multiplier)
 signal state_changed(new_state)
 
 enum GameState { PLAYING, GAME_OVER, VICTORY }
 
+const SELECT_SCENE = "res://ui/boss_select.tscn"
+
 const SYNC_MAX = 100.0
 const SYNC_START = 0.0
-const SYNC_RELAY_GAIN = 25.0
-const SYNC_GRAB_DODGE_GAIN = 15.0
-const SYNC_GRAND_SLASH_GAIN = 40.0
-const SYNC_SHOCKWAVE_PARRY_GAIN = 8.0
-const SYNC_DOUBLE_COUNTER_GAIN = 30.0
-const SYNC_SINGLE_COUNTER_GAIN = 15.0
-const SYNC_STAB_PARRY_GAIN = 8.0
-const SYNC_TRIPLE_CLASH_GAIN = 10.0  # on top of the three stab parries
-const SYNC_CLASH_COUNTER_GAIN = 20.0
+# Sync gained per boss sync_event, by kind.
+const SYNC_GAINS = {
+	# Cubus Maximus
+	"relay_completed": 25.0,
+	"grab_dodged": 15.0,
+	"grand_slash_parried": 40.0,
+	"shockwave_parried": 8.0,
+	"double_counter": 30.0,
+	"single_counter": 15.0,
+	"stab_parried": 8.0,
+	"triple_clash": 10.0,  # on top of the three stab parries
+	"clash_countered": 20.0,
+	# Sphaera Pendula
+	"swing_parried": 6.0,
+	"swing_relay_completed": 25.0,
+	"hook_dodged": 15.0,
+	"hook_rescued": 25.0,  # worth more than a dodge: it took both of you
+	"undertow_exposed": 10.0,
+	"counterweight_catapult": 30.0,
+	"shackle_sweeps_cleared": 8.0,
+	"shackle_slingshot": 35.0,
+	"zenith_interrupted": 25.0,
+	"coupled_parried": 6.0,
+	"coupled_collision": 30.0,
+}
+const SYNC_LAUNCH_GAIN = 5.0  # a Launch (see player.gd), anywhere in any fight...
+const SYNC_LAUNCH_COOLDOWN = 5.0  # ...at most once per this many seconds
 const SYNC_BLOCK_LOSS = 5.0
 const SYNC_HIT_LOSS = 10.0
 
@@ -26,6 +46,8 @@ var state = GameState.PLAYING
 var elapsed_time = 0.0
 var players: Array = []
 var boss = null
+
+var _last_launch_sync = -100.0
 
 
 func _ready():
@@ -38,6 +60,9 @@ func _process(delta):
 		elapsed_time += delta
 	elif Input.is_action_just_pressed("restart"):
 		restart()
+	if Input.is_action_just_pressed("menu") and get_tree().current_scene \
+			and get_tree().current_scene.scene_file_path != SELECT_SCENE:
+		start_fight(SELECT_SCENE)
 
 
 func damage_multiplier() -> float:
@@ -59,31 +84,38 @@ func register_player(player):
 	player.damaged.connect(_on_player_damaged)
 	player.blocked.connect(_on_player_blocked)
 	player.died.connect(_on_player_died)
+	player.launched.connect(_on_player_launched)
 
 
 func register_boss(new_boss):
 	boss = new_boss
-	boss.relay_completed.connect(change_sync.bind(SYNC_RELAY_GAIN))
-	boss.grab_dodged.connect(change_sync.bind(SYNC_GRAB_DODGE_GAIN))
-	boss.grand_slash_parried.connect(change_sync.bind(SYNC_GRAND_SLASH_GAIN))
-	boss.shockwave_parried.connect(_on_shockwave_parried)
-	boss.counterattack_landed.connect(_on_counterattack_landed)
-	boss.stab_parried.connect(_on_stab_parried)
-	boss.triple_clash_started.connect(change_sync.bind(SYNC_TRIPLE_CLASH_GAIN))
-	boss.triple_clash_countered.connect(change_sync.bind(SYNC_CLASH_COUNTER_GAIN))
+	boss.sync_event.connect(_on_sync_event)
 	boss.defeated.connect(_end_game.bind(GameState.VICTORY))
 
 
 func restart():
+	_reset()
+	get_tree().reload_current_scene()
+	state_changed.emit(state)
+	sync_changed.emit(sync_value, damage_multiplier())
+
+
+# Loads a fight (or the boss select screen) from scratch.
+func start_fight(scene_path: String):
+	_reset()
+	get_tree().change_scene_to_file(scene_path)
+	state_changed.emit(state)
+	sync_changed.emit(sync_value, damage_multiplier())
+
+
+func _reset():
 	get_tree().paused = false
 	players.clear()
 	boss = null
 	sync_value = SYNC_START
 	elapsed_time = 0.0
+	_last_launch_sync = -100.0
 	state = GameState.PLAYING
-	get_tree().reload_current_scene()
-	state_changed.emit(state)
-	sync_changed.emit(sync_value, damage_multiplier())
 
 
 func _end_game(new_state):
@@ -95,6 +127,13 @@ func _end_game(new_state):
 	state_changed.emit(state)
 
 
+func _on_sync_event(kind: String):
+	if not SYNC_GAINS.has(kind):
+		push_warning("GameManager: no sync gain for \"%s\"" % kind)
+		return
+	change_sync(SYNC_GAINS[kind])
+
+
 # A failed parry is just a hit taken, so it costs the same.
 func _on_player_damaged(_player):
 	change_sync(-SYNC_HIT_LOSS)
@@ -104,16 +143,10 @@ func _on_player_blocked(_player):
 	change_sync(-SYNC_BLOCK_LOSS)
 
 
-func _on_shockwave_parried(_player):
-	change_sync(SYNC_SHOCKWAVE_PARRY_GAIN)
-
-
-func _on_stab_parried(_player):
-	change_sync(SYNC_STAB_PARRY_GAIN)
-
-
-func _on_counterattack_landed(both_players):
-	change_sync(SYNC_DOUBLE_COUNTER_GAIN if both_players else SYNC_SINGLE_COUNTER_GAIN)
+func _on_player_launched(_player):
+	if elapsed_time - _last_launch_sync >= SYNC_LAUNCH_COOLDOWN:
+		_last_launch_sync = elapsed_time
+		change_sync(SYNC_LAUNCH_GAIN)
 
 
 func _on_player_died(_player):

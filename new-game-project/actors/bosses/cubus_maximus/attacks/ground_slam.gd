@@ -125,9 +125,11 @@ func _spawn_floor_wave(floor_y: float, color: Color):
 	wave.color = Color(color, 0.8)
 	wave.size = Vector2(1200.0, 14.0)
 	wave.pivot_offset = wave.size / 2
-	wave.scale = Vector2(0.07, 1.0)
 	boss.add_child(wave)
+	# Placed before it's scaled down: global_position accounts for the scale, so setting it on
+	# the shrunken band would shift it off to the left once it grows back out.
 	wave.global_position = Vector2(boss.global_position.x - wave.size.x / 2, floor_y - wave.size.y)
+	wave.scale = Vector2(0.07, 1.0)
 	var tween = wave.create_tween().set_parallel()
 	tween.tween_property(wave, "scale", Vector2.ONE, 0.15)
 	tween.tween_property(wave, "modulate:a", 0.0, 0.4)

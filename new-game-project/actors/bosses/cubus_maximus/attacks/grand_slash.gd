@@ -22,10 +22,12 @@ const HANG_CREEP = 12.0
 const HANG_SQUASH = Vector2(1.2, 0.8)
 const DIVE_STRETCH = Vector2(0.8, 1.3)
 const IMPACT_SQUASH = Vector2(1.4, 0.6)
-# The dive the players parry: slow off the top, accelerating. With these it takes about as long
-# as the old constant 750 px/s dive, but arrives much faster.
-const DIVE_START_SPEED = 150.0
-const DIVE_ACCEL = 2600.0
+# The dive the players parry: slow off the top, then accelerating harder and harder all the way
+# down, so the long read ends in a sudden strike. With these it takes ~0.4 s from the hang to
+# the floor, arriving at ~2000 px/s. Raise DIVE_ACCEL_GROWTH for a snappier finish.
+const DIVE_START_SPEED = 80.0
+const DIVE_ACCEL = 2600.0  # at the top
+const DIVE_ACCEL_GROWTH = 12000.0  # added to the acceleration every second of the dive
 const DIVE_DAMAGE = 35.0
 const DIVE_KNOCKBACK = 350.0
 const BLOCKED_DAMAGE = 12.0
@@ -50,7 +52,8 @@ var ring: Node2D  # the failure shockwave
 
 var _rise_from = Vector2.ZERO
 var _dive_speed = DIVE_START_SPEED
-var _dive_accel = DIVE_ACCEL  # 0 once he breaks free (a straight, fast finish)
+var _dive_accel = DIVE_ACCEL
+var _dive_accel_growth = DIVE_ACCEL_GROWTH  # both 0 once he breaks free (a straight, fast finish)
 var _resolved: Array = []  # players the lunge has already dealt with
 var _holder = null  # the player holding Cubus Maximus in the clash
 var _helper = null  # the partner who has to come and parry
@@ -110,6 +113,7 @@ func update(delta: float):
 				_start_dive()
 
 		Phase.GRAND_DIVE:
+			_dive_accel += _dive_accel_growth * delta
 			_dive_speed += _dive_accel * delta
 			boss.global_position.y += _dive_speed * delta
 			# The players parry Cubus Maximus himself: his blade or his body reaching them.
@@ -155,6 +159,7 @@ func _start_dive():
 	phase = Phase.GRAND_DIVE
 	_dive_speed = DIVE_START_SPEED
 	_dive_accel = DIVE_ACCEL
+	_dive_accel_growth = DIVE_ACCEL_GROWTH
 	boss.pop_body(DIVE_STRETCH, 0.3)
 	_resolved.clear()
 	_holder = null
@@ -283,6 +288,7 @@ func _break_free():
 	phase = Phase.GRAND_DIVE
 	_dive_speed = BREAK_FREE_SPEED
 	_dive_accel = 0.0
+	_dive_accel_growth = 0.0
 
 
 # --- Failure: the sword hits the center and a red shockwave ring expands ---

@@ -23,6 +23,7 @@ var _sync_fill: ColorRect
 var _sync_mult: Label
 var _boss_fill: ColorRect
 var _boss_hp_label: Label
+var _boss_name: Label
 var _overlay: ColorRect
 var _overlay_label: Label
 
@@ -76,7 +77,8 @@ func _process(_delta):
 
 	var boss = GameManager.boss
 	if is_instance_valid(boss):
-		_boss_fill.size.x = BOSS_BAR_WIDTH * clampf(boss.hp / boss.MAX_HP, 0.0, 1.0)
+		_boss_fill.size.x = BOSS_BAR_WIDTH * clampf(boss.hp / boss.get_max_hp(), 0.0, 1.0)
+		_boss_name.text = boss.get_display_name()
 		_boss_hp_label.text = "%d" % int(ceil(boss.hp))
 
 
@@ -119,7 +121,7 @@ func _build_sync_bar(root):
 
 func _build_boss_bar(root):
 	var box = _anchored_box(root, 1.0, -BOSS_BAR_WIDTH - 60.0, -16.0)
-	_label(box, Vector2(0, 0), "BOSS")
+	_boss_name = _label(box, Vector2(0, 0), "BOSS")
 	_rect(box, Vector2(0, 24), Vector2(BOSS_BAR_WIDTH, BAR_HEIGHT), HP_BG_COLOR)
 	_boss_fill = _rect(box, Vector2(0, 24), Vector2(BOSS_BAR_WIDTH, BAR_HEIGHT), HP_COLOR)
 	_boss_hp_label = _label(box, Vector2(BOSS_BAR_WIDTH + 6, 22), "")
@@ -127,8 +129,10 @@ func _build_boss_bar(root):
 
 func _build_controls_hint(root):
 	var hint = Label.new()
-	hint.text = "P1: A/D move · W jump · Q/E dash · Space attack · L-Ctrl block/parry · F potion · S drop      " \
-		+ "P2 (pad): stick move · A jump · LB/RB dash · X attack · RT block/parry · Y potion"
+	hint.text = "P1: A/D move · W jump · ←/→ dash · Space attack · ↑ + Space upslash · L-Ctrl block/parry · F potion · S drop" \
+		+ "      Esc: boss select\n" \
+		+ "P2 (pad): stick move · A jump · LB/RB dash · X attack · stick up + X upslash · RT block/parry · Y potion" \
+		+ "      Dash + attack: dash-slash · dash-slash into your partner's upslash: launch"
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.modulate = Color(1, 1, 1, 0.6)
 	hint.anchor_top = 1.0
@@ -136,7 +140,7 @@ func _build_controls_hint(root):
 	hint.anchor_right = 1.0
 	hint.offset_left = 16.0
 	hint.offset_right = -16.0
-	hint.offset_top = -20.0
+	hint.offset_top = -36.0
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(hint)
 

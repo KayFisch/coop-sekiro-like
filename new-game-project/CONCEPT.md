@@ -15,7 +15,7 @@ Combat is sword-based. Players attack with their sword, and holding block reduce
 A relay means the boss's attack is redirected to the second player, who now has their own parry window. If the second player also perfect parries, the boss staggers and both players get a free window to deal damage. Nail the chain and you deal significantly more damage. Break it and you both pay for it.
 
 Not every attack is parriable. The boss has a vocabulary of attacks that require different responses:
-- **Sword relay** — leaping slash; each parry deflects him into another leap at the other player (P1, P2, P1), and the third parry knocks him into the arena's middle, staggered
+- **Jump attack** — leaping slash; each parry deflects him into another leap at the other player (P1, P2, P1), and the third parry knocks him into the arena's middle, staggered
 - **Grab** — he charges at you and his hands scoop in from both sides; dash exactly as they reach you to slip out of his grasp. Caught: lifted overhead as he jumps, then slammed into the floor
 - **Ground slam** — get airborne before it lands
 - **Grand slash** — a top-to-bottom arena-wide shockwave, both players must parry near-simultaneously or both take full damage
