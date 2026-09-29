@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://levels/gym/movement_gym.gd" id="1_gym"]
+
+[node name="MovementGym" type="Node2D"]
+script = ExtResource("1_gym")

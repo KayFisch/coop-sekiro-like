@@ -90,13 +90,13 @@ rather than footwork.
 ```
  x:  24                             476       576      676                             1128
  y 16 ═══════════════════════════════════════╤═══════════════════════════════════════════
-      │  (pan chains)                   anchor (576, 50)                  (pan chains) │
-      │                                      │                                         │
-      │                                      ●  ← Sphaera Pendula (home: 576, 250)      │
+	  │  (pan chains)                   anchor (576, 50)                  (pan chains) │
+	  │                                      │                                         │
+	  │                                      ●  ← Sphaera Pendula (home: 576, 250)      │
  y 470 ██████████████████████████████        │         ██████████████████████████████████
-      │        LEFT PAN (452 px)     │  THE PIT (200)  │        RIGHT PAN (452 px)      │
-                                             ▼
-                                   fall below y 780 → damage + respawn
+	  │        LEFT PAN (452 px)     │  THE PIT (200)  │        RIGHT PAN (452 px)      │
+											 ▼
+								   fall below y 780 → damage + respawn
 ```
 
 - **Two pans** (`AnimatableBody2D`, so the players standing on them ride along) on either side

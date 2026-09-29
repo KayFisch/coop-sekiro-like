@@ -130,7 +130,7 @@ func _build_boss_bar(root):
 func _build_controls_hint(root):
 	var hint = Label.new()
 	hint.text = "P1: A/D move · W jump · ←/→ dash · Space attack · ↑ + Space upslash · L-Ctrl block/parry · F potion · S drop" \
-		+ "      Esc: boss select\n" \
+		+ "      F1: movement switches · Esc: boss select\n" \
 		+ "P2 (pad): stick move · A jump · LB/RB dash · X attack · stick up + X upslash · RT block/parry · Y potion" \
 		+ "      Dash + attack: dash-slash · dash-slash into your partner's upslash: launch"
 	hint.add_theme_font_size_override("font_size", 12)

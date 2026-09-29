@@ -20,10 +20,10 @@ const ATTACK_WEIGHTS = {
 # Attacks that may come twice in a row; the rest never repeat back to back.
 const REPEATABLE_ATTACKS = ["JUMP_ATTACK"]
 # For testing: set to an attack's name (e.g. "TRIPLE_STAB") to use only that attack.
-const TEST_ONLY_ATTACK = "GROUND_SLAM"
+const TEST_ONLY_ATTACK = ""
 # For testing: 1 or 2 makes him target only that player (attacks aimed at both still hit the
 # other, who can't lose health). 0 targets both players as normal.
-const TEST_ONLY_TARGET = 2
+const TEST_ONLY_TARGET = 0
 
 const SWORD_REACH = 110.0  # blade tip distance from the pivot at scale 1 (see the scene)
 

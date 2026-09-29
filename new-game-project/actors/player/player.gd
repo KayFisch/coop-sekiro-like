@@ -4,10 +4,16 @@ signal health_changed(player, hp)
 signal damaged(player)
 signal blocked(player)
 signal died(player)
-signal launched(player)  # sent up by a partner's upslash (see _check_launch())
+signal launched(player)  # sent up by a partner's upslash (see _check_clashes())
+signal relayed(player)  # boosted off a partner's block (momentum relay, see _check_clashes())
 signal landed(player, air_time)  # touched down after air_time seconds off the ground
 
-enum Swing { SLASH, UPSLASH }
+enum Swing { SLASH, UPSLASH, DOWNSLASH }
+# Held in place for a moment by a clash with the partner (see _begin_hold()).
+enum Hold { NONE, CHIMNEY, RELAY_DASHER, RELAY_ANCHOR }
+
+# Which abilities are on is decided by the Moves autoload (core/moves.gd, F1 in game): every
+# ability below checks its switch there.
 
 # --- Movement tuning ---
 # Running: a slight ease in and out, never a slide (px/s and px/s²).
@@ -48,10 +54,10 @@ const CHIP_INVULN_TIME = 0.2
 # PARRY WINDOW (every boss attack), Sekiro-style: a block press opens a window of this length,
 # and a hit connecting inside it is a perfect parry. So the press must come at most this long
 # *before* contact; pressing after the hit has landed is too late. Raise for easier parries.
-const PARRY_TOLERANCE = 0.133
+const PARRY_TOLERANCE = 0.633
 # DODGE WINDOW (the grab), same idea: a dash press opens a window of this length, and the
 # boss's hands shutting inside it is a clean dodge. Press at most this long before they shut.
-const DODGE_TOLERANCE = 0.133
+const DODGE_TOLERANCE = 0.633
 const PARRY_SPAM_LOCK = 0.3  # a block press this soon after the previous one can't parry
 const ATTACK_ACTIVE_TIME = 0.15
 const ATTACK_RETURN_TIME = 0.1
@@ -60,7 +66,11 @@ const ATTACK_DAMAGE = 10.0
 const SWING_START_ANGLE = -1.05  # -60 degrees
 const SWING_END_ANGLE = 0.52  # +30 degrees, a 90 degree arc
 # Dash-slash: dash and attack together (or attack a moment before the dash) to dash with the
-# sword thrust out level in front, hitting all the way through the dash.
+# sword thrust out level in front, hitting all the way through the dash. It starts with a short
+# windup, held in place with the blade drawn back and brightening, so a partner can see it
+# coming and time a parry (see the momentum relay).
+const DASH_SLASH_WINDUP = 0.15
+const DASH_SLASH_WINDUP_DRAW = 14.0  # the blade drawn back this far behind the usual grip
 const DASH_SLASH_LEAD = 0.1  # an attack pressed at most this long before a dash turns into one...
 const DASH_SLASH_LATE = 0.06  # ...and so does one pressed at most this long after the dash starts
 const DASH_SLASH_DAMAGE = 15.0  # a plain slash is 10
@@ -89,10 +99,82 @@ const LAUNCH_REACH = Vector2(70.0, 50.0)  # center-to-center distance at which t
 const LAUNCH_HEIGHT = 340.0  # 2.5x a jump
 const LAUNCH_CARRY = 0.15  # fraction of the dash's sideways speed kept (~150 px/s)
 const LAUNCH_STRETCH = Vector2(0.7, 1.4)
+# FAST FALL: holding down in the air, once falling, pulls you down harder and faster.
+const FAST_FALL_GRAVITY = 2.2  # times the usual falling gravity
+const FAST_FALL_MAX_SPEED = 1900.0
+# WALLS (Moves "wall": off / slide / cling). In the air, press into a wall (or fly into it fast)
+# to stick to it, facing away from it; rising, you carry on up along it first. Sliding, you then
+# slip down at WALL_SLIDE_SPEED; clinging, you hang still for WALL_CLING_TIME, then slide. Press
+# away, or land, to let go. Wall jump: jump off a wall you're on or touching, up and away; for
+# WALL_JUMP_LOCK you can't steer back, so it carries you clear of the wall. A wall you jumped off
+# is spent until you land, catch a ledge or reach another wall: you can't stick to it, jump off
+# it or get refreshed by it again, so one wall alone can't be climbed (two facing ones can).
+# A wall you're merely next to only counts if you're moving into it: pressing toward it, or
+# still flying from the last wall jump (for WALL_FLIGHT_TIME). In that flight, holding back
+# toward the wall you left doesn't steer, so between two walls you can keep one direction held
+# and just time the jumps; a gap too wide to cross in that time ends the flight, and you drift back.
+# Walls and ledges refresh the dash (Moves "wall_refresh"), never the air jump.
+# Partners aren't walls.
+const WALL_PROBE = 4.0  # px: how close a wall has to be to stick to or jump off
+const WALL_ATTACH_SPEED = 150.0  # flying into a wall this fast sticks without pressing into it
+const WALL_SLIDE_SPEED = 140.0
+const WALL_CLING_TIME = 1.2
+const WALL_COYOTE_TIME = 0.1  # a wall jump this soon after letting go of the wall still works
+const WALL_SPENT_RANGE = 24.0  # px: a wall on the spent side this close to where you jumped is the same wall
+const WALL_JUMP_HEIGHT = 110.0
+const WALL_JUMP_PUSH = 360.0  # px/s away from the wall
+const WALL_JUMP_LOCK = 0.15
+const WALL_FLIGHT_TIME = 0.26  # how long a wall jump counts as flying at the next wall (~94 px)
+# LEDGE GRAB: in the air, pressing into a wall whose top edge is between a little above your
+# head and your middle, with room to stand up there: you catch the edge and hang. Up climbs at
+# once, and so does holding toward the wall once you've hung for LEDGE_MIN_HANG; jump jumps
+# from the hang; down or away lets go.
+const LEDGE_REACH_UP = 50.0  # the edge may be this far above your middle (head top + 30)...
+const LEDGE_REACH_DOWN = 6.0  # ...down to this far below it
+const LEDGE_MAX_RISE = 250.0  # rising faster than this, you fly past edges instead of catching them
+const LEDGE_HANG_DROP = 14.0  # hanging, your middle is this far below the edge
+const LEDGE_MIN_HANG = 0.1
+const LEDGE_CLIMB_TIME = 0.18
+const LEDGE_REGRAB_TIME = 0.3  # after letting go or jumping off
+# POGO (Moves "pogo", Hollow Knight style): down + attack in the air slashes below you. If the
+# blade hits something (a target, a boss, spikes, and if switched on your partner), you bounce up
+# to POGO_HEIGHT however fast you were falling. What it refreshes is up to the Moves switches.
+const DOWNSLASH_ACTIVE_TIME = 0.15
+const DOWNSLASH_RETURN_TIME = 0.1
+const DOWNSLASH_START_ANGLE = 0.8  # low in front...
+const DOWNSLASH_END_ANGLE = 2.35  # ...sweeping under you to behind
+const DOWNSLASH_DAMAGE = 10.0
+const POGO_HEIGHT = 110.0
+const POGO_PARTNER_REACH = Vector2(30.0, 40.0)  # blade's middle to the partner's, to bounce off them
+# CHIMNEY CLASH (Moves "chimney_clash"): two players who both just wall-jumped, flying at each
+# other, clash in mid-air: held a moment, then thrown back toward the walls they came from,
+# higher than a wall jump goes. A chimney too wide to climb alone becomes a climb for two.
+# Players collide, so flying into each other counts as meeting even once the bump has stopped them.
+const CHIMNEY_WINDOW = 0.6  # s since each one's wall jump
+const CHIMNEY_REACH = Vector2(60.0, 60.0)
+const CHIMNEY_CLASH_TIME = 0.1
+const CHIMNEY_BOOST_HEIGHT = 160.0
+const CHIMNEY_PUSH = 380.0
+# MOMENTUM RELAY (Moves "momentum_relay"): a dash-slash into a partner who parries it: their
+# block press must come at most RELAY_PARRY_TOLERANCE before the blades meet (the dash-slash's
+# windup is the cue). Just holding block, or pressing too early, only stops the dash with a dull
+# clang and bounces the dasher off (RELAY_FAIL_BOUNCE). On a parry the blades
+# lock for RELAY_CLASH_TIME, both held in place, while the dasher aims (8 directions, with move,
+# up/jump and down; no input keeps the dash's direction); then the dasher is boosted that way,
+# gravity off, and the partner pushed back the other way. It refreshes the dasher's dash (a
+# Moves switch) but never the air jump.
+const RELAY_CLASH_TIME = 0.25
+const RELAY_SPEED = 1000.0
+const RELAY_BOOST_TIME = 0.22  # ~220 px
+const RELAY_EXIT_FRACTION = 0.45  # of the boost's speed kept once it ends
+const RELAY_RECOIL = 220.0
+const RELAY_PARRY_TOLERANCE = 0.2
+const RELAY_FAIL_BOUNCE = Vector2(260.0, -220.0)  # the dasher, off a block that wasn't a parry
 const GUARD_ANGLE = -1.571  # sword held upright...
 const GUARD_OFFSET = Vector2(24, 30)  # ...in front of the body (x mirrors with facing)
 const DROP_THROUGH_TIME = 0.3
 const WORLD_LAYER = 1  # floor and walls
+const PLAYER_LAYER = 2  # players; they collide with each other while Moves "players_collide" is on
 const PLATFORM_LAYER = 4  # one-way platforms live on physics layer 4
 const SWORD_FLASH_TIME = 0.1
 const DODGE_FLASH_TIME = 0.25
@@ -146,7 +228,8 @@ var _dash_dir = 1.0
 var _dash_timer = 0.0
 var _dash_cooldown = 0.0
 var _dash_press_time = -100.0
-var _dash_slash = false  # this dash is a dash-slash
+var _dash_slash = false  # this dash is a dash-slash (also true through its windup)
+var _windup_timer = 0.0  # > 0 while winding up a dash-slash
 var _invuln_timer = 0.0
 var _drop_timer = 0.0
 var _sword_flash = 0.0
@@ -182,6 +265,35 @@ var _sword_color: Color
 var _hands: Array = []  # [ColorRect, ColorRect]
 var _was_on_floor = false
 var _air_time = 0.0  # seconds since leaving the ground
+var _fast_falling = false
+var _uncut_timer = 0.0  # > 0 while releasing jump mustn't cut the rise (a pogo, a bounce)
+var _pogoed = false  # this downslash already bounced
+var _wall_side = 0.0  # -1 / 1 while stuck to a wall on that side, else 0
+var _last_wall_side = 0.0
+var _wall_time = 0.0  # time stuck, not counting rising along it
+var _wall_coyote = 0.0
+var _spent_wall_side = 0.0  # the wall last jumped off (see WALL_SPENT_RANGE), 0 once cleared
+var _spent_wall_x = 0.0
+var _wall_jump_time = -100.0
+var _wall_jump_dir = 0.0  # which way the last wall jump flew
+var _wall_jump_lock = 0.0
+var _wall_flight = 0.0  # > 0 while flying from a wall jump (see WALL_FLIGHT_TIME)
+var _wall_held_away = 0.0  # a key held away from the wall since arriving on it (doesn't let go)
+var _ledge = false  # hanging from (or climbing over) a ledge
+var _ledge_side = 0.0
+var _ledge_hang = Vector2.ZERO
+var _ledge_stand = Vector2.ZERO  # where the climb ends
+var _ledge_time = 0.0
+var _ledge_climb = -1.0  # time into the climb; < 0 while hanging
+var _ledge_regrab = 0.0
+var _hold_kind = Hold.NONE
+var _hold_timer = 0.0
+var _hold_release = Vector2.ZERO
+var _hold_partner = null
+var _relay_dir = Vector2.RIGHT
+var _relay_arrow: ColorRect
+var _boost_timer = 0.0
+var _boost_velocity = Vector2.ZERO
 
 @onready var body: ColorRect = $ColorRect
 @onready var sword_pivot: Node2D = $SwordPivot
@@ -202,13 +314,31 @@ func _ready():
 	_setup_gather_label()
 	_setup_drink_bar()
 	_setup_hands()
+	_relay_arrow = ColorRect.new()
+	_relay_arrow.size = Vector2(38, 5)
+	_relay_arrow.pivot_offset = Vector2(0, 2.5)
+	_relay_arrow.position = Vector2(0, -2.5)
+	_relay_arrow.color = Color.WHITE
+	_relay_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_relay_arrow.visible = false
+	add_child(_relay_arrow)
+	_update_player_collision()
+	Moves.changed.connect(_update_player_collision)
 	GameManager.register_player(self)
+
+
+func _update_player_collision():
+	set_collision_mask_value(PLAYER_LAYER, Moves.on("players_collide"))
 
 
 func _physics_process(delta):
 	_tick_timers(delta)
 	if is_grabbed or is_clashing:
 		velocity = Vector2.ZERO  # carried by the boss, or braced holding him back
+	elif _hold_kind != Hold.NONE:
+		_process_hold(delta)
+	elif _ledge:
+		_process_ledge(delta)
 	elif is_tumbling():
 		_process_tumble(delta)
 	elif is_staggered():
@@ -218,12 +348,14 @@ func _physics_process(delta):
 	elif is_drinking():
 		_process_drinking(delta)
 		move_and_slide()
+	elif _windup_timer > 0.0:
+		_process_windup(delta)
+		move_and_slide()
 	else:
 		_process_movement(delta)
 		_process_actions()
 		move_and_slide()
-		if _dash_slash and _dash_timer > 0.0:
-			_check_launch()
+		_check_clashes()
 	if not is_grabbed and not is_clashing:
 		_apply_tether()
 	_track_landing()
@@ -231,15 +363,23 @@ func _physics_process(delta):
 	_update_visuals()
 
 
-# Normal gravity on the way up, heavier on the way down, up to the fall speed cap. (Tumbling
-# uses plain GRAVITY, so the grab's bounce height comes out as tuned.)
-func _apply_gravity(delta):
+# Normal gravity on the way up, heavier on the way down, up to the fall speed cap; heavier and
+# faster still when fast falling. (Tumbling uses plain GRAVITY, so the grab's bounce height
+# comes out as tuned.)
+func _apply_gravity(delta, fast = false):
 	var gravity = GRAVITY * (FALL_GRAVITY_MULTIPLIER if velocity.y > 0.0 else 1.0)
-	velocity.y = minf(velocity.y + gravity * delta, MAX_FALL_SPEED)
+	if fast:
+		velocity.y = minf(velocity.y + gravity * FAST_FALL_GRAVITY * delta, FAST_FALL_MAX_SPEED)
+	else:
+		velocity.y = minf(velocity.y + gravity * delta, MAX_FALL_SPEED)
 
 
+# Each player's input set; "Swap P1 / P2 controls" (Moves) trades them, e.g. to play solo on a pad.
 func _action(action_name: String) -> String:
-	return "p%d_%s" % [player_id, action_name]
+	var id = player_id
+	if Moves.on("swap_controls"):
+		id = 3 - player_id
+	return "p%d_%s" % [id, action_name]
 
 
 func _now() -> float:
@@ -257,18 +397,31 @@ func _process_movement(delta):
 		facing = signf(direction)
 	if _dash_slash and _dash_timer > 0.0:
 		facing = _dash_dir  # the thrust points the way of the dash
+	_fast_falling = false
 	if is_on_floor():
 		_air_jumps = AIR_JUMPS
 		_coyote_timer = COYOTE_TIME
+		_wall_side = 0.0
+		_spent_wall_side = 0.0
+		_wall_flight = 0.0
+	var holding_back = _wall_flight > 0.0 and direction != 0.0 and signf(direction) == -_wall_jump_dir
+	if holding_back:
+		facing = _wall_jump_dir  # holding toward the wall you left doesn't turn you around
 
+	if _boost_timer > 0.0:
+		velocity = _boost_velocity  # a relay boost: straight, gravity off
+		return
 	if _dash_timer > 0.0:
 		velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
 		return
+	if not is_on_floor() and _knockback_timer <= 0.0:
+		if _try_ledge_grab(direction) or _update_wall(direction, delta):
+			return
 
 	if _knockback_timer > 0.0:
 		velocity.x = move_toward(velocity.x, 0.0, KNOCKBACK_FRICTION * delta)
-	elif _launch_timer > 0.0 and direction == 0.0:
-		pass  # rising from a launch: keep its sliver of sideways carry until steered
+	elif (_launch_timer > 0.0 and direction == 0.0) or _wall_jump_lock > 0.0 or holding_back:
+		pass  # a launch's sideways carry (until steered), or flying off a wall: keep it
 	else:
 		var target = direction * SPEED * (BLOCK_SPEED_FACTOR if is_blocking() else 1.0)
 		if target != 0.0 and velocity.x != 0.0 and signf(target) != signf(velocity.x):
@@ -282,9 +435,227 @@ func _process_movement(delta):
 		else:
 			rate = AIR_ACCEL if speeding_up else AIR_DECEL
 		velocity.x = move_toward(velocity.x, target, rate * delta)
-	_apply_gravity(delta)
-	if Input.is_action_just_released(_action("jump")) and velocity.y < 0.0 and _launch_timer <= 0.0:
+	_fast_falling = Moves.on("fast_fall") and not is_on_floor() and velocity.y > 0.0 \
+		and Input.is_action_pressed(_action("down"))
+	_apply_gravity(delta, _fast_falling)
+	if Input.is_action_just_released(_action("jump")) and velocity.y < 0.0 and _launch_timer <= 0.0 \
+			and _uncut_timer <= 0.0:
 		velocity.y *= JUMP_CUT
+
+
+# --- Walls: slide / cling, wall jump ------------------------------------------
+
+# Sticks to, stays on, or lets go of a wall. True while on one (it has moved the player).
+func _update_wall(direction: float, delta: float) -> bool:
+	var mode = Moves.value("wall")
+	if _wall_side != 0.0:
+		if signf(direction) != _wall_held_away:
+			_wall_held_away = 0.0  # let go of (or changed) the key held on arrival
+		var pressing_away = direction != 0.0 and signf(direction) == -_wall_side and _wall_held_away == 0.0
+		if mode == "off" or pressing_away or not _touching_wall(_wall_side):
+			_leave_wall()
+	elif mode != "off":
+		var in_flight = _wall_flight > 0.0
+		for side in _sides_moving_into(direction):
+			if not _wall_spent(side) and _touching_wall(side):
+				_attach_wall(side)
+				# Carried here by a wall jump while still holding the other way: that key doesn't
+				# pull you off until it's let go, so chained wall jumps need no key switching.
+				_wall_held_away = signf(direction) if in_flight and signf(direction) == -side else 0.0
+				break
+	if _wall_side == 0.0:
+		return false
+	facing = -_wall_side
+	velocity.x = 0.0
+	if velocity.y < 0.0:
+		_apply_gravity(delta)  # still rising along it
+	elif mode == "cling" and _wall_time < WALL_CLING_TIME:
+		velocity.y = 0.0
+		_wall_time += delta
+	else:
+		velocity.y = WALL_SLIDE_SPEED
+		_wall_time += delta
+	return true
+
+
+# The sides you're moving into: the one pressed, the one you're flying toward fast, and the
+# one a wall jump is carrying you to.
+func _sides_moving_into(direction: float) -> Array:
+	var sides = []
+	if direction != 0.0:
+		sides.append(signf(direction))
+	if absf(velocity.x) >= WALL_ATTACH_SPEED:
+		sides.append(signf(velocity.x))
+	if _wall_flight > 0.0:
+		sides.append(_wall_jump_dir)
+	return sides
+
+
+# A wall right beside you on `side`. Only the world counts: a partner isn't a wall.
+func _touching_wall(side: float) -> bool:
+	var params = PhysicsTestMotionParameters2D.new()
+	params.from = global_transform
+	params.motion = Vector2(side * WALL_PROBE, 0.0)
+	var partners: Array[RID] = []
+	for other in get_tree().get_nodes_in_group("players"):
+		if other != self:
+			partners.append(other.get_rid())
+	params.exclude_bodies = partners
+	return PhysicsServer2D.body_test_motion(get_rid(), params)
+
+
+# The wall on `side` is the one last jumped off (see WALL_SPENT_RANGE).
+func _wall_spent(side: float) -> bool:
+	return side == _spent_wall_side and absf(global_position.x - _spent_wall_x) <= WALL_SPENT_RANGE
+
+
+func _attach_wall(side: float):
+	_wall_side = side
+	_wall_time = 0.0
+	_wall_flight = 0.0
+	_spent_wall_side = 0.0  # a new wall: the old one is fresh again
+	_dash_timer = 0.0
+	_dash_slash = false
+	_launch_timer = 0.0
+	_boost_timer = 0.0
+	if Moves.on("wall_refresh"):
+		refresh_dash()
+
+
+func _leave_wall():
+	if _wall_side != 0.0:
+		_last_wall_side = _wall_side
+		_wall_coyote = WALL_COYOTE_TIME
+	_wall_side = 0.0
+
+
+# The wall a jump now would push off: the one you're on, one you just let go of, or one you're
+# touching and moving into. 0 if none.
+func _wall_jump_side() -> float:
+	if _wall_side != 0.0:
+		return _wall_side
+	if _wall_coyote > 0.0:
+		return _last_wall_side
+	for side in _sides_moving_into(move_axis()):
+		if not _wall_spent(side) and _touching_wall(side):
+			return side
+	return 0.0
+
+
+func _wall_jump(side: float):
+	velocity = Vector2(-side * WALL_JUMP_PUSH, -sqrt(2.0 * GRAVITY * WALL_JUMP_HEIGHT))
+	facing = -side
+	_wall_side = 0.0
+	_wall_coyote = 0.0
+	_spent_wall_side = side
+	_spent_wall_x = global_position.x
+	_wall_jump_lock = WALL_JUMP_LOCK
+	_wall_jump_time = _now()
+	_wall_jump_dir = -side
+	_wall_flight = WALL_FLIGHT_TIME
+	_wall_held_away = 0.0
+	_jump_buffer = 0.0
+	_launch_timer = 0.0
+	_boost_timer = 0.0
+	_dash_timer = 0.0
+
+
+# --- Ledges: grab, hang, climb -------------------------------------------------
+
+# Catches a ledge if one is in reach on the side pressed into (or the wall you're on).
+func _try_ledge_grab(direction: float) -> bool:
+	if not Moves.on("ledge_grab") or _ledge_regrab > 0.0 or velocity.y < -LEDGE_MAX_RISE:
+		return false
+	var side = _wall_side if _wall_side != 0.0 else signf(direction)
+	if side == 0.0:
+		return false
+	var edge = _find_ledge(side)
+	if edge.is_empty():
+		return false
+	_ledge = true
+	_ledge_side = side
+	_ledge_hang = Vector2(edge.face_x - side * body.size.x / 2.0, edge.top + LEDGE_HANG_DROP)
+	_ledge_stand = edge.stand
+	_ledge_time = 0.0
+	_ledge_climb = -1.0
+	_wall_side = 0.0
+	_wall_flight = 0.0
+	_spent_wall_side = 0.0
+	_dash_timer = 0.0
+	_launch_timer = 0.0
+	_boost_timer = 0.0
+	velocity = Vector2.ZERO
+	global_position = _ledge_hang
+	facing = side
+	if Moves.on("wall_refresh"):
+		refresh_dash()
+	return true
+
+
+# A wall on `side` that ends within reach, with room to stand on top: {face_x, top, stand}.
+func _find_ledge(side: float) -> Dictionary:
+	var space = get_world_2d().direct_space_state
+	var half = body.size.x / 2.0
+	var at = global_position
+	var reach = side * (half + WALL_PROBE + 2.0)
+	if not _ray(space, at + Vector2(0.0, -LEDGE_REACH_UP), at + Vector2(reach, -LEDGE_REACH_UP)).is_empty():
+		return {}  # the wall goes on above: no edge in reach
+	var low = _ray(space, at + Vector2(0.0, LEDGE_REACH_DOWN), at + Vector2(reach, LEDGE_REACH_DOWN))
+	if low.is_empty():
+		return {}  # no wall here at all
+	var face_x = low.position.x
+	var inside = face_x + side * 3.0
+	var down = _ray(space, Vector2(inside, at.y - LEDGE_REACH_UP), Vector2(inside, at.y + LEDGE_REACH_DOWN + 1.0))
+	if down.is_empty():
+		return {}
+	var stand = Vector2(face_x + side * (half + 4.0), down.position.y - half - 1.0)
+	if not _room_for_body(space, stand):
+		return {}
+	return {"face_x": face_x, "top": down.position.y, "stand": stand}
+
+
+func _ray(space, from: Vector2, to: Vector2) -> Dictionary:
+	var query = PhysicsRayQueryParameters2D.create(from, to, 1 << (WORLD_LAYER - 1))
+	return space.intersect_ray(query)
+
+
+func _room_for_body(space, center: Vector2) -> bool:
+	var query = PhysicsShapeQueryParameters2D.new()
+	var shape = RectangleShape2D.new()
+	shape.size = body.size - Vector2(2.0, 2.0)
+	query.shape = shape
+	query.transform = Transform2D(0.0, center)
+	query.collision_mask = 1 << (WORLD_LAYER - 1)
+	return space.intersect_shape(query, 1).is_empty()
+
+
+func _process_ledge(delta):
+	velocity = Vector2.ZERO
+	if _ledge_climb >= 0.0:
+		# Up first, then over the edge.
+		_ledge_climb += delta
+		var t = clampf(_ledge_climb / LEDGE_CLIMB_TIME, 0.0, 1.0)
+		var up = Vector2(_ledge_hang.x, _ledge_stand.y)
+		global_position = _ledge_hang.lerp(up, minf(t * 2.0, 1.0)) if t < 0.5 else up.lerp(_ledge_stand, t * 2.0 - 1.0)
+		if t >= 1.0:
+			_ledge = false
+		return
+	global_position = _ledge_hang
+	_ledge_time += delta
+	var direction = move_axis()
+	var toward = direction != 0.0 and signf(direction) == _ledge_side
+	if signf(direction) != _wall_held_away:
+		_wall_held_away = 0.0
+	var away = direction != 0.0 and signf(direction) == -_ledge_side and _wall_held_away == 0.0
+	if Input.is_action_just_pressed(_action("jump")):
+		_ledge = false
+		_ledge_regrab = LEDGE_REGRAB_TIME
+		velocity.y = -sqrt(2.0 * GRAVITY * JUMP_HEIGHT)
+	elif Input.is_action_pressed(_action("up")) or (toward and _ledge_time >= LEDGE_MIN_HANG):
+		_ledge_climb = 0.0
+	elif away or Input.is_action_just_pressed(_action("down")):
+		_ledge = false
+		_ledge_regrab = LEDGE_REGRAB_TIME
 
 
 func _process_actions():
@@ -349,12 +720,16 @@ func _cancel_drink():
 		Sfx.stop(_drink_sound)
 
 
-# Jumps if it can: from the ground (or just off a ledge), else with an air jump. A fresh press
-# with no air jumps left stays buffered, and fires on landing if that comes soon enough.
+# Jumps if it can: from the ground (or just off a ledge), off a wall, else with an air jump. A
+# fresh press with none of those stays buffered, and fires on landing (or on reaching a wall)
+# if that comes soon enough.
 func _try_jump():
 	if _coyote_timer > 0.0:
 		velocity.y = -sqrt(2.0 * GRAVITY * JUMP_HEIGHT)
-	elif _air_jumps > 0 and Input.is_action_just_pressed(_action("jump")):
+	elif Moves.on("wall_jump") and _wall_jump_side() != 0.0:
+		_wall_jump(_wall_jump_side())
+		return
+	elif Moves.on("double_jump") and _air_jumps > 0 and Input.is_action_just_pressed(_action("jump")):
 		_air_jumps -= 1
 		velocity.y = -sqrt(2.0 * GRAVITY * DOUBLE_JUMP_HEIGHT)
 	else:
@@ -362,6 +737,8 @@ func _try_jump():
 	_jump_buffer = 0.0
 	_coyote_timer = 0.0
 	_launch_timer = 0.0
+	_boost_timer = 0.0
+	_uncut_timer = 0.0
 	if _dash_timer > 0.0:
 		# Jumping cancels a dash, carrying only a normal amount of its speed.
 		_dash_timer = 0.0
@@ -369,11 +746,14 @@ func _try_jump():
 
 
 func _start_dash(direction: float):
-	if _dash_cooldown > 0.0 or not _dash_ready:
+	if not Moves.on("dash") or _dash_cooldown > 0.0 or not _dash_ready:
 		return
 	# A slash pressed a moment ago turns into a dash-slash.
-	var slash_lead = _attack_timer > 0.0 and _swing_kind == Swing.SLASH \
+	var slash_lead = Moves.on("dash_slash") and _attack_timer > 0.0 and _swing_kind == Swing.SLASH \
 		and _now() - _slash_press_time <= DASH_SLASH_LEAD
+	_leave_wall()
+	_wall_flight = 0.0
+	_boost_timer = 0.0
 	_dash_ready = false
 	_dash_dir = direction
 	_dash_timer = DASH_TIME
@@ -399,13 +779,19 @@ func _start_dash(direction: float):
 # --- Sword: slash, upslash, dash-slash -----------------------------------------
 
 func _press_attack():
-	if _dash_timer > 0.0 and not _dash_slash and _now() - _dash_press_time <= DASH_SLASH_LATE:
+	if Moves.on("dash_slash") and _dash_timer > 0.0 and not _dash_slash \
+			and _now() - _dash_press_time <= DASH_SLASH_LATE:
 		_begin_dash_slash()  # attacking right as the dash starts
 		return
 	if _attack_cooldown > 0.0 or is_blocking():
 		return
 	if Input.is_action_pressed(_action("up")) and _dash_timer <= 0.0:
 		_press_upslash()
+		return
+	if Moves.on("pogo") and not is_on_floor() and _dash_timer <= 0.0 \
+			and Input.is_action_pressed(_action("down")):
+		_start_swing(Swing.DOWNSLASH)
+		Sfx.play("slash", -4.0)
 		return
 	_start_swing(Swing.SLASH)
 	_slash_press_time = _now()
@@ -416,7 +802,7 @@ func _press_attack():
 func _press_upslash():
 	_start_swing(Swing.UPSLASH)
 	_upslash_press_time = _now()
-	if _upslash_hop_ready:
+	if _upslash_hop_ready and Moves.on("upslash_hop"):
 		_upslash_hop_ready = false
 		velocity.y = minf(velocity.y, -sqrt(2.0 * GRAVITY * UPSLASH_HOP_HEIGHT))
 		_coyote_timer = 0.0
@@ -428,26 +814,63 @@ func _start_swing(kind: Swing):
 	_attack_timer = _swing_active_time() + _swing_return_time()
 	_attack_cooldown = UPSLASH_COOLDOWN if kind == Swing.UPSLASH else ATTACK_COOLDOWN
 	_attack_landed = false
+	_pogoed = false
 	swing_serial += 1
 
 
+# The dash-slash's windup: held in place, blade drawn back, then the dash (_process_windup()).
 func _begin_dash_slash():
 	_dash_slash = true
+	_windup_timer = DASH_SLASH_WINDUP
+	_dash_timer = 0.0
+	_attack_timer = 0.0
 	_attack_landed = false
-	_attack_cooldown = ATTACK_COOLDOWN
-	swing_serial += 1
+	_attack_cooldown = ATTACK_COOLDOWN + DASH_SLASH_WINDUP
 	facing = _dash_dir
+	velocity = Vector2.ZERO
+
+
+func _process_windup(delta):
+	velocity = Vector2.ZERO  # hanging still, even in the air
+	facing = _dash_dir
+	_windup_timer -= delta
+	if _windup_timer > 0.0:
+		return
+	_windup_timer = 0.0
+	_dash_timer = DASH_TIME
+	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
+	swing_serial += 1
 	_trail_timer = 0.0
+	if _stretch_tween:
+		_stretch_tween.kill()
+	body.scale = DASH_STRETCH
+	_stretch_tween = create_tween()
+	_stretch_tween.tween_property(body, "scale", Vector2.ONE, DASH_STRETCH_TIME) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	Sfx.play("stab", 1.0)
 	Sfx.play("slash", -2.0)
 
 
+func is_winding_up() -> bool:
+	return _windup_timer > 0.0
+
+
 func _swing_active_time() -> float:
-	return UPSLASH_ACTIVE_TIME if _swing_kind == Swing.UPSLASH else ATTACK_ACTIVE_TIME
+	match _swing_kind:
+		Swing.UPSLASH:
+			return UPSLASH_ACTIVE_TIME
+		Swing.DOWNSLASH:
+			return DOWNSLASH_ACTIVE_TIME
+	return ATTACK_ACTIVE_TIME
 
 
 func _swing_return_time() -> float:
-	return UPSLASH_RETURN_TIME if _swing_kind == Swing.UPSLASH else ATTACK_RETURN_TIME
+	match _swing_kind:
+		Swing.UPSLASH:
+			return UPSLASH_RETURN_TIME
+		Swing.DOWNSLASH:
+			return DOWNSLASH_RETURN_TIME
+	return ATTACK_RETURN_TIME
 
 
 func _swing_elapsed() -> float:
@@ -464,7 +887,12 @@ func _is_sword_active() -> bool:
 func _swing_damage() -> float:
 	if _dash_slash and _dash_timer > 0.0:
 		return DASH_SLASH_DAMAGE
-	return UPSLASH_DAMAGE if _swing_kind == Swing.UPSLASH else ATTACK_DAMAGE
+	match _swing_kind:
+		Swing.UPSLASH:
+			return UPSLASH_DAMAGE
+		Swing.DOWNSLASH:
+			return DOWNSLASH_DAMAGE
+	return ATTACK_DAMAGE
 
 
 # The middle of the blade's hitbox while it can hit, else null. For attacks with parts that
@@ -476,17 +904,50 @@ func active_sword_point():
 	return _sword_shape.global_position
 
 
+# Sword hits: damage on the boss (or a target), and a downslash bounces off whatever it hits.
 func _process_attack():
-	if _attack_landed or not _is_sword_active():
+	if not _is_sword_active():
 		return
+	var downslash = _swing_kind == Swing.DOWNSLASH and not (_dash_slash and _dash_timer > 0.0)
 	for hit in sword_hitbox.get_overlapping_bodies():
-		if hit.is_in_group("boss"):
+		if hit.is_in_group("boss") and not _attack_landed:
 			_attack_landed = true
 			hit.take_damage(_swing_damage() * GameManager.damage_multiplier(), self)
-			return
+			if downslash:
+				_pogo()
+		elif downslash and hit.is_in_group("pogo"):
+			_pogo()  # spikes and the like: no damage to deal, just the bounce
+	if downslash and not _pogoed and Moves.on("pogo_partner"):
+		var blade = _sword_shape.global_position
+		for other in get_tree().get_nodes_in_group("players"):
+			var gap = other.global_position - blade
+			if other != self and absf(gap.x) <= POGO_PARTNER_REACH.x and absf(gap.y) <= POGO_PARTNER_REACH.y:
+				other._sword_flash = SWORD_FLASH_TIME
+				_pogo()
 
 
-# --- Launch: a dash-slash clashing with the partner's upslash ------------------
+# The bounce off a downslash: up to POGO_HEIGHT, whatever the fall.
+func _pogo():
+	if _pogoed:
+		return
+	_pogoed = true
+	var rise = sqrt(2.0 * GRAVITY * POGO_HEIGHT)
+	velocity.y = -rise
+	_uncut_timer = rise / GRAVITY
+	_launch_timer = 0.0
+	_boost_timer = 0.0
+	if Moves.on("pogo_refresh_air_jump"):
+		_air_jumps = AIR_JUMPS
+		_upslash_hop_ready = true
+	if Moves.on("pogo_refresh_dash"):
+		_dash_ready = true
+		_dash_cooldown = 0.0
+	_sword_flash = SWORD_FLASH_TIME
+	_spawn_sparks(_sword_shape.global_position, 6, _sword_color.lightened(0.5))
+	Sfx.play("parry", -8.0)
+
+
+# --- Clashes with the partner: launch, momentum relay, chimney clash -----------
 
 # The upslash side of a launch: pressed recently enough to meet a dash-slash.
 func is_launch_ready() -> bool:
@@ -495,15 +956,191 @@ func is_launch_ready() -> bool:
 		and not is_grabbed and not is_staggered() and not is_tumbling()
 
 
-# Checked every frame of a dash-slash: have we run into a partner's upslash?
-func _check_launch():
+# Checked every frame: a dash-slash meeting the partner's upslash (launch) or block (relay), or
+# two wall jumps meeting (chimney clash).
+func _check_clashes():
 	for other in get_tree().get_nodes_in_group("players"):
-		if other == self or not other.is_launch_ready():
+		if other == self or other._hold_kind != Hold.NONE:
 			continue
 		var gap = other.global_position - global_position
-		if absf(gap.x) <= LAUNCH_REACH.x and absf(gap.y) <= LAUNCH_REACH.y:
-			_launch(other)
-			return
+		if _dash_slash and _dash_timer > 0.0 and absf(gap.x) <= LAUNCH_REACH.x and absf(gap.y) <= LAUNCH_REACH.y:
+			if Moves.on("launch") and other.is_launch_ready():
+				_launch(other)
+				return
+			if Moves.on("momentum_relay") and other.is_relay_parry():
+				_start_relay(other)
+				return
+			if Moves.on("momentum_relay") and other.is_blocking():
+				_relay_blocked(other)
+				return
+		# Each pair is checked once, by the lower id. Flying at each other, or already bumped
+		# together (the bump stops them) after jumping off opposite walls.
+		if Moves.on("chimney_clash") and player_id < other.player_id and _in_wall_flight() \
+				and other._in_wall_flight() and absf(gap.x) <= CHIMNEY_REACH.x \
+				and absf(gap.y) <= CHIMNEY_REACH.y:
+			var closing = gap.x * velocity.x > 0.0 and gap.x * other.velocity.x < 0.0
+			var bumped = _wall_jump_dir * gap.x > 0.0 and other._wall_jump_dir * gap.x < 0.0 \
+				and absf(gap.x) <= body.size.x + WALL_PROBE
+			if closing or bumped:
+				_chimney_clash(other)
+				return
+
+
+func _in_wall_flight() -> bool:
+	return not is_on_floor() and _hold_kind == Hold.NONE and _now() - _wall_jump_time <= CHIMNEY_WINDOW
+
+
+# Both thrown back toward the walls they jumped from, higher.
+func _chimney_clash(other):
+	var point = (global_position + other.global_position) / 2.0
+	var boost = -sqrt(2.0 * GRAVITY * CHIMNEY_BOOST_HEIGHT)
+	for p in [self, other]:
+		var back = signf(p.global_position.x - point.x)
+		p._begin_hold(Hold.CHIMNEY, CHIMNEY_CLASH_TIME, Vector2(back * CHIMNEY_PUSH, boost))
+		p._wall_jump_time = -100.0  # one clash per wall jump
+		p._spent_wall_side = 0.0  # thrown back at the wall they came from: it's climbable again
+		p._sword_flash = SWORD_FLASH_TIME
+	_spawn_sparks(point, 14, body_color.lerp(other.body_color, 0.5).lightened(0.5))
+	Sfx.play("parry_strong")
+	var cam = get_viewport().get_camera_2d()
+	if cam and cam.has_method("shake"):
+		cam.shake(4.0)
+
+
+# Blades locked: the dasher aims while both are held, then boosts (see _release_hold()).
+func _start_relay(anchor):
+	_relay_dir = Vector2(_dash_dir, 0.0)
+	_begin_hold(Hold.RELAY_DASHER, RELAY_CLASH_TIME, Vector2.ZERO, anchor)
+	# The anchor's hold outlasts the dasher's, so the dasher's release is what frees them.
+	anchor._begin_hold(Hold.RELAY_ANCHOR, RELAY_CLASH_TIME + 0.1)
+	anchor.parry_press_time = -100.0  # one press parries one dash-slash
+	_sword_flash = SWORD_FLASH_TIME
+	anchor._sword_flash = SWORD_FLASH_TIME
+	_spawn_sparks((global_position + anchor.global_position) / 2.0, 12, Color(1.0, 0.85, 0.4))
+	Sfx.play("parry_strong")
+	var cam = get_viewport().get_camera_2d()
+	if cam and cam.has_method("shake"):
+		cam.shake(4.0)
+	relayed.emit(self)
+
+
+# The partner parried a dash-slash: blocked, with the press timed to the blades meeting.
+func is_relay_parry() -> bool:
+	return is_blocking() and _now() - parry_press_time <= RELAY_PARRY_TOLERANCE
+
+
+# Blocked but not parried: the dash stops dead with a dull clang, and the dasher bounces off.
+func _relay_blocked(anchor):
+	_dash_timer = 0.0
+	_dash_slash = false
+	var back = -signf(anchor.global_position.x - global_position.x)
+	if back == 0.0:
+		back = -_dash_dir
+	apply_knockback(Vector2(back * RELAY_FAIL_BOUNCE.x, RELAY_FAIL_BOUNCE.y))
+	_spawn_sparks((global_position + anchor.global_position) / 2.0, 5, Color(0.6, 0.6, 0.6))
+	Sfx.play("chip")
+
+
+func _begin_hold(kind: Hold, time: float, release = Vector2.ZERO, partner = null):
+	_hold_kind = kind
+	_hold_timer = time
+	_hold_release = release
+	_hold_partner = partner
+	velocity = Vector2.ZERO
+	_dash_timer = 0.0
+	_dash_slash = false
+	_windup_timer = 0.0
+	_attack_timer = 0.0
+	_launch_timer = 0.0
+	_boost_timer = 0.0
+	_wall_side = 0.0
+	_wall_flight = 0.0
+
+
+func _process_hold(delta):
+	velocity = Vector2.ZERO
+	_hold_timer -= delta
+	if _hold_kind == Hold.RELAY_DASHER:
+		_relay_dir = _aim(_relay_dir)
+	if _hold_timer <= 0.0:
+		_release_hold()
+
+
+func _release_hold():
+	var kind = _hold_kind
+	_hold_kind = Hold.NONE
+	match kind:
+		Hold.CHIMNEY:
+			velocity = _hold_release
+			if velocity.x != 0.0:
+				facing = signf(velocity.x)
+				_wall_jump_dir = facing  # a flight back to the wall, like a wall jump's
+				_wall_flight = WALL_FLIGHT_TIME
+			_wall_jump_lock = WALL_JUMP_LOCK
+			_uncut_timer = -_hold_release.y / GRAVITY
+		Hold.RELAY_DASHER:
+			_boost_velocity = _relay_dir * RELAY_SPEED
+			_boost_timer = RELAY_BOOST_TIME
+			velocity = _boost_velocity
+			if _relay_dir.x != 0.0:
+				facing = signf(_relay_dir.x)
+			if Moves.on("relay_refresh_dash"):
+				_dash_ready = true
+				_dash_cooldown = 0.0
+			var anchor = _hold_partner
+			if anchor and is_instance_valid(anchor) and anchor._hold_kind == Hold.RELAY_ANCHOR:
+				anchor._hold_kind = Hold.NONE
+				anchor.apply_knockback(-_relay_dir * RELAY_RECOIL)
+			Sfx.play("launch", -4.0)
+	_hold_partner = null
+
+
+# The direction held right now, snapped to 8 ways (down counts); `fallback` if none.
+func _aim(fallback: Vector2) -> Vector2:
+	var aim = Vector2(move_axis(), 0.0)
+	if Input.is_action_pressed(_action("down")):
+		aim.y += 1.0
+	if Input.is_action_pressed(_action("up")) or Input.is_action_pressed(_action("jump")):
+		aim.y -= 1.0
+	if aim.length() < 0.5:
+		return fallback
+	return Vector2.from_angle(snappedf(aim.angle(), PI / 4.0))
+
+
+# Stops everything the player was doing in the air: walls, ledges, clashes, boosts. For hits,
+# grabs, respawns and the like.
+func interrupt_movement():
+	if _windup_timer > 0.0:
+		_windup_timer = 0.0
+		_dash_slash = false
+	_wall_side = 0.0
+	_wall_flight = 0.0
+	_ledge = false
+	_boost_timer = 0.0
+	_hold_kind = Hold.NONE
+	_hold_timer = 0.0
+	_hold_partner = null
+
+
+# What the player is doing, for readouts.
+func movement_state() -> String:
+	if _hold_kind != Hold.NONE:
+		return "clash"
+	if _ledge:
+		return "climbing" if _ledge_climb >= 0.0 else "ledge"
+	if _boost_timer > 0.0:
+		return "relay boost"
+	if _wall_side != 0.0:
+		return "wall cling" if velocity.y == 0.0 else "wall slide"
+	if _windup_timer > 0.0:
+		return "dash-slash windup"
+	if _dash_timer > 0.0:
+		return "dash-slash" if _dash_slash else "dash"
+	if is_on_floor():
+		return "ground"
+	if _fast_falling:
+		return "fast fall"
+	return "air"
 
 
 # The blades clash: the dash's momentum turns upward.
@@ -552,6 +1189,12 @@ func refresh_air_moves():
 	_upslash_hop_ready = true
 
 
+# Just the dash back (walls and ledges: the air jump only comes back on landing or a pogo).
+func refresh_dash():
+	_dash_ready = true
+	_dash_cooldown = 0.0
+
+
 func _tick_timers(delta):
 	if _dash_timer > 0.0 and _dash_timer <= delta:
 		# The dash runs out: keep only running speed, which the usual acceleration takes from there.
@@ -571,6 +1214,14 @@ func _tick_timers(delta):
 	_attack_timer = maxf(_attack_timer - delta, 0.0)
 	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
 	_launch_timer = maxf(_launch_timer - delta, 0.0)
+	if _boost_timer > 0.0 and _boost_timer <= delta:
+		velocity = _boost_velocity * RELAY_EXIT_FRACTION  # the boost runs out: keep some of it
+	_boost_timer = maxf(_boost_timer - delta, 0.0)
+	_uncut_timer = maxf(_uncut_timer - delta, 0.0)
+	_wall_coyote = maxf(_wall_coyote - delta, 0.0)
+	_wall_jump_lock = maxf(_wall_jump_lock - delta, 0.0)
+	_wall_flight = maxf(_wall_flight - delta, 0.0)
+	_ledge_regrab = maxf(_ledge_regrab - delta, 0.0)
 	_knockback_timer = maxf(_knockback_timer - delta, 0.0)
 	_stagger_timer = maxf(_stagger_timer - delta, 0.0)
 	if _drop_timer > 0.0:
@@ -625,14 +1276,18 @@ func is_on_main_floor() -> bool:
 	return false
 
 
-# What the player is standing on (e.g. which pan of the Scales), or null in the air.
+# What the player is standing on (e.g. which pan of the Scales), or null in the air. Standing on
+# the partner counts as standing on whatever they stand on.
 func get_floor_body():
 	if not is_on_floor():
 		return null
 	for i in get_slide_collision_count():
 		var collision = get_slide_collision(i)
 		if collision.get_normal().y < -0.7:
-			return collision.get_collider()
+			var collider = collision.get_collider()
+			if collider != null and collider.is_in_group("players") and collider != self:
+				return collider.get_floor_body()
+			return collider
 	return null
 
 
@@ -686,6 +1341,7 @@ func take_damage(amount: float, knockback = Vector2.ZERO, chip = false, ignore_i
 		hp = maxf(hp - amount, 0.0)
 	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
 	_dash_timer = 0.0
+	interrupt_movement()
 	_launch_timer = 0.0
 	_cancel_drink()
 	_hurt_flash = HURT_FLASH_TIME
@@ -712,6 +1368,7 @@ func set_grabbed(grabbed: bool):
 	is_grabbed = grabbed
 	velocity = Vector2.ZERO
 	_dash_timer = 0.0
+	interrupt_movement()
 	_launch_timer = 0.0
 	if grabbed:
 		_cancel_drink()  # being carried off interrupts the drink like a hit would
@@ -722,6 +1379,7 @@ func stagger(duration: float):
 	_stagger_timer = maxf(_stagger_timer, duration)
 	velocity.x = 0.0
 	_dash_timer = 0.0
+	interrupt_movement()
 	_attack_timer = 0.0
 
 
@@ -730,6 +1388,7 @@ func set_clashing(clashing: bool, overhead = true):
 	_clash_overhead = overhead
 	velocity = Vector2.ZERO
 	_dash_timer = 0.0
+	interrupt_movement()
 	_attack_timer = 0.0
 
 
@@ -800,6 +1459,7 @@ func tumble(launch: Vector2, impact_damage = 0.0, bounce = Vector2.ZERO, get_up_
 	_tumble_get_up = get_up_time
 	_tumble_floor_hits = 0
 	_dash_timer = 0.0
+	interrupt_movement()
 	_attack_timer = 0.0
 	_knockback_timer = 0.0
 	_launch_timer = 0.0
@@ -845,14 +1505,21 @@ func _process_tumble(delta):
 
 
 func _sword_angle() -> float:
-	if is_clashing:
-		return 0.0  # held flat against the boss's blade
+	if is_clashing or _hold_kind != Hold.NONE:
+		return 0.0  # held flat against the other blade
 	if _dash_slash and _dash_timer > 0.0:
 		return 0.0  # thrust out level through the whole dash
+	if _windup_timer > 0.0:
+		return -0.35  # drawn back, tip raised a little
 	if _attack_timer > 0.0:
-		var upslash = _swing_kind == Swing.UPSLASH
-		var start = UPSLASH_START_ANGLE if upslash else SWING_START_ANGLE
-		var end = UPSLASH_END_ANGLE if upslash else SWING_END_ANGLE
+		var start = SWING_START_ANGLE
+		var end = SWING_END_ANGLE
+		if _swing_kind == Swing.UPSLASH:
+			start = UPSLASH_START_ANGLE
+			end = UPSLASH_END_ANGLE
+		elif _swing_kind == Swing.DOWNSLASH:
+			start = DOWNSLASH_START_ANGLE
+			end = DOWNSLASH_END_ANGLE
 		var elapsed = _swing_elapsed()
 		var active = _swing_active_time()
 		if elapsed < active:
@@ -873,8 +1540,14 @@ func _update_visuals():
 	else:
 		_bob_time = 0.0
 	body.position.y = lerpf(body.position.y, _body_rest.y + bob, 0.3)
-	# Straining to hold the boss back: tremble.
-	body.position.x = _body_rest.x + (randf_range(-2.0, 2.0) if is_clashing else 0.0)
+	# Straining to hold the boss back, or locked with the partner's blade: tremble.
+	var straining = is_clashing or _hold_kind != Hold.NONE
+	body.position.x = _body_rest.x + (randf_range(-2.0, 2.0) if straining else 0.0)
+	# Aiming a relay: the arrow shows the way the boost will go.
+	_relay_arrow.visible = _hold_kind == Hold.RELAY_DASHER
+	if _relay_arrow.visible:
+		_relay_arrow.rotation = _relay_dir.angle()
+		_relay_arrow.color = body_color.lightened(0.6)
 
 	# Guard pose: sword upright in front of the body while blocking; in a clash, flat overhead
 	# (grand slash) or level against the boss's blade (triple stab); thrust forward through a
@@ -884,6 +1557,8 @@ func _update_visuals():
 		sword_offset = Vector2(-38.0 * facing, -28.0) if _clash_overhead else Vector2(0.0, -4.0)
 	elif _dash_slash and _dash_timer > 0.0:
 		sword_offset = Vector2(DASH_SLASH_THRUST * facing, 0.0)
+	elif _windup_timer > 0.0:
+		sword_offset = Vector2(-DASH_SLASH_WINDUP_DRAW * facing, 0.0)
 	elif is_blocking() and _attack_timer <= 0.0:
 		sword_offset = Vector2(GUARD_OFFSET.x * facing, GUARD_OFFSET.y)
 	sword_pivot.position = sword_pivot.position.lerp(sword_offset, 0.4)
@@ -895,6 +1570,8 @@ func _update_visuals():
 		sword.color = Color.WHITE
 	elif dash_slashing:
 		sword.color = _sword_color.lerp(Color.WHITE, DASH_SLASH_GLOW)
+	elif _windup_timer > 0.0:
+		sword.color = _sword_color.lerp(Color.WHITE, _windup_progress())  # heating up: the cue to parry
 	else:
 		sword.color = _sword_color
 	if dash_slashing:
@@ -910,10 +1587,14 @@ func _update_visuals():
 		color = Color(0.5, 1.0, 1.0)
 	elif _dash_timer > 0.0:
 		color = body_color.lightened(0.5)
+	elif _windup_timer > 0.0:
+		color = body_color.lightened(0.5 * _windup_progress())
 	elif _launch_timer > 0.0:
 		color = body_color.lerp(Color.WHITE, 0.3)
-	elif is_clashing:
+	elif straining:
 		color = body_color.lerp(Color(1.0, 0.8, 0.3), 0.35 + 0.25 * sin(_now() * 30.0))
+	elif _boost_timer > 0.0:
+		color = body_color.lightened(0.5)
 	elif is_staggered():
 		color = body_color.lerp(Color(0.6, 0.6, 0.6), 0.6)
 	elif is_blocking():
@@ -944,6 +1625,11 @@ func _update_visuals():
 			_gather_label.modulate = body_color.lerp(Color.WHITE, pulse)
 		else:
 			_gather_label.modulate = body_color.lerp(Color.WHITE, 0.5)
+
+
+# 0 -> 1 through a dash-slash's windup.
+func _windup_progress() -> float:
+	return 1.0 - _windup_timer / DASH_SLASH_WINDUP
 
 
 # A fading copy of the body and the long blade, left behind along a dash-slash.

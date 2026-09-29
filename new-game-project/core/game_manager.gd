@@ -60,7 +60,7 @@ func _process(delta):
 		elapsed_time += delta
 	elif Input.is_action_just_pressed("restart"):
 		restart()
-	if Input.is_action_just_pressed("menu") and get_tree().current_scene \
+	if Input.is_action_just_pressed("menu") and not Moves.panel_open and get_tree().current_scene \
 			and get_tree().current_scene.scene_file_path != SELECT_SCENE:
 		start_fight(SELECT_SCENE)
 
@@ -85,6 +85,7 @@ func register_player(player):
 	player.blocked.connect(_on_player_blocked)
 	player.died.connect(_on_player_died)
 	player.launched.connect(_on_player_launched)
+	player.relayed.connect(_on_player_launched)  # a momentum relay counts like a launch
 
 
 func register_boss(new_boss):
