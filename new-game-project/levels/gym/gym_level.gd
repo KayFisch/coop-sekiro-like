@@ -110,7 +110,7 @@ func _physics_process(_delta):
 			respawn(p)
 		var box = Rect2(p.global_position - Vector2.ONE * PLAYER_HALF, Vector2.ONE * PLAYER_HALF * 2.0)
 		for hazard in _spikes:
-			if hazard.intersects(box):
+			if hazard.intersects(box) and not p.just_pogoed():
 				Sfx.play("chip")
 				respawn(p)
 				break

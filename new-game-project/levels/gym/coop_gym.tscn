@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://lolkb5h6dx1g"]
 
-[ext_resource type="Script" path="res://levels/gym/coop_gym.gd" id="1_gym"]
+[ext_resource type="Script" uid="uid://c6iy3yb5badsr" path="res://levels/gym/coop_gym.gd" id="1_gym"]
 
-[node name="CoopGym" type="Node2D"]
+[node name="CoopGym" type="Node2D" unique_id=1397410059]
 script = ExtResource("1_gym")

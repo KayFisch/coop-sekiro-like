@@ -1,4 +1,4 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bvoqtoj1prr25"]
 
 [ext_resource type="Script" uid="uid://cegm7tvwnu1b3" path="res://actors/bosses/cubus_maximus/cubus_maximus.gd" id="1_cubus"]
 
@@ -11,12 +11,11 @@ size = Vector2(84, 18)
 [sub_resource type="RectangleShape2D" id="Shape_grab"]
 size = Vector2(100, 100)
 
-[node name="CubusMaximus" type="CharacterBody2D" groups=["boss"]]
+[node name="CubusMaximus" type="CharacterBody2D" unique_id=1670420235 groups=["boss"]]
 collision_layer = 4
-collision_mask = 1
 script = ExtResource("1_cubus")
 
-[node name="Glow" type="ColorRect" parent="."]
+[node name="Glow" type="ColorRect" parent="." unique_id=1144218344]
 offset_left = -65.0
 offset_top = -65.0
 offset_right = 65.0
@@ -24,7 +23,7 @@ offset_bottom = 65.0
 mouse_filter = 2
 color = Color(1, 1, 1, 0)
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1523348918]
 offset_left = -40.0
 offset_top = -40.0
 offset_right = 40.0
@@ -32,12 +31,12 @@ offset_bottom = 40.0
 mouse_filter = 2
 color = Color(0.27, 0.27, 0.3, 1)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1111564548]
 shape = SubResource("Shape_body")
 
-[node name="SwordPivot" type="Node2D" parent="."]
+[node name="SwordPivot" type="Node2D" parent="." unique_id=1686145198]
 
-[node name="Sword" type="ColorRect" parent="SwordPivot"]
+[node name="Sword" type="ColorRect" parent="SwordPivot" unique_id=935331373]
 offset_left = 30.0
 offset_top = -4.0
 offset_right = 110.0
@@ -45,19 +44,19 @@ offset_bottom = 4.0
 mouse_filter = 2
 color = Color(0.8, 0.82, 0.86, 1)
 
-[node name="SwordHitbox" type="Area2D" parent="SwordPivot"]
+[node name="SwordHitbox" type="Area2D" parent="SwordPivot" unique_id=1785241807]
 collision_layer = 0
 collision_mask = 2
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="SwordPivot/SwordHitbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SwordPivot/SwordHitbox" unique_id=324507532]
 position = Vector2(70, 0)
 shape = SubResource("Shape_sword")
 
-[node name="GrabArea" type="Area2D" parent="."]
+[node name="GrabArea" type="Area2D" parent="." unique_id=1632403845]
 collision_layer = 0
 collision_mask = 2
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="GrabArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GrabArea" unique_id=1518572120]
 shape = SubResource("Shape_grab")
