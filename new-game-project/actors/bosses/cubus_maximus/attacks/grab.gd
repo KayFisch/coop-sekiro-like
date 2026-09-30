@@ -2,8 +2,8 @@ class_name Grab
 extends Attack
 ## Purple -> red. Cubus Maximus charges at one player, homing in all the way. Once he's on
 ## them, he lets go of his sword and his hands scoop in from both sides, tracking the target
-## until they close. It can't be blocked: the target escapes only by dashing (any direction) as
-## the hands reach them, slipping out of his grasp, which leaves him tumbling.
+## until they close. It can't be blocked: the target escapes only by dashing (either way, even
+## into him) as the hands reach them, slipping out of his grasp, which leaves him tumbling.
 ## A caught player is lifted overhead as he jumps, carried down, and thrown steeply into the
 ## floor for the last stretch, bouncing off it toward the side of the arena with more room.
 
@@ -34,6 +34,8 @@ const HAND_OPEN_OFFSET = Vector2(75.0, 18.0)  # from the target's center (x mirr
 # meet the target to DODGE_LATE_WINDOW after. Raise it if the window feels too early.
 const DODGE_LATE_WINDOW = 0.07
 const CLAP_TIME = 0.12  # the hands snapping shut on empty air after a dodge
+const DUST_COUNT = 8  # specks puffing out of the clap
+const DUST_COLOR = Color(0.75, 0.75, 0.8)
 const TUMBLE_TIME = 0.8  # his stagger after a dodged grab
 # The slam: jump up with the target held overhead, come down, throw them the last stretch.
 const LIFT_TIME = 0.35
@@ -152,6 +154,9 @@ func update(delta: float):
 			for i in 2:
 				boss.place_hand(i, _clap_from[i].lerp(_clap_point + _hand_side(i) * Vector2(boss.hands[i].size.x / 2, 0.0), ease(t, 2.0)))
 			if timer <= 0.0:
+				# Shut on nothing: a clap and a puff of dust.
+				Sfx.play("clap")
+				_spawn_dust(_clap_point)
 				finish_with_stagger(TUMBLE_TIME, true)
 
 		Phase.GRAB_LIFT:
@@ -235,13 +240,20 @@ func _place_open_hands(t: float, center: Vector2):
 
 func _dodged():
 	boss.body.color = boss.COLOR_EXECUTE
-	boss.target_player.on_grab_dodged()
+	boss.target_player.on_grab_dodged(true)
 	grab_dodged.emit()
 	boss.shake(3.0)
-	# The hands snap shut on the spot the target just slipped out of.
+	# The hands snap shut on the spot the target just slipped out of. If the dash left them close
+	# to it (a dash into his body stops short), they shut just behind them: always on empty air.
 	phase = Phase.GRAB_CLAP
 	timer = CLAP_TIME
 	_clap_point = _shut_point
+	var target = boss.target_player
+	var clear = target.body.size.x / 2.0 + boss.hands[0].size.x
+	var moved = target.global_position.x - _shut_point.x
+	if absf(moved) < clear:
+		var away = signf(moved) if moved != 0.0 else signf(target.global_position.x - boss.global_position.x)
+		_clap_point.x = target.global_position.x - away * clear
 	_clap_from = [boss.hands[0].global_position + boss.hands[0].size / 2,
 		boss.hands[1].global_position + boss.hands[1].size / 2]
 
@@ -334,3 +346,20 @@ func _release():
 	var target = boss.target_player
 	if target and target.is_grabbed:
 		target.set_grabbed(false)
+
+
+# Grey specks puffing out where the hands met.
+func _spawn_dust(point: Vector2):
+	for i in DUST_COUNT:
+		var speck = ColorRect.new()
+		speck.top_level = true
+		speck.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		speck.size = Vector2(4, 4)
+		speck.color = DUST_COLOR
+		boss.add_child(speck)
+		speck.global_position = point
+		var fly = Vector2.from_angle(randf() * TAU) * randf_range(20.0, 60.0)
+		var tween = speck.create_tween().set_parallel()
+		tween.tween_property(speck, "global_position", point + fly, 0.3).set_ease(Tween.EASE_OUT)
+		tween.tween_property(speck, "modulate:a", 0.0, 0.3)
+		tween.chain().tween_callback(speck.queue_free)

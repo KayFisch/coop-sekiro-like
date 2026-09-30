@@ -7,27 +7,33 @@ extends Node
 signal changed
 
 const SAVE_PATH = "user://moves.cfg"
+# Bumped whenever the defaults change: a save from an older version is dropped once, so the new
+# defaults reach it (see _ready()).
+const VERSION = 2
 
 # Each switch: key, what the panel calls it, and its default (a bool, or one of `options`).
+# The fight kit is on by default; the platforming kit is off, for the gyms (see CONCEPT.md).
 const ENTRIES = [
-	{"key": "double_jump", "label": "Double jump", "default": true},
-	{"key": "dash", "label": "Dash", "default": true},
+	{"key": "double_jump", "label": "Double jump", "default": false},
+	{"key": "dash", "label": "Dash (the way you face)", "default": true},
 	{"key": "dash_slash", "label": "Dash-slash", "default": true},
-	{"key": "upslash_hop", "label": "Upslash hop", "default": true},
-	{"key": "fast_fall", "label": "Fast fall (hold down in the air)", "default": true},
-	{"key": "wall", "label": "Wall: slide or cling", "default": "slide", "options": ["off", "slide", "cling"]},
-	{"key": "wall_jump", "label": "Wall jump", "default": true},
-	{"key": "wall_refresh", "label": "Wall / ledge refreshes the dash", "default": true},
-	{"key": "ledge_grab", "label": "Ledge grab + climb", "default": true},
-	{"key": "pogo", "label": "Pogo (down + attack in the air)", "default": true},
-	{"key": "pogo_refresh_air_jump", "label": "   pogo refreshes the air jump", "default": true},
-	{"key": "pogo_refresh_dash", "label": "   pogo refreshes the dash", "default": true},
-	{"key": "pogo_partner", "label": "   pogo off your partner", "default": true},
+	{"key": "upslash_hop", "label": "Upslash hop", "default": false},
+	{"key": "fast_fall", "label": "Fast fall (hold down in the air)", "default": false},
+	{"key": "wall", "label": "Wall: slide or cling", "default": "off", "options": ["off", "slide", "cling"]},
+	{"key": "wall_jump", "label": "Wall jump", "default": false},
+	{"key": "wall_refresh", "label": "Wall / ledge refreshes the dash", "default": false},
+	{"key": "ledge_grab", "label": "Ledge grab + climb", "default": false},
+	{"key": "pogo", "label": "Pogo clash (downslash onto your partner's upslash)", "default": true},
+	{"key": "pogo_environment", "label": "Pogo off targets, spikes, lanterns (gyms)", "default": false},
+	{"key": "pogo_refresh_air_jump", "label": "   that pogo refreshes the air jump", "default": false},
+	{"key": "pogo_refresh_dash", "label": "   that pogo refreshes the dash", "default": false},
 	{"key": "launch", "label": "Launch (dash-slash into an upslash)", "default": true},
 	{"key": "momentum_relay", "label": "Momentum relay (dash-slash into a block)", "default": true},
-	{"key": "relay_refresh_dash", "label": "   relay refreshes the dash", "default": true},
-	{"key": "chimney_clash", "label": "Chimney clash (wall jumps meeting)", "default": true},
+	{"key": "relay_refresh_dash", "label": "   relay refreshes the dash", "default": false},
+	{"key": "chimney_clash", "label": "Chimney clash (wall jumps meeting)", "default": false},
 	{"key": "players_collide", "label": "Players collide (stand on, bump into each other)", "default": true},
+	{"key": "boss_body", "label": "Boss body blocks players (Cubus)", "default": true},
+	{"key": "call", "label": "Call countdown (P1 Enter, P2 LB)", "default": true},
 	{"key": "swap_controls", "label": "Swap P1 / P2 controls (P1 on the pad)", "default": false},
 ]
 
@@ -45,11 +51,15 @@ func _ready():
 	for e in ENTRIES:
 		_values[e.key] = e.default
 	var cfg = ConfigFile.new()
-	if cfg.load(SAVE_PATH) == OK:
-		for e in ENTRIES:
-			var saved = cfg.get_value("moves", e.key, e.default)
-			if typeof(saved) == typeof(e.default) and (not e.has("options") or saved in e.options):
-				_values[e.key] = saved
+	if cfg.load(SAVE_PATH) != OK:
+		return
+	if cfg.get_value("meta", "version", 1) != VERSION:
+		_save()  # an older save: back to the new defaults, once
+		return
+	for e in ENTRIES:
+		var saved = cfg.get_value("moves", e.key, e.default)
+		if typeof(saved) == typeof(e.default) and (not e.has("options") or saved in e.options):
+			_values[e.key] = saved
 
 
 # True if a switch is on (for a multi-way one: anything but "off").
@@ -64,11 +74,16 @@ func value(key: String):
 
 func set_value(key: String, v):
 	_values[key] = v
+	_save()
+	changed.emit()
+
+
+func _save():
 	var cfg = ConfigFile.new()
+	cfg.set_value("meta", "version", VERSION)
 	for e in ENTRIES:
 		cfg.set_value("moves", e.key, _values[e.key])
 	cfg.save(SAVE_PATH)
-	changed.emit()
 
 
 func reset_defaults():
@@ -158,7 +173,7 @@ func _refresh():
 		var e = ENTRIES[i]
 		var v = _values[e.key]
 		var shown = ("ON" if v else "off") if v is bool else str(v).to_upper()
-		lines.append("%s %-46s %s" % ["▶" if i == _selected else " ", e.label, shown])
+		lines.append("%s %-52s %s" % ["▶" if i == _selected else " ", e.label, shown])
 	lines.append("")
 	lines.append("%s %s" % ["▶" if _selected == ENTRIES.size() else " ", "Reset all to defaults"])
 	_text.text = "\n".join(lines)

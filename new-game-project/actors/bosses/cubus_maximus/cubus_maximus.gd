@@ -27,6 +27,14 @@ const TEST_ONLY_TARGET = 0
 
 const SWORD_REACH = 110.0  # blade tip distance from the pivot at scale 1 (see the scene)
 
+# His body (Moves "boss_body"): players can't get past him alone. He blocks them from his
+# bottom up to BOSS_BLOCK_HEIGHT, above a running jump (136) and far below a launch (340), as
+# wide as his body; the zone moves with him, so players walk under him while he's in the air.
+# Drawn faintly, so it isn't an invisible wall.
+const BOSS_BLOCK_HEIGHT = 170.0
+const BLOCK_ZONE_COLOR = Color(1.0, 1.0, 1.0, 0.035)
+const BLOCK_EDGE_COLOR = Color(1.0, 1.0, 1.0, 0.14)  # its top edge
+
 # Sword angles in radians, for a boss facing right (mirrored when facing left).
 const SWORD_REST_ANGLE = 0.3  # low guard; steeper would clip through the floor
 const SWORD_RAISED_ANGLE = -1.9
@@ -42,6 +50,8 @@ const HAND_DARKEN = 0.25  # hands are the body's color, a bit darker
 var sword_scale = Vector2.ONE
 var hands: Array = []  # [ColorRect, ColorRect]
 var hands_free = false  # true while an attack places the hands itself (see place_hand())
+
+var _block_zone: ColorRect
 
 @onready var sword_pivot: Node2D = $SwordPivot
 @onready var sword: ColorRect = $SwordPivot/Sword
@@ -90,9 +100,35 @@ func get_repeatable_attacks() -> Array:
 	return REPEATABLE_ATTACKS
 
 
+func body_block() -> Rect2:
+	if not Moves.on("boss_body") or hp <= 0.0:
+		return Rect2()
+	var bottom = global_position.y + body.size.y / 2.0
+	return Rect2(global_position.x - body.size.x / 2.0, bottom - BOSS_BLOCK_HEIGHT, body.size.x, BOSS_BLOCK_HEIGHT)
+
+
+func _update_block_zone():
+	_block_zone.visible = Moves.on("boss_body") and hp > 0.0
+
+
 # --- Sword and hands ---
 
 func _setup_pose():
+	# The block's faint column, behind everything else of his.
+	_block_zone = ColorRect.new()
+	_block_zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_block_zone.size = Vector2(body.size.x, BOSS_BLOCK_HEIGHT)
+	_block_zone.position = Vector2(-body.size.x / 2.0, body.size.y / 2.0 - BOSS_BLOCK_HEIGHT)
+	_block_zone.color = BLOCK_ZONE_COLOR
+	var edge = ColorRect.new()
+	edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	edge.size = Vector2(body.size.x, 2.0)
+	edge.color = BLOCK_EDGE_COLOR
+	_block_zone.add_child(edge)
+	add_child(_block_zone)
+	move_child(_block_zone, 0)  # drawn first: under his glow and body (a z_index below 0 would hide it under the arena)
+	_update_block_zone()
+	Moves.changed.connect(_update_block_zone)
 	for i in 2:
 		var hand = ColorRect.new()
 		hand.size = body.size * HAND_SIZE_RATIO
@@ -118,6 +154,7 @@ func _update_pose():
 func _die():
 	hands_free = false
 	super()
+	_update_block_zone()
 
 
 func reset_sword():

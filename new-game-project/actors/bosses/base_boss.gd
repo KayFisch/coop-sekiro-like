@@ -139,6 +139,12 @@ func _update_pose():
 	pass
 
 
+# The zone players can't enter (see _keep_out_of_boss() in player.gd), in world coordinates;
+# an empty Rect2 for none. It must move with the boss.
+func body_block() -> Rect2:
+	return Rect2()
+
+
 # Where the center charge floats.
 func hover_point() -> Vector2:
 	return Vector2(home_position.x, home_position.y - CENTER_HOVER_HEIGHT)
@@ -367,6 +373,11 @@ func _die():
 
 func get_players() -> Array:
 	return get_tree().get_nodes_in_group("players")
+
+
+# True while an attack aimed at `player` is telegraphed or running.
+func is_attacking(player) -> bool:
+	return state in [State.TELEGRAPH, State.ATTACKING] and target_player == player
 
 
 func partner_of(player):

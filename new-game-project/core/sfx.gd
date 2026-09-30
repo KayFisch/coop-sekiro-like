@@ -83,6 +83,10 @@ func _build_sounds():
 	_sounds["swing"] = _whoosh(0.35)  # Sphaera Pendula's heavy swings
 	_sounds["chain"] = _grind(0.3)  # chains paying out and snapping taut
 	_sounds["thunk"] = _thud(90.0, 38.0, 0.35, 8.0, 0.6)  # the sphere landing on a pan
+	_sounds["tell"] = _zip(0.12)  # ends on the tell ring's close (TELL_SOUND_TIME in player.gd)
+	_sounds["call_tick"] = _blip(1100.0, 0.06)
+	_sounds["call_go"] = _notes([784.0, 1174.7], 0.09, true)
+	_sounds["clap"] = _clap(0.09)  # the grab's hands shutting on nothing
 	_sounds["game_over"] = _notes([440.0, 349.2, 293.7], 0.17, false)
 	_sounds["victory"] = _notes([523.3, 659.3, 784.0, 1046.5], 0.125, true)
 
@@ -205,6 +209,42 @@ func _rise(duration: float) -> PackedVector2Array:
 		var s = sin(phase) + sin(phase * 2.0) * 0.4 + sin(phase * 3.0) * 0.2
 		s *= minf(t / 0.02, 1.0) * minf((duration - t) / 0.08, 1.0)
 		out[i] = Vector2.ONE * s * 0.3
+	return out
+
+
+# A quick rising zip that swells and stops dead: the end is the cue.
+func _zip(duration: float) -> PackedVector2Array:
+	var out = _buffer(duration)
+	var phase = 0.0
+	for i in out.size():
+		var k = i / float(out.size())
+		phase += TAU * lerpf(500.0, 1700.0, k * k) / MIX_RATE
+		var s = sin(phase) + sin(phase * 2.0) * 0.25
+		s *= k * k  # swelling into the cut-off
+		out[i] = Vector2.ONE * s * 0.4
+	return out
+
+
+# A short, clean sine blip, like a metronome tick.
+func _blip(freq: float, duration: float) -> PackedVector2Array:
+	var out = _buffer(duration)
+	for i in out.size():
+		var t = i / MIX_RATE
+		var s = sin(TAU * freq * t) * minf(t / 0.002, 1.0) * exp(-t * 60.0)
+		out[i] = Vector2.ONE * s * 0.5
+	return out
+
+
+# A dry clap: a bright noise burst with a fast decay.
+func _clap(duration: float) -> PackedVector2Array:
+	var out = _buffer(duration)
+	var last = 0.0
+	for i in out.size():
+		var t = i / MIX_RATE
+		var noise = randf_range(-1.0, 1.0)
+		var bright = noise - last  # a crude high-pass
+		last = noise
+		out[i] = Vector2.ONE * clampf(bright * 0.45 * exp(-t * 45.0) * minf(t / 0.001, 1.0), -1.0, 1.0)
 	return out
 
 

@@ -129,10 +129,12 @@ func _build_boss_bar(root):
 
 func _build_controls_hint(root):
 	var hint = Label.new()
-	hint.text = "P1: A/D move · W jump · ←/→ dash · Space attack · ↑ + Space upslash · L-Ctrl block/parry · F potion · S drop" \
-		+ "      F1: movement switches · Esc: boss select\n" \
-		+ "P2 (pad): stick move · A jump · LB/RB dash · X attack · stick up + X upslash · RT block/parry · Y potion" \
-		+ "      Dash + attack: dash-slash · dash-slash into your partner's upslash: launch"
+	hint.text = "P1: A/D move · W jump · R-Shift dash · Space attack · ↑ + Space upslash · S + Space (air) downslash" \
+		+ " · L-Shift block/parry · F potion · Enter call · S drop\n" \
+		+ "P2 (pad): stick move · A jump · RB dash · X attack · up + X upslash · down + X (air) downslash" \
+		+ " · RT block/parry · Y potion · LB call\n" \
+		+ "Dash + attack: dash-slash. Into your partner's upslash: launch · into their block: relay · press as the ring closes" \
+		+ " · Downslash onto their upslash: pogo clash      F1: switches · Esc: boss select"
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.modulate = Color(1, 1, 1, 0.6)
 	hint.anchor_top = 1.0
@@ -140,7 +142,7 @@ func _build_controls_hint(root):
 	hint.anchor_right = 1.0
 	hint.offset_left = 16.0
 	hint.offset_right = -16.0
-	hint.offset_top = -36.0
+	hint.offset_top = -52.0
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(hint)
 

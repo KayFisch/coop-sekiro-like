@@ -31,7 +31,47 @@ Successful relays and coordinated responses build a shared **sync meter**. Takin
 
 ---
 
+## Moveset
+
+The fight kit is built for the parry duet: each player's freedom is small, and the big moves take both of you. The platforming kit (double jump, walls, ledges, fast fall, environment pogo) is parked behind switches that are off by default. F1 in game shows every switch.
+
+**Alone**
+- **Run, jump** (136 px), drop through one-way platforms (down).
+- **Dash**: the way you face (hold a direction and press dash on the same frame to dash that way). 140 px, no invulnerability, 0.6 s cooldown, one per trip into the air. Only landing or a Launch gives it back. Pressed as the grab's hands close, it slips out of them whichever way you face, even into his body.
+- **Slash, upslash** (up + attack), **downslash** (down + attack in the air). A downslash never hurts the boss or bounces off him.
+- **Block / perfect parry**: press block at most 0.133 s before contact.
+- **Dash-slash** (dash + attack): a 0.2 s windup with the blade heating to white, then a long thrust through the whole dash. It stops at his body, but the blade still lands.
+
+**Together**
+- **Launch**: a dash-slash into the partner's upslash throws the dasher 340 px up.
+- **Momentum relay**: a dash-slash into the partner's parry locks the blades. The dasher aims sideways or upward (5 ways) and is boosted that way.
+- **Pogo clash**: a downslash onto the partner's upslash bounces the falling player 110 px. Nothing else bounces a downslash in a fight.
+- **The tell**: a dash-slash headed at the partner puts a ring in the dasher's color around them. It closes 0.08 s before the blades meet, which is the moment to press (block for a relay, upslash for a launch). A short sound ends on the close.
+- **Standing on each other**: players collide.
+- **Call** (P1 Enter, P2 LB): a 3, 2, 1, GO countdown over the caller's head on a 0.4 s beat, with both players pulsing. Pressing again cancels your own, and a partner's call replaces it.
+- Launch, relay and pogo clash each give +5 sync, at most once per 5 s between them.
+
+**His body**: Cubus Maximus blocks players from his bottom up to 170 px, above a running jump and far below a launch. The zone moves with him, so you can walk under him while he's in the air. Nobody stands on him: landing on top slides you off the side you came from. Getting past him takes your partner (a launch or a relay). Both players start on the same side of him.
+
+| Switch | Default |
+|---|---|
+| dash, dash_slash, launch, momentum_relay, players_collide | on |
+| pogo (the pogo clash) | on |
+| boss_body (Cubus only) | on |
+| call | on |
+| double_jump, upslash_hop, fast_fall, wall_jump, ledge_grab, chimney_clash | off |
+| wall | off (slide / cling) |
+| wall_refresh, relay_refresh_dash | off |
+| pogo_environment (targets, spikes, lanterns: the gyms), pogo_refresh_air_jump, pogo_refresh_dash | off |
+| swap_controls | off |
+
+Settings are saved in `user://moves.cfg` with a version. When the defaults change, the version goes up, and an older save is reset to the new defaults once.
+
+---
+
 ## Beyond the boss fight — platforming levels
+
+*Parked for now: the fight comes first. The gyms and the platforming switches above remain for experimenting.*
 
 The second pillar of the game is cooperative platforming. Like the combat, the platforming is built around timing interactions *between* players rather than just having two people traverse the same level. Planned mechanics include:
 

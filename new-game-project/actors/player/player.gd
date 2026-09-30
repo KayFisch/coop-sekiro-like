@@ -7,6 +7,7 @@ signal died(player)
 signal launched(player)  # sent up by a partner's upslash (see _check_clashes())
 signal relayed(player)  # boosted off a partner's block (momentum relay, see _check_clashes())
 signal landed(player, air_time)  # touched down after air_time seconds off the ground
+signal pogo_clashed(player)  # bounced off a partner's upslash (see _pogo_clash())
 
 enum Swing { SLASH, UPSLASH, DOWNSLASH }
 # Held in place for a moment by a clash with the partner (see _begin_hold()).
@@ -36,8 +37,9 @@ const AIR_JUMPS = 1  # extra jumps in the air
 const JUMP_CUT = 0.5  # releasing jump early keeps this fraction of upward speed
 const COYOTE_TIME = 0.1  # a jump this soon after running off a ledge still counts as grounded
 const JUMP_BUFFER_TIME = 0.12  # a jump pressed this soon before landing fires on landing
-# Dashing: straight left or right, ignoring gravity. One dash per trip into the air: it's only
-# refreshed by touching the ground.
+# Dashing: straight ahead, the way you face, ignoring gravity. Holding a direction and pressing
+# dash on the same frame dashes that way (movement turns you before actions run). One dash per
+# trip into the air: it's only refreshed by landing and by a launch.
 const DASH_DISTANCE = 140.0
 const DASH_TIME = 0.14
 const DASH_SPEED = DASH_DISTANCE / DASH_TIME
@@ -69,7 +71,7 @@ const SWING_END_ANGLE = 0.52  # +30 degrees, a 90 degree arc
 # sword thrust out level in front, hitting all the way through the dash. It starts with a short
 # windup, held in place with the blade drawn back and brightening, so a partner can see it
 # coming and time a parry (see the momentum relay).
-const DASH_SLASH_WINDUP = 0.15
+const DASH_SLASH_WINDUP = 0.2
 const DASH_SLASH_WINDUP_DRAW = 14.0  # the blade drawn back this far behind the usual grip
 const DASH_SLASH_LEAD = 0.1  # an attack pressed at most this long before a dash turns into one...
 const DASH_SLASH_LATE = 0.06  # ...and so does one pressed at most this long after the dash starts
@@ -79,6 +81,16 @@ const DASH_SLASH_REACH = 1.5  # ...and drawn out to this times its length (the h
 const DASH_SLASH_GLOW = 0.6  # the blade this far toward white-hot
 const DASH_SLASH_TRAIL_INTERVAL = 0.02  # an afterimage of the body this often through the dash
 const DASH_SLASH_TRAIL_FADE = 0.18
+# THE TELL: a dash-slash headed at the partner puts a ring in the dasher's color around them,
+# shrinking at a steady rate and closing TELL_LEAD before the blades meet: the moment to press
+# (block for a relay, upslash for a launch; inside both windows). The contact is predicted every
+# frame (see _predict_contact()). A short sound ends on the close.
+const TELL_LEAD = 0.08
+const TELL_CLOSED_RADIUS = 30.0  # just around the partner's body
+const TELL_SHRINK_SPEED = 380.0  # px/s
+const TELL_WIDTH = 3.0
+const TELL_FADE = 0.15  # fading out once the dash-slash is over
+const TELL_SOUND_TIME = 0.12  # the sound's length (see "tell" in sfx.gd): started this long before the close
 # Upslash: attack while holding up. A rising cut with a little hop, a fifth of a jump's height.
 # The hop is once per trip into the air, like the dash; the cut itself can be repeated.
 # Up pressed at most UPSLASH_LATE after the attack still counts, as for the dash-slash.
@@ -136,10 +148,15 @@ const LEDGE_HANG_DROP = 14.0  # hanging, your middle is this far below the edge
 const LEDGE_MIN_HANG = 0.1
 const LEDGE_CLIMB_TIME = 0.18
 const LEDGE_REGRAB_TIME = 0.3  # after letting go or jumping off
-# POGO (Moves "pogo", Hollow Knight style): down + attack in the air slashes below you. If there
-# is something in POGO_REACH under you (a target, a boss, spikes, and if switched on your partner)
-# from the press on, for POGO_WINDOW, you bounce up to POGO_HEIGHT however fast you were
-# falling. The blade's swing is only the look. What it refreshes is up to the Moves switches.
+# POGO: down + attack in the air slashes below you (a downslash; it never hurts the boss). What
+# is in POGO_REACH under you from the press on, for POGO_WINDOW, can bounce you up to POGO_HEIGHT
+# however fast you were falling. The blade's swing is only the look.
+# POGO CLASH (Moves "pogo"): the only bounce in a fight, off the partner, mirroring the launch.
+# The partner below upslashes as you arrive: at most POGO_CLASH_TOLERANCE before your pogo box
+# reaches them, or while it's still checking. Both blades flash, you bounce; nothing is refreshed.
+# A downslash onto a partner who didn't upslash does nothing special.
+# ENVIRONMENT POGO (Moves "pogo_environment", for the gyms): targets, lanterns and spikes bounce
+# it too, refreshing what the pogo_refresh switches say. Never the boss.
 const DOWNSLASH_ACTIVE_TIME = 0.06  # just the look: the pogo is the box (POGO_WINDOW)
 const DOWNSLASH_RETURN_TIME = 0.08
 const DOWNSLASH_START_ANGLE = 0.0  # level in front...
@@ -153,6 +170,7 @@ const POGO_RISE_GRAVITY = 1.6  # gravity times this on a pogo's rise: same heigh
 const POGO_REACH = Vector2(80.0, 28.0)
 const POGO_WINDOW = 0.15  # the box is checked this long from the press, whatever the blade is doing
 const POGO_GRACE = 0.1  # spikes touched this soon after a pogo don't count (see just_pogoed())
+const POGO_CLASH_TOLERANCE = 0.15
 # CHIMNEY CLASH (Moves "chimney_clash"): two players who both just wall-jumped, flying at each
 # other, clash in mid-air: held a moment, then thrown back toward the walls they came from,
 # higher than a wall jump goes. A chimney too wide to climb alone becomes a climb for two.
@@ -166,10 +184,10 @@ const CHIMNEY_PUSH = 380.0
 # block press must come at most RELAY_PARRY_TOLERANCE before the blades meet (the dash-slash's
 # windup is the cue). Just holding block, or pressing too early, only stops the dash with a dull
 # clang and bounces the dasher off (RELAY_FAIL_BOUNCE). On a parry the blades
-# lock for RELAY_CLASH_TIME, both held in place, while the dasher aims (8 directions, with move,
-# up/jump and down; no input keeps the dash's direction); then the dasher is boosted that way,
-# gravity off, and the partner pushed back the other way. It refreshes the dasher's dash (a
-# Moves switch) but never the air jump.
+# lock for RELAY_CLASH_TIME, both held in place, while the dasher aims (5 directions, sideways
+# or upward, with move and up/jump; never downward; no input keeps the dash's direction); then
+# the dasher is boosted that way, gravity off, and the partner pushed back the other way. The
+# dash comes back only if Moves "relay_refresh_dash" says so; the air jump never does.
 const RELAY_CLASH_TIME = 0.25
 const RELAY_SPEED = 1000.0
 const RELAY_BOOST_TIME = 0.22  # ~220 px
@@ -185,6 +203,7 @@ const PLAYER_LAYER = 2  # players; they collide with each other while Moves "pla
 const PLATFORM_LAYER = 4  # one-way platforms live on physics layer 4
 const SWORD_FLASH_TIME = 0.1
 const DODGE_FLASH_TIME = 0.25
+const DODGE_COLOR = Color(0.5, 1.0, 1.0)
 const HURT_FLASH_TIME = 0.5  # three 0.1s white flashes with 0.1s gaps
 const IDLE_BOB_HEIGHT = 3.0
 const IDLE_BOB_HZ = 0.6
@@ -201,6 +220,16 @@ const TUMBLE_IMPACT_SHAKE = 10.0
 # Tethered to the partner (Sphaera Pendula's shackle): a rope of tether_length. Past it, the rope
 # pulls the two together, moving whoever gives more: see _tether_give().
 const TETHER_MAX_CORRECTION = 40.0  # px per frame, so a respawn doesn't yank the partner across
+# BOSS BODY (Moves "boss_body"): a boss may block players with a zone (BaseBoss.body_block()).
+# Nobody walks, dashes or jumps through it, and nobody stands on it; see _keep_out_of_boss().
+const BOSS_SLIDE_SPEED = 900.0  # px/s: landing on top, you slide off the side you came from
+# CALL (Moves "call"): a 3, 2, 1, GO countdown over the caller's head, one beat per CALL_BEAT, so
+# GO lands CALL_COUNT beats after the press. Both players pulse on every beat. Informational only.
+const CALL_BEAT = 0.4
+const CALL_COUNT = 3
+const CALL_GO_HOLD = 0.35  # GO stays up this long
+const CALL_FONT_SIZE = 44
+const CALL_HEIGHT = 112.0  # the number's center, above the caller's
 # Hands: same proportions as the boss's (a fifth of the body, gripping the hilt).
 const HAND_SIZE_RATIO = 0.2
 const HAND_GRIPS = [0.075, 0.275]  # where each hand holds the sword, as a fraction of its length
@@ -304,6 +333,18 @@ var _relay_dir = Vector2.RIGHT
 var _relay_arrow: ColorRect
 var _boost_timer = 0.0
 var _boost_velocity = Vector2.ZERO
+var _tell_ring: Node2D  # drawn around the partner (see _update_tell())
+var _tell_partner = null
+var _tell_left = 0.0  # seconds to the ring's close
+var _tell_alpha = 0.0
+var _tell_sounded = false
+var _block_side = 1.0  # which side of the boss's block you're on (see _keep_out_of_boss())
+var _block_above = false  # clear of the block, above it, last frame
+var _block_sliding = false  # landed on top: sliding off
+var _block_ignored = false  # grabbed or thrown into it: passing through until clear
+var _call_time = -1.0  # time into the countdown; < 0 while there's none
+var _call_beat = -1
+var _call_label: Label
 
 @onready var body: ColorRect = $ColorRect
 @onready var sword_pivot: Node2D = $SwordPivot
@@ -317,8 +358,12 @@ func _ready():
 	sword.color = sword_color
 	body_color = player_color
 	_sword_color = sword_color
+	# Facing the boss if there is one (it's registered first: it comes before the players).
 	if player_id == 2:
 		facing = -1.0
+	if is_instance_valid(GameManager.boss) and GameManager.boss.global_position.x != global_position.x:
+		facing = signf(GameManager.boss.global_position.x - global_position.x)
+	_block_side = -facing
 	_body_rest = body.position
 	body.pivot_offset = body.size / 2  # stretch around the center
 	_setup_gather_label()
@@ -332,6 +377,13 @@ func _ready():
 	_relay_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_relay_arrow.visible = false
 	add_child(_relay_arrow)
+	_tell_ring = Node2D.new()
+	_tell_ring.top_level = true
+	_tell_ring.z_index = 5
+	_tell_ring.visible = false
+	_tell_ring.draw.connect(_draw_tell)
+	add_child(_tell_ring)
+	_setup_call_label()
 	_update_player_collision()
 	Moves.changed.connect(_update_player_collision)
 	GameManager.register_player(self)
@@ -343,6 +395,7 @@ func _update_player_collision():
 
 func _physics_process(delta):
 	_tick_timers(delta)
+	_process_call(delta)
 	if is_grabbed or is_clashing:
 		velocity = Vector2.ZERO  # carried by the boss, or braced holding him back
 	elif _hold_kind != Hold.NONE:
@@ -367,6 +420,7 @@ func _physics_process(delta):
 		_check_pogo(delta)
 		move_and_slide()
 		_check_clashes()
+	_keep_out_of_boss(delta)
 	if not is_grabbed and not is_clashing:
 		_apply_tether()
 	_track_landing()
@@ -677,11 +731,9 @@ func _process_actions():
 	if _jump_buffer > 0.0:
 		_try_jump()
 
-	# Dashes always go left or right, independent of facing.
-	if Input.is_action_just_pressed(_action("dash_left")):
-		_start_dash(-1.0)
-	elif Input.is_action_just_pressed(_action("dash_right")):
-		_start_dash(1.0)
+	# The dash goes the way you face (_process_movement() has already turned you this frame).
+	if Input.is_action_just_pressed(_action("dash")):
+		_start_dash(facing)
 
 	if Input.is_action_just_pressed(_action("block")):
 		var now = _now()
@@ -801,7 +853,7 @@ func _press_attack():
 	if Input.is_action_pressed(_action("up")) and _dash_timer <= 0.0:
 		_press_upslash()
 		return
-	if Moves.on("pogo") and not is_on_floor() and _dash_timer <= 0.0 \
+	if (Moves.on("pogo") or Moves.on("pogo_environment")) and not is_on_floor() and _dash_timer <= 0.0 \
 			and Input.is_action_pressed(_action("down")):
 		_start_swing(Swing.DOWNSLASH)
 		Sfx.play("slash", -4.0)
@@ -841,6 +893,7 @@ func _begin_dash_slash():
 	_attack_landed = false
 	_downslash_time = -100.0
 	_attack_cooldown = ATTACK_COOLDOWN + DASH_SLASH_WINDUP
+	_tell_sounded = false
 	facing = _dash_dir
 	velocity = Vector2.ZERO
 
@@ -919,7 +972,8 @@ func active_sword_point():
 	return _sword_shape.global_position
 
 
-# Sword hits: damage on the boss (or a target). A downslash's hits are _check_pogo()'s instead.
+# Sword hits: damage on the boss (or a target). A downslash never hits the boss; on targets its
+# hits are _check_pogo()'s.
 func _process_attack():
 	if not _is_sword_active() or _is_downslash():
 		return
@@ -933,22 +987,25 @@ func _is_downslash() -> bool:
 	return _swing_kind == Swing.DOWNSLASH and not (_dash_slash and _dash_timer > 0.0)
 
 
-# Before moving: a downslash hits and bounces off whatever is in POGO_REACH under you (stretched
-# by how far you fall this frame), so the bounce comes before you'd land in it. From the press
-# (that same frame) for POGO_WINDOW; the blade's position and timing don't matter.
+# Before moving: a downslash's pogo box, POGO_REACH under you (stretched by how far you fall this
+# frame), so the bounce comes before you'd land. From the press (that same frame) for
+# POGO_WINDOW; the blade's position and timing don't matter. The partner in it with a fresh
+# upslash is a pogo clash; with Moves "pogo_environment", targets, lanterns and spikes bounce it.
 func _check_pogo(delta):
 	if _pogoed or _now() - _downslash_time > POGO_WINDOW:
 		return
 	var half = body.size / 2.0
 	var depth = POGO_REACH.y + maxf(velocity.y * delta, 0.0)
-	if Moves.on("pogo_partner"):
+	if Moves.on("pogo"):
 		for other in get_tree().get_nodes_in_group("players"):
 			var gap = other.global_position - global_position
 			if other != self and absf(gap.x) <= POGO_REACH.x / 2.0 + half.x \
-					and gap.y >= half.y and gap.y <= body.size.y + depth:
-				other._sword_flash = SWORD_FLASH_TIME
-				_pogo()
+					and gap.y >= half.y and gap.y <= body.size.y + depth \
+					and other.is_upslash_fresh(POGO_CLASH_TOLERANCE):
+				_pogo_clash(other)
 				return
+	if not Moves.on("pogo_environment"):
+		return
 	var shape = RectangleShape2D.new()
 	shape.size = Vector2(POGO_REACH.x, half.y + depth)
 	var query = PhysicsShapeQueryParameters2D.new()
@@ -958,6 +1015,8 @@ func _check_pogo(delta):
 	query.exclude = [get_rid()]
 	for result in get_world_2d().direct_space_state.intersect_shape(query, 8):
 		var hit = result.collider
+		if hit is BaseBoss:
+			continue  # the boss is never pogoed off
 		if hit.is_in_group("boss") and not _attack_landed:
 			_attack_landed = true
 			hit.take_damage(_swing_damage() * GameManager.damage_multiplier(), self)
@@ -971,10 +1030,38 @@ func just_pogoed() -> bool:
 	return _now() - _pogo_time <= POGO_GRACE
 
 
-# The bounce off a downslash: up to POGO_HEIGHT, whatever the fall.
+# A bounce off something in the world (Moves "pogo_environment"), refreshing what the Moves
+# switches say.
 func _pogo():
 	if _pogoed:
 		return
+	_bounce()
+	if Moves.on("pogo_refresh_air_jump"):
+		_air_jumps = AIR_JUMPS
+		_upslash_hop_ready = true
+	if Moves.on("pogo_refresh_dash"):
+		_dash_ready = true
+		_dash_cooldown = 0.0
+	_spawn_sparks(global_position + Vector2(0.0, body.size.y / 2.0 + 6.0), 6, _sword_color.lightened(0.5))
+	Sfx.play("parry", -8.0)
+
+
+# The downslash met the partner's upslash: both blades flash and the downslasher bounces. No
+# refreshes. It counts toward the launch's sync gain (see GameManager).
+func _pogo_clash(partner):
+	_bounce()
+	partner.on_launch_clash()
+	var point = (global_position + partner.global_position) / 2.0
+	_spawn_sparks(point, 14, body_color.lerp(partner.body_color, 0.5).lightened(0.5))
+	Sfx.play("parry_strong")
+	var cam = get_viewport().get_camera_2d()
+	if cam and cam.has_method("shake"):
+		cam.shake(4.0)
+	pogo_clashed.emit(self)
+
+
+# The bounce off a downslash: up to POGO_HEIGHT, whatever the fall.
+func _bounce():
 	_pogoed = true
 	_pogo_time = _now()
 	var rise = sqrt(2.0 * GRAVITY * POGO_RISE_GRAVITY * POGO_HEIGHT)
@@ -983,23 +1070,20 @@ func _pogo():
 	_uncut_timer = _pogo_rise
 	_launch_timer = 0.0
 	_boost_timer = 0.0
-	if Moves.on("pogo_refresh_air_jump"):
-		_air_jumps = AIR_JUMPS
-		_upslash_hop_ready = true
-	if Moves.on("pogo_refresh_dash"):
-		_dash_ready = true
-		_dash_cooldown = 0.0
 	_sword_flash = SWORD_FLASH_TIME
-	_spawn_sparks(global_position + Vector2(0.0, body.size.y / 2.0 + 6.0), 6, _sword_color.lightened(0.5))
-	Sfx.play("parry", -8.0)
 
 
 # --- Clashes with the partner: launch, momentum relay, chimney clash -----------
 
 # The upslash side of a launch: pressed recently enough to meet a dash-slash.
 func is_launch_ready() -> bool:
+	return is_upslash_fresh(LAUNCH_TOLERANCE)
+
+
+# Upslashing, pressed at most `tolerance` ago (the launch and the pogo clash).
+func is_upslash_fresh(tolerance: float) -> bool:
 	return _swing_kind == Swing.UPSLASH and _attack_timer > 0.0 \
-		and _now() - _upslash_press_time <= LAUNCH_TOLERANCE \
+		and _now() - _upslash_press_time <= tolerance \
 		and not is_grabbed and not is_staggered() and not is_tumbling()
 
 
@@ -1142,11 +1226,10 @@ func _release_hold():
 	_hold_partner = null
 
 
-# The direction held right now, snapped to 8 ways (down counts); `fallback` if none.
+# The direction held right now, sideways or upward, snapped to 5 ways (down doesn't count);
+# `fallback` if none.
 func _aim(fallback: Vector2) -> Vector2:
 	var aim = Vector2(move_axis(), 0.0)
-	if Input.is_action_pressed(_action("down")):
-		aim.y += 1.0
 	if Input.is_action_pressed(_action("up")) or Input.is_action_pressed(_action("jump")):
 		aim.y -= 1.0
 	if aim.length() < 0.5:
@@ -1313,17 +1396,11 @@ func is_perfect_dodge() -> bool:
 	return not is_grabbed and _now() - _dash_press_time <= DODGE_TOLERANCE
 
 
-# Standing on the arena floor itself, not on a one-way platform.
+# Standing on the arena floor itself, not on a one-way platform. Standing on the partner counts
+# as standing where they stand (see get_floor_body()).
 func is_on_main_floor() -> bool:
-	if not is_on_floor():
-		return false
-	for i in get_slide_collision_count():
-		var collision = get_slide_collision(i)
-		var collider = collision.get_collider()
-		if collision.get_normal().y < -0.7 and collider is CollisionObject2D \
-				and collider.get_collision_layer_value(WORLD_LAYER):
-			return true
-	return false
+	var floor_body = get_floor_body()
+	return floor_body is CollisionObject2D and floor_body.get_collision_layer_value(WORLD_LAYER)
 
 
 # What the player is standing on (e.g. which pan of the Scales), or null in the air. Standing on
@@ -1379,8 +1456,12 @@ func on_perfect_parry(strong: bool):
 		cam.shake(7.0 if strong else 4.0)
 
 
-func on_grab_dodged():
+# burst: a ring bursting off the player and a whoosh on top of the flash (Cubus's grab).
+func on_grab_dodged(burst = false):
 	_dodge_flash = DODGE_FLASH_TIME
+	if burst:
+		_spawn_ring(DODGE_COLOR, 22.0, 60.0, DODGE_FLASH_TIME)
+		Sfx.play("slash", -2.0)
 
 
 # ignore_invuln: for hits chained faster than the post-hit invulnerability (the triple stab).
@@ -1508,6 +1589,7 @@ func tumble(launch: Vector2, impact_damage = 0.0, bounce = Vector2.ZERO, get_up_
 	_tumble_bounce = bounce
 	_tumble_get_up = get_up_time
 	_tumble_floor_hits = 0
+	_block_ignored = true  # thrown out of the boss's hands: through his block until clear of it
 	_dash_timer = 0.0
 	interrupt_movement()
 	_attack_timer = 0.0
@@ -1554,6 +1636,198 @@ func _process_tumble(delta):
 		set_collision_mask_value(PLATFORM_LAYER, true)
 
 
+# --- The boss's body (Moves "boss_body") ---------------------------------------
+
+# Keeps the player out of the boss's block (BaseBoss.body_block()). Runs after both have moved
+# this frame (the boss comes first in the tree), so his movement wins: an overlapping player is
+# pushed out sideways toward the side they were on, never through him; one landing on top
+# slides off the side they came from. The push goes through the player's own collision, so walls
+# stop it (a partner in the way is shoved along): with no room, the overlap stays until there
+# is. The block is never a wall or a floor to the movement: nothing else here sees it.
+func _keep_out_of_boss(delta):
+	var boss = GameManager.boss
+	var block: Rect2 = boss.body_block() if is_instance_valid(boss) else Rect2()
+	if block.size == Vector2.ZERO or is_grabbed:
+		_block_ignored = is_grabbed
+		_block_sliding = false
+		return
+	var me = Rect2(global_position - body.size / 2.0, body.size)
+	if not me.intersects(block):
+		_block_ignored = false
+		_block_sliding = false
+		_block_above = me.end.y <= block.position.y
+		# Beside or under him: that's your side. Over him, keep the side you came from.
+		var side = signf(global_position.x - block.get_center().x)
+		if not _block_above and side != 0.0:
+			_block_side = side
+		return
+	if _block_ignored:
+		return  # held or thrown: passing through until clear
+	if _block_above:
+		_block_sliding = true  # came down on top of him
+		_block_above = false
+	var out_x = block.position.x - body.size.x / 2.0 if _block_side < 0.0 else block.end.x + body.size.x / 2.0
+	var push = out_x - global_position.x
+	if _block_sliding:
+		push = clampf(push, -BOSS_SLIDE_SPEED * delta, BOSS_SLIDE_SPEED * delta)
+	var hit = move_and_collide(Vector2(push, 0.0))
+	# A partner in the way is shoved along (through their own collision too), so nobody is left
+	# inside him while there's room behind them. Not the one his attack is aimed at, though: he'd
+	# drag them along (his approach homes on them), so they stay the wall.
+	var other = hit.get_collider() if hit else null
+	if other is Node and other.is_in_group("players") and not boss.is_attacking(other):
+		other.move_and_collide(hit.get_remainder())
+		move_and_collide(hit.get_remainder())
+	if velocity.x * _block_side < 0.0:
+		velocity.x = 0.0  # stopped at his side, like at a wall
+
+
+# The boss's block lies between here and `x`, at this player's height.
+func _boss_in_the_way(x: float) -> bool:
+	var boss = GameManager.boss
+	if not is_instance_valid(boss):
+		return false
+	var block: Rect2 = boss.body_block()
+	if block.size == Vector2.ZERO:
+		return false
+	var span = Rect2(minf(x, global_position.x), global_position.y - body.size.y / 2.0,
+		absf(x - global_position.x), body.size.y)
+	return span.intersects(block)
+
+
+# --- The tell: when to press, around the partner of a dash-slash ---------------
+
+# Seconds until this dash-slash's blades meet `other` (LAUNCH_REACH), from where both are now:
+# what's left of the windup, then the run at dash speed. -1 if it won't reach them: not winding
+# up or dash-slashing, the partner not ahead or too high or low, out of the dash's range, or the
+# boss in the way.
+func _predict_contact(other) -> float:
+	var dashing = _dash_slash and _dash_timer > 0.0
+	if _windup_timer <= 0.0 and not dashing:
+		return -1.0
+	var gap = other.global_position - global_position
+	if signf(gap.x) != _dash_dir or absf(gap.y) > LAUNCH_REACH.y:
+		return -1.0
+	var run = maxf(0.0, absf(gap.x) - LAUNCH_REACH.x)
+	var reach = _dash_timer * DASH_SPEED if dashing else DASH_DISTANCE
+	if run > reach or _boss_in_the_way(other.global_position.x):
+		return -1.0
+	return _windup_timer + run / DASH_SPEED
+
+
+# Every frame: the ring follows the prediction, and fades once there's none (the dash-slash is
+# over, clashed, or can't reach).
+func _update_tell(delta):
+	var partner = null
+	var contact = -1.0
+	for other in get_tree().get_nodes_in_group("players"):
+		if other != self:
+			contact = _predict_contact(other)
+			if contact >= 0.0:
+				partner = other
+				break
+	if partner:
+		_tell_partner = partner
+		_tell_left = contact - TELL_LEAD
+		_tell_alpha = 1.0
+		if not _tell_sounded and _tell_left <= TELL_SOUND_TIME:
+			_tell_sounded = true
+			Sfx.play("tell", -3.0)
+	else:
+		_tell_alpha = move_toward(_tell_alpha, 0.0, delta / TELL_FADE)
+	_tell_ring.visible = _tell_alpha > 0.0 and is_instance_valid(_tell_partner)
+	if _tell_ring.visible:
+		_tell_ring.global_position = _tell_partner.global_position
+		_tell_ring.queue_redraw()
+
+
+func tell_radius() -> float:
+	return TELL_CLOSED_RADIUS + maxf(_tell_left, 0.0) * TELL_SHRINK_SPEED
+
+
+# True from the frame the ring closes until it has faded (for tests and readouts).
+func is_tell_closed() -> bool:
+	return _tell_ring.visible and _tell_left <= 0.0
+
+
+func _draw_tell():
+	var closed = _tell_left <= 0.0
+	var color = body_color.lightened(0.6) if closed else body_color.lightened(0.2)
+	var width = TELL_WIDTH * (2.0 if closed else 1.0)
+	_tell_ring.draw_arc(Vector2.ZERO, tell_radius(), 0.0, TAU, 48, Color(color, _tell_alpha), width, true)
+
+
+# --- Call: a countdown both players can follow ---------------------------------
+
+# The call button starts a 3, 2, 1, GO over this player's head (replacing a partner's running
+# one); pressed again during your own, it cancels it. Works whatever the player is doing.
+func _process_call(delta):
+	if Moves.on("call") and Input.is_action_just_pressed(_action("call")):
+		if _call_time >= 0.0:
+			cancel_call()
+		else:
+			for other in get_tree().get_nodes_in_group("players"):
+				if other != self:
+					other.cancel_call()
+			_call_time = 0.0
+			_call_beat = -1
+	if _call_time < 0.0:
+		return
+	var beat = floori(_call_time / CALL_BEAT + 0.001)
+	if beat > _call_beat and beat <= CALL_COUNT:
+		_call_beat = beat
+		_on_call_beat(beat)
+	if _call_time >= CALL_COUNT * CALL_BEAT + CALL_GO_HOLD:
+		cancel_call()
+	else:
+		_call_time += delta
+
+
+func cancel_call():
+	_call_time = -1.0
+	_call_beat = -1
+	_call_label.visible = false
+
+
+func is_calling() -> bool:
+	return _call_time >= 0.0
+
+
+# Beats 0, 1, 2 show 3, 2, 1 with a tick; beat CALL_COUNT is GO.
+func _on_call_beat(beat: int):
+	var go = beat == CALL_COUNT
+	_call_label.text = "GO" if go else str(CALL_COUNT - beat)
+	_call_label.visible = true
+	_call_label.scale = Vector2.ONE * 1.5
+	_call_label.create_tween().tween_property(_call_label, "scale", Vector2.ONE, CALL_BEAT * 0.5) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	for p in get_tree().get_nodes_in_group("players"):
+		p.pulse(Color.WHITE if go else body_color.lightened(0.3), go)
+	Sfx.play("call_go" if go else "call_tick", -2.0)
+
+
+# A ring swelling out of the player and fading: the call's beat, seen by both.
+func pulse(color: Color, strong = false):
+	_spawn_ring(color, 24.0, 70.0 if strong else 48.0, 0.3 if strong else 0.2)
+
+
+func _setup_call_label():
+	_call_label = Label.new()
+	_call_label.size = Vector2(120, 60)
+	_call_label.position = Vector2(-60, -CALL_HEIGHT - 30)
+	_call_label.pivot_offset = _call_label.size / 2
+	_call_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_call_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_call_label.add_theme_font_size_override("font_size", CALL_FONT_SIZE)
+	_call_label.add_theme_constant_override("outline_size", 8)
+	_call_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_call_label.modulate = body_color.lightened(0.2)
+	_call_label.z_index = 10
+	_call_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_call_label.visible = false
+	add_child(_call_label)
+
+
 func _sword_angle() -> float:
 	if is_clashing or _hold_kind != Hold.NONE:
 		return 0.0  # held flat against the other blade
@@ -1583,6 +1857,7 @@ func _sword_angle() -> float:
 
 
 func _update_visuals():
+	_update_tell(get_physics_process_delta_time())
 	# Idle bob while standing still on the ground; ease back to rest otherwise.
 	var bob = 0.0
 	if is_on_floor() and absf(velocity.x) < 1.0 and not is_grabbed:
@@ -1636,7 +1911,7 @@ func _update_visuals():
 	if _hurt_flash > 0.0 and fmod(HURT_FLASH_TIME - _hurt_flash, 0.2) < 0.1:
 		color = Color.WHITE
 	elif _dodge_flash > 0.0:
-		color = Color(0.5, 1.0, 1.0)
+		color = DODGE_COLOR
 	elif _dash_timer > 0.0:
 		color = body_color.lightened(0.5)
 	elif _windup_timer > 0.0:
@@ -1721,6 +1996,20 @@ func _spawn_sparks(point: Vector2, count: int, color: Color):
 		tween.tween_property(spark, "global_position", point + fly, 0.3).set_ease(Tween.EASE_OUT)
 		tween.tween_property(spark, "modulate:a", 0.0, 0.3)
 		tween.chain().tween_callback(spark.queue_free)
+
+
+# A circle outline around the player that swells from `from_radius` to `to_radius` and fades.
+func _spawn_ring(color: Color, from_radius: float, to_radius: float, duration: float):
+	var ring = Node2D.new()
+	ring.z_index = 4
+	ring.set_meta("radius", from_radius)
+	ring.draw.connect(func(): ring.draw_arc(Vector2.ZERO, ring.get_meta("radius"), 0.0, TAU, 40, color, 3.0, true))
+	add_child(ring)
+	var tween = ring.create_tween().set_parallel()
+	tween.tween_method(func(r): ring.set_meta("radius", r); ring.queue_redraw(), from_radius, to_radius, duration) \
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(ring, "modulate:a", 0.0, duration)
+	tween.chain().tween_callback(ring.queue_free)
 
 
 func _setup_drink_bar():

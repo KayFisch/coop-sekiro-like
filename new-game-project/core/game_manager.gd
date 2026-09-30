@@ -36,7 +36,7 @@ const SYNC_GAINS = {
 	"coupled_parried": 6.0,
 	"coupled_collision": 30.0,
 }
-const SYNC_LAUNCH_GAIN = 5.0  # a Launch (see player.gd), anywhere in any fight...
+const SYNC_LAUNCH_GAIN = 5.0  # a Launch, relay or pogo clash (see player.gd), in any fight...
 const SYNC_LAUNCH_COOLDOWN = 5.0  # ...at most once per this many seconds
 const SYNC_BLOCK_LOSS = 5.0
 const SYNC_HIT_LOSS = 10.0
@@ -86,6 +86,7 @@ func register_player(player):
 	player.died.connect(_on_player_died)
 	player.launched.connect(_on_player_launched)
 	player.relayed.connect(_on_player_launched)  # a momentum relay counts like a launch
+	player.pogo_clashed.connect(_on_player_launched)  # and so does a pogo clash
 
 
 func register_boss(new_boss):
