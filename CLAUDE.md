@@ -8,7 +8,7 @@ Keep this file short and true: when something here goes stale, fix it in the sam
 
 **Claude: do this at the start of every session, before anything else.**
 
-1. Ask who you're working with (Nick or Kay) if it isn't clear yet.
+1. Ask who you're working with (Nicho or Kay) if it isn't clear yet.
 2. `git rev-parse HEAD` (remember it as OLD), then `git pull`. If there are uncommitted local
    changes, say so instead of pulling.
 3. If OLD differs from the new HEAD, summarize for the person, in German, short (a few bullets):
@@ -28,7 +28,7 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
-### For Kay, from Nick (2026-09-30)
+### For Kay, from Nicho (2026-09-30)
 
 - The repo was restructured: the Godot project moved from `new-game-project/` to the **repo
   root**, and the design docs moved to `docs/` (`concept.md`, `boss_sphaera_pendula.md`,
@@ -78,6 +78,8 @@ Move files with `git mv`, or in the Godot editor, never one without the other.
 - `TASKS.md`: what's being done, by whom, and the open questions. Read it at the start of a
   session. Claim a task (`@name`) before starting it, so we don't both edit the same files.
   Tick it off in the commit that finishes it.
+- `TASKS.local.md` (gitignored, optional): a personal todo list, for things that only concern
+  one person (learning Godot, reminders). Not shared; never put team tasks there.
 - `scribbles.md`: unfinished ideas, playtest observations, "what if...". Append, don't polish.
   A decision moves to `docs/`; work moves to `TASKS.md`.
 
@@ -86,7 +88,7 @@ Move files with `git mv`, or in the Godot editor, never one without the other.
 - `git pull` before starting. `main` should always open and run in Godot.
 - **Small changes** (tuning, fixes, docs): commit straight to `main`, pull, push.
 - **Anything bigger or experimental** (new boss, a rework, a refactor touching many files):
-  a branch `<name>/<topic>` (e.g. `kay/top-down-test`, `nick/player-split`), merged into `main`
+  a branch `<name>/<topic>` (e.g. `kay/top-down-test`, `nicho/player-split`), merged into `main`
   once it runs. Delete it after merging.
 - Don't have both people touching `player.gd` or the same `.tscn` at the same time (claim it in
   `TASKS.md`). Scene files merge badly; prefer building nodes in code, as the existing scripts do.
@@ -111,7 +113,7 @@ Optional scope in parentheses: `feat(cubus): add grab follow-up`, `tune(player):
 ## Checking a change (Claude)
 
 Nobody can *play* the game but the humans, but Godot runs headless for a smoke test. Godot
-4.7.2 on Nick's machine: `C:/Program Files/Godot_v4.7.2-stable_win64_console.exe` (Kay's may
+4.7.2 on Nicho's machine: `C:/Program Files/Godot_v4.7.2-stable_win64_console.exe` (Kay's may
 differ). From the repo root:
 
 ```bash

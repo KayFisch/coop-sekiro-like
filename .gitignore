@@ -22,5 +22,8 @@ Thumbs.db
 desktop.ini
 .vscode/
 
+# Personal files (e.g. TASKS.local.md: private todo list)
+*.local.md
+
 # Claude Code: personal settings stay local (shared ones go in .claude/settings.json)
 .claude/settings.local.json
