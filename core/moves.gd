@@ -12,7 +12,7 @@ const SAVE_PATH = "user://moves.cfg"
 const VERSION = 2
 
 # Each switch: key, what the panel calls it, and its default (a bool, or one of `options`).
-# The fight kit is on by default; the platforming kit is off, for the gyms (see CONCEPT.md).
+# The fight kit is on by default; the platforming kit is off, for the gyms (see docs/concept.md).
 const ENTRIES = [
 	{"key": "double_jump", "label": "Double jump", "default": false},
 	{"key": "dash", "label": "Dash (the way you face)", "default": true},

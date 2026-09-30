@@ -46,7 +46,7 @@ hits, and counters deal bonus damage scaled by the sync multiplier.
    a set distance apart.
 2. **Two of six attacks leave the partner with nothing to do.** In the grab, the partner
    watches their friend get lifted and slammed, with no way to rescue them. That breaks the
-   rule in CONCEPT.md: *"neither player is just watching while the other does something"*.
+   rule in `concept.md`: *"neither player is just watching while the other does something"*.
 3. **Players never act *on each other*.** Every interaction between the players passes
    through the boss. The planned platforming verbs (dash into partner → upslash launch)
    don't exist in combat yet.
