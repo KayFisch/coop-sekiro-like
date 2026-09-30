@@ -4,11 +4,29 @@ Shared context for everyone working on this repo with Claude. Two people work on
 their own Claude sessions; this file, `TASKS.md` and `scribbles.md` are how we stay in sync.
 Keep this file short and true: when something here goes stale, fix it in the same commit.
 
+## Session start: pull, then tell what's new
+
+**Claude: do this at the start of every session, before anything else.**
+
+1. Ask who you're working with (Nick or Kay) if it isn't clear yet.
+2. `git rev-parse HEAD` (remember it as OLD), then `git pull`. If there are uncommitted local
+   changes, say so instead of pulling.
+3. If OLD differs from the new HEAD, summarize for the person, in German, short (a few bullets):
+   - what the *other* person changed: `git log --oneline OLD..HEAD` plus a look at
+     `git diff --stat OLD..HEAD` and the diffs that matter; describe what changed in the game
+     (feel, mechanics, structure), not file by file
+   - new or changed entries in `TASKS.md` (open questions, claimed tasks) and `scribbles.md`
+   - anything that needs action from them (reopen the project, a claimed file to avoid, ...)
+4. Handover notes below addressed to this person: pass them on, then delete them in your next
+   commit.
+5. Nothing new: one line saying so.
+
+When you finish work that the other person should know about and that the commits don't
+explain well (a moved folder, a changed convention, a decision), leave a handover note.
+
 ## Handover notes
 
-A note from one person to the other. **Claude: at the start of a session, if a note here is
-addressed to the person you're working with, tell them about it (in German, briefly) before
-anything else, then delete the note in your next commit.**
+Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
 ### For Kay, from Nick (2026-09-30)
 
