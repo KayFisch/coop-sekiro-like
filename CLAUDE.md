@@ -4,6 +4,27 @@ Shared context for everyone working on this repo with Claude. Two people work on
 their own Claude sessions; this file, `TASKS.md` and `scribbles.md` are how we stay in sync.
 Keep this file short and true: when something here goes stale, fix it in the same commit.
 
+## Handover notes
+
+A note from one person to the other. **Claude: at the start of a session, if a note here is
+addressed to the person you're working with, tell them about it (in German, briefly) before
+anything else, then delete the note in your next commit.**
+
+### For Kay, from Nick (2026-09-30)
+
+- The repo was restructured: the Godot project moved from `new-game-project/` to the **repo
+  root**, and the design docs moved to `docs/` (`concept.md`, `boss_sphaera_pendula.md`,
+  `parkour_gyms.md`). Your "basics revamp" is included unchanged.
+- In Godot: open the project again via `coop-sekiro-like/project.godot` and remove the old
+  "new-game-project" entry. Delete the leftover local `new-game-project/` folder (it only holds
+  the old `.godot` cache).
+- New shared files: this `CLAUDE.md` (please read "Git workflow": commit format
+  `type: message`, branches `name/topic` for bigger things), `TASKS.md` (claim tasks with
+  `@name`; open design questions at the top, side-scroller vs. top-down first) and
+  `scribbles.md` (dump unfinished ideas there).
+- Cleanup of the `.gd` files is planned in `TASKS.md`: part 1 can start now, but splitting
+  `player.gd` waits until side-scroller vs. top-down is decided.
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
