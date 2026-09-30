@@ -6,17 +6,22 @@ Keep this file short and true: when something here goes stale, fix it in the sam
 
 ## Session start: pull, then tell what's new
 
-**Claude: do this at the start of every session, before anything else.**
+A SessionStart hook (`.claude/settings.json` → `.claude/hooks/session-start.sh`) pulls
+automatically and puts a "Session start" block into your context: pull result and the commits
+since this clone's last session (tracked in `.git/claude-last-seen`, per clone).
+
+**Claude: at the start of every session, before anything else:**
 
 1. Ask who you're working with (Nicho or Kay) if it isn't clear yet.
-2. `git rev-parse HEAD` (remember it as OLD), then `git pull`. If there are uncommitted local
-   changes, say so instead of pulling.
-3. If OLD differs from the new HEAD, summarize for the person, in German, short (a few bullets):
-   - what the *other* person changed: `git log --oneline OLD..HEAD` plus a look at
-     `git diff --stat OLD..HEAD` and the diffs that matter; describe what changed in the game
-     (feel, mechanics, structure), not file by file
+2. Read the hook's block. If it's missing (hook didn't run), do it by hand: note
+   `git rev-parse HEAD`, `git pull`, compare. If the pull failed or was skipped (uncommitted
+   changes), say so first.
+3. If there are new commits, summarize for the person, in German, short (a few bullets):
+   - what the *other* person changed: read the relevant diffs (`git diff <old>..HEAD`);
+     describe what changed in the game (feel, mechanics, structure), not file by file
    - new or changed entries in `TASKS.md` (open questions, claimed tasks) and `scribbles.md`
    - anything that needs action from them (reopen the project, a claimed file to avoid, ...)
+   On a first session in a clone, summarize the recent commits by the other person instead.
 4. Handover notes below addressed to this person: pass them on, then delete them in your next
    commit.
 5. Nothing new: one line saying so.
@@ -38,10 +43,15 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   the old `.godot` cache).
 - New shared files: this `CLAUDE.md` (please read "Git workflow": commit format
   `type: message`, branches `name/topic` for bigger things), `TASKS.md` (claim tasks with
-  `@name`; open design questions at the top, side-scroller vs. top-down first) and
-  `scribbles.md` (dump unfinished ideas there).
-- Cleanup of the `.gd` files is planned in `TASKS.md`: part 1 can start now, but splitting
-  `player.gd` waits until side-scroller vs. top-down is decided.
+  `@name`; open design questions at the top), `scribbles.md` (dump unfinished ideas there),
+  and optionally a private `TASKS.local.md` (gitignored).
+- **Side-scroller it is.** Nicho had top-down in mind but agrees with your side-scroller (see
+  "Decisions" in `TASKS.md`).
+- The session-start routine you agreed to is now a hook: every Claude session pulls and lists
+  what's new automatically (`.claude/settings.json`, `.claude/hooks/session-start.sh`).
+- Cleanup is planned in `TASKS.md`: the `.gd` files (now including splitting `player.gd`, since
+  side-scroller is settled) and `docs/concept.md` (mixes vision with a numbers spec, parts
+  outdated; review notes are in the task). Neither is claimed yet.
 
 ## The project
 
@@ -49,9 +59,9 @@ A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and C
 core idea: players act *through* each other (parry relay: one player's perfect parry passes the
 boss's attack to the partner). Full pitch and current moveset: `docs/concept.md`.
 
-**Status: prototype, design under review.** After the first playtest (2026-09-29) some
-fundamental questions are open, the biggest being **side-scroller vs. top-down** (see
-`TASKS.md` → "Offene Grundsatzfragen"). Treat the existing bosses, attacks and moves as
+**Status: prototype, design under review.** Settled: it's a **2D side-scroller**. After the
+first playtest (2026-09-29) other fundamental questions are open (see `TASKS.md` → "Offene
+Grundsatzfragen"). Treat the existing bosses, attacks and moves as
 experiments, not settled design. Nothing is sacred; don't preserve code for its own sake, and
 don't build on a mechanic whose question is still open without asking.
 
