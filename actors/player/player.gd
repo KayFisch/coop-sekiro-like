@@ -56,6 +56,9 @@ const CHIP_INVULN_TIME = 0.2
 # PARRY WINDOW (every boss attack), Sekiro-style: a block press opens a window of this length,
 # and a hit connecting inside it is a perfect parry. So the press must come at most this long
 # *before* contact; pressing after the hit has landed is too late. Raise for easier parries.
+# A swing commits: from the attack press until the blade is back (and all through a dash-slash),
+# block does nothing, and a parry window opened just before the swing is given up. So there's
+# no attacking and parrying at once (see _is_swinging()).
 const PARRY_TOLERANCE = 0.133
 # DODGE WINDOW (the grab), same idea: a dash press opens a window of this length, and the
 # boss's hands shutting inside it is a clean dodge. Press at most this long before they shut.
@@ -735,7 +738,7 @@ func _process_actions():
 	if Input.is_action_just_pressed(_action("dash")):
 		_start_dash(facing)
 
-	if Input.is_action_just_pressed(_action("block")):
+	if Input.is_action_just_pressed(_action("block")) and not _is_swinging():
 		var now = _now()
 		# Mashing doesn't parry: a press too soon after the previous one isn't a parry attempt.
 		parry_press_time = now if now - _last_block_press >= PARRY_SPAM_LOCK else -100.0
@@ -881,6 +884,7 @@ func _start_swing(kind: Swing):
 	_attack_landed = false
 	_pogoed = false
 	_downslash_time = _now() if kind == Swing.DOWNSLASH else -100.0
+	parry_press_time = -100.0  # a swing gives up the parry window
 	swing_serial += 1
 
 
@@ -893,6 +897,7 @@ func _begin_dash_slash():
 	_attack_landed = false
 	_downslash_time = -100.0
 	_attack_cooldown = ATTACK_COOLDOWN + DASH_SLASH_WINDUP
+	parry_press_time = -100.0  # as a swing does
 	_tell_sounded = false
 	facing = _dash_dir
 	velocity = Vector2.ZERO
@@ -943,6 +948,12 @@ func _swing_return_time() -> float:
 
 func _swing_elapsed() -> float:
 	return _swing_active_time() + _swing_return_time() - _attack_timer
+
+
+# True from the attack press until the blade is back: a swing and its return, or a dash-slash
+# from its windup to the end of the dash. No blocking or parrying meanwhile.
+func _is_swinging() -> bool:
+	return _attack_timer > 0.0 or _windup_timer > 0.0 or (_dash_slash and _dash_timer > 0.0)
 
 
 # True while the blade can hit: a swing's active part, or all through a dash-slash.
@@ -1380,7 +1391,7 @@ func _track_landing():
 
 func is_blocking() -> bool:
 	return not is_grabbed and not is_drinking() and not is_staggered() and not is_tumbling() \
-		and Input.is_action_pressed(_action("block"))
+		and not _is_swinging() and Input.is_action_pressed(_action("block"))
 
 
 func is_perfect_parry() -> bool:
