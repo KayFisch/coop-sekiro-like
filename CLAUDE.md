@@ -183,17 +183,20 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
 - `actors/player/player.gd`: one large script (~2000 lines) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
   potions, defensive queries the boss uses (`is_perfect_parry()` etc.), and some boss-specific
-  hooks (gather, tether, grab). Tuning constants at the top, grouped by feature. A swing
-  commits: no block or parry until the blade is back.
+  hooks (gather, tether, grab). Tuning constants at the top, grouped by feature. The sword's
+  rules are under "THE SWORD" there: a swing commits (windup, cut, return; no block or parry
+  until the blade is back at rest), and a swing an enemy blade parries recoils
+  (`on_swing_parried()`, called by the boss).
 - `actors/bosses/`: `BaseBoss` runs the state machine
   `IDLE → TELEGRAPH → ATTACKING → RECOVER/STAGGER`; each attack is an `Attack` (`RefCounted`,
   `base_attack.gd`) with hooks `start / update_telegraph / execute / update / on_struck /
   cleanup` and `finish()` / `finish_with_stagger()`. A boss subclass supplies its attack pool,
   weights, pose and HP. Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs the Scales level),
   and `columna_bifrons/`, a test boss for fighting from both sides (`docs/boss_columna_bifrons.md`):
-  one `StrikePattern` attack run with different strike lists, a guard that overrides
-  `take_damage()`, and a reactive mode in which he parries the players' hits and counters
-  (it starts attacks from `take_damage()`, outside BaseBoss's idle timer).
+  a `StrikePattern` attack run with different strike lists and a `Sweep`; a guard that overrides
+  `take_damage()` (a blade standing at its flank parries, `is_guarding()`; one that's swinging
+  can't); and a reactive mode in which he strikes back at whoever attacked him (started from
+  his own `_physics_process()`, outside BaseBoss's idle timer).
 
 ## Conventions
 
