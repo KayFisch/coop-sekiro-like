@@ -37,11 +37,43 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   (Sync-Werte), `core/sfx.gd` (Sounds, Gesamtlautstärke), `ui/boss_select.gd` (Eintrag),
   `project.godot` (Autoload), `actors/bosses/base_boss.gd` (ein Hook für die Pause zwischen
   Attacken) und **`actors/player/player.gd`**, und das ist **nicht mehr klein**: Der Schlag ist
-  ein echter Schwung (Ausholen, Schnitt, Zurückführen: einer alle 0,35 s statt alle 0,3 s, er
+  ein echter Schwung (Ausholen, Schnitt, Zurückführen: einer alle 0,41 s statt alle 0,3 s, er
   trifft 0,08 s nach dem Druck), währenddessen kein Block und kein Parry, pariert prallt er
   zurück, ein etwas zu früher Angriffsdruck zählt noch, und das Schwert ist größer (76 statt
   48 px, mehr Reichweite) und wird anders gehalten. Gilt in jedem Kampf, also vor dem Merge
   gemeinsam entscheiden; Cubus und Sphaera sind nicht darauf abgestimmt.
+  Treffer-Fenster: Nicho tendiert nach dem Solo-Test zu **„beat“** (mit „after“ wartet man nach
+  dem Parry erst, und bis man selbst wieder dran ist, dauert es zu lang; „beat“ hält das
+  Ganze schneller). Noch mit Kay zu besprechen.
+- [ ] **Mash-Problem bei Bifrons anschauen** (offen, niemand). Seit die Sonderregeln raus sind
+  (keine Mash-Sperre, kein Treffer-Limit im Windup), lohnt sich Dauerdrücken auf Angriff:
+  - **Was passiert:** Ein Spieler pariert nur die Schläge auf seiner eigenen Seite und drückt
+    sonst durchgehend Angriff. Zwei Quellen bringen Schaden, ohne dass er mit dem Partner
+    zusammenspielt:
+    1. *Windup-Treffer:* Solange das Schwert des Bosses auf seiner Seite oben ist, landet
+       jeder Schlag (10 Schaden). In einen ersten Windup (1–1,8 s) passen 2–3 Schläge, also
+       20–30 Schaden, gegenüber 25 für einen Sync-Hit. Das ist gewollt („man kann immer
+       treffen, wenn er nicht parieren kann“), aber pro Schlag des Bosses etwa so viel wert
+       wie die eigentliche Koop-Mechanik.
+    2. *Sync-Hits per Glück:* Auf der Partnerseite prallt jeder Schlag an der Deckung ab und
+       kostet 0,53 s (0,08 s bis zum Treffer, 0,45 s Rückprall). Das Fenster nach dem Parry
+       des Partners ist 0,25 s („beat“) bzw. 0,3 s („after“) offen, also trifft ein
+       Dauerdrücker es rechnerisch in etwa der Hälfte der Fälle; gemessen 2–5 von 10, je nach
+       Lauf stark schwankend.
+  - **Gemessen (Bots mit echten Tasteneingaben):** nur eigene Schläge parieren und sonst
+    mashen: Boss tot in 35–55 s. Sauber zusammenspielen (einer pariert, der andere trifft im
+    Fenster, keine Windup-Treffer): 45 s. Mashen ist also gleich schnell, ohne dass man auf den
+    Partner achten muss.
+  - **Was dagegen spricht, dass es ein echtes Problem ist:** Der Bot stoppt perfekt rechtzeitig
+    vor jedem eigenen Parry; ein Mensch, der masht, verpasst Parrys (während des Schwungs
+    geht kein Block). Im reaktiven Modus ruft jeder abgeprallte Schlag sofort seinen nächsten
+    Angriff auf den Masher. Muss mit Menschen getestet werden.
+  - **Stellschrauben, ohne neue Sonderregel:** `SYNC_HIT_FACTOR` hoch (Sync-Hit klar mehr
+    wert als Windup-Treffer; jetzt x2,5), `PARRIED_RECOIL` länger (weniger Glückstreffer, aber
+    träger), Fenster kürzer (`BREAK_TIME`), Schläge des Bosses schneller (weniger Platz im
+    Windup), Windup-Treffer weniger Schaden.
+  - **Mit Sonderregel** (wollten wir eigentlich nicht): Deckung bricht nicht, wenn sie gerade
+    selbst pariert hat (die alte Mash-Sperre).
 - [ ] **Zwei Controller** (@Nicho), selber Branch: bisher hört P2 auf jedes Gamepad, mit zwei
   Pads steuern beide P2. Neu: ein Pad pro Spieler (`core/pads.gd`). Braucht Test mit zwei Pads.
 - [ ] **Concept aufräumen** (`docs/concept.md`). Befund vom Review 2026-09-30:

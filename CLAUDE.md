@@ -79,7 +79,7 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   proposal, for us to decide together: one small rule set for every blade, the players' and the
   bosses' ("a blade guards or swings, never both"; the rules are at the top of
   `docs/boss_columna_bifrons.md` on the branch). For the players that means: the slash is a real
-  swing (drawn back, cut, brought back: one every 0.35 s instead of every 0.3 s, landing 0.08 s
+  swing (drawn back, cut, brought back: one every 0.41 s instead of every 0.3 s, landing 0.08 s
   after the press), nothing can be blocked or parried until the blade is back, a swing a boss
   parries recoils (0.45 s), an attack pressed a moment too early still comes, and the sword is
   bigger (76 px instead of 48, its reach too) and held differently (diagonal at rest, diagonally
