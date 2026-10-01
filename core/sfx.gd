@@ -6,6 +6,7 @@ extends Node
 const MIX_RATE = 22050.0
 const POOL_SIZE = 16
 const MAX_LENGTH = 2.0  # seconds; each generator buffer must hold a whole sound
+const VOLUME_DB = -8.0  # added to every sound: the game's overall loudness (0 = as synthesized)
 
 var _sounds = {}  # name -> PackedVector2Array
 var _pool: Array = []  # AudioStreamPlayer
@@ -38,7 +39,7 @@ func play(sound: String, volume_db = 0.0) -> Dictionary:
 			slot = i
 	var player: AudioStreamPlayer = _pool[slot]
 	player.stop()
-	player.volume_db = volume_db
+	player.volume_db = volume_db + VOLUME_DB
 	player.play()
 	var playback = player.get_stream_playback() as AudioStreamGeneratorPlayback
 	var available = playback.get_frames_available()
