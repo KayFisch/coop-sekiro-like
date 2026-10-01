@@ -62,12 +62,14 @@ func _unhandled_input(event):
 	# Pad A / Start presses the highlighted button (ui_accept doesn't include the pad by default).
 	if event is InputEventJoypadButton and event.pressed \
 			and event.button_index in [JOY_BUTTON_A, JOY_BUTTON_START]:
+		# Handled first: pressing a level's button changes the scene, and this screen is out of
+		# the tree (no viewport) by the time the press returns.
+		get_viewport().set_input_as_handled()
 		var focused = get_viewport().gui_get_focus_owner()
 		if focused in _buttons:
 			focused.pressed.emit()
 		else:
 			_buttons[0].grab_focus()
-		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var index = event.keycode - KEY_1
