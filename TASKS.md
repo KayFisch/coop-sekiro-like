@@ -21,9 +21,14 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Grundregel aus den Scribbles: Spieler links und rechts vom Boss, zwei Schwerter, er ist auf
   beiden Seiten gedeckt; ein Parry auf einer Seite bricht kurz die Deckung auf der anderen
   (Partner trifft im selben Takt), beide Seiten gleichzeitig pariert = Stagger.
+  Dazu ein **reaktiver Modus** (F1): Der Boss pariert Angriffe der Spieler und kontert, nach
+  dem Vorbild Genichiro (siehe Scribble vom 2026-10-01).
   **Braucht einen Playtest zu zweit**, danach entscheiden: mergen, umbauen oder verwerfen.
-  Fasst außerhalb des eigenen Ordners an: `core/moves.gd` (2 Schalter), `core/game_manager.gd`
-  (Sync-Werte), `core/sfx.gd` (2 Sounds), `ui/boss_select.gd` (Eintrag), `project.godot` (Autoload).
+  Fasst außerhalb des eigenen Ordners an: `core/moves.gd` (Schalter), `core/game_manager.gd`
+  (Sync-Werte), `core/sfx.gd` (Sounds, Gesamtlautstärke), `ui/boss_select.gd` (Eintrag),
+  `project.godot` (Autoload), `actors/bosses/base_boss.gd` (ein Hook für die Pause zwischen
+  Attacken) und **`actors/player/player.gd`** (klein: während des eigenen Schwungs kein Block
+  und kein Parry).
 - [ ] **Zwei Controller** (@Nicho), selber Branch: bisher hört P2 auf jedes Gamepad, mit zwei
   Pads steuern beide P2. Neu: ein Pad pro Spieler (`core/pads.gd`). Braucht Test mit zwei Pads.
 - [ ] **Concept aufräumen** (`docs/concept.md`). Befund vom Review 2026-09-30:

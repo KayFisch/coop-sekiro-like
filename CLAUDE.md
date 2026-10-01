@@ -70,9 +70,16 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   together.
 - The same branch gives each player their own gamepad when two are connected (a new autoload,
   `core/pads.gd`); with one pad nothing changes.
-- Outside its own folders the branch touches `core/moves.gd` (two switches), `core/sfx.gd` (two
-  sounds), `core/game_manager.gd` (sync gains), `ui/boss_select.gd` and `project.godot` (one
-  autoload). If you're changing those right now, say so and we merge carefully.
+- He has a second, **reactive mode** (F1), after Genichiro in Sekiro: he parries the players'
+  own attacks and answers them with a short counter, often at the *other* player; left alone
+  for a while, he starts one of his patterns. The reasoning is in the scribble of 2026-10-01
+  ("Sekiro/Genichiro als Vorbild").
+- Outside its own folders the branch touches `core/moves.gd` (switches), `core/sfx.gd` (sounds;
+  everything is 8 dB quieter), `core/game_manager.gd` (sync gains), `ui/boss_select.gd`,
+  `project.godot` (one autoload), `actors/bosses/base_boss.gd` (one hook: the pause between
+  attacks) and **`actors/player/player.gd`**: a swing can no longer be blocked or parried out
+  of (attacking and blocking at once was possible; it changes parry timing in every fight).
+  If you're changing those right now, say so and we merge carefully.
 
 ## The project
 
