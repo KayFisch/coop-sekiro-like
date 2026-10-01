@@ -93,6 +93,11 @@ func get_repeatable_attacks() -> Array:
 	return []
 
 
+# How long he idles between two attacks, once recovered from the first.
+func get_idle_pause() -> float:
+	return randf_range(IDLE_PAUSE_MIN, IDLE_PAUSE_MAX)
+
+
 # A weighted random pick. The last attack isn't repeated unless it's repeatable or it's the
 # only one enabled.
 func pick_attack() -> Attack:
@@ -236,7 +241,7 @@ func _physics_process(delta):
 			_recover_motion(delta)
 			if timer <= 0.0:
 				state = State.IDLE
-				timer = randf_range(IDLE_PAUSE_MIN, IDLE_PAUSE_MAX)
+				timer = get_idle_pause()
 
 		State.STAGGER:
 			var flash = fmod(anim_time, 0.16) < 0.08

@@ -2,13 +2,18 @@ class_name ColumnaBifrons
 extends BaseBoss
 ## Columna Bifrons, the two-faced column: a test boss for fights fought from both sides at once
 ## (player - boss - player). He stands in the middle of the arena and never moves, a sword on
-## each side, and strikes left, right or both in set patterns (attacks/strike_pattern.gd). The
+## each side, and strikes left, right or both in set series (attacks/strike_pattern.gd). The
 ## state machine lives in BaseBoss; what's his own is here: the patterns and how often they come,
-## his two swords, and his guard.
+## his two swords, his guard, and how he answers being attacked.
 ##
 ## THE GUARD: he's guarded on both sides, so sword hits bounce off him. A strike that's perfect
-## parried breaks the guard on the *other* side for a moment, and the partner's hit there, timed
-## to the same strike, is a sync hit. Both swords parried at once stagger him: open on both sides.
+## parried breaks the guard on the *other* side for a moment, and the partner's hit there is a
+## sync hit. Both swords parried at once stagger him: open on both sides.
+##
+## TWO MODES (Moves "bifrons_mode"). "patterns": he runs one pattern after another, and the
+## players' part is to answer them. "reactive": he waits between patterns and parries whatever
+## the players throw at him, until he's had enough and answers with a quick counter, often at
+## the *other* player; left alone, he starts a pattern himself.
 ## docs/boss_columna_bifrons.md has the design and what it's meant to find out.
 
 const LEFT = StrikePattern.LEFT
@@ -34,33 +39,57 @@ const PATTERNS = {
 	"SWAP": {"weight": 0.0, "strikes": [[5, LEFT], [4, RIGHT]]},
 	"BOTH": {"weight": 0.0, "strikes": [[6, BOTH]]},
 }
-# Patterns that may come twice in a row; the rest never repeat back to back.
-const REPEATABLE_PATTERNS = ["SINGLE", "TRIPLE"]
+# THE REACTIVE MODE's counters: his answers to the player who struck his guard once too often.
+# Same format, but the sides are that player's (SAME) and their partner's (OTHER). They're quick:
+# no long windup, the hits that provoked him are the warning.
+const SAME = RIGHT  # i.e. a counter is written for a provoker on his right; orient() turns it
+const OTHER = LEFT
+const COUNTERS = {
+	"CROSS": {"weight": 3.0, "strikes": [[4, OTHER]]},
+	"CROSS_BACK": {"weight": 2.0, "strikes": [[4, OTHER], [4, SAME]]},
+	"CROSS_BOTH": {"weight": 1.0, "strikes": [[4, OTHER], [4, BOTH]]},
+	"RIPOSTE": {"weight": 2.0, "strikes": [[3, SAME]]},
+	"RIPOSTE_CROSS": {"weight": 1.0, "strikes": [[3, SAME], [4, OTHER]]},
+}
+# Patterns and counters that may come twice in a row; the rest never repeat back to back.
+const REPEATABLE_PATTERNS = ["SINGLE", "TRIPLE", "CROSS"]
 # Runs each pattern as written or mirrored, whichever keeps the strikes even between the two
 # sides (at random while they're even). Off: always as written.
 const MIRROR_PATTERNS = true
 # For testing: set to a pattern's name (e.g. "TRIPLE") to use only that pattern.
 const TEST_ONLY_PATTERN = ""
-# For testing alone: LEFT or RIGHT makes every strike on that side count as parried, with nobody
-# needed there (and nobody there hurt), so one player can practice the hits from the other side.
-# 0 is off.
-const TEST_PARRY_SIDE = 0
+
+# The reactive mode: between two series of strikes he waits this long before starting a
+# pattern of his own (after the usual recovery), so there's room for the players to start
+# something instead. He parries their hits meanwhile, and after one of PATIENCE's numbers of
+# them (picked afresh after every series) he answers with a counter.
+const REACTIVE_WAIT_MIN = 1.5
+const REACTIVE_WAIT_MAX = 4.0
+const PATIENCE = [1, 2, 2, 3]
+# Now and then his answer isn't a counter but one of his own patterns, long windup and all.
+const PATTERN_ANSWER_CHANCE = 0.25
 
 const SYNC_HIT_FACTOR = 2.5  # a sync hit's damage, times the sword hit's own
-# A sword hit that bounces off his guard keeps that player's hits bouncing for this long, even
-# where the guard is broken: mashing attack never gets through, a timed hit does. Longer than a
-# swing's cooldown (0.3 s), shorter than the gap between two strikes.
+# A sword hit he parries keeps that player's hits from getting through a broken guard for this
+# long: mashing attack never lands a sync hit, a timed hit does. Longer than a swing's cooldown
+# (0.3 s), shorter than the gap between two strikes.
 const HIT_SPAM_LOCK = 0.45
-const BOUNCE_PUSH = 260.0  # px/s: the player whose hit bounced, pushed back
+const BOUNCE_PUSH = 120.0  # px/s: the player whose hit he parried, pushed back a little
+# TESTING ALONE (Moves "bifrons_stand_in"): a stand-in on that side parries the strikes there,
+# this often; nobody on that side is hurt. Below 1 it misses some, so the player on the other
+# side has to watch whether the parry came before hitting.
+const STAND_IN_PARRY_CHANCE = 0.75
 
 # The swords, one per side, each on a pivot at its hand.
 const SWORD_LENGTH = 230.0
 const SWORD_WIDTH = 14.0
 const SWORD_FOLLOW = 22.0  # how fast a blade eases into its pose (1/s); the drop itself is exact
 const PLATE_WIDTH = 6.0  # the guard, drawn down each flank
+const PARRY_FLICK_TIME = 0.12  # his own parry: the guarding blade flicked at the attacker
 # Sword poses, for the right-hand sword (the left one mirrors them): x, y = where the hand is,
 # from his center; z = the blade's angle in radians (0 points outward, level; negative is up).
 const POSE_GUARD = Vector3(50.0, 62.0, -1.571)  # upright, covering its flank
+const POSE_PARRY = Vector3(62.0, 52.0, -1.2)  # flicked outward, meeting a player's blade
 const POSE_RAISED = Vector3(44.0, -70.0, -1.82)  # over his head, about to strike
 const POSE_COILED = Vector3(40.0, -78.0, -2.07)  # drawn all the way back: the drop starts here
 const POSE_DOWN = Vector3(46.0, 56.0, 0.19)  # landed: out from his flank at head height, tip on the floor
@@ -72,10 +101,12 @@ const COLOR_SWORD = Color(0.8, 0.82, 0.86)  # silver
 const COLOR_SWORD_LIMP = Color(0.45, 0.45, 0.5)
 const COLOR_PLATE = Color(0.62, 0.64, 0.7)
 const COLOR_OPEN = Color(1.0, 0.95, 0.6)  # "hit here, now": a broken guard's flank, flashing
+const COLOR_PARRY = Color(1.0, 0.7, 0.3)  # sparks off his own parry
 const COLOR_BOUNCE = Color(0.6, 0.6, 0.6)
 const HAND_SIZE = 18.0
 const HAND_DARKEN = 0.25
 const CROSSGUARD = Vector2(6.0, 40.0)
+const PLAYER_HEAD = Vector2(30.0, 60.0)  # where a player stands, from his flank and his center
 
 var _pivots = {}  # side -> Node2D
 var _blades = {}  # side -> ColorRect
@@ -85,11 +116,21 @@ var _poses = {LEFT: POSE_GUARD, RIGHT: POSE_GUARD}  # where each blade is drawn 
 var _targets = {LEFT: POSE_GUARD, RIGHT: POSE_GUARD}  # where it's headed (pose_sword())
 var _snaps = {LEFT: false, RIGHT: false}
 var _side_tints = {LEFT: Color(1, 1, 1, 0), RIGHT: Color(1, 1, 1, 0)}  # tint_side()
+var _flick_until = {LEFT: 0.0, RIGHT: 0.0}  # anim_time until which that blade is parrying
 
-var _open_until = {LEFT: 0.0, RIGHT: 0.0}  # anim_time at which that side's guard is back
+# A broken guard, per side: open from..until (anim_time). It may be broken a moment before it
+# opens (break_guard()'s delay).
+var _open_from = {LEFT: 0.0, RIGHT: 0.0}
+var _open_until = {LEFT: 0.0, RIGHT: 0.0}
+var _open_shown = {LEFT: true, RIGHT: true}  # the opening has made its sound and sparks
 var _held = {LEFT: [], RIGHT: []}  # sword hits waiting for a strike to land: {player, amount}
 var _hit_locks = {}  # player -> anim_time until which their hits bounce (HIT_SPAM_LOCK)
-var _strikes_at = {LEFT: 0, RIGHT: 0}  # strikes aimed at each side so far (pick_mirror())
+var _strikes_at = {LEFT: 0, RIGHT: 0}  # strikes aimed at each side so far (orient())
+
+var _provocations = 0  # hits parried since his last series of strikes (the reactive mode)
+var _patience = 2  # how many of those he lets go before countering
+var _provoker_side = RIGHT  # the side of the last player whose hit he parried
+var _countering = false  # picking a counter (see get_attack_weights())
 
 
 func get_max_hp() -> float:
@@ -102,25 +143,34 @@ func get_display_name() -> String:
 
 func get_attack_pool() -> Array:
 	var pool = []
-	for pattern_name in PATTERNS:
-		var pattern = StrikePattern.new(pattern_name, PATTERNS[pattern_name].strikes)
-		pattern.strike_parried.connect(func(_player): sync_event.emit("bifrons_parried"))
-		pattern.both_parried.connect(sync_event.emit.bind("bifrons_both_parried"))
-		pool.append(pattern)
+	for table in [PATTERNS, COUNTERS]:
+		for pattern_name in table:
+			var pattern = StrikePattern.new(pattern_name, table[pattern_name].strikes)
+			pattern.strike_parried.connect(func(_player): sync_event.emit("bifrons_parried"))
+			pattern.both_parried.connect(sync_event.emit.bind("bifrons_both_parried"))
+			pool.append(pattern)
 	return pool
 
 
+# The patterns' weights, or the counters' while he's picking one.
 func get_attack_weights() -> Dictionary:
 	if TEST_ONLY_PATTERN != "":
 		return {TEST_ONLY_PATTERN: 1.0}
+	var table = COUNTERS if _countering else PATTERNS
 	var weights = {}
-	for pattern_name in PATTERNS:
-		weights[pattern_name] = PATTERNS[pattern_name].weight
+	for pattern_name in table:
+		weights[pattern_name] = table[pattern_name].weight
 	return weights
 
 
 func get_repeatable_attacks() -> Array:
 	return REPEATABLE_PATTERNS
+
+
+func get_idle_pause() -> float:
+	if _is_reactive():
+		return randf_range(REACTIVE_WAIT_MIN, REACTIVE_WAIT_MAX)
+	return super()
 
 
 # His whole body blocks: taller than a jump, so getting to the other side takes the partner.
@@ -130,39 +180,75 @@ func body_block() -> Rect2:
 	return Rect2(global_position - body.size / 2.0, body.size)
 
 
-# --- The patterns' sides ---
+func _is_reactive() -> bool:
+	return Moves.value("bifrons_mode") == "reactive"
+
+
+# --- Sides ---
 
 func side_of(player) -> int:
 	return LEFT if player.global_position.x < global_position.x else RIGHT
 
 
-# Whether a pattern about to start should run mirrored (see MIRROR_PATTERNS), counting its
-# strikes toward the sides' tally.
-func pick_mirror(strikes: Array) -> bool:
-	var lean = 0  # > 0: as written, it strikes right more often than left
-	for strike in strikes:
-		lean += strike[1]
-	var ahead = (_strikes_at[RIGHT] - _strikes_at[LEFT]) * lean  # > 0: as written, it adds to the lead
-	var mirror = MIRROR_PATTERNS and (ahead > 0 or (ahead == 0 and randf() < 0.5))
+# The side Moves "bifrons_stand_in" puts a stand-in on (see STAND_IN_PARRY_CHANCE), or 0.
+func stand_in_side() -> int:
+	match Moves.value("bifrons_stand_in"):
+		"left":
+			return LEFT
+		"right":
+			return RIGHT
+	return 0
+
+
+# Called by a pattern or counter as it starts: which way round it runs (1 as written, -1
+# mirrored). A counter is turned to the player who provoked it; a pattern, to whichever way
+# keeps the strikes even between the sides (see MIRROR_PATTERNS).
+func orient(pattern_name: String, strikes: Array) -> int:
+	var way = 1
+	if COUNTERS.has(pattern_name):
+		way = _provoker_side
+	elif MIRROR_PATTERNS:
+		var lean = 0  # > 0: as written, it strikes right more often than left
+		for strike in strikes:
+			lean += strike[1]
+		var ahead = (_strikes_at[RIGHT] - _strikes_at[LEFT]) * lean  # > 0: as written, it adds to the lead
+		if ahead > 0 or (ahead == 0 and randf() < 0.5):
+			way = -1
 	for strike in strikes:
 		if strike[1] != BOTH:
-			_strikes_at[-strike[1] if mirror else strike[1]] += 1
-	return mirror
+			_strikes_at[strike[1] * way] += 1
+	_provocations = 0
+	_patience = PATIENCE.pick_random()
+	return way
 
 
 # --- The guard ---
 
+# True while that side's guard is broken and open: sword hits there are sync hits.
 func is_open(side: int) -> bool:
+	return anim_time >= _open_from[side] and anim_time < _open_until[side]
+
+
+# True from the parry that breaks that side's guard until it's back: open, or about to be.
+func is_breaking(side: int) -> bool:
 	return anim_time < _open_until[side]
 
 
-# A parried strike on the other side: this side's guard is gone for `duration`, and the sword
-# hits held for the strike land.
-func break_guard(side: int, duration: float):
-	_open_until[side] = anim_time + duration
+# A parried strike on the other side: after `delay` this side's guard is gone for `duration`.
+# Without a delay, the sword hits held for the strike land now.
+func break_guard(side: int, duration: float, delay = 0.0):
+	_open_from[side] = anim_time + delay
+	_open_until[side] = _open_from[side] + duration
+	_open_shown[side] = false
+	if delay <= 0.0:
+		_show_open(side)
+		land_held(side)
+
+
+func _show_open(side: int):
+	_open_shown[side] = true
 	Sfx.play("guard_break", -2.0)
 	spawn_sparks(_flank(side, global_position.y), 12, COLOR_PLATE)
-	land_held(side)
 
 
 # The sword hits held on `side` land, as sync hits.
@@ -174,13 +260,13 @@ func land_held(side: int):
 			_land_sync_hit(hit.player, hit.amount)
 
 
-# The strike wasn't parried: the guard holds, and the sword hits held on `side` are refused.
+# The strike wasn't parried: the guard holds, and the sword hits held on `side` are parried.
 func keep_guard(side: int):
 	var held = _held[side]
 	_held[side] = []
 	for hit in held:
 		if is_instance_valid(hit.player):
-			_refuse(hit.player, hit.amount)
+			_parry(hit.player, hit.amount)
 
 
 # source: the player whose sword hit landed. Those only get through where his guard is broken
@@ -194,10 +280,12 @@ func take_damage(amount: float, source = null):
 	var pattern = current_attack as StrikePattern
 	if is_open(side) and not locked:
 		_land_sync_hit(source, amount)
+	elif _is_reactive() and pattern and pattern.take_commit_hit(side):
+		_land_plain_hit(source, amount)  # that blade is busy striking: nothing to parry with
 	elif not locked and pattern and pattern.holds_hit(side):
 		_held[side].append({"player": source, "amount": amount})
 	else:
-		_refuse(source, amount)
+		_parry(source, amount)
 
 
 func _land_sync_hit(player, amount: float):
@@ -208,27 +296,65 @@ func _land_sync_hit(player, amount: float):
 	super.take_damage(amount * SYNC_HIT_FACTOR, player)
 
 
-# A sword hit on his guard: it bounces off (with Moves "bifrons_guard" off, it's a plain hit).
-func _refuse(player, amount: float):
+func _land_plain_hit(player, amount: float):
+	Sfx.play("sync_hit", -6.0)
+	spawn_sparks(_flank(side_of(player), player.global_position.y), 6, COLOR_EXECUTE)
+	super.take_damage(amount, player)
+
+
+# A sword hit on his guard: he parries it. It bounces off, and that player's hits stay locked
+# out for a moment (HIT_SPAM_LOCK). In the reactive mode it also wears on his patience. (With
+# Moves "bifrons_guard" off there's no guard: a plain hit.)
+func _parry(player, amount: float):
 	if not Moves.on("bifrons_guard"):
 		super.take_damage(amount, player)
 		return
 	var side = side_of(player)
 	_hit_locks[player] = anim_time + HIT_SPAM_LOCK
 	player.apply_knockback(Vector2(side * BOUNCE_PUSH, 0.0))
-	Sfx.play("chip")
-	spawn_sparks(_flank(side, player.global_position.y), 5, COLOR_BOUNCE)
+	if _targets[side] == POSE_GUARD and not is_breaking(side):
+		_flick_until[side] = anim_time + PARRY_FLICK_TIME  # that blade is free: he parries with it
+		Sfx.play("parry", -6.0)
+		spawn_sparks(_flank(side, player.global_position.y), 8, COLOR_PARRY)
+	else:
+		Sfx.play("chip")  # the blade is busy: the hit glances off his plate
+		spawn_sparks(_flank(side, player.global_position.y), 5, COLOR_BOUNCE)
+	if _is_reactive() and state in [State.IDLE, State.RECOVER]:
+		_provoked(side)
+
+
+# The reactive mode: he's just parried a hit while waiting. Once he's had enough of them
+# (_patience) he answers the player on `side`: with a counter, or now and then a pattern.
+func _provoked(side: int):
+	_provocations += 1
+	_provoker_side = side
+	if _provocations < _patience:
+		return
+	_countering = randf() >= PATTERN_ANSWER_CHANCE
+	var answer = pick_attack()
+	_countering = false
+	_choose_target()
+	if target_player != null:
+		_begin_telegraph(answer)
 
 
 func _die():
 	_held = {LEFT: [], RIGHT: []}
 	_open_until = {LEFT: 0.0, RIGHT: 0.0}
+	_open_shown = {LEFT: true, RIGHT: true}
 	super()
 
 
 # A point on that side's flank, at height y (world coordinates).
 func _flank(side: int, y: float) -> Vector2:
 	return Vector2(global_position.x + side * body.size.x / 2.0, y)
+
+
+# The stand-in on `side` has parried a strike: a clang and sparks where a player would stand.
+func show_stand_in_parry(side: int):
+	Sfx.play("parry", -3.0)
+	var at = _flank(side, global_position.y + PLAYER_HEAD.y) + Vector2(side * PLAYER_HEAD.x, 0.0)
+	spawn_sparks(at, 10, StrikePattern.COLOR_PARRY)
 
 
 # --- Swords, plates and halves ---
@@ -298,23 +424,33 @@ func tint_side(side: int, color: Color, alpha: float):
 func _update_pose():
 	var down = hp <= 0.0 or state == State.STAGGER
 	var follow = 1.0 - exp(-SWORD_FOLLOW * get_physics_process_delta_time())
+	var pattern = current_attack as StrikePattern
 	for side in SIDES:
 		var open = is_open(side) and not down
+		if open and not _open_shown[side]:
+			_show_open(side)  # a guard broken with a delay opens only now
+		var guarding = _targets[side] == POSE_GUARD and not down  # this blade isn't striking
 		var pose: Vector3 = _targets[side]
 		var snap: bool = _snaps[side]
 		if down:
 			pose = POSE_LIMP
 			snap = hp <= 0.0  # dead: this is the last frame he's posed
-		elif open and pose == POSE_GUARD:
+		elif guarding and is_breaking(side):
 			pose = POSE_OPEN  # knocked aside (a blade with a strike coming up is posed by the pattern)
-			_blades[side].color = COLOR_SWORD
+		elif guarding and anim_time < _flick_until[side]:
+			pose = POSE_PARRY
 		_poses[side] = pose if snap else _poses[side].lerp(pose, follow)
 		var pivot: Node2D = _pivots[side]
 		pivot.position = Vector2(_poses[side].x * side, _poses[side].y)
 		pivot.rotation = _poses[side].z * side
 		if down:
 			_blades[side].color = COLOR_SWORD_LIMP
-		_plates[side].visible = not down and not open
+		elif guarding:
+			_blades[side].color = Color.WHITE if pose == POSE_PARRY else COLOR_SWORD
+		# The plate: the guard. Gone while it's broken, and in the reactive mode while that blade
+		# is committed to a strike.
+		var committed = _is_reactive() and pattern != null and pattern.is_committed(side)
+		_plates[side].visible = not down and not open and not committed
 		if down:
 			_halves[side].color = Color(1, 1, 1, 0)  # the body's own stagger flash shows
 		elif open:
