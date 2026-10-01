@@ -53,6 +53,25 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   side-scroller is settled) and `docs/concept.md` (mixes vision with a numbers spec, parts
   outdated; review notes are in the task). Neither is claimed yet.
 
+### For Kay, from Nicho (2026-10-01)
+
+- Two new entries in `scribbles.md` (2026-09-30 and 2026-10-01): a possible core for the game.
+  Players on both sides of the boss (player - boss - player), a two-sided boss, sync as the
+  thing that lets the two halves join. Please read them; nothing in there is decided.
+- To try that core out, there's a branch **`nicho/pep-test`** with a new test boss, **Columna
+  Bifrons**, next to Cubus and Sphaera (neither is touched). He stands in the middle with two
+  big swords and strikes left, right or both on a beat. He's guarded on both sides; a perfect
+  parry on one side breaks his guard on the other for a moment, so the partner's hit lands on
+  the same beat. Both swords parried at once stagger him. To play it: `git checkout
+  nicho/pep-test`, then entry 5 on the select screen; the design is in
+  `docs/boss_columna_bifrons.md` on that branch. It stays off `main` until we've played it
+  together.
+- The same branch gives each player their own gamepad when two are connected (a new autoload,
+  `core/pads.gd`); with one pad nothing changes.
+- Outside its own folders the branch touches `core/moves.gd` (two switches), `core/sfx.gd` (two
+  sounds), `core/game_manager.gd` (sync gains), `ui/boss_select.gd` and `project.godot` (one
+  autoload). If you're changing those right now, say so and we merge carefully.
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The

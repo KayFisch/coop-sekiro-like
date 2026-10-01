@@ -68,3 +68,15 @@ nicht geben.
   - Zusammenbleiben
   - Haltungsdurchbruch
   - Finisher
+
+→ Erster Test der pep-Grundregel: Test-Boss **Columna Bifrons** auf dem Branch
+`nicho/pep-test` (Regeln und Muster in `docs/boss_columna_bifrons.md`).
+
+## 2026-10-01 (Nicho): Parieren vs. Blocken, Seitenwechsel
+
+- **Parieren** kann den Boss taumeln lassen.
+- **Blocken** könnte das Boss-Schwert kurz festhalten, um dem anderen Spieler Zeit zu geben,
+  die Seite zu wechseln (oder sonst was).
+- Kontext zur Idee: Beide Seiten werden angegriffen, P1 pariert, P2 blockt. Das Schwert schwingt
+  von P1 zu P2, jetzt sind beide auf einer Seite. P1 kommt also zu P2, und das könnte etwas
+  eröffnen.

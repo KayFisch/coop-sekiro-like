@@ -17,6 +17,15 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 
 ## Jetzt
 
+- [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), Branch `nicho/pep-test`. Testet die
+  Grundregel aus den Scribbles: Spieler links und rechts vom Boss, zwei Schwerter, er ist auf
+  beiden Seiten gedeckt; ein Parry auf einer Seite bricht kurz die Deckung auf der anderen
+  (Partner trifft im selben Takt), beide Seiten gleichzeitig pariert = Stagger.
+  **Braucht einen Playtest zu zweit**, danach entscheiden: mergen, umbauen oder verwerfen.
+  Fasst außerhalb des eigenen Ordners an: `core/moves.gd` (2 Schalter), `core/game_manager.gd`
+  (Sync-Werte), `core/sfx.gd` (2 Sounds), `ui/boss_select.gd` (Eintrag), `project.godot` (Autoload).
+- [ ] **Zwei Controller** (@Nicho), selber Branch: bisher hört P2 auf jedes Gamepad, mit zwei
+  Pads steuern beide P2. Neu: ein Pad pro Spieler (`core/pads.gd`). Braucht Test mit zwei Pads.
 - [ ] **Concept aufräumen** (`docs/concept.md`). Befund vom Review 2026-09-30:
   - Vision und technische Spezifikation sind vermischt: „Moveset“ hat genaue Werte
     (136 px, 0.133 s …) und eine Kopie der F1-Schalter-Tabelle aus `core/moves.gd`, die veralten
@@ -41,7 +50,6 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [ ] **`.gd` aufräumen, Teil 2:** `player.gd` (~2000 Zeilen) in Komponenten aufteilen
   (Bewegung, Schwert, Partner-Moves, Zustand/Health). Side-Scroller steht, also möglich;
   sinnvoll, sobald klar ist, welche Moves bleiben. Eigener Branch, `player.gd` vorher claimen.
-- [ ] P2-Eingabe: hört auf jedes Gamepad (`device: -1`), mit zwei Pads steuern beide P2
 
 ## Erledigt
 
