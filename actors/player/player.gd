@@ -72,7 +72,7 @@ const PARRY_SPAM_LOCK = 0.3  # a block press this soon after the previous one ca
 # back comes as soon as it is.
 const ATTACK_WINDUP_TIME = 0.05  # short: the cut has to follow the press
 const ATTACK_ACTIVE_TIME = 0.12
-const ATTACK_RETURN_TIME = 0.18
+const ATTACK_RETURN_TIME = 0.24  # the price of a swing: this long until the next one, or a block
 const ATTACK_COOLDOWN = ATTACK_WINDUP_TIME + ATTACK_ACTIVE_TIME + ATTACK_RETURN_TIME
 const ATTACK_BUFFER_TIME = 0.15
 const ATTACK_DAMAGE = 10.0

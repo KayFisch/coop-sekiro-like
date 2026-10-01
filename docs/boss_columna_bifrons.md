@@ -29,7 +29,7 @@ There are five rules, and they're the same for his blades and the players':
 2. **A strike has to be perfect parried** by whoever stands under it (block pressed at most
    0.133 s before it lands). Just blocking softens the hit and opens nothing.
 3. **A parried swing recoils.** The blade that was parried is knocked back and takes longer to
-   come back: a player's 0.45 s (instead of the 0.27 s a swing has left once it has hit), his
+   come back: a player's 0.45 s (instead of the 0.33 s a swing has left once it has hit), his
    0.35 s before it moves again (instead of 0.12 s).
 4. **A parried strike breaks his guard on the other side** for a moment: the plate is gone, that
    half of him flashes, his sword there is knocked aside. The partner's hit there is a **sync
@@ -43,7 +43,7 @@ There's nothing else: no cap on hits, no lock against mashing. What used to be e
 follows from these five:
 
 - **Hitting his windup.** The player about to be struck can cut at the raised blade's side
-  (rule 1), as often as fits, but a swing takes 0.35 s and has to be over before the parry.
+  (rule 1), as often as fits, but a swing takes 0.41 s and has to be over before the parry.
   Greed isn't forbidden, it gets hit. How many fit is a matter of how fast his strikes come.
 - **After your own parry** his blade on your side is thrown back (rule 3): for about 0.45 s
   your own side is open too. One swing fits, if it's started at once.
@@ -57,7 +57,7 @@ Changed for this boss, in `player.gd`, so it holds in every fight (and needs Kay
 - **Rest:** held diagonally, up and forward. **Block:** diagonally down in front. Letting go
   swings it back up; a perfect parry beats it up past its rest. That upswing *is* the parry.
 - **The slash is a real swing:** drawn back (0.05 s, short: the cut has to follow the press),
-  cut down (0.12 s; it reaches him about 0.08 s after the press), brought back (0.18 s). 0.35 s
+  cut down (0.12 s; it reaches him about 0.08 s after the press), brought back (0.24 s). 0.41 s
   in all, and until the blade is back nothing else goes: no block, no parry, no second swing.
   No cooldown beyond that, and an attack pressed up to 0.15 s too early comes as soon as the
   blade is back.
@@ -103,8 +103,8 @@ after its press, so the press has to come that much before the window:
 
 Mashing gets through by luck, since nothing forbids it, and with the quicker swing it does so
 often. Measured with bots that mash attack and stop only to parry the strikes on their own side:
-about 4 sync hits in 10 strikes on "beat", about 3 in 10 on "after". A timed press gets all of
-them.
+somewhere between 2 and 5 sync hits in 10 strikes, in either window (it varies a lot from run to
+run). A timed press gets all of them. `TASKS.md` has the problem in detail.
 
 ## The sweep
 
@@ -198,7 +198,7 @@ watch whether the parry really came before hitting. The stand-in never attacks.
 | Reactive: his wait | `REACTIVE_WAIT_MIN`, `_MAX` | 0.5 - 1.2 s |
 | Reactive: parried hits before he strikes back | `PATIENCE` | 1, 1 or 2 |
 | Reactive: his answer's first strike lands within | `ANSWER_WAIT` | 4 (0.8 s) |
-| Player: slash windup / cut / return | `ATTACK_WINDUP_TIME`, `_ACTIVE_`, `_RETURN_` (player.gd) | 0.05 / 0.12 / 0.18 s |
+| Player: slash windup / cut / return | `ATTACK_WINDUP_TIME`, `_ACTIVE_`, `_RETURN_` (player.gd) | 0.05 / 0.12 / 0.24 s |
 | Player: recoil after being parried | `PARRIED_RECOIL` (player.gd) | 0.45 s |
 | Player: an early attack press still counts | `ATTACK_BUFFER_TIME` (player.gd) | 0.15 s |
 | Sync gained (parry / sync hit / both parried) | `GameManager.SYNC_GAINS` | 3 / 6 / 25 |
@@ -214,8 +214,8 @@ For testing: `TEST_ONLY_PATTERN` (one attack only, e.g. `"SWEEP"`).
   Can you tell when you can block again?
 - **Mashing pays.** Windup hits are uncapped (two or three fit into a first strike's windup:
   20 to 30 damage, against 25 for the sync hit), and a masher's swings find the broken guard often. Bots
-  that only parry their own strikes and mash otherwise kill him in 40 s; bots that play it as
-  meant (one parries, the other hits, no windup hits) in 50 s. Whether that's a problem depends
+  that only parry their own strikes and mash otherwise kill him in 35 to 55 s; bots that play it
+  as meant (one parries, the other hits, no windup hits) in 45 s. Whether that's a problem depends
   on how it feels with people; the knobs are `SYNC_HIT_FACTOR`, `PARRIED_RECOIL` and the tempo of
   his strikes.
 - **Reactive:** does it flow now, one exchange into the next? Is being struck back at once a
