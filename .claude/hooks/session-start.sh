@@ -54,7 +54,7 @@ else
 		echo
 		if [ -n "$main_last" ] && [ "$main_last" != "$main_head" ] \
 				&& git cat-file -e "$main_last^{commit}" 2>/dev/null; then
-			echo "New on main since the last session ($(git rev-list --count "$main_last..$main_head") commits, not pulled into $branch):"
+			echo "New on main since the last session ($(git rev-list --count "$main_last..$main_head") commits):"
 			git log --format='%h %an %ad  %s' --date=short "$main_last..$main_head"
 		else
 			echo "Nothing new on main since the last session."
