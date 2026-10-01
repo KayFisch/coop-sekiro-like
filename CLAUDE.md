@@ -90,11 +90,12 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 
 ```
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
-docs/                                design docs: concept.md, boss_sphaera_pendula.md, parkour_gyms.md
-core/                                autoloads: GameManager, Sfx, Moves
+docs/                                design docs: concept.md, boss_*.md (one per boss), parkour_gyms.md
+core/                                autoloads: GameManager, Sfx, Moves, Pads
 actors/player/                       player.gd (+ scene)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
-levels/                              arena/ (fight 1), scales/ (fight 2), gym/ (movement test rooms)
+levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
+                                     gym/ (movement test rooms)
 ui/                                  boss select, HUD
 assets/                              empty for now: everything is procedural
 ```
@@ -146,12 +147,21 @@ Nobody can *play* the game but the humans, but Godot runs headless for a smoke t
 differ). From the repo root:
 
 ```bash
-godot --headless --import                                  # reimport, shows parse errors
-godot --headless --quit-after 180 res://levels/arena/arena.tscn   # run a scene ~3 s
+godot --headless --import     # reimport: shows parse errors, registers new class_names and .uid files
+godot --headless --fixed-fps 60 --quit-after 600 res://levels/arena/arena.tscn   # 10 s of game time, at once
 ```
 
 Any `SCRIPT ERROR` / `Parse Error` in the output means it's broken. A clean run only means it
 loads; the feel still needs a human test.
+
+To test behavior, drive a scene from a throwaway script outside the repo:
+`godot --headless --script <file.gd>` with a script that `extends SceneTree`. From
+`_initialize()` on the autoloads exist (reach them with `root.get_node("GameManager")`; their
+names don't compile in such a script); `change_scene_to_file()` loads a level, and the
+`physics_frame` signal runs before every node's `_physics_process`, so `Input.action_press()`
+there is seen by the players that same frame. The player's timing windows (parry, dodge) read
+the real clock, so anything pressing buttons has to run in real time, without `--fixed-fps`.
+Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
 
 ## Code map
 
@@ -159,7 +169,8 @@ loads; the feel still needs a human test.
   `SYNC_GAINS` maps boss `sync_event` kinds to sync), `Sfx` (all sound synthesized at startup,
   `Sfx.play("name")`), `Moves` (F1 panel toggling movement abilities, saved to
   `user://moves.cfg` with a `VERSION`: bump it when defaults change; code asks
-  `Moves.on("pogo")`). The fight kit is on by default, the platforming kit is off.
+  `Moves.on("pogo")`). The fight kit is on by default, the platforming kit is off. `Pads` gives
+  each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device).
 - `actors/player/player.gd`: one large script (~2000 lines) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
   potions, defensive queries the boss uses (`is_perfect_parry()` etc.), and some boss-specific
@@ -168,7 +179,10 @@ loads; the feel still needs a human test.
   `IDLE → TELEGRAPH → ATTACKING → RECOVER/STAGGER`; each attack is an `Attack` (`RefCounted`,
   `base_attack.gd`) with hooks `start / update_telegraph / execute / update / on_struck /
   cleanup` and `finish()` / `finish_with_stagger()`. A boss subclass supplies its attack pool,
-  weights, pose and HP. Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs the Scales level).
+  weights, pose and HP. Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs the Scales level),
+  and `columna_bifrons/`, a test boss for fighting from both sides (`docs/boss_columna_bifrons.md`):
+  one `StrikePattern` attack run with different strike lists, and a guard that overrides
+  `take_damage()`.
 
 ## Conventions
 
@@ -177,5 +191,6 @@ loads; the feel still needs a human test.
   ("0 -> SPEED in ~0.06 s"), grouped under `# --- Feature ---` headers.
 - New movement abilities get a `Moves` switch so they can be A/B tested.
 - Attacks telegraph by color; each color means one player response (see the boss 2 doc).
-- Input: P1 keyboard, P2 gamepad (`p1_*` / `p2_*` actions; the player reads `_action("jump")`).
+- Input: two sets of actions, `p1_*` (keyboard) and `p2_*` (gamepad); the player reads
+  `_action("jump")`. One pad: P1 keyboard, P2 pad. Two pads: one each (P1 keeps the keyboard too).
 - Code, comments, docs and commit messages in English; `TASKS.md` / `scribbles.md` in any language.
