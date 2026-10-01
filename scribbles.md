@@ -80,3 +80,58 @@ nicht geben.
 - Kontext zur Idee: Beide Seiten werden angegriffen, P1 pariert, P2 blockt. Das Schwert schwingt
   von P1 zu P2, jetzt sind beide auf einer Seite. P1 kommt also zu P2, und das könnte etwas
   eröffnen.
+
+## 2026-10-01 (Nicho): Playtest Columna Bifrons (allein) + Sekiro/Genichiro als Vorbild
+
+**Playtest** (allein, die linke Seite galt immer als pariert):
+- Treffer im selben Moment wie der Parry („beat“) fühlt sich jetzt schon gut an; verzögert
+  („after“) ist auch gut.
+- Allein nicht testbar: Gibt es echte Interaktion? Solange der Partner immer perfekt pariert,
+  kann man blind zuschlagen, sobald man den Angriff auf der anderen Seite sieht. Gewünscht: P1
+  muss darauf achten, ob P2 wirklich pariert, und erst dann zuschlagen. Wer den Boss angreift,
+  während er blockt, soll das spüren. Nur blocken (statt parieren) darf nichts öffnen.
+- Angreifen und Blocken gleichzeitig darf nicht gehen.
+
+**Wie Sekiro es macht** (soweit erkennbar):
+- Gegner blocken oder parieren Angriffe standardmäßig, solange sie selbst nicht angreifen.
+- In einem Wind-up oder in der Bewegung kann man sie trotzdem treffen, eher selten. Genau diese
+  Momente zu finden ist wichtig und cool.
+- Wird der eigene Angriff geblockt oder pariert, fällt er zurück: kein extra Stun, aber das eine
+  Fenster ist weg. Der nächste Angriff geht nach dem normalen Cooldown.
+
+**Genichiro als Vorzeigebeispiel** (G = Genichiro, P = Spieler, a = angreifen, p = parieren):
+`PaGp PaGp GaPp Ga…`
+- Der Kampf ist eine Schlagabfolge, die P oder G beginnt. Beide warten, ob der andere angreift.
+- Das Hauptmuster entsteht aus dem Flow: G lässt sich zweimal angreifen und pariert, dann greift
+  er selbst an: ein bis drei einfache Schläge, manchmal ein Spezialangriff (Sprung, Bogen …).
+- Greift P ein drittes Mal an, trifft er G vielleicht, wird aber selbst getroffen: G hat schon
+  ausgeholt und staggert nicht. G hat mehr Leben, also keine gute Idee.
+- Der Spieler fühlt sich, als würde er den Kampf leiten (er kann proaktiv angreifen), aber der
+  Gegner gibt vor, wie der Spieler reagieren muss.
+- Manchmal startet G eines seiner Muster: erst alles parieren, vorher keine Zeit anzugreifen.
+  Das entspricht den festen Mustern, die Bifrons schon hat. So ist es bisher eher wie Hollow
+  Knight: feste Muster, dazwischen Zeit zum Angreifen.
+
+**Daraus abgeleitet:**
+- Unsere Bosse sollten reaktiver sein. Feste Muster sind cool, aber der Spieler sollte auch
+  einfach angreifen können; der Boss pariert das standardmäßig, bis er selbst angreift.
+- Symmetrische Regel: Greift P1 an, pariert G und reagiert: Er greift an oder ist nochmal bereit
+  zu parieren. Wozu G sich entscheidet, ist dann sein Muster.
+- Mit zwei Spielern wird die Reaktion reicher: Nach dem Parry kann er P1, P2 oder beide
+  angreifen, z. B. den *anderen* Spieler, mit ähnlichem Delay wie beim Treffer nach dem Parry.
+  Er kann P1 angreifen und dabei für P2s Angriff parierbereit bleiben. P1 und P2 können
+  gleichzeitig angreifen oder nur einer; der zweite kann in die Schlagabfolge einsteigen.
+- Mögliche Specials: ein durchgehender Schwung (beginnt bei P1, schwingt durch bis P2); ein
+  heftiger Schlag auf einer Seite, den beide parieren müssen.
+- Zu testen: Fühlen sich beide noch zusammen an, wenn jede Seite praktisch für sich agieren
+  kann? Fühlt sich der Boss wie *ein* Gegner an? Hängt wohl an den Konsequenzen eines Parrys
+  und an Einschränkungen (z. B. dieser Boss greift bevorzugt zweimal links, dann zweimal rechts an).
+- Parry-Belohnung: In Sekiro ist es Haltungsschaden. Bei uns ist jeder parierte Boss-Angriff
+  ein Fenster für den Partner, also direkter Schadensfortschritt. Mit seltenen Parrys gewinnt
+  man trotzdem irgendwann; mit vielen Parrys und vollem Sync gibt es den schnelleren,
+  anspruchsvolleren Weg.
+- Sync sollte nicht nur langsam über Zeit verfallen, sondern auch, wenn entscheidende
+  Sync-Momente verpasst werden (vielleicht nur bei Angriffen auf beide gleichzeitig?).
+
+→ Zum Testen: ein reaktiver Modus für Columna Bifrons, per F1 umschaltbar, zusätzlich zu den
+festen Mustern (Branch `nicho/pep-test`, `docs/boss_columna_bifrons.md`).
