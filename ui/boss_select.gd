@@ -43,6 +43,7 @@ func _ready():
 	_swap.add_theme_font_size_override("font_size", 18)
 	_swap.pressed.connect(_toggle_swap)
 	Moves.changed.connect(_label_swap)
+	Pads.changed.connect(_label_swap)  # a pad plugged in or pulled
 	_label_swap()
 	column.add_child(_swap)
 	_buttons.append(_swap)
@@ -80,4 +81,4 @@ func _toggle_swap():
 
 
 func _label_swap():
-	_swap.text = "P1 on the %s   (C / pad Back to swap)" % ("pad" if Moves.on("swap_controls") else "keyboard")
+	_swap.text = "%s   (C / pad Back to swap)" % Pads.describe()
