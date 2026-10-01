@@ -71,15 +71,24 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
 - The same branch gives each player their own gamepad when two are connected (a new autoload,
   `core/pads.gd`); with one pad nothing changes.
 - He has a second, **reactive mode** (F1), after Genichiro in Sekiro: he parries the players'
-  own attacks and answers them with a short counter, often at the *other* player; left alone
-  for a while, he starts one of his patterns. The reasoning is in the scribble of 2026-10-01
-  ("Sekiro/Genichiro als Vorbild").
-- Outside its own folders the branch touches `core/moves.gd` (switches), `core/sfx.gd` (sounds;
-  everything is 8 dB quieter), `core/game_manager.gd` (sync gains), `ui/boss_select.gd`,
-  `project.godot` (one autoload), `actors/bosses/base_boss.gd` (one hook: the pause between
-  attacks) and **`actors/player/player.gd`**: a swing can no longer be blocked or parried out
-  of (attacking and blocking at once was possible; it changes parry timing in every fight).
-  If you're changing those right now, say so and we merge carefully.
+  own attacks, and after a few of them strikes back at whoever attacked him; left alone for a
+  while, he starts one of his patterns. The reasoning is in the scribble of 2026-10-01
+  ("Sekiro/Genichiro als Vorbild"). And a new attack, a sweep from one side through to the
+  other: who parries it decides where his swords end up.
+- **The branch changes the players' sword, in every fight** (`actors/player/player.gd`). It's a
+  proposal, for us to decide together: one small rule set for every blade, the players' and the
+  bosses' ("a blade guards or swings, never both"; the rules are at the top of
+  `docs/boss_columna_bifrons.md` on the branch). For the players that means: the slash is a real
+  swing (drawn back, cut, brought back: one every 0.45 s instead of every 0.3 s, landing 0.17 s
+  after the press instead of almost at once), nothing can be blocked or parried until the blade
+  is back, a swing a boss parries recoils (0.5 s), and the sword is held differently (diagonal
+  at rest, diagonally down while blocking). Cubus and Sphaera aren't retuned for it; they'll
+  feel different on the branch.
+- Outside its own folders the branch also touches `core/moves.gd` (switches), `core/sfx.gd`
+  (sounds; everything is 8 dB quieter), `core/game_manager.gd` (sync gains),
+  `ui/boss_select.gd`, `project.godot` (one autoload) and `actors/bosses/base_boss.gd` (one
+  hook: the pause between attacks). If you're changing those or `player.gd` right now, say so
+  and we merge carefully.
 
 ## The project
 

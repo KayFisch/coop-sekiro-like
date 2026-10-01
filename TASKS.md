@@ -21,14 +21,25 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Grundregel aus den Scribbles: Spieler links und rechts vom Boss, zwei Schwerter, er ist auf
   beiden Seiten gedeckt; ein Parry auf einer Seite bricht kurz die Deckung auf der anderen
   (Partner trifft im selben Takt), beide Seiten gleichzeitig pariert = Stagger.
-  Dazu ein **reaktiver Modus** (F1): Der Boss pariert Angriffe der Spieler und kontert, nach
-  dem Vorbild Genichiro (siehe Scribble vom 2026-10-01).
+  Dazu ein **reaktiver Modus** (F1): Der Boss pariert Angriffe der Spieler und schlägt auf den
+  zurück, der ihn angegriffen hat, nach dem Vorbild Genichiro (siehe Scribble vom 2026-10-01).
+  Und ein **Sweep**: ein Schwert von einer Seite durch zur anderen; wer pariert, entscheidet,
+  wo seine Schwerter danach sind.
+  Seit der zweiten Runde (2026-10-01) gilt **ein Regelsatz für jede Klinge**, Spieler wie Boss
+  („eine Klinge deckt oder schwingt, nie beides“, ein parierter Schlag prallt zurück); die
+  Sonderregeln (Mash-Sperre, nur ein Treffer pro Windup) sind raus.
   **Braucht einen Playtest zu zweit**, danach entscheiden: mergen, umbauen oder verwerfen.
+  Was dabei zu klären ist, steht in `docs/boss_columna_bifrons.md` (auf dem Branch) unter
+  „What to look for“: Treffer-Fenster „beat“ oder „after“, wie viel Windup-Treffer wert sind,
+  ob sich der längere Schwung richtig anfühlt.
   Fasst außerhalb des eigenen Ordners an: `core/moves.gd` (Schalter), `core/game_manager.gd`
   (Sync-Werte), `core/sfx.gd` (Sounds, Gesamtlautstärke), `ui/boss_select.gd` (Eintrag),
   `project.godot` (Autoload), `actors/bosses/base_boss.gd` (ein Hook für die Pause zwischen
-  Attacken) und **`actors/player/player.gd`** (klein: während des eigenen Schwungs kein Block
-  und kein Parry).
+  Attacken) und **`actors/player/player.gd`**, und das ist **nicht mehr klein**: Der Schlag ist
+  ein echter Schwung (Ausholen, Schnitt, Zurückführen: einer alle 0,45 s statt alle 0,3 s, er
+  trifft 0,17 s nach dem Druck), währenddessen kein Block und kein Parry, pariert prallt er
+  zurück, und das Schwert wird anders gehalten. Gilt in jedem Kampf, also vor dem Merge
+  gemeinsam entscheiden; Cubus und Sphaera sind nicht darauf abgestimmt.
 - [ ] **Zwei Controller** (@Nicho), selber Branch: bisher hört P2 auf jedes Gamepad, mit zwei
   Pads steuern beide P2. Neu: ein Pad pro Spieler (`core/pads.gd`). Braucht Test mit zwei Pads.
 - [ ] **Concept aufräumen** (`docs/concept.md`). Befund vom Review 2026-09-30:
