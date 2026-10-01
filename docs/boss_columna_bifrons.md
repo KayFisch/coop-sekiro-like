@@ -29,7 +29,7 @@ There are five rules, and they're the same for his blades and the players':
 2. **A strike has to be perfect parried** by whoever stands under it (block pressed at most
    0.133 s before it lands). Just blocking softens the hit and opens nothing.
 3. **A parried swing recoils.** The blade that was parried is knocked back and takes longer to
-   come back: a player's 0.5 s (instead of the 0.28 s a swing has left once it has hit), his
+   come back: a player's 0.45 s (instead of the 0.27 s a swing has left once it has hit), his
    0.35 s before it moves again (instead of 0.12 s).
 4. **A parried strike breaks his guard on the other side** for a moment: the plate is gone, that
    half of him flashes, his sword there is knocked aside. The partner's hit there is a **sync
@@ -43,12 +43,12 @@ There's nothing else: no cap on hits, no lock against mashing. What used to be e
 follows from these five:
 
 - **Hitting his windup.** The player about to be struck can cut at the raised blade's side
-  (rule 1), as often as fits, but a swing takes 0.45 s and has to be over before the parry.
-  Greed isn't forbidden, it gets hit.
+  (rule 1), as often as fits, but a swing takes 0.35 s and has to be over before the parry.
+  Greed isn't forbidden, it gets hit. How many fit is a matter of how fast his strikes come.
 - **After your own parry** his blade on your side is thrown back (rule 3): for about 0.45 s
   your own side is open too. One swing fits, if it's started at once.
-- **Mashing at his guard.** Every swing is parried and costs 0.67 s (0.17 s until it lands,
-  0.5 s recoil), with no block meanwhile.
+- **Mashing at his guard.** Every swing is parried and costs 0.53 s (0.08 s until it lands,
+  0.45 s recoil), with no block meanwhile.
 
 ## The players' sword
 
@@ -56,12 +56,19 @@ Changed for this boss, in `player.gd`, so it holds in every fight (and needs Kay
 
 - **Rest:** held diagonally, up and forward. **Block:** diagonally down in front. Letting go
   swings it back up; a perfect parry beats it up past its rest. That upswing *is* the parry.
-- **The slash is a real swing:** drawn back (0.1 s), cut down (0.15 s; it reaches him about
-  0.17 s after the press), brought back (0.2 s). 0.45 s in all, and until the blade is back
-  nothing else goes: no block, no parry, no second swing. No cooldown beyond that.
-- **Parried, it's knocked back** over the shoulder: 0.5 s until it's at rest again.
+- **The slash is a real swing:** drawn back (0.05 s, short: the cut has to follow the press),
+  cut down (0.12 s; it reaches him about 0.08 s after the press), brought back (0.18 s). 0.35 s
+  in all, and until the blade is back nothing else goes: no block, no parry, no second swing.
+  No cooldown beyond that, and an attack pressed up to 0.15 s too early comes as soon as the
+  blade is back.
+- **Parried, it's knocked back** over the shoulder: 0.45 s until it's at rest again.
+- **The sword is bigger:** 76 px long and 6 thick (it was 48 by 3), so the swing can be seen.
+  Its reach grew with it.
 - The upslash dips for 0.05 s first, from the new rest pose; the downslash and the dash-slash
-  are as they were.
+  keep their timing.
+
+He is smaller than he was (64 x 150 px, swords 170 px; it was 80 x 200 and 230), so a player's
+cut is something next to him. The players' bodies are the size they were.
 
 ## Reading him
 
@@ -83,20 +90,21 @@ Changed for this boss, in `player.gd`, so it holds in every fight (and needs Kay
 
 ## The partner's hit: on the beat, or after it ("bifrons_window")
 
-When the guard breaks (rule 4) is the open question, so it's a switch. A swing lands 0.17 s
+When the guard breaks (rule 4) is the open question, so it's a switch. A swing lands 0.08 s
 after its press, so the press has to come that much before the window:
 
 - **beat** (default): the guard breaks with the parry, for 0.25 s. The attack press has to come
-  between 0.17 s before the strike lands and 0.08 s after: together with the partner's block
-  press. Nobody can know yet whether the parry will come, it's a bet on the partner; lost, the
-  swing is parried and recoils.
-- **after**: the guard breaks 0.3 s after the parry, for 0.35 s. The press has to come 0.13 to
-  0.48 s after the strike landed: the hitter has to see or hear the parry first. A swing started
+  between 0.08 s before the strike lands and 0.17 s after: with the partner's block press or
+  just behind it ("clang, cut"). Nobody can know yet whether the parry will come, it's a bet on
+  the partner; lost, the swing is parried and recoils.
+- **after**: the guard breaks 0.25 s after the parry, for 0.3 s. The press has to come 0.17 to
+  0.47 s after the strike landed: the hitter has to see or hear the parry first. A swing started
   with the strike is parried, and its recoil outlasts the window.
 
-Mashing gets through by luck now and then, since nothing forbids it. Measured with bots that
-mash attack and stop only to parry the strikes on their own side: about 1 sync hit in 10 strikes
-on "beat", about 1 in 3 on "after" (the longer window). A timed press gets all of them.
+Mashing gets through by luck, since nothing forbids it, and with the quicker swing it does so
+often. Measured with bots that mash attack and stop only to parry the strikes on their own side:
+about 4 sync hits in 10 strikes on "beat", about 3 in 10 on "after". A timed press gets all of
+them.
 
 ## The sweep
 
@@ -143,34 +151,25 @@ row, the long ones not.
 
 ### reactive
 
-After Genichiro: an exchange that either side can start.
+After Genichiro: an exchange that either side can start. It's the same fight, with the same
+attacks; two things are different.
 
-- **He waits** between his attacks: 1.5 to 4 s (after the usual 0.6 s recovery) before he
-  starts one of his own. That's the room for the players to start something.
-- **He parries** whatever hits his guard (rule 1), and every hit he parries, at any time, wears
-  on his **patience**: 1, 2 or 3 hits (usually 2, picked afresh with every attack). His body
-  warms as it runs out.
-- Once it's gone and he's free, **he strikes back at the player who attacked him** (the one
-  whose hit he parried last): with a quick counter, or one time in four with a whole pattern or
-  the sweep, starting on that player's side.
-
-  | Counter | Strikes | Weight |
-  |---|---|---|
-  | RIPOSTE | 4 same | 3 |
-  | RIPOSTE_TWICE | 4 same, 4 same | 1 |
-  | RIPOSTE_CROSS | 4 same, 4 other | only when both attacked him |
-
-  "Same" is the attacker's side, "other" their partner's (`ColumnaBifrons.COUNTERS`).
-- **If both players attacked him**, he answers the last one first and then the other
-  (RIPOSTE_CROSS), never both at once: two players can't call up a strike on both sides, and
-  with it the stagger, by mashing.
+- **A hit he parries calls up his next attack, aimed at whoever attacked him.** He parries
+  what hits his guard (rule 1), and that wears on his patience: 1 or 2 hits (picked afresh with
+  every attack). Once it's gone and he's free, he strikes back at once: with one of his
+  patterns or the sweep, turned so its first strike is the attacker's, and that strike lands
+  within 0.8 s whatever the pattern's own windup. Then the series runs to its end, as ever.
+  A hit he parries while he's attacking is answered as soon as that attack is over (0.6 s).
+- **He leaves a little more room between his own attacks:** 0.5 to 1.2 s (after the usual
+  0.6 s recovery) instead of 0.25 to 0.5 s. That's the players' moment to start instead.
 
 So attacking him means being attacked, and that's the opening: you parry his answer, your
 partner hits. Provoking is how a pair starts an exchange on its own beat. And greed is a trade:
 a swing into the blade he's raising against you lands (rule 1), but it isn't over when the blade
 comes down.
 
-Everything else is as in "patterns": the windows, the stagger, the patterns themselves.
+In both modes **he starts an attack only while a player is in reach of his blades** (215 px).
+He can't walk up to anyone yet, so backing off is the way to get a breath.
 
 ## Testing alone ("bifrons_stand_in")
 
@@ -188,18 +187,20 @@ watch whether the parry really came before hitting. The stand-in never attacks.
 | How the drop accelerates | `StrikePattern.FALL_POWER` | 1.7 |
 | His blade after a strike: lying / thrown back by a parry | `STICK_TIME`, `RECOIL_TIME` | 0.12 / 0.35 s |
 | Hit window, "beat": delay / length | `BREAK_DELAY`, `BREAK_TIME` | 0 / 0.25 s |
-| Hit window, "after": delay / length | `BREAK_DELAY`, `BREAK_TIME` | 0.3 / 0.35 s |
+| Hit window, "after": delay / length | `BREAK_DELAY`, `BREAK_TIME` | 0.25 / 0.3 s |
 | Sync hit damage | `ColumnaBifrons.SYNC_HIT_FACTOR` | x2.5 |
 | Stagger length | `StrikePattern.BOTH_STAGGER_TIME`, `Sweep.STAGGER_TIME` | 2.2 s |
 | Sweep: until it reaches the first player / on to the second | `Sweep.WINDUP_UNITS`, `TRAVEL_TIME` | 6 (1.2 s) / 0.4 s |
 | Sweep: blade away / propped / swinging back | `Sweep.AWAY_TIME`, `PROP_TIME`, `RETURN_TIME` | 1.4 / 1.4 / 0.3 s |
 | Damage to players (hit / blocked) | `BLADE_DAMAGE`, `BLOCKED_DAMAGE` | 12 / 4 |
 | His health | `ColumnaBifrons.MAX_HP` | 1600 |
-| Reactive: his wait | `REACTIVE_WAIT_MIN`, `_MAX` | 1.5 - 4 s |
-| Reactive: parried hits before he strikes back | `PATIENCE` | 1, 2, 2 or 3 |
-| Reactive: a pattern instead of a counter | `PATTERN_ANSWER_CHANCE` | 0.25 |
-| Player: slash windup / cut / return | `ATTACK_WINDUP_TIME`, `_ACTIVE_`, `_RETURN_` (player.gd) | 0.1 / 0.15 / 0.2 s |
-| Player: recoil after being parried | `PARRIED_RECOIL` (player.gd) | 0.5 s |
+| How close a player has to be for him to attack, and for a blade to reach them | `BLADE_REACH` | 215 px |
+| Reactive: his wait | `REACTIVE_WAIT_MIN`, `_MAX` | 0.5 - 1.2 s |
+| Reactive: parried hits before he strikes back | `PATIENCE` | 1, 1 or 2 |
+| Reactive: his answer's first strike lands within | `ANSWER_WAIT` | 4 (0.8 s) |
+| Player: slash windup / cut / return | `ATTACK_WINDUP_TIME`, `_ACTIVE_`, `_RETURN_` (player.gd) | 0.05 / 0.12 / 0.18 s |
+| Player: recoil after being parried | `PARRIED_RECOIL` (player.gd) | 0.45 s |
+| Player: an early attack press still counts | `ATTACK_BUFFER_TIME` (player.gd) | 0.15 s |
 | Sync gained (parry / sync hit / both parried) | `GameManager.SYNC_GAINS` | 3 / 6 / 25 |
 
 For testing: `TEST_ONLY_PATTERN` (one attack only, e.g. `"SWEEP"`).
@@ -209,15 +210,16 @@ For testing: `TEST_ONLY_PATTERN` (one attack only, e.g. `"SWEEP"`).
 - Does "you parry, I hit" feel like one action done together, or like two people each doing
   their own thing next to a metronome? **beat** (a bet on the partner) or **after** (watching the
   partner): which reads as co-op, and in which does it matter that the hitter reacted?
-- **The swing:** does 0.45 s feel like swinging a sword, and can you tell when you can block
-  again? Is the recoil (0.5 s) enough of a price for a swing he parries, or too much for the
-  reactive mode, where being parried is how an exchange starts?
-- **Windup hits are worth a lot.** Uncapped, two fit into a first strike's windup: 20 damage,
-  against 25 for the sync hit. Bots that only parry their own strikes and mash otherwise kill him
-  in 64 s; bots that play it as meant (one parries, the other hits, no windup hits) in 46 s. If
-  the sync hit is meant to be the point, it has to be worth more (`SYNC_HIT_FACTOR`).
-- **Reactive:** is being struck back for attacking a fair answer? Does provoking feel like
-  leading the fight?
+- **The swing:** does it follow the press now, and does it still feel like swinging a sword?
+  Can you tell when you can block again?
+- **Mashing pays.** Windup hits are uncapped (two or three fit into a first strike's windup:
+  20 to 30 damage, against 25 for the sync hit), and a masher's swings find the broken guard often. Bots
+  that only parry their own strikes and mash otherwise kill him in 40 s; bots that play it as
+  meant (one parries, the other hits, no windup hits) in 50 s. Whether that's a problem depends
+  on how it feels with people; the knobs are `SYNC_HIT_FACTOR`, `PARRIED_RECOIL` and the tempo of
+  his strikes.
+- **Reactive:** does it flow now, one exchange into the next? Is being struck back at once a
+  fair answer, and does provoking feel like leading the fight?
 - **The sweep:** can the second player read their moment (0.4 s after the first)? Do the four
   outcomes read from where the swords are, without knowing the table?
 - Is the drop readable from the *other* side? Is 0.8 s between strikes the right tempo?
@@ -228,5 +230,5 @@ For testing: `TEST_ONLY_PATTERN` (one attack only, e.g. `"SWEEP"`).
 - Him moving: walking up to a player who backs off, charging through to swap sides.
 - Joining up ("together mode"); blocking (not parrying) holding his sword for a moment.
 - Sync that drains over time and when a moment for both is missed; the finisher at full sync.
-- A smaller boss, with blades closer to the players' in size.
+- Bigger players (their bodies; the swords are bigger now). That changes every level.
 - Any theme: two-sided beings, one-armed players, yin and yang.
