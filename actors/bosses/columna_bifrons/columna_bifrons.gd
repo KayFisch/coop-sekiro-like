@@ -305,8 +305,8 @@ func _update_pose():
 		if down:
 			pose = POSE_LIMP
 			snap = hp <= 0.0  # dead: this is the last frame he's posed
-		elif open and not snap:
-			pose = POSE_OPEN  # knocked aside, unless it's already dropping for its own strike
+		elif open and pose == POSE_GUARD:
+			pose = POSE_OPEN  # knocked aside (a blade with a strike coming up is posed by the pattern)
 			_blades[side].color = COLOR_SWORD
 		_poses[side] = pose if snap else _poses[side].lerp(pose, follow)
 		var pivot: Node2D = _pivots[side]

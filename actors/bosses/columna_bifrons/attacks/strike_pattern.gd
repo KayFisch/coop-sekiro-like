@@ -42,6 +42,9 @@ const BREAK_TIME = {"beat": 0.2, "after": 0.5}
 const BOTH_STAGGER_TIME = 2.2  # both blades parried at once
 const RECOVER_TIME = 0.6
 const TREMBLE = 0.05  # radians the drawn-back blade shakes by, just before the drop
+# A blade knocked aside by a broken guard goes up for its own strike at least this long before
+# its drop, however long the guard stays broken: it has to be up there when the drop starts.
+const RAISE_ROOM = 0.3
 
 const COLOR = Color.YELLOW
 const COLOR_PARRY = Color(1.0, 0.85, 0.4)
@@ -208,13 +211,20 @@ func _pose_blade(side: int):
 		var from = _contacts[last] + STICK_TIME if last >= 0 else 0.0
 		var fall_time = _fall_time(_next)
 		var fall_start = _contacts[_next] - fall_time
-		if _time >= fall_start:
+		if boss.is_open(side) and fall_start - _time > RAISE_ROOM:
+			# Its guard was just broken: still knocked aside, for as long as there's room.
+			boss.pose_sword(side, boss.POSE_OPEN)
+			boss.tint_sword(side, boss.COLOR_SWORD)
+			boss.tint_side(side, COLOR, 0.0)
+		elif _time >= fall_start:
 			var drop = pow(clampf((_time - fall_start) / fall_time, 0.0, 1.0), FALL_POWER)
 			boss.pose_sword(side, boss.POSE_COILED.lerp(boss.POSE_DOWN, drop), true)
 			boss.tint_sword(side, boss.COLOR_EXECUTE)
 			boss.tint_side(side, boss.COLOR_EXECUTE, 0.45)
 		else:
 			# Drawn further back the closer the drop is, faster toward the end, and trembling.
+			if boss.is_open(side):
+				from = maxf(from, fall_start - RAISE_ROOM)  # it only got to go up now
 			var tension = clampf((_time - from) / maxf(fall_start - from, 0.01), 0.0, 1.0)
 			var pose: Vector3 = boss.POSE_RAISED.lerp(boss.POSE_COILED, ease(tension, 2.0))
 			pose.z += randf_range(-TREMBLE, TREMBLE) * tension
