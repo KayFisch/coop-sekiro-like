@@ -10,6 +10,10 @@ const SAVE_PATH = "user://moves.cfg"
 # Bumped whenever the defaults change: a save from an older version is dropped once, so the new
 # defaults reach it (see _ready()).
 const VERSION = 2
+# The panel's text: shrunk as far as it takes for the whole list to fit on screen.
+const PANEL_MARGIN = Vector2(80, 16)
+const PANEL_FONT_SIZE = 17
+const PANEL_MIN_FONT_SIZE = 10
 
 # Each switch: key, what the panel calls it, and its default (a bool, or one of `options`).
 # The fight kit is on by default; the platforming kit is off, for the gyms (see docs/concept.md).
@@ -32,7 +36,9 @@ const ENTRIES = [
 	{"key": "relay_refresh_dash", "label": "   relay refreshes the dash", "default": false},
 	{"key": "chimney_clash", "label": "Chimney clash (wall jumps meeting)", "default": false},
 	{"key": "players_collide", "label": "Players collide (stand on, bump into each other)", "default": true},
-	{"key": "boss_body", "label": "Boss body blocks players (Cubus)", "default": true},
+	{"key": "boss_body", "label": "Boss body blocks players (Cubus, Bifrons)", "default": true},
+	{"key": "bifrons_guard", "label": "Bifrons: guarded (hits bounce unless a parry opens him)", "default": true},
+	{"key": "bifrons_window", "label": "Bifrons: partner hits on the beat, or after it", "default": "beat", "options": ["beat", "after"]},
 	{"key": "call", "label": "Call countdown (P1 Enter, P2 LB)", "default": true},
 	{"key": "swap_controls", "label": "Swap P1 / P2 controls (P1 on the pad)", "default": false},
 ]
@@ -161,8 +167,7 @@ func _build_panel():
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_layer.add_child(shade)
 	_text = Label.new()
-	_text.position = Vector2(80, 40)
-	_text.add_theme_font_size_override("font_size", 17)
+	_text.position = PANEL_MARGIN
 	_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_layer.add_child(_text)
 
@@ -177,3 +182,9 @@ func _refresh():
 	lines.append("")
 	lines.append("%s %s" % ["▶" if _selected == ENTRIES.size() else " ", "Reset all to defaults"])
 	_text.text = "\n".join(lines)
+	var room = _layer.get_viewport().get_visible_rect().size.y - 2.0 * PANEL_MARGIN.y
+	var font_size = PANEL_FONT_SIZE
+	_text.add_theme_font_size_override("font_size", font_size)
+	while font_size > PANEL_MIN_FONT_SIZE and _text.get_minimum_size().y > room:
+		font_size -= 1
+		_text.add_theme_font_size_override("font_size", font_size)

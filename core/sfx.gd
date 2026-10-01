@@ -87,6 +87,8 @@ func _build_sounds():
 	_sounds["call_tick"] = _blip(1100.0, 0.06)
 	_sounds["call_go"] = _notes([784.0, 1174.7], 0.09, true)
 	_sounds["clap"] = _clap(0.09)  # the grab's hands shutting on nothing
+	_sounds["guard_break"] = _clang(700.0, 0.3)  # Columna Bifrons's guard knocked open
+	_sounds["sync_hit"] = _thud(240.0, 80.0, 0.18, 16.0, 0.5)  # a hit through his broken guard
 	_sounds["game_over"] = _notes([440.0, 349.2, 293.7], 0.17, false)
 	_sounds["victory"] = _notes([523.3, 659.3, 784.0, 1046.5], 0.125, true)
 

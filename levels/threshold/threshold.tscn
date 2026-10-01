@@ -1,0 +1,115 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://cerd7p55i2ogi" path="res://core/camera_shake.gd" id="1_cam"]
+[ext_resource type="PackedScene" path="res://actors/bosses/columna_bifrons/columna_bifrons.tscn" id="2_bifrons"]
+[ext_resource type="PackedScene" path="res://actors/player/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://ui/hud.tscn" id="4_hud"]
+
+[sub_resource type="Shader" id="Shader_bg_gradient"]
+code = "shader_type canvas_item;
+
+uniform vec4 top_color : source_color = vec4(0.02, 0.02, 0.035, 1.0);
+uniform vec4 bottom_color : source_color = vec4(0.12, 0.12, 0.14, 1.0);
+
+void fragment() {
+	COLOR = mix(top_color, bottom_color, UV.y);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="Material_bg_gradient"]
+shader = SubResource("Shader_bg_gradient")
+shader_parameter/top_color = Color(0.02, 0.02, 0.035, 1)
+shader_parameter/bottom_color = Color(0.12, 0.12, 0.14, 1)
+
+[sub_resource type="RectangleShape2D" id="Shape_floor"]
+size = Vector2(1152, 48)
+
+[sub_resource type="RectangleShape2D" id="Shape_wall"]
+size = Vector2(24, 648)
+
+[sub_resource type="RectangleShape2D" id="Shape_ceiling"]
+size = Vector2(1152, 16)
+
+[node name="Threshold" type="Node2D"]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(576, 324)
+script = ExtResource("1_cam")
+
+[node name="Stage" type="Node2D" parent="."]
+
+[node name="Background" type="ColorRect" parent="Stage"]
+material = SubResource("Material_bg_gradient")
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
+
+[node name="Floor" type="StaticBody2D" parent="Stage"]
+position = Vector2(576, 624)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="ColorRect" type="ColorRect" parent="Stage/Floor"]
+offset_left = -576.0
+offset_top = -24.0
+offset_right = 576.0
+offset_bottom = 24.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="LeftWall" type="StaticBody2D" parent="Stage"]
+position = Vector2(12, 324)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/LeftWall"]
+shape = SubResource("Shape_wall")
+
+[node name="ColorRect" type="ColorRect" parent="Stage/LeftWall"]
+offset_left = -12.0
+offset_top = -324.0
+offset_right = 12.0
+offset_bottom = 324.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="RightWall" type="StaticBody2D" parent="Stage"]
+position = Vector2(1140, 324)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/RightWall"]
+shape = SubResource("Shape_wall")
+
+[node name="ColorRect" type="ColorRect" parent="Stage/RightWall"]
+offset_left = -12.0
+offset_top = -324.0
+offset_right = 12.0
+offset_bottom = 324.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="Ceiling" type="StaticBody2D" parent="Stage"]
+position = Vector2(576, 8)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/Ceiling"]
+shape = SubResource("Shape_ceiling")
+
+[node name="ColorRect" type="ColorRect" parent="Stage/Ceiling"]
+offset_left = -576.0
+offset_top = -8.0
+offset_right = 576.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="ColumnaBifrons" parent="." instance=ExtResource("2_bifrons")]
+position = Vector2(576, 500)
+
+[node name="Player1" parent="." instance=ExtResource("3_player")]
+position = Vector2(446, 560)
+
+[node name="Player2" parent="." instance=ExtResource("3_player")]
+position = Vector2(706, 560)
+player_id = 2
+player_color = Color(1, 0.55, 0.15, 1)
+sword_color = Color(1, 0.8, 0.55, 1)
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]
