@@ -37,7 +37,7 @@ const ENTRIES = [
 	{"key": "chimney_clash", "label": "Chimney clash (wall jumps meeting)", "default": false},
 	{"key": "players_collide", "label": "Players collide (stand on, bump into each other)", "default": true},
 	{"key": "boss_body", "label": "Boss body blocks players (Cubus, Bifrons)", "default": true},
-	{"key": "bifrons_mode", "label": "Bifrons: set patterns, or reactive (he strikes back)", "default": "patterns", "options": ["patterns", "reactive"]},
+	{"key": "bifrons_mode", "label": "Bifrons: set patterns, or reactive (hit him and he strikes back)", "default": "patterns", "options": ["patterns", "reactive"]},
 	{"key": "bifrons_window", "label": "Bifrons: partner hits on the beat, or after it", "default": "beat", "options": ["beat", "after"]},
 	{"key": "bifrons_stand_in", "label": "Bifrons: a stand-in parries on that side (testing alone)", "default": "off", "options": ["off", "left", "right"]},
 	{"key": "call", "label": "Call countdown (P1 Enter, P2 LB)", "default": true},

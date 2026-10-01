@@ -101,7 +101,7 @@ mouse_filter = 2
 color = Color(0.19, 0.19, 0.21, 1)
 
 [node name="ColumnaBifrons" parent="." instance=ExtResource("2_bifrons")]
-position = Vector2(576, 500)
+position = Vector2(576, 525)
 
 [node name="Player1" parent="." instance=ExtResource("3_player")]
 position = Vector2(446, 560)

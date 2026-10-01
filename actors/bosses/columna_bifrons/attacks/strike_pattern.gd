@@ -2,8 +2,8 @@ class_name StrikePattern
 extends Attack
 ## Yellow blade -> red. Columna Bifrons's main attack: a set series of sword strikes, each on
 ## his left, his right or both sides at once, landing on a beat. There's one instance per pattern
-## and per counter (see ColumnaBifrons.PATTERNS and COUNTERS); the boss says which way round
-## each run goes (ColumnaBifrons.orient()).
+## (see ColumnaBifrons.PATTERNS); the boss says which way round each run goes
+## (ColumnaBifrons.orient()) and how soon its first strike comes (first_wait()).
 ##
 ## A strike: that side's blade goes up over his head (so the side says who has to parry), is
 ## drawn back there, then drops in FALL_TIME. The drop is the cue, and both players read it:
@@ -36,14 +36,14 @@ const FALL_POWER = 1.7  # the drop starts slow and lands fast (1 = constant spee
 const STICK_TIME = 0.12
 const RECOIL_TIME = 0.35
 # THE PARTNER'S HIT. A parried strike breaks the guard on the other side BREAK_DELAY after the
-# parry, for BREAK_TIME; by Moves "bifrons_window". A player's swing lands 0.17 s after its
+# parry, for BREAK_TIME; by Moves "bifrons_window". A player's swing lands 0.08 s after its
 # press (see ATTACK_WINDUP_TIME in player.gd), so the press has to come that much earlier:
 # "beat": at once. Parry and hit are pressed together, the hitter betting on the parry: the
-#   attack press has to come between 0.17 s before the strike lands and 0.08 s after.
+#   attack press has to come between 0.08 s before the strike lands and 0.17 s after.
 # "after": a moment later, so a swing started on the strike itself is still parried, and the
-#   hitter has to see the parry first: press 0.13 to 0.48 s after the strike landed.
-const BREAK_DELAY = {"beat": 0.0, "after": 0.3}
-const BREAK_TIME = {"beat": 0.25, "after": 0.35}
+#   hitter has to see the parry first: press 0.17 to 0.47 s after the strike landed.
+const BREAK_DELAY = {"beat": 0.0, "after": 0.25}
+const BREAK_TIME = {"beat": 0.25, "after": 0.3}
 const BOTH_STAGGER_TIME = 2.2  # both blades parried at once
 const RECOVER_TIME = 0.6
 const TREMBLE = 0.05  # radians the drawn-back blade shakes by, just before the drop
@@ -54,8 +54,8 @@ const RAISE_ROOM = 0.3
 const COLOR = Color.YELLOW
 
 var _name: String
-var _strikes: Array  # as written in ColumnaBifrons.PATTERNS / COUNTERS: [wait, side] each
-var _contacts: Array = []  # when each strike lands, in seconds from the pattern's start
+var _strikes: Array  # as written in ColumnaBifrons.PATTERNS: [wait, side] each
+var _contacts: Array = []  # when each strike lands this run, in seconds from the pattern's start
 var _sides: Array = []  # this run's side for each strike (see ColumnaBifrons.orient())
 var _time = 0.0  # seconds into the pattern
 var _next = 0  # the strike that lands next
@@ -67,10 +67,6 @@ var _up_since = {LEFT: -1.0, RIGHT: -1.0}  # when each blade went up for the nex
 func _init(pattern_name: String, strikes: Array):
 	_name = pattern_name
 	_strikes = strikes
-	var landing = 0.0
-	for strike in strikes:
-		landing += strike[0] * TIME_UNIT
-		_contacts.append(landing)
 
 
 func get_attack_name() -> String:
@@ -79,8 +75,14 @@ func get_attack_name() -> String:
 
 func start(boss_node, player_nodes: Array):
 	super(boss_node, player_nodes)
-	var way = boss.orient(_name, _strikes)
+	var lead = boss.first_wait(_strikes[0][0])
+	var way = boss.orient(_strikes)
 	_sides = _strikes.map(func(strike): return strike[1] * way)
+	_contacts = []
+	var landing = 0.0
+	for i in _strikes.size():
+		landing += (lead if i == 0 else _strikes[i][0]) * TIME_UNIT
+		_contacts.append(landing)
 	_time = 0.0
 	_next = 0
 	_parried = {LEFT: false, RIGHT: false}

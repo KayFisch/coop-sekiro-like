@@ -52,7 +52,7 @@ func get_attack_name() -> String:
 func start(boss_node, player_nodes: Array):
 	super(boss_node, player_nodes)
 	# As written it goes from left to right; the boss says which way round this run goes.
-	_first = LEFT * boss.orient(NAME, [[WINDUP_UNITS, LEFT], [TRAVEL_TIME / StrikePattern.TIME_UNIT, RIGHT]])
+	_first = LEFT * boss.orient([[WINDUP_UNITS, LEFT], [TRAVEL_TIME / StrikePattern.TIME_UNIT, RIGHT]])
 	_time = 0.0
 	_first_at = WINDUP_UNITS * StrikePattern.TIME_UNIT
 	_second_at = _first_at + TRAVEL_TIME
