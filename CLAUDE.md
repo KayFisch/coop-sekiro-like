@@ -8,7 +8,9 @@ Keep this file short and true: when something here goes stale, fix it in the sam
 
 A SessionStart hook (`.claude/settings.json` → `.claude/hooks/session-start.sh`) pulls
 automatically and puts a "Session start" block into your context: pull result and the commits
-since this clone's last session (tracked in `.git/claude-last-seen`, per clone).
+since this clone's last session (tracked in `.git/claude-last-seen`, per clone). On a branch
+other than `main` it also lists what's new on `main`, which the pull doesn't bring: mention
+that too, and offer to merge `main` into the branch if it has fallen behind.
 
 **Claude: at the start of every session, before anything else:**
 
