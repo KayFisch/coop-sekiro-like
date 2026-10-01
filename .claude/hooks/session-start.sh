@@ -41,4 +41,26 @@ else
 fi
 
 echo "$head" > "$state"
+
+# On another branch, the pull above doesn't bring main: say what's new there too.
+main_state="$(git rev-parse --git-dir)/claude-last-seen-main"
+if [ "$branch" = "main" ]; then
+	echo "$head" > "$main_state"
+else
+	git fetch -q origin main 2>/dev/null
+	main_head=$(git rev-parse -q --verify origin/main 2>/dev/null)
+	main_last=$(cat "$main_state" 2>/dev/null)
+	if [ -n "$main_head" ]; then
+		echo
+		if [ -n "$main_last" ] && [ "$main_last" != "$main_head" ] \
+				&& git cat-file -e "$main_last^{commit}" 2>/dev/null; then
+			echo "New on main since the last session ($(git rev-list --count "$main_last..$main_head") commits, not pulled into $branch):"
+			git log --format='%h %an %ad  %s' --date=short "$main_last..$main_head"
+		else
+			echo "Nothing new on main since the last session."
+		fi
+		echo "$branch is $(git rev-list --count "$main_head..$head") commits ahead of main and $(git rev-list --count "$head..$main_head") behind."
+		echo "$main_head" > "$main_state"
+	fi
+fi
 exit 0
