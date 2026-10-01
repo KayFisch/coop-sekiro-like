@@ -68,19 +68,21 @@ const PARRY_SPAM_LOCK = 0.3  # a block press this soon after the previous one ca
 # brought back to rest (return). It commits: from the press until the blade is back at rest,
 # block does nothing, and a parry window opened just before the swing is given up; so there's
 # no attacking and parrying at once (see _is_swinging()). There's no cooldown beyond that: the
-# blade back at rest is ready again.
-const ATTACK_WINDUP_TIME = 0.1
-const ATTACK_ACTIVE_TIME = 0.15
-const ATTACK_RETURN_TIME = 0.2
+# blade back at rest is ready again, and an attack pressed up to ATTACK_BUFFER_TIME before it's
+# back comes as soon as it is.
+const ATTACK_WINDUP_TIME = 0.05  # short: the cut has to follow the press
+const ATTACK_ACTIVE_TIME = 0.12
+const ATTACK_RETURN_TIME = 0.18
 const ATTACK_COOLDOWN = ATTACK_WINDUP_TIME + ATTACK_ACTIVE_TIME + ATTACK_RETURN_TIME
+const ATTACK_BUFFER_TIME = 0.15
 const ATTACK_DAMAGE = 10.0
 const SWORD_REST_ANGLE = -0.7  # -40 degrees: up and forward
-const SWING_START_ANGLE = -1.75  # drawn back to here, just past upright...
+const SWING_START_ANGLE = -1.4  # drawn back to here, nearly upright...
 const SWING_END_ANGLE = 0.6  # ...and cut down to here
 # PARRIED: an enemy blade that meets the swing knocks it back (on_swing_parried()). The blade
 # then takes PARRIED_RECOIL to come back to rest, instead of the usual return, and until it's
 # there the swing isn't over: no block, no parry, no attack.
-const PARRIED_RECOIL = 0.5
+const PARRIED_RECOIL = 0.45
 const RECOIL_ANGLE = -2.4  # thrown back over the shoulder
 const RECOIL_KNOCK_TIME = 0.06  # how fast it's thrown there
 # Dash-slash: dash and attack together (or attack a moment before the dash) to dash with the
@@ -296,6 +298,7 @@ var _swing_kind = Swing.SLASH
 var _attack_timer = 0.0  # counts down through the swing and its return
 var _attack_cooldown = 0.0
 var _attack_landed = false
+var _attack_buffer = 0.0  # > 0 while an attack press is waiting for the blade to be back
 var _recoil_timer = 0.0  # > 0 while the blade comes back from being parried (PARRIED_RECOIL)
 var _sword_idle_angle = SWORD_REST_ANGLE  # the blade's angle when it isn't swinging, eased
 var _swing_from_angle = SWORD_REST_ANGLE  # where the blade was when the swing (or recoil) began
@@ -768,6 +771,8 @@ func _process_actions():
 
 	if Input.is_action_just_pressed(_action("attack")):
 		_press_attack()
+	elif _attack_buffer > 0.0 and _attack_cooldown <= 0.0:
+		_press_attack()  # pressed a moment too early: it comes now
 	elif Input.is_action_just_pressed(_action("up")) and _attack_timer > 0.0 \
 			and _swing_kind == Swing.SLASH and not _attack_landed \
 			and _now() - _slash_press_time <= UPSLASH_LATE:
@@ -873,7 +878,11 @@ func _press_attack():
 			and _now() - _dash_press_time <= DASH_SLASH_LATE:
 		_begin_dash_slash()  # attacking right as the dash starts
 		return
-	if _attack_cooldown > 0.0 or is_blocking():
+	if _attack_cooldown > 0.0:
+		_attack_buffer = ATTACK_BUFFER_TIME
+		return
+	_attack_buffer = 0.0
+	if is_blocking():
 		return
 	if Input.is_action_pressed(_action("up")) and _dash_timer <= 0.0:
 		_press_upslash()
@@ -1397,6 +1406,7 @@ func _tick_timers(delta):
 	_invuln_timer = maxf(_invuln_timer - delta, 0.0)
 	_sword_flash = maxf(_sword_flash - delta, 0.0)
 	_recoil_timer = maxf(_recoil_timer - delta, 0.0)
+	_attack_buffer = maxf(_attack_buffer - delta, 0.0)
 	_parry_flick = maxf(_parry_flick - delta, 0.0)
 	_dodge_flash = maxf(_dodge_flash - delta, 0.0)
 	_hurt_flash = maxf(_hurt_flash - delta, 0.0)
