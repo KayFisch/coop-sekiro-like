@@ -233,3 +233,23 @@ Was sich noch nicht richtig anfühlte, und was daraus folgt:
 langsamer beim Schlagen; die Tastenbelegung für den Dash-Parry; die Farbfrage (Grün kollidiert
 mit dem Farbvokabular von Cubus und Sphaera: Grün = „in die Luft“, Blau = „zusammen parieren“);
 ob der Stand-in auch angreifen soll.
+
+## 2026-10-02 (Nicho): Kämpfe als Beats, After-Delay je Angriff, Boss-Ideen
+
+**Kämpfe sollen sich wie Beats anfühlen** (vielleicht sogar so anhören): Hit, Parry und Konter
+kommen in bestimmten Abständen. Deshalb auch der „after“-Modus: Der Konter sitzt auf einem
+eigenen Schlag nach dem Parry, nicht auf demselben.
+
+**After-Delay an den Angriff anpassen:** Wie lange nach dem Parry die Deckung bricht, hängt
+vom Angriff ab, in Notenwerten gedacht. Z. B. normaler Hieb = Achtelnote Delay, schwerer
+Angriff = Viertelnote. Vielleicht macht das Sinn.
+
+**Boss-Ideen:**
+- Boss mit nur einer Waffe: schlägt abwechselnd auf beide Seiten.
+- Boss, der sich auch splitten kann.
+- Die Arena verursacht auf einer Seite Schaden: Die Spieler müssen die Seite wechseln.
+- Boss, der Schaden auf einer Seite aufgibt und damit eine Seite stärkt: zwingt die Spieler
+  in pep, um seine schwache Seite anzugreifen.
+
+→ Die Frage, was zwischen den Bossen passiert, steht in `TASKS.md` unter „Offene
+Grundsatzfragen“.

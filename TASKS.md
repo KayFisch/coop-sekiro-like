@@ -8,6 +8,9 @@ Persönliches (Lernen, Erinnerungen) gehört in die eigene `TASKS.local.md`, nic
 
 Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features darauf bauen.
 
+- [ ] **Was ist zwischen den Bossen?** (Nicho, 2026-10-02) Jump-and-Run-Räume wie in Celeste,
+  eine lineare Story, oder generiert / roguelike? Also: Platformer oder Mob-Fights zwischen
+  den Bosskämpfen.
 - [ ] _(weitere eintragen)_
 
 ## Entscheidungen
