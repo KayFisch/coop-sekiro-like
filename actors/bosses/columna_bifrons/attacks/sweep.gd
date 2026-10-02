@@ -1,18 +1,19 @@
 class_name Sweep
 extends Attack
 ## Yellow blade, held out to the side -> red. Columna Bifrons sweeps one blade flat from its
-## own side through to the other: it reaches the player on its side first, and the player on the
-## far side TRAVEL_TIME later. Each has to perfect parry it as it reaches them; blocking only
-## softens the hit. It breaks no guard, as a parried strike does: what a parry wins is where his
-## blades are afterwards (and a blade that isn't at its flank guards nothing, see
+## own player's side through to the other: it reaches its own player first, and the other one
+## TRAVEL_TIME later. Each has to perfect parry it as it reaches them; blocking only softens the
+## hit. It breaks no guard, as a parried strike does: what a parry wins is where his blades are
+## afterwards (and a blade that isn't at its flank guards nothing, see
 ## ColumnaBifrons.is_guarding()):
-##   nobody        the blade swings back at once: he's guarded on both sides again.
-##   first only    knocked off its course, the blade doesn't come back for a while: no sword on
-##                 the side it started from.
+##   nobody        the blade swings back at once: he's guarded against both again.
+##   first only    knocked off its course, the blade doesn't come back for a while: no sword
+##                 against the first player.
 ##   second only   stopped dead, he has to prop himself up on his other sword, which guards
-##                 nothing meanwhile; the swept blade swings back to its own side.
+##                 nothing meanwhile; the swept blade swings back to its own player.
 ##   both          both of those: the blade lies where it was stopped and he leans on the other.
-##                 No guard on either side: staggered.
+##                 No guard at all: staggered.
+## It's for a player on each side (pep); with both on one side it doesn't come.
 
 signal strike_parried(player)
 signal both_parried
@@ -33,7 +34,7 @@ const STAGGER_TIME = 2.2  # parried by both
 const RECOVER_TIME = 0.6
 const TREMBLE = 0.04  # radians the drawn-back blade shakes by, just before it comes down
 
-var _first = LEFT  # the side the blade starts from: this run's first player's
+var _first = LEFT  # the sword that sweeps: its player is the first it reaches
 var _time = 0.0  # seconds into the attack
 var _first_at = 0.0  # when the blade reaches the first player...
 var _second_at = 0.0  # ...and the second
@@ -103,9 +104,9 @@ func update(delta: float):
 	_animate()
 
 
-# The blade reaches the players on `side`: true if it was parried there.
-func _reach(side: int) -> bool:
-	var judged = boss.judge(side, players)
+# The blade reaches that sword's player: true if it was parried there.
+func _reach(blade: int) -> bool:
+	var judged = boss.judge(blade)
 	boss.land(judged)
 	for p in judged.parriers:
 		parry_success.emit(p, "bifrons_sweep")
@@ -166,7 +167,7 @@ func _animate():
 	boss.tint_sword(other, boss.COLOR_SWORD)
 	var down_from = _first_at - StrikePattern.FALL_TIME
 	if _time >= _first_at:
-		# Through, flat, from its own side to the other.
+		# Through, flat, from its own player's side to the other.
 		var across = clampf((_time - _first_at) / TRAVEL_TIME, 0.0, 1.0)
 		boss.pose_sword(swept, boss.POSE_SWEEP, true, lerpf(1.0, -1.0, across))
 		boss.tint_sword(swept, boss.COLOR_EXECUTE)
