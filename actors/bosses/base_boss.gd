@@ -150,6 +150,12 @@ func body_block() -> Rect2:
 	return Rect2()
 
 
+# True for a boss the players keep facing, whichever way they walk (see _process_movement() in
+# player.gd): one that changes sides on them.
+func holds_facing() -> bool:
+	return false
+
+
 # Where the center charge floats.
 func hover_point() -> Vector2:
 	return Vector2(home_position.x, home_position.y - CENTER_HOVER_HEIGHT)

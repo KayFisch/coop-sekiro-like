@@ -490,6 +490,10 @@ func _process_movement(delta):
 	var direction = move_axis()
 	if direction != 0.0:
 		facing = signf(direction)
+	# A boss that changes sides keeps your eyes on him, whichever way you walk.
+	var boss = GameManager.boss
+	if is_instance_valid(boss) and boss.holds_facing() and boss.global_position.x != global_position.x:
+		facing = signf(boss.global_position.x - global_position.x)
 	if _dash_slash and _dash_timer > 0.0:
 		facing = _dash_dir  # the thrust points the way of the dash
 	_fast_falling = false
@@ -759,9 +763,13 @@ func _process_actions():
 	if _jump_buffer > 0.0:
 		_try_jump()
 
-	# The dash goes the way you face (_process_movement() has already turned you this frame).
+	# The dash goes the way you face (_process_movement() has already turned you this frame);
+	# while a boss holds your facing, the way you hold.
 	if Input.is_action_just_pressed(_action("dash")):
-		_start_dash(facing)
+		var held = move_axis()
+		var boss = GameManager.boss
+		var free = held != 0.0 and is_instance_valid(boss) and boss.holds_facing()
+		_start_dash(signf(held) if free else facing)
 
 	if Input.is_action_just_pressed(_action("block")) and not _is_swinging():
 		var now = _now()
