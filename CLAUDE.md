@@ -203,7 +203,8 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   rules are under "THE SWORD" there: a swing commits (windup, cut, return; no block or parry
   until the blade is back at rest), and a swing an enemy blade parries recoils
   (`on_swing_parried()`, called by the boss). A boss that changes sides can hold the players'
-  facing (`BaseBoss.holds_facing()`); the dash then goes the way the stick is held.
+  facing (`BaseBoss.holds_facing()`); the dash then goes the way the stick is held. A perfect
+  parry landed mid-dash carries the player through the boss's body ("DASH-PARRY").
 - `actors/bosses/`: `BaseBoss` runs the state machine
   `IDLE → TELEGRAPH → ATTACKING → RECOVER/STAGGER`; each attack is an `Attack` (`RefCounted`,
   `base_attack.gd`) with hooks `start / update_telegraph / execute / update / on_struck /
@@ -211,12 +212,14 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   weights, pose and HP. Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs the Scales level),
   and `columna_bifrons/`, a test boss for fighting from both sides, and with both players on
   one (`docs/boss_columna_bifrons.md`): each of his two swords fights one player wherever they
-  are (`ward_of()`); a `StrikePattern` attack run with different strike lists, a `Sweep` and a
-  `Leap`; a guard that overrides `take_damage()` (a blade standing at its flank parries,
-  `is_guarding()`; one that's swinging can't); his own movement (he walks between attacks,
-  charges past a player, leaps between them: `_walk()`, `charge_through()`, `leap.gd`); and a
-  reactive mode in which he strikes back at whoever attacked him (started from his own
-  `_physics_process()`, outside BaseBoss's idle timer).
+  are (`ward_of()`), and turns on the other one while its own is away (`_update_turns()`); a
+  `StrikePattern` attack run with different strike lists, a `Sweep` and a `Leap`; a guard that
+  overrides `take_damage()` (a blade standing at its flank parries, `is_guarding()`; one that's
+  swinging can't); his own movement (where he stands: `_place()` / `walk()`; a lunge with every
+  strike: `lunge_goal()`; charging past a player, leaping between them, rushing one who's
+  away); a reactive mode in which he strikes back at whoever attacked him (started from his
+  own `_physics_process()`, outside BaseBoss's idle timer); and `stand_in.gd`, which plays one
+  of the players for testing alone, by pressing that player's buttons.
 
 ## Conventions
 
