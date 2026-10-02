@@ -190,3 +190,46 @@ heftiger Schlag, den beide zusammen parieren müssen. So spielt sich ppe praktis
 denselben Regeln), der Charge als Aneinander-vorbei-Laufen plus Doppelschlag, der Sprung zurück
 nach pep, das Movement-Schema, Blick immer zum Boss (`docs/boss_columna_bifrons.md`). Offen:
 die Hieb-nach-oben-Variante, der Sync-Modus, die Spieler als zwei Hälften.
+
+## 2026-10-02 (Nicho): nach dem Solo-Test von ppe, Crossing, Sprung und Movement
+
+Was sich noch nicht richtig anfühlte, und was daraus folgt:
+
+- **Schwerter zeigen auf ihre Spieler:** gut so.
+- **ppe-Haltung** noch verwirrend: Das Schwert in der hinteren Ebene darf nicht das sein, das
+  vorn lang schwingt. Das hintere schwingt über den Kopf, das vordere etwas tiefer, aber nicht
+  ganz so horizontal.
+- **„Beide“ in eigener Farbe** ist gut, Blau aber nicht: zu nah an den Spielerfarben. Später
+  wären Spieler in Schwarz und Weiß und dazu Rot cooler; dafür ist der Hintergrund noch zu
+  einfarbig. Erstmal etwas Auffälliges, das keiner Spielerfarbe ähnelt (Grün / Violett).
+- **Crossing** funktioniert; das Ausholen war zu langsam und nicht weit genug, er darf etwas
+  weiter laufen, und beim Doppelhieb danach bewegt er sich kurz oder lang zu den Spielern
+  zurück. Der Dash-Parry ist mit der Tastenbelegung noch unangenehm (später ändern).
+- **Sprung** gut; Schwerter näher an seiner Mitte, Rückstoß für beide stärker. Er soll seltener
+  kommen: Die Spieler sollen mehr selbst entscheiden, ob sie die Positionen tauschen.
+- **Movement:** Es fühlt sich komisch an, wenn er direkt an einem Spieler steht. Bessere
+  Grundidee: Er versucht immer einen passenden Abstand zu beiden zu haben, so dass er trifft,
+  aber nicht zu nah dran ist; hat er beide in Reichweite, steht er mittig zwischen ihnen.
+  Klemmen ihn beide ein, löst er manchmal direkt den Sprung aus, springt manchmal einfach weg
+  oder nutzt den Dash.
+- **Bewegung auch während der Attacken:** langsamer, und im Moment des Hiebs etwas
+  beschleunigt. Entfernt sich ein Spieler im Pattern, holt er auf und verbindet den nächsten
+  Hieb mit einem Dash (nicht die Dash-Attacke). Beim Hieb mit langem Ausholen: erst langsam,
+  dann beim Hieb schnell. Kein Anhalten und wieder Loslaufen: Es soll als Laufen oder als
+  Hiebdash zu erkennen sein. (Spieler sollten beim Schlagen eigentlich auch langsamer sein;
+  erstmal egal.)
+- **Ins Nichts schlagen:** Folgt er einem Spieler und der andere ist wirklich weit weg, fällt
+  der Hieb auf den einfach aus (knapp außer Reichweite ist okay). Passiert das oft, wechselt er
+  zeitweise in einen „ppe-Modus“ gegen den einen Spieler, mit heftigen Angriffen (er muss ja
+  nicht auf beiden Seiten verteidigen), und zurück, sobald beide wieder in Reichweite sind.
+  Seine Aggro bleibt dabei nicht nur auf einem: Den entfernten greift er mit einem Dash an.
+- **Dash-Parry:** Spieler sollten allgemein mit einem Dash-Parry durch den Boss wechseln
+  können, wenn der Parry landet?
+- **Stand-in:** soll Abstand halten, verletzt werden (75 % Parry, 15 % Block, 10 % Treffer)
+  und unter 20 HP weglaufen und sich heilen, damit sich mehr Szenarien alleine testen lassen.
+
+→ Auf `nicho/pep-test` gebaut (`docs/boss_columna_bifrons.md`: „How he moves“, „Left alone“,
+„The dash-parry“, „Testing alone“). Offen geblieben: einfach wegspringen ohne Angriff; Spieler
+langsamer beim Schlagen; die Tastenbelegung für den Dash-Parry; die Farbfrage (Grün kollidiert
+mit dem Farbvokabular von Cubus und Sphaera: Grün = „in die Luft“, Blau = „zusammen parieren“);
+ob der Stand-in auch angreifen soll.

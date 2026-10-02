@@ -36,6 +36,18 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   zur Raummitte, weicht in ppe nach einem Doppelschlag zurück) und **Spieler gucken immer zu
   ihm**. Ideen dazu und was noch offen ist (Sync-Modus, Hieb-nach-oben-Variante): Scribble vom
   2026-10-02.
+  Vierte Runde (2026-10-02, nach Nichos Solo-Test der dritten): Er **hält Abstand**, statt zur
+  Raummitte zu laufen (steht mittig zwischen den Spielern; weicht zurück, wenn einer an ihm
+  klebt; kommt näher, wenn er nicht mehr trifft), macht **mit jedem Hieb einen Schritt oder
+  Dash** auf den Spieler zu, **lässt Hiebe aus**, deren Spieler weit weg ist, und richtet nach
+  1,5 s **beide Schwerter auf den, der noch da ist** (plus **Rush** zum Entfernten).
+  Eingeklemmt oder mit dem Rücken zur Wand springt er eher; sonst kommt der Sprung seltener.
+  Dafür wechseln die Spieler selbst die Seite: **Dash-Parry durch den Boss**. „Beide“ ist
+  jetzt **grün** statt blau (zu nah an P1): Das kollidiert mit dem Farbvokabular von Cubus und
+  Sphaera (Grün = „in die Luft“, Blau = „zusammen parieren“), also **Farben noch gemeinsam
+  klären**. Der **Stand-in** zum Alleine-Testen spielt jetzt wirklich einen Spieler (läuft,
+  pariert 75 %, blockt 15 %, wird sonst getroffen, läuft unter 20 HP weg und trinkt). Nichos
+  Feedback dazu: zweiter Scribble vom 2026-10-02 („nach dem Solo-Test“).
   **Braucht einen Playtest zu zweit**, danach entscheiden: mergen, umbauen oder verwerfen.
   Was dabei zu klären ist, steht in `docs/boss_columna_bifrons.md` (auf dem Branch) unter
   „What to look for“: Treffer-Fenster „beat“ oder „after“, wie viel Windup-Treffer wert sind,
@@ -45,7 +57,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   `project.godot` (Autoload), `actors/bosses/base_boss.gd` (zwei Hooks: Pause zwischen
   Attacken, Blickrichtung der Spieler halten) und **`actors/player/player.gd`**, und das ist
   **nicht mehr klein**: Spieler gucken bei diesem Boss immer zu ihm (der Dash geht dann in die
-  gehaltene Richtung; in den anderen Kämpfen ändert sich nichts). Der Schlag ist
+  gehaltene Richtung; in den anderen Kämpfen ändert sich nichts). Ein Parry, der mitten im
+  Dash landet, trägt den Spieler durch den Boss (**Dash-Parry**, Schalter `parry_pass`): eine
+  Spieler-Regel, gilt also auch bei Cubus. Der Schlag ist
   ein echter Schwung (Ausholen, Schnitt, Zurückführen: einer alle 0,41 s statt alle 0,3 s, er
   trifft 0,08 s nach dem Druck), währenddessen kein Block und kein Parry, pariert prallt er
   zurück, ein etwas zu früher Angriffsdruck zählt noch, und das Schwert ist größer (76 statt
