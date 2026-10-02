@@ -85,11 +85,17 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   bigger (76 px instead of 48, its reach too) and held differently (diagonal at rest, diagonally
   down while blocking). Cubus and Sphaera aren't retuned for it; they'll feel different on the
   branch.
+- Since 2026-10-02 he also **moves, and both players can end up on one side of him**: each of
+  his swords follows one player, he charges past a player (then both swords come down on the
+  two of you), leaps back between you, walks after a player who backs off. In this fight the
+  players always face him (the dash goes where the stick is held). Nicho's ideas behind it, and
+  what's still open (a "sync mode" for two players side by side), are in the scribble of
+  2026-10-02.
 - Outside its own folders the branch also touches `core/moves.gd` (switches), `core/sfx.gd`
   (sounds; everything is 8 dB quieter), `core/game_manager.gd` (sync gains),
-  `ui/boss_select.gd`, `project.godot` (one autoload) and `actors/bosses/base_boss.gd` (one
-  hook: the pause between attacks). If you're changing those or `player.gd` right now, say so
-  and we merge carefully.
+  `ui/boss_select.gd`, `project.godot` (one autoload) and `actors/bosses/base_boss.gd` (two
+  hooks: the pause between attacks, holding the players' facing). If you're changing those or
+  `player.gd` right now, say so and we merge carefully.
 
 ## The project
 
