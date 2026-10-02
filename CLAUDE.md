@@ -222,14 +222,16 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   weights, pose and HP. Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs the Scales level),
   and `columna_bifrons/`, a test boss for fighting from both sides, and with both players on
   one (`docs/boss_columna_bifrons.md`): each of his two swords fights one player wherever they
-  are (`ward_of()`), and turns on the other one while its own is away (`_update_turns()`); a
-  `StrikePattern` attack run with different strike lists, a `Sweep` and a `Leap`; a guard that
+  are (`ward_of()`), and turns on the other one while its own is away (`_update_turns()`); all
+  his attacks in one table (`ATTACKS`: a weight per situation, and either a list of strikes,
+  run by `StrikePattern`, or a script of its own: `Sweep`, `Leap`, `Shove`); a guard that
   overrides `take_damage()` (a blade standing at its flank parries, `is_guarding()`; one that's
   swinging can't); his own movement (where he stands: `_place()` / `walk()`; a lunge with every
-  strike: `lunge_goal()`; charging past a player, leaping between them, rushing one who's
-  away); a reactive mode in which he strikes back at whoever attacked him (started from his
-  own `_physics_process()`, outside BaseBoss's idle timer); and `stand_in.gd`, which plays one
-  of the players for testing alone, by pressing that player's buttons.
+  strike: `lunge_goal()`; making room: `make_room()`; charging past a player, leaping between
+  them, rushing one who's away); a reactive mode in which he strikes back at whoever attacked
+  him (started from his own `_physics_process()`, outside BaseBoss's idle timer); and
+  `stand_in.gd`, which plays one of the players for testing alone, by pressing that player's
+  buttons.
 
 ## Conventions
 
