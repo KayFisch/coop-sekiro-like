@@ -38,46 +38,57 @@ const SIDES = [LEFT, RIGHT]
 # --- Tuning ---
 const MAX_HP = 1600.0
 
-# The strike patterns: how often each comes, relative to the others (0 disables it), and its
-# strikes in order, as [wait, sword] or [wait, sword, kind]. `wait` is the time until the strike
-# lands, counted from the pattern's start or from the strike before, in StrikePattern.TIME_UNITs:
-# a rough 1-10 scale, where 4 is a quick follow-up and 9 a long windup (under 3 is too quick to
-# read). `sword` is LEFT, RIGHT or BOTH: which of his swords strikes, at its own player. `kind`
-# is CUT (the default), CHARGE (see "THE CHARGE" below) or RUSH ("LEFT ALONE"). "when" limits a
-# pattern to one situation: "pep" (a player on each side of him) or "alone" (both swords on one
-# player, the other one away). Each pattern is written once and also comes mirrored
-# (MIRROR_PATTERNS).
-const PATTERNS = {
-	"SINGLE": {"weight": 1.0, "strikes": [[5, LEFT]]},
-	"TRIPLE": {"weight": 3.0, "strikes": [[5, RIGHT], [4, RIGHT], [4, LEFT]]},
-	"QUAD": {"weight": 2.0, "strikes": [[7, LEFT], [4, LEFT], [4, RIGHT], [4, BOTH]]},
+# HIS ATTACKS, one entry each: how often it comes, and what it is.
+# "weight": how often it comes, relative to the others (0: never). Either one number, for
+# wherever the players are; or one number per situation, and it doesn't come in a situation
+# that's left out:
+#   "pep"    a player on each side of him
+#   "ppe"    both players on one side
+#   "alone"  both swords on one player, the other one away (see "LEFT ALONE")
+#   "pep_cornered", "ppe_cornered": the same two while he's cornered (see "CORNERED"); an
+#   attack that has no weight of its own for them keeps its "pep" or "ppe" one.
+# "repeats": true if it may come twice in a row; the others never repeat back to back.
+# What it is, one of:
+# "strikes": a series of sword strikes (attacks/strike_pattern.gd), each [wait, sword] or
+#   [wait, sword, kind]. `wait` is the time until the strike lands, counted from the series'
+#   start or from the strike before, in StrikePattern.TIME_UNITs: a rough 1-10 scale, where 4 is
+#   a quick follow-up and 9 a long windup (under 3 is too quick to read). `sword` is LEFT, RIGHT
+#   or BOTH: which of his swords strikes, at its own player. `kind` is CUT (the default),
+#   CHARGE (see "THE CHARGE" below) or RUSH ("LEFT ALONE"). Each series is written once and
+#   also comes mirrored (MIRROR_PATTERNS).
+# "attack": the script of an attack of its own, one of the three here.
+const SWEEP = preload("attacks/sweep.gd")
+const LEAP = preload("attacks/leap.gd")
+const SHOVE = preload("attacks/shove.gd")
+const ATTACKS = {
+	"SINGLE": {"weight": 1.0, "repeats": true, "strikes": [[5, LEFT]]},
+	"DOUBLE": {"weight": 0.5, "strikes": [[5, LEFT], [4, RIGHT]]},
+	"TRIPLE": {"weight": 2.0, "repeats": true, "strikes": [[5, RIGHT], [4, RIGHT], [4, LEFT]]},
+	"QUAD": {"weight": 1.5, "strikes": [[6, LEFT], [4, LEFT], [4, RIGHT], [4, BOTH]]},
 	"LONG": {"weight": 1.0, "strikes": [
 		[9, RIGHT], [4, RIGHT], [4, LEFT], [4, RIGHT], [4, RIGHT], [4, LEFT], [4, BOTH]]},
+	"BOTH": {"weight": 0.5, "strikes": [[6, BOTH]]},
 	# He charges past one player, so both are on one side of him, and brings both swords down
 	# on them.
-	"CROSSING": {"weight": 1.5, "when": "pep", "strikes": [[5, RIGHT, CHARGE], [6, BOTH]]},
+	"CROSSING": {"weight": {"pep": 2.0, "pep_cornered": 6.0}, "strikes": [[5, RIGHT, CHARGE], [6, BOTH]]},
 	# He dashes over to the player who's away, and strikes them.
-	"RUSH": {"weight": 3.0, "when": "alone", "strikes": [[7, RIGHT, RUSH]]},
-	# Building blocks, off for now: the smallest swap of roles, and a lone strike of both swords.
-	"SWAP": {"weight": 0.0, "strikes": [[5, LEFT], [4, RIGHT]]},
-	"BOTH": {"weight": 0.0, "strikes": [[6, BOTH]]},
+	"RUSH": {"weight": {"alone": 2.0}, "strikes": [[7, RIGHT, RUSH]]},
+	# One sword, from one side of him through to the other.
+	"SWEEP": {"weight": {"pep": 1.5}, "attack": SWEEP},
+	# He jumps and comes down between the players: his way of getting them back on both sides
+	# (theirs is the dash-parry, see player.gd), and out of a corner. The series' weights add up
+	# to 6.5, so in ppe about one attack in four is the leap: that's how long ppe lasts if they
+	# leave it to him.
+	"LEAP": {"weight": {"ppe": 2.5, "pep_cornered": 6.0, "ppe_cornered": 6.0}, "attack": LEAP},
+	# Both swords thrust at the players, to throw them back. It comes when he wants room (see
+	# "MAKING ROOM"), not by weight; give it one to have it come among the others as well.
+	"SHOVE": {"weight": 0.0, "attack": SHOVE},
 }
-const SWEEP_WEIGHT = 1.5  # the sweep (attacks/sweep.gd) comes among the patterns, in pep only
-# The leap (attacks/leap.gd) comes among the patterns in ppe only: it's his way of getting the
-# players back on both sides (theirs is the dash-parry, see player.gd). The patterns' weights
-# add up to 7 there, so this is how long ppe lasts if they leave it to him: at 3.5, one attack
-# in three is the leap.
-const LEAP_WEIGHT = 3.5
-# Cornered (see "CORNERED"), he gets out: the leap gets this weight, and with a player on each
-# side the crossing does too.
-const CORNERED_WEIGHT = 6.0
-# Patterns that may come twice in a row; the rest never repeat back to back.
-const REPEATABLE_PATTERNS = ["SINGLE", "TRIPLE"]
-# Runs each pattern as written or mirrored, whichever keeps the strikes even between his two
-# swords (at random while they're even). Off: always as written.
+# Runs each series of strikes as written or mirrored, whichever keeps the strikes even between
+# his two swords (at random while they're even). Off: always as written.
 const MIRROR_PATTERNS = true
-# For testing: set to an attack's name (e.g. "TRIPLE", "SWEEP", "LEAP") to use only that one.
-const TEST_ONLY_PATTERN = ""
+# For testing: the names of the attacks to use, e.g. ["TRIPLE", "SWEEP"]. Empty: all of them.
+const TEST_ONLY_PATTERN = [] # "TRIPLE", "QUAD", "SINGLE", "LONG", "SWEEP"
 
 # THE REACTIVE MODE. Between two attacks he waits REACTIVE_WAIT (after the usual recovery)
 # before starting the next of his own: a little room for the players to start instead. Every
@@ -86,7 +97,7 @@ const TEST_ONLY_PATTERN = ""
 # player whose hit he parried last: with one of the same attacks, turned so its first strike is
 # theirs, and that strike comes quickly (ANSWER_WAIT). Then the series runs to its end, as ever.
 const REACTIVE_WAIT_MIN = 0.5
-const REACTIVE_WAIT_MAX = 1.2
+const REACTIVE_WAIT_MAX = 0.9
 const PATIENCE = [1, 1, 2]
 const ANSWER_WAIT = 4  # StrikePattern.TIME_UNITs until an answer's first strike lands, at most
 
@@ -135,15 +146,18 @@ const CLOSEST = 72.0  # no lunge or advance takes him closer to a player than th
 # for all through it, until he has reached them, and then lunges. Both players have to move.
 const LONG_WINDUP = 6
 const ADVANCE_SPEED = 70.0
-# CROWDED (a player closer than CROWD_DISTANCE) for CROWD_PATIENCE: stepping back hasn't
-# helped, so he hops back instead (BACK_OFF_), HOP_COOLDOWN apart at least. He backs off the
-# same way after a strike of both swords that didn't stagger him, if the players are on one
-# side of him.
-# CORNERED: no room for any of that. A player on each side, both crowding him; or the players
-# on one side and the wall behind him (he's in the room's outer fifth). He gets out with his
-# next attack: over them with the leap, or past one with the crossing (see CORNERED_WEIGHT).
+# MAKING ROOM. He wants room when he's been crowded (a player closer than CROWD_DISTANCE) for
+# CROWD_PATIENCE, so stepping back hasn't helped (ROOM_COOLDOWN apart at least); and after a
+# strike of both swords that didn't stagger him. With the players on one side of him, he makes
+# it:
+# - with a hop back (BACK_OFF_), if that takes him toward the middle of the room;
+# - else by shoving them back (attacks/shove.gd): so making room never drives him to the wall.
+# CORNERED: no room to keep his distance by walking. A player on each side, both crowding
+# him; or the players on one side and the wall behind him (he's in the room's outer fifth).
+# That's a situation of its own in ATTACKS: he gets out over them with the leap, or past one
+# with the crossing.
 const CROWD_PATIENCE = 0.7
-const HOP_COOLDOWN = 4.0
+const ROOM_COOLDOWN = 4.0
 const BACK_OFF_DISTANCE = 110.0
 const BACK_OFF_DELAY = 0.1
 const BACK_OFF_TIME = 0.2
@@ -158,11 +172,12 @@ const CHARGE_TIME = 0.25
 const CHARGE_MIN_ROOM = 150.0  # he charges toward the side that has at least this much room
 # LEFT ALONE. A strike whose player is out of his range when it's due is left out (see
 # StrikePattern). A sword whose own player has been out of range for TURN_TIME turns on the
-# other one: both swords on one player, and nothing guarding his far side. It turns back when
-# its own player is in reach again. Meanwhile he gets at the one who's away with THE RUSH (a
-# strike of kind RUSH): their own sword turns back to them, and as it comes he dashes over, in
-# RUSH_TIME, his body no obstacle.
+# other one: both swords on one player, and nothing guarding his far side. It turns back once
+# its own player is within RETURN_DISTANCE again. Meanwhile he gets at the one who's away with
+# THE RUSH (a strike of kind RUSH): their own sword turns back to them, and as it comes he
+# dashes over, in RUSH_TIME, his body no obstacle.
 const TURN_TIME = 1.5
+const RETURN_DISTANCE = 300.0  # further than his blades reach: he turns to them as they come
 const RUSH_TIME = 0.45
 
 # The swords, each on a pivot at its hand.
@@ -192,12 +207,15 @@ const POSE_LANCE = Vector3(62.0, 44.0, 0.0)  # thrust out
 const POSE_STAB = Vector3(13.0, -95.0, 1.54)  # the leap: held high over his middle, pointing straight down
 # PPE, both swords on one side: the one whose hand is on the other flank reaches across, in
 # front of him and of the other sword. It stands outside the other one, leaning out (this is
-# added to its guard poses). And where the other comes down from over his head, it cuts lower,
-# on a slant: drawn back at shoulder height on its own flank, and around his front
-# (see StrikePattern).
+# added to its guard poses). It strikes as the other one does, only from lower: where that one
+# comes down from over his head, this one is laid back over his shoulder and comes on a
+# flatter arc.
 const ACROSS_SHIFT = Vector3(16.0, -16.0, 0.28)
 const ACROSS_POSES = [POSE_GUARD, POSE_PARRY, POSE_OPEN]
-const POSE_SLASH_BACK = Vector3(46.0, -6.0, -0.95)
+const POSE_SLASH_RAISED = Vector3(54.0, -14.0, -2.2)
+const POSE_SLASH_COILED = Vector3(50.0, -20.0, -2.55)
+const POSE_SLASH_DOWN = Vector3(46.0, 38.0, 0.1)
+const EDGE_WIDTH = 4.0  # a blade's cutting edge, in the color of the player it fights
 
 const COLOR_SWORD = Color(0.8, 0.82, 0.86)  # silver
 const COLOR_SWORD_LIMP = Color(0.45, 0.45, 0.5)
@@ -206,7 +224,7 @@ const COLOR_OPEN = Color(1.0, 0.95, 0.6)  # "hit here, now": a broken guard's fl
 const COLOR_PARRY = Color(1.0, 0.7, 0.3)  # sparks off his own parry
 const COLOR_PLAYER_PARRY = Color(1.0, 0.85, 0.4)  # sparks off a player's
 const COLOR_PROVOKED = Color(0.75, 0.33, 0.16)  # his body, the closer he is to striking back
-const WARD_TINT = 0.85  # how far a sword's crossguard takes its player's color: whose it is
+const WARD_TINT = 0.85  # how far a sword's crossguard and edge take its player's color: whose it is
 const HAND_SIZE = 16.0
 const HAND_DARKEN = 0.25
 const CROSSGUARD = Vector2(6.0, 32.0)
@@ -216,6 +234,7 @@ var _turned = {LEFT: false, RIGHT: false}  # sword -> it has turned on the other
 var _away_for = {LEFT: 0.0, RIGHT: 0.0}  # sword -> how long its own player has been out of range
 var _pivots = {}  # sword -> Node2D
 var _blades = {}  # sword -> ColorRect
+var _edges = {}  # sword -> ColorRect: its cutting edge
 var _crossguards = {}  # sword -> ColorRect
 var _plates = {}  # sword -> ColorRect: its guard
 var _halves = {}  # side -> ColorRect over that half of his body
@@ -223,7 +242,7 @@ var _poses = {LEFT: POSE_GUARD, RIGHT: POSE_GUARD}  # where each blade is drawn 
 var _targets = {LEFT: POSE_GUARD, RIGHT: POSE_GUARD}  # where it's headed (pose_sword())
 var _snaps = {LEFT: false, RIGHT: false}
 # How far over toward the side *away* from its player a blade is headed: 1 on its player's
-# side, -1 all the way over on the other (the sweep; a cut's windup on the far flank).
+# side, -1 all the way over on the other (the sweep).
 var _overs = {LEFT: 1.0, RIGHT: 1.0}
 var _homes = {LEFT: false, RIGHT: false}  # posed at its own hand's flank, wherever its player is
 # Where a blade is drawn: 1 at its own hand's flank, -1 across on the other. In between it's
@@ -253,7 +272,8 @@ var _closing = false
 var _ghost_until = 0.0  # anim_time until which his body blocks nobody
 var _slowed_until = 0.0
 var _crowded_for = 0.0  # how long a player has been closer than CROWD_DISTANCE
-var _hop_ready = 0.0  # anim_time from which he may hop back again
+var _room_ready = 0.0  # anim_time from which crowding may make him make room again
+var _shove_due = false  # he wants room, and it's the shove: as soon as he's free
 
 # The reactive mode (see REACTIVE_WAIT).
 var _provocations = 0  # hits parried since his last attack began
@@ -279,42 +299,52 @@ func get_display_name() -> String:
 	return "COLUMNA BIFRONS"
 
 
+# One attack per entry of ATTACKS.
 func get_attack_pool() -> Array:
 	var pool = []
-	for pattern_name in PATTERNS:
-		pool.append(StrikePattern.new(pattern_name, PATTERNS[pattern_name].strikes))
-	pool.append(Sweep.new())
-	pool.append(Leap.new())
+	for attack_name in ATTACKS:
+		var entry = ATTACKS[attack_name]
+		if entry.has("strikes"):
+			pool.append(StrikePattern.new(attack_name, entry.strikes))
+		else:
+			pool.append(entry.attack.new(attack_name))
 	for attack in pool:
-		attack.strike_parried.connect(func(_player): sync_event.emit("bifrons_parried"))
-		attack.both_parried.connect(sync_event.emit.bind("bifrons_both_parried"))
+		if attack.has_signal("strike_parried"):
+			attack.strike_parried.connect(func(_player): sync_event.emit("bifrons_parried"))
+			attack.both_parried.connect(sync_event.emit.bind("bifrons_both_parried"))
 	return pool
 
 
-# What he picks from: by where the players are, and whether they leave him room.
+# What he picks from: each attack's weight for the situation he's in (see ATTACKS), as long as
+# the attack is possible at all just now (its fits()).
 func get_attack_weights() -> Dictionary:
-	if TEST_ONLY_PATTERN != "":
-		return {TEST_ONLY_PATTERN: 1.0}
 	var situation = _situation()
 	var weights = {}
-	for pattern_name in PATTERNS:
-		var pattern = PATTERNS[pattern_name]
-		weights[pattern_name] = pattern.weight if pattern.get("when", situation) == situation else 0.0
-	weights[Sweep.NAME] = SWEEP_WEIGHT if situation == "pep" else 0.0
-	weights[Leap.NAME] = LEAP_WEIGHT if situation == "ppe" else 0.0
-	if situation != "alone" and is_cornered():
-		weights[Leap.NAME] = CORNERED_WEIGHT
-		if situation == "pep":
-			weights["CROSSING"] = CORNERED_WEIGHT
-	# No leap while there's no room for him between the players: both at a wall, behind him.
-	var spot = Leap.landing_spot(self, global_position.x)
-	if absf(clamp_x(spot) - spot) > 1.0:
-		weights[Leap.NAME] = 0.0
+	for attack_name in ATTACKS:
+		var attack = find_attack(attack_name)
+		var fits = attack == null or attack.fits(self)
+		weights[attack_name] = _weight_in(attack_name, situation) if fits else 0.0
+	if not TEST_ONLY_PATTERN.is_empty():
+		for attack_name in weights:
+			if not attack_name in TEST_ONLY_PATTERN:
+				weights[attack_name] = 0.0
+		# None of the listed ones comes in this situation: he uses them all the same.
+		if weights.values().all(func(weight): return weight <= 0.0):
+			for attack_name in TEST_ONLY_PATTERN:
+				weights[attack_name] = 1.0
 	return weights
 
 
+# An attack's weight in a situation (see ATTACKS).
+func _weight_in(attack_name: String, situation: String) -> float:
+	var weight = ATTACKS[attack_name].weight
+	if weight is Dictionary:
+		return weight.get(situation, weight.get(situation.trim_suffix("_cornered"), 0.0))
+	return weight
+
+
 func get_repeatable_attacks() -> Array:
-	return REPEATABLE_PATTERNS
+	return ATTACKS.keys().filter(func(attack_name): return ATTACKS[attack_name].get("repeats", false))
 
 
 func get_idle_pause() -> float:
@@ -358,7 +388,9 @@ func _physics_process(delta):
 	if hp <= 0.0:
 		return
 	_run_dash()
-	if state == State.IDLE and _is_reactive() and _provocations >= _patience:
+	if state == State.IDLE and _shove_due:
+		_shove()
+	elif state == State.IDLE and _is_reactive() and _provocations >= _patience:
 		_strike_back()
 
 
@@ -375,7 +407,7 @@ func _assign_wards():
 	elif players.size() > 1:
 		_wards[LEFT] = players[0]
 		_wards[RIGHT] = players[1]
-	_color_crossguards()
+	_color_swords()
 
 
 # That sword's own player, or null.
@@ -418,11 +450,13 @@ func reaches_across(blade: int) -> bool:
 	return is_ppe() and blade_side(blade) != blade
 
 
-# "alone" (both swords on one player), "ppe" (both players on one side of him) or "pep".
+# Where the players are, as ATTACKS has it: "alone" (both swords on one player), "ppe" (both
+# players on one side of him) or "pep"; and those two with "_cornered" while he's cornered.
 func _situation() -> String:
 	if _turned[LEFT] or _turned[RIGHT]:
 		return "alone"
-	return "ppe" if is_ppe() else "pep"
+	var where = "ppe" if is_ppe() else "pep"
+	return where + "_cornered" if is_cornered() else where
 
 
 # The players his swords fight right now: both, or the one who's there.
@@ -520,8 +554,8 @@ func _update_turns(delta: float):
 		if own == null or other == null:
 			continue
 		if _turned[blade]:
-			# Back to its own player once they're in reach; or once nobody is here either.
-			if (distance_to(own) <= BLADE_REACH or not in_range(other)) and _is_free(blade):
+			# Back to its own player once they're near again; or once nobody is here either.
+			if (distance_to(own) <= RETURN_DISTANCE or not in_range(other)) and _is_free(blade):
 				_turn(blade, false)
 			continue
 		_away_for[blade] = 0.0 if in_range(own) else _away_for[blade] + delta
@@ -538,14 +572,16 @@ func _is_free(blade: int) -> bool:
 func _turn(blade: int, on: bool):
 	_turned[blade] = on
 	_away_for[blade] = 0.0
-	_color_crossguards()
+	_color_swords()
 
 
-# A sword's crossguard has the color of the player it fights.
-func _color_crossguards():
+# A sword's crossguard and cutting edge have the color of the player it fights.
+func _color_swords():
 	for blade in BLADES:
 		var ward = ward_of(blade)
-		_crossguards[blade].color = COLOR_PLATE if ward == null else COLOR_PLATE.lerp(ward.player_color, WARD_TINT)
+		var color = COLOR_PLATE if ward == null else COLOR_PLATE.lerp(ward.player_color, WARD_TINT)
+		_crossguards[blade].color = color
+		_edges[blade].color = color
 
 
 # --- A blade landing on a player (used by his attacks) ---
@@ -648,6 +684,15 @@ func _parry(blade: int, player, at: Vector2):
 	if _is_reactive():
 		_provocations += 1
 		_provoker = blade
+
+
+# He's free, and he wanted room (see "MAKING ROOM"): the shove, if anyone is still that close.
+func _shove():
+	_shove_due = false
+	var shove = find_attack("SHOVE")
+	if shove.fits(self):
+		_choose_target()
+		_begin_telegraph(shove)
 
 
 # The reactive mode: his patience is gone and he's free. He strikes back at the player whose hit
@@ -771,14 +816,14 @@ func is_cornered() -> bool:
 	return x < ARENA_LEFT + room / 5.0 if side == RIGHT else x > ARENA_RIGHT - room / 5.0
 
 
-# Crowded for a while, with room behind him: he hops back.
+# Crowded for a while: he makes room.
 func _mind_the_crowd(delta: float):
 	var crowding = _fought().any(func(p): return distance_to(p) < CROWD_DISTANCE)
 	_crowded_for = _crowded_for + delta if crowding else 0.0
-	if _crowded_for >= CROWD_PATIENCE and anim_time >= _hop_ready and _dash == null:
+	if _crowded_for >= CROWD_PATIENCE and anim_time >= _room_ready and _dash == null:
 		_crowded_for = 0.0
-		if back_off():
-			_hop_ready = anim_time + HOP_COOLDOWN
+		if make_room():
+			_room_ready = anim_time + ROOM_COOLDOWN
 
 
 # How far he can go toward that side before he's CLOSEST to a player there.
@@ -843,19 +888,22 @@ func charge_through(blade: int):
 	Sfx.play("swing", -3.0)
 
 
-# A hop back from the players, if they're all on one side of him and the wall isn't right
-# behind him (see "CROWDED" above). True if he does.
-func back_off() -> bool:
+# He makes room between him and the players, if they're all on one side of him (see "MAKING
+# ROOM"): a hop back at once, or a shove as soon as he's free. False if he can't.
+func make_room() -> bool:
 	var fought = _fought()
 	if fought.is_empty():
 		return false
 	var side = side_of(fought[0])
 	if fought.any(func(p): return side_of(p) != side):
 		return false
-	var to = clamp_x(global_position.x - side * BACK_OFF_DISTANCE)
-	if absf(to - global_position.x) < BACK_OFF_DISTANCE / 2.0:
-		return false
-	_dash_to(to, BACK_OFF_TIME, BACK_OFF_HOP)
+	var x = global_position.x
+	var to = clamp_x(x - side * BACK_OFF_DISTANCE)
+	var toward_middle = ((ARENA_LEFT + ARENA_RIGHT) / 2.0 - x) * side <= 0.0
+	if toward_middle and absf(to - x) >= BACK_OFF_DISTANCE / 2.0:
+		_dash_to(to, BACK_OFF_TIME, BACK_OFF_HOP)
+	else:
+		_shove_due = true
 	return true
 
 
@@ -906,6 +954,12 @@ func _setup_pose():
 		steel.position = Vector2(0.0, -SWORD_WIDTH / 2.0)
 		pivot.add_child(steel)
 		_blades[blade] = steel
+		# Its cutting edge (the side it comes down with), which keeps its player's color whatever
+		# color the blade turns.
+		var edge = _rect(Vector2(SWORD_LENGTH, EDGE_WIDTH), COLOR_PLATE)
+		edge.position = Vector2(0.0, SWORD_WIDTH - EDGE_WIDTH)
+		steel.add_child(edge)
+		_edges[blade] = edge
 		var crossguard = _rect(CROSSGUARD, COLOR_PLATE)
 		crossguard.position = Vector2(HAND_SIZE / 2.0, -CROSSGUARD.y / 2.0)
 		pivot.add_child(crossguard)

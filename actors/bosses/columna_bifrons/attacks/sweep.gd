@@ -20,7 +20,6 @@ signal both_parried
 
 enum Phase { NONE, SWEEPING, AFTER }
 
-const NAME = "SWEEP"
 const LEFT = StrikePattern.LEFT
 const RIGHT = StrikePattern.RIGHT
 
@@ -34,6 +33,7 @@ const STAGGER_TIME = 2.2  # parried by both
 const RECOVER_TIME = 0.6
 const TREMBLE = 0.04  # radians the drawn-back blade shakes by, just before it comes down
 
+var _name: String
 var _first = LEFT  # the sword that sweeps: its player is the first it reaches
 var _time = 0.0  # seconds into the attack
 var _first_at = 0.0  # when the blade reaches the first player...
@@ -46,8 +46,17 @@ var _after_for = 0.0
 var _sounded = false
 
 
+func _init(attack_name: String):
+	_name = attack_name
+
+
 func get_attack_name() -> String:
-	return NAME
+	return _name
+
+
+# It needs a player on each side, and that's where it comes (see ColumnaBifrons.ATTACKS).
+func fits(_boss_node) -> bool:
+	return true
 
 
 func start(boss_node, player_nodes: Array):

@@ -2,26 +2,25 @@ class_name Leap
 extends Attack
 ## Green blades, pointing down -> red. Columna Bifrons jumps, hangs over the players and comes
 ## down between them, both swords stabbing down. It's his way out of having both players on one
-## side of him (ppe), and out of being cornered (see "CORNERED" in columna_bifrons.gd). Each
-## player near where he lands has to perfect parry the sword that's theirs; both do, and he's
-## staggered. Either way he's between them now, and they're thrown apart: whoever is under him
-## is pushed out to their side, and everyone near is knocked back, parry or not.
+## side of him (ppe), and out of being cornered (see "CORNERED" in columna_bifrons.gd). Where he
+## comes down is settled as he jumps: between the players as they stand then. Each player near
+## that spot as he lands has to perfect parry the sword that's theirs; both do, and he's
+## staggered. They're thrown apart: whoever is under him is pushed out to their side, and
+## everyone near is knocked back, parry or not. Walking out from under him is the other answer.
 
 signal strike_parried(player)
 signal both_parried
 
 enum Phase { NONE, FALLING }
 
-const NAME = "LEAP"
 const LEFT = StrikePattern.LEFT
 const RIGHT = StrikePattern.RIGHT
 
 # --- Tuning ---
 const WINDUP_UNITS = 7  # StrikePattern.TIME_UNITs until he lands
-const RISE_TIME = 0.3  # from the floor up to HEIGHT
-const HANG_TIME = 0.3  # up there, over the players, before he drops (in StrikePattern.FALL_TIME)
+const RISE_TIME = 0.3  # from the floor up to HEIGHT, and over to where he'll come down
+const HANG_TIME = 0.3  # up there, before he drops (in StrikePattern.FALL_TIME)
 const HEIGHT = 200.0  # how high he gets: his feet clear the players' heads
-const TRACK_SPEED = 600.0  # px/s he follows the spot he's going to land on, until he drops
 const AHEAD = 50.0  # both players on one side: he lands at most this far past the nearer one
 const REACH = 80.0  # a player this close to where he lands is under the swords
 const KNOCKBACK = 1.6  # times a sword strike's knockback, for a player it hits (or chips)...
@@ -31,17 +30,29 @@ const RECOVER_TIME = 0.6
 const CROUCH = Vector2(1.12, 0.78)  # his body, loaded for the jump
 const TREMBLE = 0.04  # radians the blades shake by as he hangs
 
+var _name: String
 var _time = 0.0  # seconds into the attack
 var _jump_at = 0.0
 var _fall_at = 0.0
 var _land_at = 0.0
-var _from_x = 0.0  # where he jumped off
+var _from_x = 0.0  # where he jumps off...
+var _to_x = 0.0  # ...and where he comes down: settled as he jumps
 var _jumped = false
 var _dropping = false
 
 
+func _init(attack_name: String):
+	_name = attack_name
+
+
 func get_attack_name() -> String:
-	return NAME
+	return _name
+
+
+# No leap while there's no room for him between the players: both at a wall, behind him.
+func fits(boss_node) -> bool:
+	var spot = landing_spot(boss_node, boss_node.global_position.x)
+	return absf(boss_node.clamp_x(spot) - spot) <= 1.0
 
 
 func start(boss_node, player_nodes: Array):
@@ -52,6 +63,7 @@ func start(boss_node, player_nodes: Array):
 	_fall_at = _land_at - StrikePattern.FALL_TIME
 	_jump_at = _fall_at - HANG_TIME - RISE_TIME
 	_from_x = boss.global_position.x
+	_to_x = _from_x
 	_jumped = false
 	_dropping = false
 
@@ -148,15 +160,16 @@ func _animate():
 		# Crouching, the blades going up.
 		boss.squash_body(Vector2.ONE.lerp(CROUCH, ease(_time / maxf(_jump_at, 0.01), 0.5)))
 	elif _time < _fall_at:
-		# Up, and over the spot he'll land on.
+		# Up, and over to the spot he'll land on: where that is doesn't change any more.
 		if not _jumped:
 			_jumped = true
+			_from_x = boss.global_position.x
+			_to_x = boss.clamp_x(landing_spot(boss, _from_x))
 			boss.pop_body(Vector2(0.85, 1.2), 0.25)
 			Sfx.play("launch", -4.0)
 		var rise = clampf((_time - _jump_at) / RISE_TIME, 0.0, 1.0)
 		boss.global_position.y = floor_y - HEIGHT * (1.0 - (1.0 - rise) * (1.0 - rise))
-		boss.global_position.x = move_toward(boss.global_position.x, boss.clamp_x(landing_spot(boss, _from_x)),
-			TRACK_SPEED * boss.get_physics_process_delta_time())
+		boss.global_position.x = lerpf(_from_x, _to_x, smoothstep(0.0, 1.0, rise))
 	else:
 		# Down, both blades first. His body is no obstacle until he's landed.
 		if not _dropping:
@@ -165,6 +178,7 @@ func _animate():
 			Sfx.play("swing", -3.0)
 		var drop = pow(clampf((_time - _fall_at) / StrikePattern.FALL_TIME, 0.0, 1.0), StrikePattern.FALL_POWER)
 		boss.global_position.y = floor_y - HEIGHT * (1.0 - drop)
+		boss.global_position.x = _to_x
 	for blade in [LEFT, RIGHT]:
 		boss.pose_sword_home(blade, pose, _dropping)
 		if _dropping:
