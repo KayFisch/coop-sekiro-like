@@ -196,17 +196,21 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   hooks (gather, tether, grab). Tuning constants at the top, grouped by feature. The sword's
   rules are under "THE SWORD" there: a swing commits (windup, cut, return; no block or parry
   until the blade is back at rest), and a swing an enemy blade parries recoils
-  (`on_swing_parried()`, called by the boss).
+  (`on_swing_parried()`, called by the boss). A boss that changes sides can hold the players'
+  facing (`BaseBoss.holds_facing()`); the dash then goes the way the stick is held.
 - `actors/bosses/`: `BaseBoss` runs the state machine
   `IDLE → TELEGRAPH → ATTACKING → RECOVER/STAGGER`; each attack is an `Attack` (`RefCounted`,
   `base_attack.gd`) with hooks `start / update_telegraph / execute / update / on_struck /
   cleanup` and `finish()` / `finish_with_stagger()`. A boss subclass supplies its attack pool,
   weights, pose and HP. Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs the Scales level),
-  and `columna_bifrons/`, a test boss for fighting from both sides (`docs/boss_columna_bifrons.md`):
-  a `StrikePattern` attack run with different strike lists and a `Sweep`; a guard that overrides
-  `take_damage()` (a blade standing at its flank parries, `is_guarding()`; one that's swinging
-  can't); and a reactive mode in which he strikes back at whoever attacked him (started from
-  his own `_physics_process()`, outside BaseBoss's idle timer).
+  and `columna_bifrons/`, a test boss for fighting from both sides, and with both players on
+  one (`docs/boss_columna_bifrons.md`): each of his two swords fights one player wherever they
+  are (`ward_of()`); a `StrikePattern` attack run with different strike lists, a `Sweep` and a
+  `Leap`; a guard that overrides `take_damage()` (a blade standing at its flank parries,
+  `is_guarding()`; one that's swinging can't); his own movement (he walks between attacks,
+  charges past a player, leaps between them: `_walk()`, `charge_through()`, `leap.gd`); and a
+  reactive mode in which he strikes back at whoever attacked him (started from his own
+  `_physics_process()`, outside BaseBoss's idle timer).
 
 ## Conventions
 
