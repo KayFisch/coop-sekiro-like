@@ -253,3 +253,73 @@ Angriff = Viertelnote. Vielleicht macht das Sinn.
 
 → Die Frage, was zwischen den Bossen passiert, steht in `TASKS.md` unter „Offene
 Grundsatzfragen“.
+
+## 2026-10-02 (Nicho, mit Claude durchgesprochen): Was ist der Rest des Spiels?
+
+**Ausgangslage.** Columna Bifrons ist inzwischen ein guter Proof of Concept. Der Sync-Modus
+fehlt noch; ist der drin und getestet, steht dem Boss-Fighting nicht mehr viel im Weg. Offen
+ist, was es außer Bossen gibt.
+
+**Maßstab** (Vorschlag von Claude, Nicho stimmt zu): Was zwischen den Bossen liegt, sollte
+dieselben Regeln benutzen wie der Bosskampf (dein Parry lässt mich treffen, pep/ppe, Schläge
+auf dem Beat). Sonst sind es zwei Spiele.
+
+### Wohl raus
+
+- **Lineare Story** (Sekiro, Hollow Knight): am teuersten, weil Level, Gegner und Erzählung
+  alle einmalig gebaut werden. Fortschritt kommt dort durch eigenen Skill, aber es gibt keinen
+  Grund, von vorn zu beginnen.
+- **Roguelike mit Mobs** (Dead Cells, Wizard of Legend): lebt von Waffen und Builds, und daran
+  fehlt es bei uns; das widerspricht auch „wenige Regeln, für alle gleich“. Mobs wären der
+  Hauptinhalt. Dass sie wenig HP haben, wäre nicht das Problem (ein gedeckter Mob, der nur
+  durch „einer pariert, der andere trifft“ stirbt, ist ein Kampf von einem Takt), aber es
+  braucht Gegnertypen, Räume und ein Fortschrittssystem, bevor es trägt.
+
+### Im Rennen
+
+- **Fokus auf Bosse** (Cuphead, Furi, Titan Souls): zwischen den Bossen nur wenig. Der Aufwand
+  landet dort, wo der Proof of Concept liegt. Nicho: scheint sinnvoll.
+- **Aufwärmphase vor einem Boss: Auto-Runner plus „Beat Saber“.** Die Spieler bewegen sich von
+  selbst, im Fokus sind Springen, Dashen, Schlagen, Parieren; Dinge fliegen auf sie zu, die sie
+  im Rhythmus parieren und schlagen. Sieht anders aus als der Bosskampf, funktioniert aber
+  ähnlich: im Kern eine Liste von Schlägen ohne Boss, jedes Ding in der Farbe seines Spielers.
+  - pep und ppe lassen sich spiegeln: **zwei Lanes, zwischen denen die Spieler wechseln**
+    (Nichos Idee).
+  - Passt zu „Kämpfe als Beats“ (Scribble von heute).
+  - Billig: Level sind Daten, wie die Angriffstabelle.
+- **Platformer.** Wir wissen schon, dass Koop-Platforming interaktiv sein kann, ohne viele
+  Mobility-Fähigkeiten zu brauchen, die im Bosskampf stören würden (Launch, Relay, Pogo-Clash
+  benutzen dieselben Tasten und Zeitfenster wie der Kampf). Vorbilder: Hollow Knight; Celeste
+  (einzelne Räume, jeder ohne Pause zu schaffen, Pause am Raumanfang). Bedenken: Platforming
+  ohne Kämpfe und Bosse ohne Platforming fühlen sich wie zwei Spiele an. Wenn, dann nur aus
+  Partner-Clashes gebaut, ohne eigenes Bewegungs-Kit (Wände, Ledges, Doppelsprung).
+- **Berg erklimmen mit Fortschrittsverlust** (Jump King, Bread & Fred, Chained Together):
+  hochklettern, durch Fallen Fortschritt verlieren, aber nur bis zum letzten Checkpoint; Bosse
+  und Minibosse an den Checkpoints (Minibosse, um einzelne Mechaniken zu lernen). Claude riet
+  als Hauptstruktur ab (Schuldzuweisung im Koop, zwei bestrafende Schichten). Nicho hält
+  dagegen: Genau davon leben diese Spiele. Sie sind hart und tun weh, aber das Fesselnde ist
+  die Herausforderung, die man bezwingen will. Bleibt also eine Option.
+
+### Noch nicht bedacht (von Claude)
+
+- **Roguelite ohne Mobs:** Vielfalt aus den Bossen und den Koop-Regeln statt aus Waffen:
+  zufällige Reihenfolge, Boss-Varianten (eine Variante ist nur eine andere Angriffstabelle),
+  Modifikatoren (beat oder after, Schwerter vertauscht, Sync verfällt schneller).
+- **Minibosse als gesamter Zwischeninhalt:** ein Miniboss = ein Ausschnitt der Tabelle plus
+  eine Mechanik.
+- **Der Weg als Phase null des Bosses:** Der Boss greift schon aus der Ferne an, während man
+  sich nähert. Die Beat-Saber-Idee, aber im Kampf verankert.
+- **Umgekehrte Aufstellung:** Gegner auf beiden Seiten, die Spieler Rücken an Rücken in der
+  Mitte: das Gegenstück zu pep.
+- **Bewertung statt Inhalt als Wiederspielgrund:** Ränge für Sync, Zeit, ohne Treffer;
+  Rollentausch.
+
+### Reihenfolge (Vorschlag)
+
+1. Sync-Modus fertig bauen und testen.
+2. Einen zweiten Boss aus denselben Regeln bauen (am billigsten: der mit nur einer Waffe).
+   Erst zwei Bosse zeigen, ob das System trägt oder nur Bifrons.
+3. Von den Bossen ausgehen; als billigsten Test für den Zwischeninhalt eine Minute „Anlauf“
+   (Auto-Runner/Beat-Saber) vor Bifrons im bestehenden Level. Fühlt es sich wie derselbe Kampf
+   an, ist die Frage beantwortet.
+4. Roguelite-Modifikatoren erst, wenn der Wiederspielwert wirklich fehlt.

@@ -11,6 +11,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [ ] **Was ist zwischen den Bossen?** (Nicho, 2026-10-02) Jump-and-Run-Räume wie in Celeste,
   eine lineare Story, oder generiert / roguelike? Also: Platformer oder Mob-Fights zwischen
   den Bosskämpfen.
+  Stand nach dem Durchsprechen (Scribble vom 2026-10-02, „Was ist der Rest des Spiels?“):
+  lineare Story und Roguelike mit Mobs fallen wohl raus; im Rennen sind Fokus auf Bosse, eine
+  Aufwärmphase als Auto-Runner/Beat-Saber, Platformer und der Berg mit Fortschrittsverlust.
 - [ ] _(weitere eintragen)_
 
 ## Entscheidungen
