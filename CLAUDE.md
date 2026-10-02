@@ -91,6 +91,16 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   players always face him (the dash goes where the stick is held). Nicho's ideas behind it, and
   what's still open (a "sync mode" for two players side by side), are in the scribble of
   2026-10-02.
+- After Nicho's solo test of that (same day, a fourth round): he now **keeps his distance** (in
+  the middle between you, or back from a player right up against him), **steps or dashes at a
+  player with every strike**, leaves out strikes at a player who has walked off, and after
+  1.5 s **turns both swords on the one who's still there** (and rushes the other). The leap is
+  rarer; instead **players change sides themselves: a perfect parry landed mid-dash carries you
+  through the boss** (`parry_pass` on F1). That's a player rule in `player.gd`, so on the branch
+  it holds for Cubus too. **"Parry together" is green on this boss, not blue** (blue was too
+  close to P1's color): that collides with the color vocabulary of Cubus and Sphaera (green =
+  get off the floor, blue = parry together), so the colors are something to settle together.
+  The stand-in for testing alone now really plays a player (walks, parries, gets hurt, drinks).
 - Outside its own folders the branch also touches `core/moves.gd` (switches), `core/sfx.gd`
   (sounds; everything is 8 dB quieter), `core/game_manager.gd` (sync gains),
   `ui/boss_select.gd`, `project.godot` (one autoload) and `actors/bosses/base_boss.gd` (two
