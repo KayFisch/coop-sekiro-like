@@ -48,6 +48,15 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   klären**. Der **Stand-in** zum Alleine-Testen spielt jetzt wirklich einen Spieler (läuft,
   pariert 75 %, blockt 15 %, wird sonst getroffen, läuft unter 20 HP weg und trinkt). Nichos
   Feedback dazu: zweiter Scribble vom 2026-10-02 („nach dem Solo-Test“).
+  Fünfte Runde (2026-10-02, nach Nichos ausführlichem Test): Der Landepunkt des Sprungs steht
+  beim Absprung fest. Jede Klinge hat eine **Kante in der Farbe ihres Spielers**. In ppe schlägt
+  das vordere Schwert im selben Bogen wie das hintere, nur tiefer. Neu ist der **Stoß**: Er
+  stößt beide Schwerter auf die Spieler und wirft sie zurück (kein Schaden, nichts zu
+  parieren), wenn Zurückhüpfen ihn von der Raummitte wegtreiben würde. Das „after“-Fenster
+  öffnet 0,18 s nach dem Parry statt 0,25 s. Alle Attacken stehen in **einer Tabelle**
+  (`ColumnaBifrons.ATTACKS`, ein Gewicht je Situation). Nicho hat Gewichte und Patterns selbst
+  angepasst (DOUBLE und BOTH an). „beat“ ist für ihn weiter gut; „after“ könnte mehr Tiefe
+  bringen, jetzt mit dem kürzeren Warten noch mal vergleichen.
   **Braucht einen Playtest zu zweit**, danach entscheiden: mergen, umbauen oder verwerfen.
   Was dabei zu klären ist, steht in `docs/boss_columna_bifrons.md` (auf dem Branch) unter
   „What to look for“: Treffer-Fenster „beat“ oder „after“, wie viel Windup-Treffer wert sind,
@@ -68,6 +77,25 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Treffer-Fenster: Nicho tendiert nach dem Solo-Test zu **„beat“** (mit „after“ wartet man nach
   dem Parry erst, und bis man selbst wieder dran ist, dauert es zu lang; „beat“ hält das
   Ganze schneller). Noch mit Kay zu besprechen.
+- [ ] **Movement von Bifrons weiter tunen** (offen, niemand). Nach dem Test vom 2026-10-02:
+  Das Schema steht (Abstand halten, Schritt oder Dash mit jedem Hieb, Platz schaffen, auf den
+  Spieler wechseln, der noch da ist), fühlt sich aber insgesamt noch nicht rund an. Erst beim
+  Spielen notieren, *was* stört (zu nervös, zu träge, steht falsch, kommt zu nah), dann drehen.
+  Die Stellschrauben stehen oben in `columna_bifrons.gd` unter „Moving“, mit den aktuellen
+  Werten in `docs/boss_columna_bifrons.md` → „Tuning“ (beides auf dem Branch):
+  - *Abstand:* ab wann er zurückweicht und wie weit (`CROWD_DISTANCE` 62, `FIT_DISTANCE` 90),
+    ab wann er nachrückt (`BLADE_REACH` 215, `REACH_MARGIN` 30), wie weit er neben der Mitte
+    zwischen den Spielern stehen darf (`PLACE_SLACK` 28).
+  - *Tempo:* Gehen (`WALK_SPEED` 110), während Attacken (`ATTACK_PACE` 0,5), gebremst durch
+    Treffer (`SLOWED_FACTOR` 0,3 für `SLOWED_TIME` 0,6 s).
+  - *Hiebdash:* kurzer Schritt, langer Dash, Zielabstand (`LUNGE_SHORT` 14, `LUNGE_LONG` 160,
+    `STRIKE_DISTANCE` 105, `CLOSEST` 72); Zulaufen bei langem Ausholen (`LONG_WINDUP` 6,
+    `ADVANCE_SPEED` 70).
+  - *Platz schaffen:* Hüpfer zurück oder Stoß (`CROWD_PATIENCE` 0,7 s, `ROOM_COOLDOWN` 4 s,
+    `BACK_OFF_DISTANCE` 110, `Shove.PUSH`, `Shove.NEAR`); wann er als „in die Ecke gedrängt“
+    gilt (äußeres Fünftel des Raums).
+  - *Allein gelassen:* ab wann ein Schwert wechselt und zurückwechselt (`TURN_TIME` 1,5 s,
+    `RETURN_DISTANCE` 300), wie oft er zum Entfernten rusht (Gewicht von `RUSH`).
 - [ ] **Mash-Problem bei Bifrons anschauen** (offen, niemand). Seit die Sonderregeln raus sind
   (keine Mash-Sperre, kein Treffer-Limit im Windup), lohnt sich Dauerdrücken auf Angriff:
   - **Was passiert:** Ein Spieler pariert nur die Schläge auf seiner eigenen Seite und drückt

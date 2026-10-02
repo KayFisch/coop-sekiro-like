@@ -101,6 +101,12 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   close to P1's color): that collides with the color vocabulary of Cubus and Sphaera (green =
   get off the floor, blue = parry together), so the colors are something to settle together.
   The stand-in for testing alone now really plays a player (walks, parries, gets hurt, drinks).
+- A fifth round after a longer test (still 2026-10-02): every blade's edge has its player's
+  color; he has a shove (both swords thrust at the players: no damage, it throws them back) for
+  when a hop back would take him away from the middle of the room; the leap's landing spot is
+  settled as he jumps; the "after" window opens sooner (0.18 s); and all his attacks sit in one
+  table, `ColumnaBifrons.ATTACKS`, with a weight per situation. His movement still needs
+  tuning: there's a task for it in `TASKS.md`.
 - Outside its own folders the branch also touches `core/moves.gd` (switches), `core/sfx.gd`
   (sounds; everything is 8 dB quieter), `core/game_manager.gd` (sync gains),
   `ui/boss_select.gd`, `project.godot` (one autoload) and `actors/bosses/base_boss.gd` (two
