@@ -246,6 +246,11 @@ const TETHER_MAX_CORRECTION = 40.0  # px per frame, so a respawn doesn't yank th
 # BOSS BODY (Moves "boss_body"): a boss may block players with a zone (BaseBoss.body_block()).
 # Nobody walks, dashes or jumps through it, and nobody stands on it; see _keep_out_of_boss().
 const BOSS_SLIDE_SPEED = 900.0  # px/s: landing on top, you slide off the side you came from
+# DASH-PARRY (Moves "parry_pass"): a perfect parry that lands while you're dashing at the boss
+# carries you through him: the dash starts over from there, and his block is no obstacle until
+# it's done. A dash started up to PASS_WINDOW after the parry goes through him too. Out the far
+# side, you've changed sides; a dash too short for that is pushed back out the nearer side.
+const PASS_WINDOW = 0.2
 # CALL (Moves "call"): a 3, 2, 1, GO countdown over the caller's head, one beat per CALL_BEAT, so
 # GO lands CALL_COUNT beats after the press. Both players pulse on every beat. Informational only.
 const CALL_BEAT = 0.4
@@ -370,6 +375,8 @@ var _block_side = 1.0  # which side of the boss's block you're on (see _keep_out
 var _block_above = false  # clear of the block, above it, last frame
 var _block_sliding = false  # landed on top: sliding off
 var _block_ignored = false  # grabbed or thrown into it: passing through until clear
+var _pass_timer = 0.0  # > 0 just after a perfect parry: a dash started now goes through the boss
+var _passing = false  # this dash goes through the boss's block (see PASS_WINDOW)
 var _call_time = -1.0  # time into the countdown; < 0 while there's none
 var _call_beat = -1
 var _call_label: Label
@@ -865,6 +872,8 @@ func _start_dash(direction: float):
 	_dash_slash = false
 	_launch_timer = 0.0
 	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
+	_passing = _pass_timer > 0.0 and _boss_ahead()  # right after a parry: through him
+	_pass_timer = 0.0
 	# Squash-and-stretch: snap wide and short, then spring back.
 	if _stretch_tween:
 		_stretch_tween.kill()
@@ -1415,6 +1424,7 @@ func _tick_timers(delta):
 	_sword_flash = maxf(_sword_flash - delta, 0.0)
 	_recoil_timer = maxf(_recoil_timer - delta, 0.0)
 	_attack_buffer = maxf(_attack_buffer - delta, 0.0)
+	_pass_timer = maxf(_pass_timer - delta, 0.0)
 	_parry_flick = maxf(_parry_flick - delta, 0.0)
 	_dodge_flash = maxf(_dodge_flash - delta, 0.0)
 	_hurt_flash = maxf(_hurt_flash - delta, 0.0)
@@ -1530,6 +1540,13 @@ func on_perfect_parry(strong: bool):
 	var cam = get_viewport().get_camera_2d()
 	if cam and cam.has_method("shake"):
 		cam.shake(7.0 if strong else 4.0)
+	if Moves.on("parry_pass"):
+		_pass_timer = PASS_WINDOW
+		if _dash_timer > 0.0 and not _dash_slash and _boss_ahead():
+			# A dash-parry: the dash starts over from here, and goes through him.
+			_dash_timer = DASH_TIME
+			_passing = true
+			_pass_timer = 0.0
 
 
 # burst: a ring bursting off the player and a whoosh on top of the flash (Cubus's grab).
@@ -1728,6 +1745,15 @@ func _keep_out_of_boss(delta):
 		_block_sliding = false
 		return
 	var me = Rect2(global_position - body.size / 2.0, body.size)
+	if _passing:
+		if _dash_timer > 0.0:
+			return  # a dash-parry: through him
+		# The dash is over. Still inside him: out the side you got closer to.
+		_passing = false
+		if me.intersects(block):
+			_block_side = 1.0 if global_position.x >= block.get_center().x else -1.0
+			_block_sliding = true
+			_block_above = false
 	if not me.intersects(block):
 		_block_ignored = false
 		_block_sliding = false
@@ -1756,6 +1782,11 @@ func _keep_out_of_boss(delta):
 		move_and_collide(hit.get_remainder())
 	if velocity.x * _block_side < 0.0:
 		velocity.x = 0.0  # stopped at his side, like at a wall
+
+
+# The boss's block is in this dash's way.
+func _boss_ahead() -> bool:
+	return _boss_in_the_way(global_position.x + _dash_dir * (DASH_DISTANCE + body.size.x))
 
 
 # The boss's block lies between here and `x`, at this player's height.
