@@ -1,10 +1,11 @@
 class_name Leap
 extends Attack
-## Blue blades, pointing down -> red. Columna Bifrons's way out of having both players on one
-## side of him (ppe): he crouches, jumps, hangs over them and comes down between them, a sword
-## stabbing down on each. Each player has to perfect parry the one that's theirs as he lands;
-## both do, and he's staggered. Either way he's between them now (whoever is under him is pushed
-## out to their side): a player on each side again (pep).
+## Green blades, pointing down -> red. Columna Bifrons jumps, hangs over the players and comes
+## down between them, both swords stabbing down. It's his way out of having both players on one
+## side of him (ppe), and out of being cornered (see "CORNERED" in columna_bifrons.gd). Each
+## player near where he lands has to perfect parry the sword that's theirs; both do, and he's
+## staggered. Either way he's between them now, and they're thrown apart: whoever is under him
+## is pushed out to their side, and everyone near is knocked back, parry or not.
 
 signal strike_parried(player)
 signal both_parried
@@ -21,8 +22,10 @@ const RISE_TIME = 0.3  # from the floor up to HEIGHT
 const HANG_TIME = 0.3  # up there, over the players, before he drops (in StrikePattern.FALL_TIME)
 const HEIGHT = 200.0  # how high he gets: his feet clear the players' heads
 const TRACK_SPEED = 600.0  # px/s he follows the spot he's going to land on, until he drops
-const AHEAD = 50.0  # he lands at most this far past the nearer player, between the two
+const AHEAD = 50.0  # both players on one side: he lands at most this far past the nearer one
 const REACH = 80.0  # a player this close to where he lands is under the swords
+const KNOCKBACK = 1.6  # times a sword strike's knockback, for a player it hits (or chips)...
+const PARRIED_PUSH = 220.0  # ...and one who parried it is still pushed back, at this speed (px/s)
 const STAGGER_TIME = 2.2  # parried by both
 const RECOVER_TIME = 0.6
 const CROUCH = Vector2(1.12, 0.78)  # his body, loaded for the jump
@@ -88,8 +91,9 @@ func update(delta: float):
 		judged[blade] = boss.judge(blade, REACH)
 	var both = judged[LEFT].parried and judged[RIGHT].parried
 	for blade in [LEFT, RIGHT]:
-		boss.land(judged[blade], both)
+		boss.land(judged[blade], both, 1.0, KNOCKBACK)
 		for p in judged[blade].parriers:
+			p.apply_knockback(Vector2(boss.side_of(p) * PARRIED_PUSH, 0.0))
 			parry_success.emit(p, "bifrons_leap")
 			strike_parried.emit(p)
 	boss.shake(12.0 if both else 9.0)
@@ -102,21 +106,35 @@ func update(delta: float):
 		finish(RECOVER_TIME)
 
 
+# Seconds until he lands on that player.
+func time_to_strike(player) -> float:
+	var theirs = boss.ward_of(LEFT) == player or boss.ward_of(RIGHT) == player
+	return _land_at - _time if theirs and _time < _land_at else INF
+
+
 func cleanup():
 	boss.global_position.y = boss.home_position.y
 
 
-# Where he comes down: between the two players, at most AHEAD past the nearer one.
-func _landing_x() -> float:
-	var wards = [boss.ward_of(LEFT), boss.ward_of(RIGHT)].filter(func(ward): return ward != null)
+# Where he'd like to come down, jumping off at from_x: between the two players. One on each
+# side of from_x: in the middle. Both on one side: at most AHEAD past the nearer one. (The walls
+# may not leave him room there: see ColumnaBifrons.clamp_x().)
+static func landing_spot(boss_node, from_x: float) -> float:
+	var wards = []
+	for blade in [LEFT, RIGHT]:
+		var ward = boss_node.ward_of(blade)
+		if ward != null and not ward in wards:
+			wards.append(ward)
 	if wards.is_empty():
-		return boss.global_position.x
-	wards.sort_custom(func(a, b): return absf(a.global_position.x - _from_x) < absf(b.global_position.x - _from_x))
+		return from_x
+	wards.sort_custom(func(a, b): return absf(a.global_position.x - from_x) < absf(b.global_position.x - from_x))
 	var near = wards[0].global_position.x
 	if wards.size() == 1:
-		return boss.clamp_x(near)
+		return near
 	var gap = wards[1].global_position.x - near
-	return boss.clamp_x(near + signf(gap) * minf(absf(gap) / 2.0, AHEAD))
+	if signf(near - from_x) != signf(wards[1].global_position.x - from_x):
+		return near + gap / 2.0
+	return near + signf(gap) * minf(absf(gap) / 2.0, AHEAD)
 
 
 # --- His body and blades, as a function of the time into the attack ---
@@ -137,7 +155,7 @@ func _animate():
 			Sfx.play("launch", -4.0)
 		var rise = clampf((_time - _jump_at) / RISE_TIME, 0.0, 1.0)
 		boss.global_position.y = floor_y - HEIGHT * (1.0 - (1.0 - rise) * (1.0 - rise))
-		boss.global_position.x = move_toward(boss.global_position.x, _landing_x(),
+		boss.global_position.x = move_toward(boss.global_position.x, boss.clamp_x(landing_spot(boss, _from_x)),
 			TRACK_SPEED * boss.get_physics_process_delta_time())
 	else:
 		# Down, both blades first. His body is no obstacle until he's landed.

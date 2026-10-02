@@ -104,6 +104,15 @@ func update(delta: float):
 	_animate()
 
 
+# Seconds until the sweep reaches that player; INF once it's past them.
+func time_to_strike(player) -> float:
+	if _landed == 0 and boss.ward_of(_first) == player:
+		return _first_at - _time
+	if _landed < 2 and boss.ward_of(-_first) == player:
+		return _second_at - _time
+	return INF
+
+
 # The blade reaches that sword's player: true if it was parried there.
 func _reach(blade: int) -> bool:
 	var judged = boss.judge(blade)
