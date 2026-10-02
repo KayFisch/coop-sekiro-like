@@ -29,14 +29,23 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Seit der zweiten Runde (2026-10-01) gilt **ein Regelsatz für jede Klinge**, Spieler wie Boss
   („eine Klinge deckt oder schwingt, nie beides“, ein parierter Schlag prallt zurück); die
   Sonderregeln (Mash-Sperre, nur ein Treffer pro Windup) sind raus.
+  Seit der dritten Runde (2026-10-02) **folgt jedes seiner Schwerter einem Spieler**, egal auf
+  welcher Seite: damit geht auch **ppe** (beide Spieler auf einer Seite) mit denselben Regeln.
+  Neu dazu: **Crossing** (er charged an einem Spieler vorbei, dann Doppelschlag), **Sprung**
+  (er landet zwischen den Spielern, zurück zu pep), **Movement** (er läuft Spielern nach, will
+  zur Raummitte, weicht in ppe nach einem Doppelschlag zurück) und **Spieler gucken immer zu
+  ihm**. Ideen dazu und was noch offen ist (Sync-Modus, Hieb-nach-oben-Variante): Scribble vom
+  2026-10-02.
   **Braucht einen Playtest zu zweit**, danach entscheiden: mergen, umbauen oder verwerfen.
   Was dabei zu klären ist, steht in `docs/boss_columna_bifrons.md` (auf dem Branch) unter
   „What to look for“: Treffer-Fenster „beat“ oder „after“, wie viel Windup-Treffer wert sind,
   ob sich der längere Schwung richtig anfühlt.
   Fasst außerhalb des eigenen Ordners an: `core/moves.gd` (Schalter), `core/game_manager.gd`
   (Sync-Werte), `core/sfx.gd` (Sounds, Gesamtlautstärke), `ui/boss_select.gd` (Eintrag),
-  `project.godot` (Autoload), `actors/bosses/base_boss.gd` (ein Hook für die Pause zwischen
-  Attacken) und **`actors/player/player.gd`**, und das ist **nicht mehr klein**: Der Schlag ist
+  `project.godot` (Autoload), `actors/bosses/base_boss.gd` (zwei Hooks: Pause zwischen
+  Attacken, Blickrichtung der Spieler halten) und **`actors/player/player.gd`**, und das ist
+  **nicht mehr klein**: Spieler gucken bei diesem Boss immer zu ihm (der Dash geht dann in die
+  gehaltene Richtung; in den anderen Kämpfen ändert sich nichts). Der Schlag ist
   ein echter Schwung (Ausholen, Schnitt, Zurückführen: einer alle 0,41 s statt alle 0,3 s, er
   trifft 0,08 s nach dem Druck), währenddessen kein Block und kein Parry, pariert prallt er
   zurück, ein etwas zu früher Angriffsdruck zählt noch, und das Schwert ist größer (76 statt

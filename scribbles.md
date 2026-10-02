@@ -135,3 +135,58 @@ nicht geben.
 
 → Zum Testen: ein reaktiver Modus für Columna Bifrons, per F1 umschaltbar, zusätzlich zu den
 festen Mustern (Branch `nicho/pep-test`, `docs/boss_columna_bifrons.md`).
+
+## 2026-10-02 (Nicho): ppe, Seitenwechsel durch den Boss, Sync-Modus als Verbindung
+
+Nach dem Solo-Test der Grundregeln (Hieb, reaktiver Modus). pep = Spieler – Boss – Spieler,
+ppe = beide Spieler auf einer Seite.
+
+**Charge mit Seitenwechsel, dann heftiger Angriff.** Zwei Varianten:
+- Hieb von unten nach oben, der Spieler fliegt in die Luft, der Boss charged unten drunter durch.
+- Boss und Spieler laufen kurz aneinander vorbei: Der Boss schlägt auf bestimmte Art, und egal
+  ob der Spieler getroffen wird, blockt oder pariert: bewegt er sich zum Boss hin, kommt er an
+  ihm vorbei, während der zur Seite geht. Wer nah steht, muss sich praktisch nicht bewegen, wer
+  weiter weg steht, schon.
+- In beiden Fällen schwingt das Schwert der Charge-Seite mit auf die andere Seite, damit beide
+  Schwerter zu den Spielern zeigen. Nicht als festes Pattern, sondern reaktiv: Schwert 1 zeigt
+  zu P1, Schwert 2 zu P2, je nachdem wo sie stehen. Spieler gucken immer zum Boss.
+
+**ppe wie pep?** Die Patterns bleiben wie vorher, nur schlagen jetzt beide Schwerter auf
+dieselbe Seite, weiter abwechselnd; ein Schwert zur Seite der Spieler, eins hinten, und je
+nachdem welches angreift, kommt der Schlag vertikal oder horizontal. „Beide“ ist dann ein
+heftiger Schlag, den beide zusammen parieren müssen. So spielt sich ppe praktisch wie pep.
+- Oder sollte sich ppe gerade *nicht* wie pep anfühlen und nur für einzelne heftige Schläge
+  aktiv sein?
+- Es braucht einen Weg zurück nach pep, den der Boss auslöst: z. B. ein Sprungangriff mit
+  vertikalem Stich auf die Spieler, der beide auseinander wirft (zumindest wenn nicht beide
+  gleichzeitig pariert haben?).
+
+**Sync-Modus: Verbindung und Movement** (nur in ppe, wenn beide nebeneinander stehen):
+- Aus zwei Charakteren nebeneinander mit zwei Schwertern wird praktisch ein Charakter mit einem
+  großen Schwert. Der Impact muss spürbar sein. In dem Zustand sind die Spieler eher der Boss,
+  und der Boss muss sich verteidigen, bis seine Verteidigung gebrochen ist. Erst im Sync-Modus
+  können beide wirklich zusammen angreifen.
+- Der Spieler auf der Boss-Seite (vorne) übernimmt Movement und sein Schwert. Der Spieler
+  hinten hält einen Knopf, solange er die Verbindung nicht beenden will, und steuert seinen Arm.
+- Spieler sollten keine Quadrate sein, sondern zwei Hälften, die zusammen ein Quadrat bilden:
+  dünner, damit sind Schwerter und Hitboxen näher beieinander.
+- Der Spieler, der nur die Verbindung hält, könnte die Angriffe des Sync-Modus starten. Ohne
+  Cue schlagen beide kaum gleichzeitig; deshalb die Überlegung, dass der Angriff automatisch
+  anfängt und beide kurz vor dem Zuschlagen in Sync drücken. Der Spieler ohne Movement hat den
+  Daumen frei (kein Stick): Er könnte mit den Pfeiltasten aus vier Angriffen den passenden
+  cuen, und beide syncen im richtigen Moment.
+- Dann ist die „Taste halten“-Aufgabe vielleicht überflüssig: Beide können die Verbindung
+  einfach vorzeitig abbrechen, z. B. durch Dashen in entgegengesetzte Richtungen.
+
+**Movement des Bosses, einfaches Schema:**
+- Bei bestimmten Hieben (z. B. mit viel Ausholzeit) bewegt er sich auf den Spieler zu, den er
+  damit angreift: beide Spieler müssen sich neu positionieren.
+- Er geht auf einen Spieler zu, der aktiv wegläuft; Angriffe des anderen Spielers verlangsamen ihn.
+- Nach einem Pattern will er wieder mittiger im Raum stehen, wenn er nicht im mittleren Drittel
+  ist; aus den äußeren Fünfteln erst recht.
+- ppe: nach einem „Beide“-Angriff, den nicht beide pariert haben, dasht er etwas zurück.
+
+→ Auf `nicho/pep-test` zum Ausprobieren gebaut: Schwerter folgen den Spielern (pep und ppe mit
+denselben Regeln), der Charge als Aneinander-vorbei-Laufen plus Doppelschlag, der Sprung zurück
+nach pep, das Movement-Schema, Blick immer zum Boss (`docs/boss_columna_bifrons.md`). Offen:
+die Hieb-nach-oben-Variante, der Sync-Modus, die Spieler als zwei Hälften.
