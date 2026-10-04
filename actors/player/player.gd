@@ -61,17 +61,36 @@ const PARRY_TOLERANCE = 0.133
 # boss's hands shutting inside it is a clean dodge. Press at most this long before they shut.
 const DODGE_TOLERANCE = 0.133
 const PARRY_SPAM_LOCK = 0.3  # a block press this soon after the previous one can't parry
-const ATTACK_ACTIVE_TIME = 0.15
-const ATTACK_RETURN_TIME = 0.1
-const ATTACK_COOLDOWN = 0.3
+# THE SWORD, the rules every blade in the game follows (the bosses' too):
+# A blade either guards or swings. At rest it's held diagonally, up and forward. Block holds it
+# diagonally down in front; a perfect parry beats it up from there.
+# THE SLASH is a real swing: drawn back (windup), cut down (active: only then can it hit), and
+# brought back to rest (return). It commits: from the press until the blade is back at rest,
+# block does nothing, and a parry window opened just before the swing is given up; so there's
+# no attacking and parrying at once (see _is_swinging()). There's no cooldown beyond that: the
+# blade back at rest is ready again, and an attack pressed up to ATTACK_BUFFER_TIME before it's
+# back comes as soon as it is.
+const ATTACK_WINDUP_TIME = 0.05  # short: the cut has to follow the press
+const ATTACK_ACTIVE_TIME = 0.12
+const ATTACK_RETURN_TIME = 0.24  # the price of a swing: this long until the next one, or a block
+const ATTACK_COOLDOWN = ATTACK_WINDUP_TIME + ATTACK_ACTIVE_TIME + ATTACK_RETURN_TIME
+const ATTACK_BUFFER_TIME = 0.15
 const ATTACK_DAMAGE = 10.0
-const SWING_START_ANGLE = -1.05  # -60 degrees
-const SWING_END_ANGLE = 0.52  # +30 degrees, a 90 degree arc
+const SWORD_REST_ANGLE = -0.7  # -40 degrees: up and forward
+const SWING_START_ANGLE = -1.4  # drawn back to here, nearly upright...
+const SWING_END_ANGLE = 0.6  # ...and cut down to here
+# PARRIED: an enemy blade that meets the swing knocks it back (on_swing_parried()). The blade
+# then takes PARRIED_RECOIL to come back to rest, instead of the usual return, and until it's
+# there the swing isn't over: no block, no parry, no attack.
+const PARRIED_RECOIL = 0.45
+const RECOIL_ANGLE = -2.4  # thrown back over the shoulder
+const RECOIL_KNOCK_TIME = 0.06  # how fast it's thrown there
 # Dash-slash: dash and attack together (or attack a moment before the dash) to dash with the
 # sword thrust out level in front, hitting all the way through the dash. It starts with a short
 # windup, held in place with the blade drawn back and brightening, so a partner can see it
 # coming and time a parry (see the momentum relay).
 const DASH_SLASH_WINDUP = 0.2
+const DASH_SLASH_COOLDOWN = 0.5  # from the windup's start until the next attack
 const DASH_SLASH_WINDUP_DRAW = 14.0  # the blade drawn back this far behind the usual grip
 const DASH_SLASH_LEAD = 0.1  # an attack pressed at most this long before a dash turns into one...
 const DASH_SLASH_LATE = 0.06  # ...and so does one pressed at most this long after the dash starts
@@ -95,6 +114,7 @@ const TELL_SOUND_TIME = 0.12  # the sound's length (see "tell" in sfx.gd): start
 # The hop is once per trip into the air, like the dash; the cut itself can be repeated.
 # Up pressed at most UPSLASH_LATE after the attack still counts, as for the dash-slash.
 const UPSLASH_LATE = 0.06
+const UPSLASH_WINDUP_TIME = 0.05  # the blade dipping from rest to where the cut starts
 const UPSLASH_ACTIVE_TIME = 0.15
 const UPSLASH_RETURN_TIME = 0.12
 const UPSLASH_COOLDOWN = 0.35
@@ -195,8 +215,11 @@ const RELAY_EXIT_FRACTION = 0.45  # of the boost's speed kept once it ends
 const RELAY_RECOIL = 220.0
 const RELAY_PARRY_TOLERANCE = 0.2
 const RELAY_FAIL_BOUNCE = Vector2(260.0, -220.0)  # the dasher, off a block that wasn't a parry
-const GUARD_ANGLE = -1.571  # sword held upright...
-const GUARD_OFFSET = Vector2(24, 30)  # ...in front of the body (x mirrors with facing)
+const GUARD_ANGLE = 0.55  # blocking: the sword held diagonally down...
+const GUARD_OFFSET = Vector2(6, -12)  # ...in front, from the chest (x mirrors with facing)
+const PARRY_FLICK_ANGLE = -1.3  # a perfect parry beats the blade up, to past its rest
+const PARRY_FLICK_TIME = 0.12
+const SWORD_EASE = 25.0  # how fast the blade moves between rest and guard (1/s)
 const DROP_THROUGH_TIME = 0.3
 const WORLD_LAYER = 1  # floor and walls
 const PLAYER_LAYER = 2  # players; they collide with each other while Moves "players_collide" is on
@@ -223,6 +246,11 @@ const TETHER_MAX_CORRECTION = 40.0  # px per frame, so a respawn doesn't yank th
 # BOSS BODY (Moves "boss_body"): a boss may block players with a zone (BaseBoss.body_block()).
 # Nobody walks, dashes or jumps through it, and nobody stands on it; see _keep_out_of_boss().
 const BOSS_SLIDE_SPEED = 900.0  # px/s: landing on top, you slide off the side you came from
+# DASH-PARRY (Moves "parry_pass"): a perfect parry that lands while you're dashing at the boss
+# carries you through him: the dash starts over from there, and his block is no obstacle until
+# it's done. A dash started up to PASS_WINDOW after the parry goes through him too. Out the far
+# side, you've changed sides; a dash too short for that is pushed back out the nearer side.
+const PASS_WINDOW = 0.2
 # CALL (Moves "call"): a 3, 2, 1, GO countdown over the caller's head, one beat per CALL_BEAT, so
 # GO lands CALL_COUNT beats after the press. Both players pulse on every beat. Informational only.
 const CALL_BEAT = 0.4
@@ -275,6 +303,11 @@ var _swing_kind = Swing.SLASH
 var _attack_timer = 0.0  # counts down through the swing and its return
 var _attack_cooldown = 0.0
 var _attack_landed = false
+var _attack_buffer = 0.0  # > 0 while an attack press is waiting for the blade to be back
+var _recoil_timer = 0.0  # > 0 while the blade comes back from being parried (PARRIED_RECOIL)
+var _sword_idle_angle = SWORD_REST_ANGLE  # the blade's angle when it isn't swinging, eased
+var _swing_from_angle = SWORD_REST_ANGLE  # where the blade was when the swing (or recoil) began
+var _parry_flick = 0.0  # > 0 while a perfect parry beats the blade up
 var _slash_press_time = -100.0
 var _upslash_press_time = -100.0
 var _upslash_hop_ready = true  # refreshed on the ground
@@ -342,6 +375,8 @@ var _block_side = 1.0  # which side of the boss's block you're on (see _keep_out
 var _block_above = false  # clear of the block, above it, last frame
 var _block_sliding = false  # landed on top: sliding off
 var _block_ignored = false  # grabbed or thrown into it: passing through until clear
+var _pass_timer = 0.0  # > 0 just after a perfect parry: a dash started now goes through the boss
+var _passing = false  # this dash goes through the boss's block (see PASS_WINDOW)
 var _call_time = -1.0  # time into the countdown; < 0 while there's none
 var _call_beat = -1
 var _call_label: Label
@@ -462,6 +497,10 @@ func _process_movement(delta):
 	var direction = move_axis()
 	if direction != 0.0:
 		facing = signf(direction)
+	# A boss that changes sides keeps your eyes on him, whichever way you walk.
+	var boss = GameManager.boss
+	if is_instance_valid(boss) and boss.holds_facing() and boss.global_position.x != global_position.x:
+		facing = signf(boss.global_position.x - global_position.x)
 	if _dash_slash and _dash_timer > 0.0:
 		facing = _dash_dir  # the thrust points the way of the dash
 	_fast_falling = false
@@ -731,11 +770,15 @@ func _process_actions():
 	if _jump_buffer > 0.0:
 		_try_jump()
 
-	# The dash goes the way you face (_process_movement() has already turned you this frame).
+	# The dash goes the way you face (_process_movement() has already turned you this frame);
+	# while a boss holds your facing, the way you hold.
 	if Input.is_action_just_pressed(_action("dash")):
-		_start_dash(facing)
+		var held = move_axis()
+		var boss = GameManager.boss
+		var free = held != 0.0 and is_instance_valid(boss) and boss.holds_facing()
+		_start_dash(signf(held) if free else facing)
 
-	if Input.is_action_just_pressed(_action("block")):
+	if Input.is_action_just_pressed(_action("block")) and not _is_swinging():
 		var now = _now()
 		# Mashing doesn't parry: a press too soon after the previous one isn't a parry attempt.
 		parry_press_time = now if now - _last_block_press >= PARRY_SPAM_LOCK else -100.0
@@ -743,6 +786,8 @@ func _process_actions():
 
 	if Input.is_action_just_pressed(_action("attack")):
 		_press_attack()
+	elif _attack_buffer > 0.0 and _attack_cooldown <= 0.0:
+		_press_attack()  # pressed a moment too early: it comes now
 	elif Input.is_action_just_pressed(_action("up")) and _attack_timer > 0.0 \
 			and _swing_kind == Swing.SLASH and not _attack_landed \
 			and _now() - _slash_press_time <= UPSLASH_LATE:
@@ -827,6 +872,8 @@ func _start_dash(direction: float):
 	_dash_slash = false
 	_launch_timer = 0.0
 	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
+	_passing = _pass_timer > 0.0 and _boss_ahead()  # right after a parry: through him
+	_pass_timer = 0.0
 	# Squash-and-stretch: snap wide and short, then spring back.
 	if _stretch_tween:
 		_stretch_tween.kill()
@@ -848,7 +895,11 @@ func _press_attack():
 			and _now() - _dash_press_time <= DASH_SLASH_LATE:
 		_begin_dash_slash()  # attacking right as the dash starts
 		return
-	if _attack_cooldown > 0.0 or is_blocking():
+	if _attack_cooldown > 0.0:
+		_attack_buffer = ATTACK_BUFFER_TIME
+		return
+	_attack_buffer = 0.0
+	if is_blocking():
 		return
 	if Input.is_action_pressed(_action("up")) and _dash_timer <= 0.0:
 		_press_upslash()
@@ -875,12 +926,14 @@ func _press_upslash():
 
 
 func _start_swing(kind: Swing):
+	_swing_from_angle = _sword_angle()
 	_swing_kind = kind
-	_attack_timer = _swing_active_time() + _swing_return_time()
+	_attack_timer = _swing_windup_time() + _swing_active_time() + _swing_return_time()
 	_attack_cooldown = UPSLASH_COOLDOWN if kind == Swing.UPSLASH else ATTACK_COOLDOWN
 	_attack_landed = false
 	_pogoed = false
 	_downslash_time = _now() if kind == Swing.DOWNSLASH else -100.0
+	parry_press_time = -100.0  # a swing gives up the parry window
 	swing_serial += 1
 
 
@@ -892,7 +945,8 @@ func _begin_dash_slash():
 	_attack_timer = 0.0
 	_attack_landed = false
 	_downslash_time = -100.0
-	_attack_cooldown = ATTACK_COOLDOWN + DASH_SLASH_WINDUP
+	_attack_cooldown = DASH_SLASH_COOLDOWN
+	parry_press_time = -100.0  # as a swing does
 	_tell_sounded = false
 	facing = _dash_dir
 	velocity = Vector2.ZERO
@@ -923,6 +977,15 @@ func is_winding_up() -> bool:
 	return _windup_timer > 0.0
 
 
+func _swing_windup_time() -> float:
+	match _swing_kind:
+		Swing.UPSLASH:
+			return UPSLASH_WINDUP_TIME
+		Swing.DOWNSLASH:
+			return 0.0
+	return ATTACK_WINDUP_TIME
+
+
 func _swing_active_time() -> float:
 	match _swing_kind:
 		Swing.UPSLASH:
@@ -942,14 +1005,32 @@ func _swing_return_time() -> float:
 
 
 func _swing_elapsed() -> float:
-	return _swing_active_time() + _swing_return_time() - _attack_timer
+	return _swing_windup_time() + _swing_active_time() + _swing_return_time() - _attack_timer
+
+
+# True from the attack press until the blade is back at rest: a swing from its windup to the end
+# of its return (or of its recoil, if it was parried), or a dash-slash from its windup to the end
+# of the dash. No blocking or parrying meanwhile.
+func _is_swinging() -> bool:
+	return _attack_timer > 0.0 or _recoil_timer > 0.0 or _windup_timer > 0.0 \
+		or (_dash_slash and _dash_timer > 0.0)
 
 
 # True while the blade can hit: a swing's active part, or all through a dash-slash.
 func _is_sword_active() -> bool:
 	if _dash_slash and _dash_timer > 0.0:
 		return true
-	return _attack_timer > 0.0 and _swing_elapsed() < _swing_active_time()
+	var cutting = _swing_elapsed() - _swing_windup_time()
+	return _attack_timer > 0.0 and cutting >= 0.0 and cutting < _swing_active_time()
+
+
+# The enemy's blade met this swing and knocked it back (PARRIED_RECOIL): the hit is lost, and so
+# is the time until the blade is back.
+func on_swing_parried():
+	_swing_from_angle = _sword_angle()
+	_attack_timer = 0.0
+	_recoil_timer = PARRIED_RECOIL
+	_attack_cooldown = maxf(_attack_cooldown, PARRIED_RECOIL)
 
 
 func _swing_damage() -> float:
@@ -1341,6 +1422,10 @@ func _tick_timers(delta):
 	_dash_cooldown = maxf(_dash_cooldown - delta, 0.0)
 	_invuln_timer = maxf(_invuln_timer - delta, 0.0)
 	_sword_flash = maxf(_sword_flash - delta, 0.0)
+	_recoil_timer = maxf(_recoil_timer - delta, 0.0)
+	_attack_buffer = maxf(_attack_buffer - delta, 0.0)
+	_pass_timer = maxf(_pass_timer - delta, 0.0)
+	_parry_flick = maxf(_parry_flick - delta, 0.0)
 	_dodge_flash = maxf(_dodge_flash - delta, 0.0)
 	_hurt_flash = maxf(_hurt_flash - delta, 0.0)
 	_attack_timer = maxf(_attack_timer - delta, 0.0)
@@ -1380,7 +1465,7 @@ func _track_landing():
 
 func is_blocking() -> bool:
 	return not is_grabbed and not is_drinking() and not is_staggered() and not is_tumbling() \
-		and Input.is_action_pressed(_action("block"))
+		and not _is_swinging() and Input.is_action_pressed(_action("block"))
 
 
 func is_perfect_parry() -> bool:
@@ -1450,10 +1535,18 @@ func on_perfect_parry(strong: bool):
 	parry_press_time = -100.0  # one press parries one hit
 	_last_block_press = -100.0  # a landed parry isn't mashing: the next press may parry at once
 	_sword_flash = SWORD_FLASH_TIME
+	_parry_flick = PARRY_FLICK_TIME
 	Sfx.play("parry_strong" if strong else "parry")
 	var cam = get_viewport().get_camera_2d()
 	if cam and cam.has_method("shake"):
 		cam.shake(7.0 if strong else 4.0)
+	if Moves.on("parry_pass"):
+		_pass_timer = PASS_WINDOW
+		if _dash_timer > 0.0 and not _dash_slash and _boss_ahead():
+			# A dash-parry: the dash starts over from here, and goes through him.
+			_dash_timer = DASH_TIME
+			_passing = true
+			_pass_timer = 0.0
 
 
 # burst: a ring bursting off the player and a whoosh on top of the flash (Cubus's grab).
@@ -1652,6 +1745,15 @@ func _keep_out_of_boss(delta):
 		_block_sliding = false
 		return
 	var me = Rect2(global_position - body.size / 2.0, body.size)
+	if _passing:
+		if _dash_timer > 0.0:
+			return  # a dash-parry: through him
+		# The dash is over. Still inside him: out the side you got closer to.
+		_passing = false
+		if me.intersects(block):
+			_block_side = 1.0 if global_position.x >= block.get_center().x else -1.0
+			_block_sliding = true
+			_block_above = false
 	if not me.intersects(block):
 		_block_ignored = false
 		_block_sliding = false
@@ -1680,6 +1782,11 @@ func _keep_out_of_boss(delta):
 		move_and_collide(hit.get_remainder())
 	if velocity.x * _block_side < 0.0:
 		velocity.x = 0.0  # stopped at his side, like at a wall
+
+
+# The boss's block is in this dash's way.
+func _boss_ahead() -> bool:
+	return _boss_in_the_way(global_position.x + _dash_dir * (DASH_DISTANCE + body.size.x))
 
 
 # The boss's block lies between here and `x`, at this player's height.
@@ -1828,6 +1935,7 @@ func _setup_call_label():
 	add_child(_call_label)
 
 
+# The blade's angle right now: 0 is level, pointing the way the player faces; negative is up.
 func _sword_angle() -> float:
 	if is_clashing or _hold_kind != Hold.NONE:
 		return 0.0  # held flat against the other blade
@@ -1845,15 +1953,39 @@ func _sword_angle() -> float:
 			start = DOWNSLASH_START_ANGLE
 			end = DOWNSLASH_END_ANGLE
 		var elapsed = _swing_elapsed()
+		var windup = _swing_windup_time()
+		if elapsed < windup:
+			return lerpf(_swing_from_angle, start, elapsed / windup)  # drawn back to where the cut starts
+		elapsed -= windup
 		var active = _swing_active_time()
 		if elapsed < active:
 			return lerpf(start, end, elapsed / active)
-		# A downslash comes back over the top, finishing the circle, rather than swiping under again.
-		var rest = TAU if _swing_kind == Swing.DOWNSLASH else 0.0
+		# Back to rest. A downslash comes back over the top, finishing the circle, rather than
+		# swiping under again.
+		var rest = SWORD_REST_ANGLE + (TAU if _swing_kind == Swing.DOWNSLASH else 0.0)
 		return lerpf(end, rest, (elapsed - active) / _swing_return_time())
-	if is_blocking():
-		return GUARD_ANGLE
-	return 0.0
+	if _recoil_timer > 0.0:
+		# Parried: thrown back over the shoulder, then brought forward again, slowly at first.
+		var since = PARRIED_RECOIL - _recoil_timer
+		if since < RECOIL_KNOCK_TIME:
+			return lerpf(_swing_from_angle, RECOIL_ANGLE, since / RECOIL_KNOCK_TIME)
+		var back = (since - RECOIL_KNOCK_TIME) / (PARRIED_RECOIL - RECOIL_KNOCK_TIME)
+		return lerpf(RECOIL_ANGLE, SWORD_REST_ANGLE, ease(back, 2.0))
+	return _sword_idle_angle
+
+
+# The blade when nothing above is going on: at rest, down in front while blocking, beaten up by
+# a perfect parry; eased from one to the other, so releasing block swings it back up.
+func _update_sword_idle(delta: float):
+	if _is_swinging() or is_clashing or _hold_kind != Hold.NONE:
+		_sword_idle_angle = wrapf(_sword_angle(), -PI, PI)  # it carries on from wherever that leaves it
+		return
+	var target = SWORD_REST_ANGLE
+	if _parry_flick > 0.0:
+		target = PARRY_FLICK_ANGLE
+	elif is_blocking():
+		target = GUARD_ANGLE
+	_sword_idle_angle = lerpf(_sword_idle_angle, target, 1.0 - exp(-SWORD_EASE * delta))
 
 
 func _update_visuals():
@@ -1876,9 +2008,10 @@ func _update_visuals():
 		_relay_arrow.rotation = _relay_dir.angle()
 		_relay_arrow.color = body_color.lightened(0.6)
 
-	# Guard pose: sword upright in front of the body while blocking; in a clash, flat overhead
-	# (grand slash) or level against the boss's blade (triple stab); thrust forward through a
-	# dash-slash; otherwise held at the side.
+	# Guard pose: sword held diagonally down in front of the chest while blocking; in a clash,
+	# flat overhead (grand slash) or level against the boss's blade (triple stab); thrust forward
+	# through a dash-slash; otherwise held at the side, diagonally up.
+	_update_sword_idle(get_physics_process_delta_time())
 	var sword_offset = Vector2(0.0, body.position.y - _body_rest.y)
 	if is_clashing:
 		sword_offset = Vector2(-38.0 * facing, -28.0) if _clash_overhead else Vector2(0.0, -4.0)

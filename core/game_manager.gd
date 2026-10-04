@@ -35,6 +35,10 @@ const SYNC_GAINS = {
 	"zenith_interrupted": 25.0,
 	"coupled_parried": 6.0,
 	"coupled_collision": 30.0,
+	# Columna Bifrons
+	"bifrons_parried": 3.0,
+	"bifrons_sync_hit": 6.0,  # the partner's hit on the same strike: it took both of you
+	"bifrons_both_parried": 25.0,
 }
 const SYNC_LAUNCH_GAIN = 5.0  # a Launch, relay or pogo clash (see player.gd), in any fight...
 const SYNC_LAUNCH_COOLDOWN = 5.0  # ...at most once per this many seconds

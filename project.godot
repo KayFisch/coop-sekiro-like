@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 GameManager="*res://core/game_manager.gd"
 Sfx="*res://core/sfx.gd"
 Moves="*res://core/moves.gd"
+Pads="*res://core/pads.gd"
 
 [display]
 
