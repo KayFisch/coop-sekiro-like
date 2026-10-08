@@ -131,7 +131,8 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 
 ```
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
-docs/                                design docs: concept.md, boss_*.md (one per boss), parkour_gyms.md
+docs/                                design docs: concept.md, boss_*.md (one per boss), parkour_gyms.md,
+                                     art_brief.md (sizes, colors, poses: for generating sprites)
 core/                                autoloads: GameManager, Sfx, Moves, Pads
 actors/player/                       player.gd (+ scene)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
