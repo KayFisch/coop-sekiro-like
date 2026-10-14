@@ -139,6 +139,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     Windup), Windup-Treffer weniger Schaden.
   - **Mit Sonderregel** (wollten wir eigentlich nicht): Deckung bricht nicht, wenn sie gerade
     selbst pariert hat (die alte Mash-Sperre).
+- [ ] **Prototyp Koop-Jump'n'Run** (@Kay), Branch `kay/coop-platformer`. Testet eine Antwort
+  auf „Was ist zwischen den Bossen?“: ein kurzer Abschnitt, den man nur zu zweit schafft.
+  Baut auf den Gyms (`levels/gym/`) und dem Platforming-Kit in `Moves` auf. Soll möglichst
+  ohne Änderungen an `player.gd` auskommen (Nicho ändert dort auf `nicho/pep-test` Schwert
+  und Facing); falls doch nötig, vorher hier absprechen.
 - [ ] **Zwei Controller** (@Nicho), selber Branch: bisher hört P2 auf jedes Gamepad, mit zwei
   Pads steuern beide P2. Neu: ein Pad pro Spieler (`core/pads.gd`). Braucht Test mit zwei Pads.
 - [ ] **Concept aufräumen** (`docs/concept.md`). Befund vom Review 2026-09-30:

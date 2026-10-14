@@ -323,3 +323,25 @@ auf dem Beat). Sonst sind es zwei Spiele.
    (Auto-Runner/Beat-Saber) vor Bifrons im bestehenden Level. Fühlt es sich wie derselbe Kampf
    an, ist die Frage beantwortet.
 4. Roguelite-Modifikatoren erst, wenn der Wiederspielwert wirklich fehlt.
+
+## 2026-10-02 (Kay, mit Claude): Farben, Wer und Was getrennt
+
+Zur Farbfrage aus Bifrons Runde 4 (Grün = „zusammen parieren“ kollidiert mit Cubus/Sphaera).
+
+- **Ein Farbvokabular für das ganze Spiel**, nicht pro Boss. Für jeden Boss neue Farben zu
+  lernen, macht das Spielerlebnis holprig.
+- **Spieler später in Schwarz und Weiß** (Nichos Idee): Kay findet das gut. Was Nichos „dazu
+  Rot“ meint, ist noch offen.
+- **Zwei Kanäle, getrennt:**
+  - *Wen* ein Hieb meint: das Schwert selbst, schwarz oder weiß wie sein Spieler (heute die
+    farbige Kante an der Klinge).
+  - *Wie* man reagieren soll: eine **Aura ums Schwert**, die beim Telegraph kurz aufleuchtet
+    (z. B. ein lila Licht). Damit kann eine Angriffsfarbe nicht mehr mit einer Spielerfarbe
+    verwechselt werden.
+- **Boss-Idee:** ein Boss, der die Cues von P1 und P2 gezielt vertauscht, teilweise oder ganz,
+  um zu verwirren. Funktioniert nur, weil das Vokabular sonst überall gilt.
+- **Farbe für „zusammen parieren“:** Kay findet **Lila oder Blau** gut, kräftig gesättigt,
+  nicht blass. (Lila ist heute bei Cubus der Grab, Cubus ist aber nur ein Testboss. Blau war
+  zu nah an P1; mit schwarzen und weißen Spielern wäre es wieder frei.) Soll die Mitte
+  zwischen Schwarz und Weiß andeuten: mittlere Helligkeit, deutlich gesättigter als Grau.
+  Noch nicht entschieden.
