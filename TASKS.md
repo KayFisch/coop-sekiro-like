@@ -89,11 +89,18 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Schwertern zu einem mit einem großen Schwert, und der Boss muss sich verteidigen. Ideen:
   Scribble vom 2026-10-02 („Sync-Modus: Verbindung und Movement“). Dazu gehört die
   **schmalere Spieler-Hitbox** (Spieler als zwei Hälften, die zusammen ein Quadrat bilden):
-  noch nicht gemacht, heute 40×40 (`actors/player/player.tscn`).
+  auf `nicho/pep-test` gemacht (2026-10-14), 20×40 statt 40×40 (`Player.BODY_SIZE`).
 - [ ] **Prototyp Beat-Runner** (@Nicho): die andere Antwort auf „Was ist zwischen den
   Bossen?“, etwas zwischen Beat Saber und Geometry Dash (Auto-Runner, Dinge fliegen im Rhythmus
   auf die Spieler zu, parieren und schlagen; vielleicht zwei Lanes für pep/ppe). Siehe Scribble
   vom 2026-10-02 („Was ist der Rest des Spiels?“). Läuft parallel zu Kays Jump'n'Run.
+- [ ] **Spiegel-Bildschirm** (@Nicho), Branch `nicho/pep-test`, Schalter `mirror_view` (F1,
+  Standard aus). Nichos Idee aus dem Scribble vom 2026-10-14: Bildschirm an der Bodenlinie
+  geteilt, oben P1 als Licht, unten die Spiegelung mit P2 als Schatten (nach Gris), der Boss
+  ganz gespiegelt. Nur das Bild ändert sich, Regeln und Welt bleiben; die Spieler gehen dort
+  durcheinander durch. Zu klären beim Spielen: Ist kopfüber spielbar? Fehlt der Partner neben
+  einem mehr, als der Platz bringt? Was wird aus Sync und Partner-Clashes, wenn man sich nur an
+  der Linie trifft?
 - [ ] **Movement von Bifrons weiter tunen** (offen, niemand). Nach dem Test vom 2026-10-02:
   Das Schema steht (Abstand halten, Schritt oder Dash mit jedem Hieb, Platz schaffen, auf den
   Spieler wechseln, der noch da ist), fühlt sich aber insgesamt noch nicht rund an. Erst beim
