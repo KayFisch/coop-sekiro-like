@@ -80,9 +80,20 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   zurück, ein etwas zu früher Angriffsdruck zählt noch, und das Schwert ist größer (76 statt
   48 px, mehr Reichweite) und wird anders gehalten. Gilt in jedem Kampf, also vor dem Merge
   gemeinsam entscheiden; Cubus und Sphaera sind nicht darauf abgestimmt.
+  **Getestet (2026-10-14): für einen Prototyp sehr gut.**
   Treffer-Fenster: Nicho tendiert nach dem Solo-Test zu **„beat“** (mit „after“ wartet man nach
   dem Parry erst, und bis man selbst wieder dran ist, dauert es zu lang; „beat“ hält das
   Ganze schneller). Noch mit Kay zu besprechen.
+- [ ] **Sync-Modus** (offen, niemand; Hauptaufgabe neben den Zwischen-Prototypen). Der
+  fehlende Teil des Proof of Concept: in ppe, beide nebeneinander, werden zwei Spieler mit zwei
+  Schwertern zu einem mit einem großen Schwert, und der Boss muss sich verteidigen. Ideen:
+  Scribble vom 2026-10-02 („Sync-Modus: Verbindung und Movement“). Dazu gehört die
+  **schmalere Spieler-Hitbox** (Spieler als zwei Hälften, die zusammen ein Quadrat bilden):
+  noch nicht gemacht, heute 40×40 (`actors/player/player.tscn`).
+- [ ] **Prototyp Beat-Runner** (@Nicho): die andere Antwort auf „Was ist zwischen den
+  Bossen?“, etwas zwischen Beat Saber und Geometry Dash (Auto-Runner, Dinge fliegen im Rhythmus
+  auf die Spieler zu, parieren und schlagen; vielleicht zwei Lanes für pep/ppe). Siehe Scribble
+  vom 2026-10-02 („Was ist der Rest des Spiels?“). Läuft parallel zu Kays Jump'n'Run.
 - [ ] **Movement von Bifrons weiter tunen** (offen, niemand). Nach dem Test vom 2026-10-02:
   Das Schema steht (Abstand halten, Schritt oder Dash mit jedem Hieb, Platz schaffen, auf den
   Spieler wechseln, der noch da ist), fühlt sich aber insgesamt noch nicht rund an. Erst beim
@@ -144,8 +155,6 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Baut auf den Gyms (`levels/gym/`) und dem Platforming-Kit in `Moves` auf. Soll möglichst
   ohne Änderungen an `player.gd` auskommen (Nicho ändert dort auf `nicho/pep-test` Schwert
   und Facing); falls doch nötig, vorher hier absprechen.
-- [ ] **Zwei Controller** (@Nicho), selber Branch: bisher hört P2 auf jedes Gamepad, mit zwei
-  Pads steuern beide P2. Neu: ein Pad pro Spieler (`core/pads.gd`). Braucht Test mit zwei Pads.
 - [ ] **Concept aufräumen** (`docs/concept.md`). Befund vom Review 2026-09-30:
   - Vision und technische Spezifikation sind vermischt: „Moveset“ hat genaue Werte
     (136 px, 0.133 s …) und eine Kopie der F1-Schalter-Tabelle aus `core/moves.gd`, die veralten
@@ -178,3 +187,5 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [x] Branch- und Commit-Konventionen in `CLAUDE.md`
 - [x] Session-Start-Hook: automatisch pullen und Neues zeigen
 - [x] Side-Scroller vs. Top-Down entschieden
+- [x] Zwei Controller: ein Pad pro Spieler (`core/pads.gd`, Branch `nicho/pep-test`), mit zwei
+  Pads getestet (2026-10-14)

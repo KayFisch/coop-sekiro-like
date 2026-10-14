@@ -345,3 +345,37 @@ Zur Farbfrage aus Bifrons Runde 4 (Grün = „zusammen parieren“ kollidiert mi
   zu nah an P1; mit schwarzen und weißen Spielern wäre es wieder frei.) Soll die Mitte
   zwischen Schwarz und Weiß andeuten: mittlere Helligkeit, deutlich gesättigter als Grau.
   Noch nicht entschieden.
+
+## 2026-10-14 (Nicho): Licht und Schatten, gespiegelter Bildschirm
+
+**Zu Kays Farbkatalog:** gut so. Spieler in Schwarz und Weiß könnten **Licht und Schatten**
+sein, und das passt perfekt zum Sync-Thema (zwei Hälften, die zusammengehören).
+
+**Spontane Idee: horizontal geteilter Bildschirm, die Trennlinie ist eine Spiegelung.**
+- Ein Spieler kämpft oben (Licht), der andere unten (Schatten). Der Boss wird komplett
+  gespiegelt: Er kann Licht- und Schattenseite nicht unabhängig bewegen, die Spieler schon.
+- Vorbild: die Spiegelszene in *Gris*; der Artstyle von Gris insgesamt als Inspiration
+  (fast monochrom, weißer Boden, schwarze Figuren, Farbe als Akzent).
+- Könnte Platzprobleme und Sichtbarkeit lösen (die Spieler verdecken sich nie).
+- Probleme: auf einem Bildschirm spielt einer immer kopfüber; jede Hälfte hat nur halb so viel
+  Höhe. Auf zwei Bildschirmen spielt jeder richtig herum und sieht den anderen gespiegelt unten.
+
+**Einschätzung (Claude):**
+- *Das Wichtigste:* Die Spiegelung kann reine Darstellung sein. Die Spieler stehen weiter in
+  einer Welt auf einem Boden, Regeln und Physik bleiben wie heute (pep, ppe, Dash-Parry,
+  Partner-Clashes). Nur das Bild zeigt oben Licht-Spieler + Boss und unten Schatten-Spieler +
+  gespiegelten Boss. In Godot: zwei SubViewports auf derselben Welt, der untere vertikal
+  gespiegelt, jeder blendet den anderen Spieler aus (Visibility-Layer). Damit ist es ein
+  billiger Test mit Bifrons, ohne die Mechanik anzufassen.
+- *Kopfüber:* Gespiegelt ist nur das Bild, nicht die Steuerung: Springen drückt man weiter
+  „hoch“, die Figur geht auf dem Bildschirm nach unten. Wie schlimm das ist, zeigt nur ein Test.
+  Ausweg, falls es zu unangenehm ist: unten nicht spiegeln, sondern dieselbe Szene richtig herum
+  in Schattenfarben (klassischer Splitscreen); die Spiegelung als Bild ginge verloren, die
+  Trennung bliebe.
+- *Platz:* 324 px Höhe pro Hälfte; Bifrons mit erhobenem Schwert ist knapp 300 px hoch. Also
+  rauszoomen oder alles kleiner.
+- *Was verloren gehen könnte:* dass man den Partner direkt neben sich sieht. Der Sync-Modus
+  (beide nebeneinander werden einer) und die Partner-Clashes leben davon. Vielleicht ist genau
+  das der Sync-Moment: die beiden Hälften treffen sich an der Spiegellinie.
+- *Zwei Bildschirme* sind lokal selten; für Online-Koop wäre es natürlich. Nicht davon abhängig
+  machen.
