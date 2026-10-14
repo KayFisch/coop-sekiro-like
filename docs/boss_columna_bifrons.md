@@ -213,7 +213,9 @@ Changed for this boss, in `player.gd`, so it holds in every fight (and needs Kay
 - **The dash-parry**, above.
 
 He is smaller than he was (64 x 150 px, swords 170 px; it was 80 x 200 and 230), so a player's
-cut is something next to him. The players' bodies are the size they were.
+cut is something next to him. The players' bodies are half as wide as they were (20 x 40 px
+instead of 40 x 40, `Player.BODY_SIZE`): two side by side make a square, their swords and
+hitboxes sit closer together, and the one behind in ppe gets nearer to him.
 
 ## Reading him
 
@@ -354,6 +356,24 @@ own buttons, so everything that happens to them is the game's own (`stand_in.gd`
   to the wall) **and drinks**, then comes back: his strikes at it are left out, its sword turns
   on you, he may rush it ("Left alone");
 - it never attacks.
+
+## The mirrored screen ("mirror_view")
+
+An alternative picture of the same fight, after the mirror scene in *Gris*: the screen split at
+the floor line. Above it the room with P1, in light (white); below it the room's reflection,
+upside down, with P2, in shadow (black on pale ground). He is in both halves, mirrored whole: he
+can't move his light and his shadow apart, the players can. Each half leaves out the other
+player, so they never cover each other, and they pass through each other (there's nobody to bump
+into in a half of your own). Everything else is the same fight: one floor, the same rules, the
+same distances.
+
+- Switch it in F1 (off by default); it goes on and off at once, mid-fight too.
+- The room is drawn at 0.85 so his leap stays inside a half (`MirrorView.ZOOM`). Colors, the
+  pale ground, the outline in the shadow half: constants at the top of `ui/mirror_view.gd`.
+- A body that's nearly white flashes black when hit, instead of white (`FLASH_DARK_ABOVE`).
+- To find out: whether playing upside down (the bottom player's jump goes down the screen) is
+  bearable; whether not seeing the partner next to you costs more than the space gained; what
+  becomes of sync and the partner clashes when the two only meet at the line.
 
 ## Tuning
 

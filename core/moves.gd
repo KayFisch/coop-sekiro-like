@@ -42,6 +42,7 @@ const ENTRIES = [
 	{"key": "bifrons_window", "label": "Bifrons: partner hits on the beat, or after it", "default": "beat", "options": ["beat", "after"]},
 	{"key": "bifrons_stand_in", "label": "Bifrons: a stand-in plays the player starting there (alone)", "default": "off", "options": ["off", "left", "right"]},
 	{"key": "bifrons_face", "label": "Bifrons: players always face him (dash goes where you hold)", "default": true},
+	{"key": "mirror_view", "label": "Bifrons: mirrored screen (P1 light above the floor, P2 its shadow below)", "default": false},
 	{"key": "call", "label": "Call countdown (P1 Enter, P2 LB)", "default": true},
 	{"key": "swap_controls", "label": "Swap P1 / P2 controls (P1 on the pad)", "default": false},
 ]

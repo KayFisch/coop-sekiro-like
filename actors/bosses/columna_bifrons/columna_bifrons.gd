@@ -407,6 +407,9 @@ func _assign_wards():
 	elif players.size() > 1:
 		_wards[LEFT] = players[0]
 		_wards[RIGHT] = players[1]
+	for p in players:
+		if not p.repainted.is_connected(_color_swords):
+			p.repainted.connect(_color_swords)
 	_color_swords()
 
 

@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://actors/bosses/columna_bifrons/columna_bifrons.tscn" id="2_bifrons"]
 [ext_resource type="PackedScene" path="res://actors/player/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="4_hud"]
+[ext_resource type="Script" path="res://ui/mirror_view.gd" id="5_mirror"]
 
 [sub_resource type="Shader" id="Shader_bg_gradient"]
 code = "shader_type canvas_item;
@@ -113,3 +114,7 @@ player_color = Color(1, 0.55, 0.15, 1)
 sword_color = Color(1, 0.8, 0.55, 1)
 
 [node name="HUD" parent="." instance=ExtResource("4_hud")]
+
+[node name="MirrorView" type="CanvasLayer" parent="."]
+script = ExtResource("5_mirror")
+scenery = NodePath("../Stage/Background")

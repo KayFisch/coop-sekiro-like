@@ -60,7 +60,7 @@ actors/player/                       player.gd (+ scene)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
                                      gym/ (movement test rooms)
-ui/                                  boss select, HUD
+ui/                                  boss select, HUD, the mirrored screen (mirror_view.gd)
 assets/                              empty for now: everything is procedural
 ```
 
@@ -161,6 +161,10 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   him (started from his own `_physics_process()`, outside BaseBoss's idle timer); and
   `stand_in.gd`, which plays one of the players for testing alone, by pressing that player's
   buttons.
+- `ui/mirror_view.gd` (`MirrorView`, in Bifrons's room, Moves "mirror_view"): an alternative
+  picture of the fight, the screen split at the floor, P1 above, P2 in the reflection below.
+  Two SubViewports on the level's World2D; what each half draws is chosen by visibility layers
+  (`Viewport.canvas_cull_mask`), so the game itself doesn't change.
 
 ## Conventions
 

@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://80kl10p8d3vr" path="res://actors/player/player.gd" id="1_player"]
 
 [sub_resource type="RectangleShape2D" id="Shape_body"]
-size = Vector2(40, 40)
+size = Vector2(20, 40)
 
 [sub_resource type="RectangleShape2D" id="Shape_sword"]
 size = Vector2(66, 16)
@@ -17,9 +17,9 @@ script = ExtResource("1_player")
 shape = SubResource("Shape_body")
 
 [node name="ColorRect" type="ColorRect" parent="."]
-offset_left = -20.0
+offset_left = -10.0
 offset_top = -20.0
-offset_right = 20.0
+offset_right = 10.0
 offset_bottom = 20.0
 mouse_filter = 2
 color = Color(0.25, 0.5, 1, 1)

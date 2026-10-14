@@ -1,6 +1,7 @@
 extends CanvasLayer
 ## Top-of-screen HUD (player health bars and potions, sync meter, boss bar) plus the
 ## end-of-game overlay. Bars are polled every frame; the overlay reacts to GameManager.state_changed.
+## On canvas layer 2 (hud.tscn): over the mirrored screen (ui/mirror_view.gd, layer 1).
 
 const BAR_HEIGHT = 16.0
 const PLAYER_BAR_WIDTH = 160.0

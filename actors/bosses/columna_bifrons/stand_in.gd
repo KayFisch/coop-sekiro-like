@@ -22,7 +22,7 @@ const BLOCK_LEAD = 0.35  # ...and to only block: too early for a parry
 # stops when it's there.
 const DISTANCE = 95.0
 const DISTANCE_IN_FRONT = 74.0
-const DISTANCE_BEHIND = 42.0  # from its partner (a player is 40 wide)
+const DISTANCE_BEHIND = 22.0  # from its partner: right behind them (a player is 20 wide)
 const SLACK = 12.0
 # Below FLEE_HP, with a potion left, it runs away from him, FLEE_DISTANCE or to the wall, and
 # drinks. Then it comes back.
