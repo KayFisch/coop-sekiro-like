@@ -35,6 +35,20 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
+### For Kay, from Nicho (2026-10-14)
+
+- Bifrons is tested and is "very good for a prototype"; two pads work (one per player). Next up
+  for Nicho: the sync mode, and a prototype for between the bosses (Beat Saber / Geometry Dash
+  style), next to your Celeste-style one. See `TASKS.md`.
+- **On `nicho/pep-test` the players are half as wide: 20 x 40 instead of 40 x 40**
+  (`Player.BODY_SIZE` in `player.gd`), so two side by side make a square (the idea from the
+  sync-mode scribble). It's a proposal: it holds in every fight, and for your platformer it
+  changes gaps, ledges and walls once the branch is merged. Say if it gets in your way.
+- An alternative view on the branch, off by default (F1, "mirrored screen"): the screen split at
+  the floor, P1 in light above, P2 in shadow in the reflection below, after the mirror scene in
+  *Gris*. Nicho's scribble of 2026-10-14. Gris is now the art reference (`docs/art_brief.md` on
+  the branch), which fits your color scribble: players in black and white, color only as a cue.
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
