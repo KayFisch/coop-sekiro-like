@@ -5,8 +5,18 @@ how big, which colors, which poses. Paste the block below into the prompt and fi
 
 Nothing here is decided art direction. Today everything is rectangles drawn in code; the sizes,
 colors and poses below are read from that code (`actors/player/player.gd`,
-`actors/bosses/columna_bifrons/columna_bifrons.gd`, `levels/threshold/threshold.tscn`). When
-those change, change them here too. Only Columna Bifrons is covered; Cubus and Sphaera aren't.
+`actors/bosses/columna_bifrons/columna_bifrons.gd`, `levels/threshold/threshold.tscn`,
+`ui/mirror_view.gd`). When those change, change them here too. Only Columna Bifrons is covered;
+Cubus and Sphaera aren't.
+
+## Inspiration: Gris
+
+*Gris* (Nomada Studio) is the reference for the look: nearly monochrome, soft shapes on pale or
+dark grounds, color used sparingly and with meaning. That fits two things we already have: the
+players as **light and shadow** (white and black, see the scribble of 2026-10-14), and one color
+vocabulary for the whole game in which color only ever says *how to respond* (Kay's scribble of
+2026-10-02). Its mirror scene, a figure standing on a pale floor with its reflection below, is
+where the mirrored screen comes from (`mirror_view`, in Bifrons's room).
 
 ## Bodies and swords are separate
 
@@ -25,9 +35,13 @@ Two players fight one boss with swords; fights are rhythmic (strike, parry, coun
 Everything is strictly side view, flat, no perspective. Currently all shapes are plain rectangles.
 
 STYLE: <STYLE - e.g. flat minimalist vector / pixel art 4x / ink silhouettes>
+Inspiration: Gris (Nomada Studio): nearly monochrome, soft painterly shapes, pale or dark grounds,
+color used sparingly and only as a signal.
 Background in game: near-black vertical gradient (#050509 to #1F1F24), platforms #303036.
-Characters must read clearly against dark. Idea under consideration: players black and white,
-red as the accent color.
+Characters must read clearly against dark. Players as light and shadow: P1 white, P2 black.
+Mirrored screen (an alternative view): the screen split at the floor line; above it the dark
+room with P1 in light (#EBE6D9); below it the reflection, upside down, on pale paper
+(#EDE8DB to #C7C2B5), P2 in shadow (#121217), everything outlined thinly in near-black (#1A1A1F).
 
 OUTPUT RULES FOR SPRITES
 - Sprite sheet, frames in one row, equal cell size, same scale and baseline in every frame.
@@ -37,8 +51,10 @@ OUTPUT RULES FOR SPRITES
   grip at the left end, tip to the right.
 
 PLAYERS (two, identical shape, different color)
-- Body: small, compact, about 40x40 px in game (square proportions), two small hands.
-- P1 blue #4080FF, sword #9ECCFF. P2 orange #FF8C26, sword #FFCC8C.
+- Body: small and slim, 20x40 px in game (half as wide as tall: two players side by side make a
+  square), two small square hands (8 px).
+- Today P1 blue #4080FF, sword #9ECCFF; P2 orange #FF8C26, sword #FFCC8C. As light and shadow:
+  P1 white #EBE6D9, sword #B8B3A8; P2 black #121217, sword #4D4D57.
 - Sword: 76 px long, 6 px thick: almost twice the body height.
 - Sword poses (angle of the blade; 0 = level forward, negative = up):
   rest: diagonal up-forward (-40 deg)
