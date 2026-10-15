@@ -124,13 +124,17 @@ names don't compile in such a script); `change_scene_to_file()` loads a level, a
 `physics_frame` signal runs before every node's `_physics_process`, so `Input.action_press()`
 there is seen by the players that same frame. The player's timing windows (parry, dodge) read
 the real clock, so anything pressing buttons has to run in real time, without `--fixed-fps`.
-Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
+Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`); set what a test
+needs in memory (`Moves._values[key] = ...`) once the scene has loaded, including
+`swap_controls = false`: the saved file may have it on. Hold a pressed button a few frames
+before releasing it: a press released on the next frame can reach the player without the
+buttons held with it (e.g. down for a pogo).
 
 ## Code map
 
 - `core/` autoloads: `GameManager` (sync meter, game state, restart, scene switching;
   `SYNC_GAINS` maps boss `sync_event` kinds to sync), `Sfx` (all sound synthesized at startup,
-  `Sfx.play("name")`), `Moves` (F1 panel toggling movement abilities, saved to
+  `Sfx.play("name")`), `Moves` (F1 panel toggling movement abilities, in tabs by theme, saved to
   `user://moves.cfg` with a `VERSION`: bump it when defaults change; code asks
   `Moves.on("pogo")`). The fight kit is on by default, the platforming kit is off. `Pads` gives
   each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device).

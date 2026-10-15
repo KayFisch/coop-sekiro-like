@@ -43,14 +43,16 @@ autoload); code asks `Moves.on("pogo")`.
   - **Slide:** you slip down at 140 px/s.
   - **Cling:** you hang still for 1.2 s, then slide.
   - Press away, or land, to let go.
-  - **Wall jump:** jump off a wall you're on or touching, up and away. For 0.15 s you can't
-    steer back, so it carries you clear of the wall. The wall you jumped off is then spent
+  - **Wall jump:** jump off a wall you're on or touching, up and away (145 px; letting go of
+    jump doesn't cut it short). For 0.15 s you can't steer back, so it carries you clear of
+    the wall. The wall you jumped off is then spent
     until you land, catch a ledge or reach another wall: you can't stick to it, jump off it,
     or get refreshed by it again. One wall alone can't be climbed; two facing walls (a
     chimney) can. Your partner doesn't count as a wall. A wall you're only touching counts
-    if you're moving into it. For 0.26 s after a wall jump (about 94 px) you're "in flight":
-    holding back toward the wall you left doesn't steer, and the wall you reach catches you,
-    so you can chain up a chimney holding one direction and just timing the jumps.
+    if you're moving into it. For 0.3 s after a wall jump (about 110 px) you're "in flight":
+    holding back toward the wall you left (or nothing) doesn't steer, and the wall you reach catches you,
+    so you can chain up a narrow chimney holding one direction (or none) and just timing the
+    jumps. A wider gap needs the stick held toward it; after the flight you steer freely.
 - **Players collide:** players bump into each other and can stand on each other (a switch).
   Standing on your partner on a weighed pan counts as standing on the pan.
 - **Ledge grab:** press into a wall whose top edge is between a little above your head and
@@ -60,9 +62,13 @@ autoload); code asks `Moves.on("pogo")`.
   style. Hitting a target, a boss, spikes or (if switched on) your partner bounces you up
   110 px however fast you were falling. What it refreshes is up to the switches.
 - **Chimney clash:** two players who both just wall-jumped, flying at each other, clash in
-  mid-air. After a short hold (0.1 s) both are thrown back toward the walls they came from,
-  160 px up. That's higher than a wall jump, so a chimney too wide to climb alone becomes a
-  climb for two. Bumping into each other counts too, as long as you jumped off opposite walls.
+  mid-air: each is the other's wall. Both wall-jump off each other, back toward the walls
+  they came from, exactly like a wall jump (same push and height, no hold or boost), so a
+  chimney twice as wide as one you'd climb alone is climbed in the same rhythm, the partner
+  standing in for the far wall. You meet when you touch (or bump, having jumped off opposite
+  walls). Meeting isn't enough: **both press jump** as you meet (within 0.08 s, early or
+  late), or you fly on and fall. With wall rhythm on, each press is judged against the
+  meeting like a wall jump against hitting the wall (full or weak).
 - **Dash-slash windup:** a dash-slash first holds still for 0.15 s with the blade drawn back
   and heating to white, then dashes. That's the partner's cue to parry.
 - **Momentum relay:** dash-slash into your partner and have them **parry** it: their block
@@ -83,7 +89,7 @@ autoload); code asks `Moves.on("pogo")`.
 | 4 | **Dash** | Low tunnel (64 px clearance, no jumping) over holes of 100 / 140 / 180 | Is a gravity-free dash of exactly 140 px readable? Should the dash carry momentum out of a hole? |
 | 5 | **Climb** | One-way ledges 110 apart (one jump each) and 220 apart (double jumps), drop-through | Is vertical play fun with this jump arc? Is dropping through (S) useful? |
 | 6 | **Sword** | Dummies on the ground, 150 up and 260 up | How do slash, upslash and dash-slash feel as movement tools? Targets name what hit them. |
-| 7 | **Walls** | A 130-wide chimney (90 px of travel for a 40 px body, just inside the 94 px wall-jump flight; walk in under its left wall), and a tall wall beside the walkway at the top | Wall-jumping up a chimney alone. Slide or cling: which feels better? |
+| 7 | **Walls** | A 130-wide chimney (90 px of travel for a 40 px body, inside the 110 px wall-jump flight; walk in under its left wall), and a tall wall beside the walkway at the top | Wall-jumping up a chimney alone. Slide or cling: which feels better? |
 | 8 | **Ledges** | Pillars of 180 / 200 / 280 / 330, with marks for "jump + grab" (206) and "double jump + grab" (313) | Does the grab reach feel generous or sloppy? Should climbing be automatic? |
 | 9 | **Pogo** | A 900 spike pit with lanterns every 180 px, then a 700 pit with only spikes | Does the pogo feel natural? Try it with and without the refreshes (F1). |
 | 10 | **Fall** | Lantern stairs up to a perch, then a 420 px drop onto a 60 px safe spot among spikes | Does fast fall help you aim a landing, or only speed it up? |
