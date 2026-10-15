@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://b0f880gh1unrv" path="res://levels/horologium/horologium.gd" id="1_level"]
+
+[node name="Horologium" type="Node2D"]
+script = ExtResource("1_level")

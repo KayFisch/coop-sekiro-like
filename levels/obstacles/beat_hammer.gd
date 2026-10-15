@@ -8,7 +8,7 @@ extends Clockwork
 ## Touching it anywhere off its resting place puts you back at the checkpoint. Place it with its
 ## x at the hammer's middle and its y on the floor.
 
-const HEAD_SIZE = Vector2(56, 40)
+const HEAD_HEIGHT = 40.0  # the heavy end at the bottom
 const FALL_TIME = 0.07  # s from the top of its draw-up to the floor: a slam, not a drop
 const HOLD_BEATS = 0.5  # lies on the floor this long: half a beat after the hit is still deadly
 const RISE_BEATS = 1.0  # back up to rest over a beat; it clears a player's head about a third of the way up
@@ -20,6 +20,7 @@ const COLOR_SHAFT = Color(0.3, 0.3, 0.34)
 const COLOR_GLOW = Color(1.0, 0.55, 0.2)  # heating up in the beat before the hit
 const COLOR_EDGE = Color(0.85, 0.87, 0.95)
 
+var width = 56.0
 var pattern = [1]
 var offset = 0  # beats later than the pattern says (a wave of hammers: 0, 1, 2, 3)
 var clearance = 120.0  # the corridor's height, floor to ceiling: the head fills it
@@ -53,7 +54,7 @@ func _physics_process(_delta):
 	if _height >= _rest_height() - 0.5:
 		return  # tucked away under the ceiling: nobody fits in there
 	# The whole block from the ceiling down to the head's underside.
-	var block = Rect2(global_position + Vector2(-HEAD_SIZE.x / 2.0, -clearance), Vector2(HEAD_SIZE.x, clearance - _height))
+	var block = Rect2(global_position + Vector2(-width / 2.0, -clearance), Vector2(width, clearance - _height))
 	for p in players():
 		if block.intersects(player_box(p)):
 			hit.emit(p)
@@ -105,9 +106,9 @@ func _impact_after(b: float) -> float:
 
 
 func _draw():
-	var head_top = -_height - HEAD_SIZE.y
+	var head_top = -_height - HEAD_HEIGHT
 	var shaft_top = -clearance - DRAW_UP - 200.0  # hidden in the ceiling
-	draw_rect(Rect2(-HEAD_SIZE.x / 2.0 + 4.0, shaft_top, HEAD_SIZE.x - 8.0, head_top - shaft_top), COLOR_SHAFT)
-	var head = Rect2(-HEAD_SIZE.x / 2.0, head_top, HEAD_SIZE.x, HEAD_SIZE.y)
+	draw_rect(Rect2(-width / 2.0 + 4.0, shaft_top, width - 8.0, head_top - shaft_top), COLOR_SHAFT)
+	var head = Rect2(-width / 2.0, head_top, width, HEAD_HEIGHT)
 	draw_rect(head, COLOR_HEAD.lerp(COLOR_GLOW, _glow * 0.8))
 	draw_rect(Rect2(head.position.x, head.end.y - 3.0, head.size.x, 3.0), COLOR_EDGE.lerp(COLOR_GLOW, _glow))
