@@ -359,7 +359,8 @@ Rhythmus-Relay (`RHYTHM_BEAT`). Bei viel langsamerem Tempo passen die nicht mehr
 Das Platformer-Konzept würde ich mehr oder weniger in **Welten** aufteilen. Die Level wären dann
 an ihrem Boss orientiert und umgekehrt: Hindernisse aus den Platformer-Leveln kommen als
 einzelne, wiederkehrende Elemente in den Bosskampf. Eine Welt kann gerne mehrere Bosse haben,
-z. B. Boss 1, Boss 2 und am Ende den finalen Boss der Welt.
+z. B. Boss 1, Boss 2 und am Ende den finalen Boss der Welt. Das Welten-Konzept würde genauso für
+die Beat-Saber-Alternative funktionieren (Nichos Beat-Runner, `TASKS.md`).
 - *Beispiel Pendel:* das schneller werdende Pendel aus dem Platformer (siehe „Pendelklingen“,
   „Schaukel pumpen“) taucht im Bosskampf wieder auf: Man muss es bis zum Überschlag bringen, um
   dem Boss zu schaden. Passt zu Sphaera.
