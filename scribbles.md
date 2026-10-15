@@ -354,6 +354,116 @@ berechnet werden (Schachtbreiten, Wurfweiten, Flugzeiten, ...). Andere Musik = a
 an BPM gebunden: Wall-Jump-Höhe/-Push, `WALL_FLIGHT_TIME`, `CHIMNEY_WINDOW`, das ganze
 Rhythmus-Relay (`RHYTHM_BEAT`). Bei viel langsamerem Tempo passen die nicht mehr.
 
+## 2026-10-14 (Nicho): Licht und Schatten, gespiegelter Bildschirm
+
+**Zu Kays Farbkatalog:** gut so. Spieler in Schwarz und Weiß könnten **Licht und Schatten**
+sein, und das passt perfekt zum Sync-Thema (zwei Hälften, die zusammengehören).
+
+**Spontane Idee: horizontal geteilter Bildschirm, die Trennlinie ist eine Spiegelung.**
+- Ein Spieler kämpft oben (Licht), der andere unten (Schatten). Der Boss wird komplett
+  gespiegelt: Er kann Licht- und Schattenseite nicht unabhängig bewegen, die Spieler schon.
+- Vorbild: die Spiegelszene in *Gris*; der Artstyle von Gris insgesamt als Inspiration
+  (fast monochrom, weißer Boden, schwarze Figuren, Farbe als Akzent).
+- Könnte Platzprobleme und Sichtbarkeit lösen (die Spieler verdecken sich nie).
+- Probleme: auf einem Bildschirm spielt einer immer kopfüber; jede Hälfte hat nur halb so viel
+  Höhe. Auf zwei Bildschirmen spielt jeder richtig herum und sieht den anderen gespiegelt unten.
+
+**Einschätzung (Claude):**
+- *Das Wichtigste:* Die Spiegelung kann reine Darstellung sein. Die Spieler stehen weiter in
+  einer Welt auf einem Boden, Regeln und Physik bleiben wie heute (pep, ppe, Dash-Parry,
+  Partner-Clashes). Nur das Bild zeigt oben Licht-Spieler + Boss und unten Schatten-Spieler +
+  gespiegelten Boss. In Godot: zwei SubViewports auf derselben Welt, der untere vertikal
+  gespiegelt, jeder blendet den anderen Spieler aus (Visibility-Layer). Damit ist es ein
+  billiger Test mit Bifrons, ohne die Mechanik anzufassen.
+- *Kopfüber:* Gespiegelt ist nur das Bild, nicht die Steuerung: Springen drückt man weiter
+  „hoch“, die Figur geht auf dem Bildschirm nach unten. Wie schlimm das ist, zeigt nur ein Test.
+  Ausweg, falls es zu unangenehm ist: unten nicht spiegeln, sondern dieselbe Szene richtig herum
+  in Schattenfarben (klassischer Splitscreen); die Spiegelung als Bild ginge verloren, die
+  Trennung bliebe.
+- *Platz:* 324 px Höhe pro Hälfte; Bifrons mit erhobenem Schwert ist knapp 300 px hoch. Also
+  rauszoomen oder alles kleiner.
+- *Was verloren gehen könnte:* dass man den Partner direkt neben sich sieht. Der Sync-Modus
+  (beide nebeneinander werden einer) und die Partner-Clashes leben davon. Vielleicht ist genau
+  das der Sync-Moment: die beiden Hälften treffen sich an der Spiegellinie.
+- *Zwei Bildschirme* sind lokal selten; für Online-Koop wäre es natürlich. Nicht davon abhängig
+  machen.
+
+## 2026-10-15 (Nicho): Beat-Dash-Level gespiegelt
+
+- Wie beim Bosskampf könnte der Bildschirm gespiegelt sein: Jeder Spieler hat seine Seite
+  (oben Licht, unten Schatten).
+- Aus einer Richtung kommen Hindernisse, über die man springen muss; aus einer anderen
+  vielleicht Projektile, die man angreifen oder parieren muss.
+- Es könnte Stellen geben, an denen die Spieler die Seiten wechseln oder zusammen auf eine Seite
+  kommen, um besonders schwere Hindernisse oder Angriffe zu schaffen.
+
+→ Prototyp Beat-Runner in `TASKS.md`; der Spiegel-Bildschirm (`ui/mirror_view.gd`, Branch
+`nicho/pep-test`) wäre die Grundlage.
+
+## 2026-10-15 (Kay, mit Claude): Jump'n'Run-Hindernisse mit Rhythmus
+
+Für den Koop-Platformer („Prototyp Koop-Jump'n'Run“) brauchen wir mehr Möglichkeiten für Level,
+aber keine neuen Movement-Fähigkeiten: Die machen einen allein zu mobil und geben im Bosskampf
+zu viele Optionen. Grundidee daher: neue Dinge in der Welt, auf die die vorhandenen Verben
+(Schlag, Parry, Block, Pogo, Dash-Slash, Launch, Relay) wirken, mit rhythmischer Komponente. So
+trainiert der Platformer nebenbei den Bosskampf.
+
+**Die Welt hat einen Takt**
+- *Taktblöcke:* Plattformen existieren nur auf bestimmten Schlägen (wie Celestes Beat-Blöcke).
+  Koop-Variante: je Spieler Blöcke in seiner Farbe, abwechselnd.
+  Kay: viele interessante Optionen.
+- *Stampfer / Sägen im Takt:* schlagen auf dem Beat zu, durch kommt man auf dem Offbeat.
+  Kay: leicht und simpel.
+- *Tempowechsel:* Ein Abschnitt zieht das Tempo an, Ruhezonen bremsen; wirkt sich auf den
+  Rhythmus der Spieler aus. Kay: sehr interessant, muss aber klar gekennzeichnet sein.
+
+**Die Umgebung parieren**
+- *Kanonen-Relay:* Eine Kanone feuert im Takt, P1 pariert zu P2, P2 pariert in einen Schalter
+  oder eine brüchige Wand. Kay: cool, muss aber wirklich als Koop funktionieren (nicht von
+  einem allein lösbar).
+- *Pendelklingen:* Ein Parry stoppt das Pendel oder kehrt es für ein paar Schläge um; einer
+  hält auf, der andere läuft durch. Passt zu Sphaera. Kay: cool.
+- *Rammkolben:* Block hält ihn nur und schiebt einen zurück, ein perfekter Parry schlägt ihn
+  zurück und verriegelt ihn für N Schläge. Kay: nicht super spannend, aber okay.
+- *Spiegel / Lichtstrahl* (geparkt, war unklar formuliert): Ein Strahl pulsiert im Takt; wer
+  blockt, lenkt ihn mit dem Schwert um (z. B. auf einen Kristall, der etwas öffnet). Erstmal
+  zurückgestellt.
+
+**Schalter mit Rhythmus**
+- *Ruf und Antwort (Simon says):* Ein Tor spielt eine Folge vor, die Spieler spielen sie nach,
+  aufgeteilt auf beide („ich, du, ich, ich, du“). Kay: cool; soll Parry UND Schlag abfragen,
+  also ein Rhythmus aus Instrumenten (z. B. Schlag = Trommel, Parry = Glocke).
+- *Weltschalter:* Jeder Schlag auf einen Hebel kippt die Welt zwischen zwei Zuständen; einer
+  spielt den Hebel im Rhythmus, der andere läuft durch die sich umbauende Welt.
+  Kay: interessant; Variante: muss von beiden gleichzeitig aktiviert werden.
+
+**Bewegliche Teile im Takt antreiben**
+- *Schaukel pumpen:* Schlag/Parry im Umkehrpunkt verstärkt die Schaukel; einer pumpt, der
+  andere springt am höchsten Punkt ab. Kay: gut; gekoppelt an die Musik: Man muss immer
+  schneller schlagen, und die Musik wird auch schneller.
+- *Ruder-Aufzug:* Ein Schlag auf dem Beat hebt ihn eine Stufe, daneben fällt er zurück;
+  abwechselnd schlagen bringt ihn doppelt so schnell hoch. Kay: cool.
+
+**Mini-Wächter**
+- *Wächterstatue:* bewacht eine Lücke mit genau einer Attacke im festen Takt, in derselben
+  Farbsprache wie die Bosse. Der Trick ist, die Attacke zu nutzen (parierte Klinge als
+  Pogo-Fläche, Hieb als Launch). Kay: klingt cool.
+- *Vokabeltrainer:* Jede Telegraph-Farbe der Bosse bekommt einen Abschnitt, in dem man die
+  Antwort lernt. Kay: gehört ins Tutorial, um die „Farbvokabeln“ der Bosse beizubringen.
+
+**Noch nicht kommentiert**
+- *Metronom-Schalter:* Ein Schlag öffnet eine Tür für N hörbare Schläge, Schalter beim Partner
+  verlängern (Kette über den Raum).
+- *Gleichzeitig / versetzt:* zwei Glocken auf denselben Schlag (Sync) oder genau einen Schlag
+  versetzt.
+- *Waage im Takt:* die Waage aus dem Duo Gym, aber die Schalen schwingen selbst.
+- *Dirigent und Läufer:* Einer gibt an einer Trommel das Tempo der Welt vor, der andere läuft.
+- *Echo-Plattform:* Wo der Partner einen Schlag vorher stand, entsteht kurz eine Plattform.
+
+→ Taktblöcke, Stampfer und Tempowechsel überschneiden sich mit Nichos Beat-Runner (`TASKS.md`):
+Dasselbe Metronom könnte beide tragen, also absprechen. Für den Moment brauchen wir nur wenige
+davon; die Auswahl folgt.
+
 ## 2026-10-15 (Kay): Platformer in Welten, passend zu den Bossen
 
 Das Platformer-Konzept würde ich mehr oder weniger in **Welten** aufteilen. Die Level wären dann
