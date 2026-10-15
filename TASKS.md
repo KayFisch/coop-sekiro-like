@@ -271,6 +271,23 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     `user://wall_log.jsonl` (Schacht, Erfolg/Absturz, alle Drücke, Kontakte, Treffen, Sprünge,
     ms ab dem ersten Wall Jump = Schlag 0; Abweichung zum Kontakt bis ±500 ms und zum
     nächsten Tick/Off-Beat). Kay testet blind nach Metronom.
+  **Erstes Level: Horologium** (2026-10-15, headless getestet, **Gefühl noch testen**), ein
+  Uhrturm, in dem alles auf einer gemeinsamen Uhr schlägt; fürs Standard-Kit, keine neuen
+  Fähigkeiten. Doku: `docs/level_horologium.md` (mit „What to look for“ und „Next, not built“).
+  - Takt-Uhr `Beat` (Autoload, 150 BPM), Anzeige `BeatDisplay`. Vier Hindernisse in
+    `levels/obstacles/`: Hammer, Taktstufe (Uhr/Ruf, P1/P2/beide), Taktglocke, Pendel.
+  - Räume: Vorhalle, Hammerwerk (einer, Welle, Kanon), Glockenschacht (Aufwärmen, Aufstieg mit
+    „ich läute, du kletterst“), Pendelgang, Glockenstube.
+  - Außerhalb von `levels/horologium/` angefasst: `core/beat.gd` (neu), `project.godot`
+    (Autoload), `core/sfx.gd` (Klick und Hindernis-Sounds), `ui/beat_display.gd` (neu),
+    `ui/boss_select.gd` (Eintrag), `levels/obstacles/` (neu), `levels/gym/` (schmale Spieler:
+    Gefahrenbox, Kamine 110/380, Wall-Gym-Schächte; `checkpoint_needs_all`, `obstacle()`,
+    eigene Physik-Layer pro Spieler), `actors/player/` nur Nichos Patch aus 70470c7 (`BODY_SIZE`
+    20×40), Zeichen für Zeichen übernommen.
+  - Offen: Ein Launch (340) ist höher als ein Schachtabschnitt (232), damit kommt einer ohne
+    Glocke eine Etage hoch (der andere braucht sie weiter). So lassen oder Abschnitte anders?
+  - Offen: `Metronome` (Wall Gym, 120 BPM, Echtzeit, startet beim Wall Jump) und `Beat` laufen
+    nebeneinander. Später zusammenführen?
 - [ ] **Concept aufräumen** (`docs/concept.md`). Befund vom Review 2026-09-30:
   - Vision und technische Spezifikation sind vermischt: „Moveset“ hat genaue Werte
     (136 px, 0.133 s …) und eine Kopie der F1-Schalter-Tabelle aus `core/moves.gd`, die veralten

@@ -35,6 +35,18 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
+### For Nicho, from Kay (2026-10-15)
+
+- **`Beat`** (`core/beat.gd`) is a new autoload: one clock (150 BPM) that a level starts and
+  everything in time asks, with a click (M) and a display (`ui/beat_display.gd`). It's meant for
+  your beat-runner too: please use it rather than a second clock (`docs/level_horologium.md`).
+- `kay/coop-platformer` now has your slimmer players: the changes to `actors/player/` from
+  70470c7 taken character for character (`git apply -3`), so they merge without conflicts.
+  The gyms are adapted to 20 px bodies (chimneys 110 and 380 wide).
+- `GymLevel` has a new option `checkpoint_needs_all` (off by default): a checkpoint takes only
+  once every player stands in it. And `obstacle()` for the new clockwork obstacles
+  (`levels/obstacles/`).
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
@@ -53,13 +65,15 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 
 ```
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
-docs/                                design docs: concept.md, boss_*.md (one per boss), parkour_gyms.md
-core/                                autoloads: GameManager, Sfx, Moves, Pads
+docs/                                design docs: concept.md, boss_*.md (one per boss), level_*.md (one
+                                     per level), parkour_gyms.md
+core/                                autoloads: GameManager, Sfx, Moves, Pads, Beat
 actors/player/                       player.gd (+ scene)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
-                                     gym/ (movement test rooms)
-ui/                                  boss select, HUD
+                                     gym/ (movement test rooms), horologium/ (coop platformer level),
+                                     obstacles/ (clockwork obstacles on the Beat clock)
+ui/                                  boss select, HUD, beat display
 assets/                              empty for now: everything is procedural
 ```
 
@@ -129,6 +143,8 @@ needs in memory (`Moves._values[key] = ...`) once the scene has loaded, includin
 `swap_controls = false`: the saved file may have it on. Hold a pressed button a few frames
 before releasing it: a press released on the next frame can reach the player without the
 buttons held with it (e.g. down for a pogo).
+Such a test script can't name a class whose script uses an autoload (`BeatStep`, `GymTarget`...):
+it fails to compile. `load()` the script, or compare `get_script().resource_path`.
 
 ## Code map
 
@@ -138,6 +154,8 @@ buttons held with it (e.g. down for a pogo).
   `user://moves.cfg` with a `VERSION`: bump it when defaults change; code asks
   `Moves.on("pogo")`). The fight kit is on by default, the platforming kit is off. `Pads` gives
   each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device).
+  `Beat` is the one clock for everything in time (150 BPM; a level starts it, it's never reset
+  inside one; signals `beat` / `bar`, `offset_to_downbeat()` etc.; click on M).
 - `actors/player/player.gd`: one large script (~2000 lines) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
   potions, defensive queries the boss uses (`is_perfect_parry()` etc.), and some boss-specific
@@ -164,6 +182,13 @@ buttons held with it (e.g. down for a pogo).
   him (started from his own `_physics_process()`, outside BaseBoss's idle timer); and
   `stand_in.gd`, which plays one of the players for testing alone, by pressing that player's
   buttons.
+- `levels/`: `GymLevel` (`gym/gym_level.gd`) is the base of the gyms and the platformer levels:
+  it builds rooms from code (`solid()`, `ledge()`, `checkpoint()`, `measure()`, ...), spawns the
+  players, respawns them at checkpoints (`checkpoint_needs_all`: only once both are there) and
+  gives each player a physics layer of their own (`OWN_PLATFORM_LAYERS`). `obstacles/`: the
+  clockwork obstacles, each working out its state from `Beat` alone (`Clockwork` base:
+  `BeatHammer`, `BeatStep`, `BeatPendulum`; `BeatBell` is a `GymTarget`). `horologium/`: the
+  first coop platformer level (`docs/level_horologium.md`).
 
 ## Conventions
 
