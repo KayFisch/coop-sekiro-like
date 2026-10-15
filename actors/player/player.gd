@@ -8,6 +8,7 @@ signal launched(player)  # sent up by a partner's upslash (see _check_clashes())
 signal relayed(player)  # boosted off a partner's block (momentum relay, see _check_clashes())
 signal landed(player, air_time)  # touched down after air_time seconds off the ground
 signal pogo_clashed(player)  # bounced off a partner's upslash (see _pogo_clash())
+signal repainted  # new colors (paint()): a boss's swords that carry them follow
 
 enum Swing { SLASH, UPSLASH, DOWNSLASH }
 # Held in place for a moment by a clash with the partner (see _begin_hold()).
@@ -277,7 +278,8 @@ const PLATFORM_LAYER = 4  # one-way platforms live on physics layer 4
 const SWORD_FLASH_TIME = 0.1
 const DODGE_FLASH_TIME = 0.25
 const DODGE_COLOR = Color(0.5, 1.0, 1.0)
-const HURT_FLASH_TIME = 0.5  # three 0.1s white flashes with 0.1s gaps
+const HURT_FLASH_TIME = 0.5  # three 0.1s white flashes with 0.1s gaps...
+const FLASH_DARK_ABOVE = 0.8  # ...black ones on a body this light (luminance), or they'd vanish
 const IDLE_BOB_HEIGHT = 3.0
 const IDLE_BOB_HZ = 0.6
 const DASH_STRETCH = Vector2(1.3, 0.7)
@@ -308,7 +310,11 @@ const CALL_COUNT = 3
 const CALL_GO_HOLD = 0.35  # GO stays up this long
 const CALL_FONT_SIZE = 44
 const CALL_HEIGHT = 112.0  # the number's center, above the caller's
-# Hands: same proportions as the boss's (a fifth of the body, gripping the hilt).
+# The body: half as wide as it's tall, so two players side by side make a square, and their
+# swords and hitboxes sit closer together. The scene's rect and collision shape take this size
+# in _ready().
+const BODY_SIZE = Vector2(20, 40)
+# Hands: same proportions as the boss's (square, a fifth of the body's height, gripping the hilt).
 const HAND_SIZE_RATIO = 0.2
 const HAND_GRIPS = [0.075, 0.275]  # where each hand holds the sword, as a fraction of its length
 const HAND_DARKEN = 0.25
@@ -324,6 +330,12 @@ var is_clashing = false  # blades locked with the boss, held in place
 var invincible = false  # testing: hits still land (flash, knockback) but take no health
 var facing = 1.0
 var body_color: Color
+# The mirrored screen (ui/mirror_view.gd) shows each player in a half of their own: there the
+# partner is nobody to bump into.
+var own_half = false:
+	set(v):
+		own_half = v
+		_update_player_collision()
 var parry_press_time = -100.0  # when the last block press that can still parry happened
 var gathered = 0  # shockwaves parried in the current volley
 var swing_serial = 0  # bumped by every new swing and dash-slash (see active_sword_point())
@@ -462,6 +474,9 @@ var _call_label: Label
 
 
 func _ready():
+	body.size = BODY_SIZE
+	body.position = -BODY_SIZE / 2.0
+	$CollisionShape2D.shape.size = BODY_SIZE  # shared by both players: the same size anyway
 	body.color = player_color
 	sword.color = sword_color
 	body_color = player_color
@@ -503,7 +518,16 @@ func _ready():
 
 
 func _update_player_collision():
-	set_collision_mask_value(PLAYER_LAYER, Moves.on("players_collide"))
+	set_collision_mask_value(PLAYER_LAYER, Moves.on("players_collide") and not own_half)
+
+
+# New colors for the body and the sword (the mirrored screen makes the players light and shadow).
+func paint(new_body: Color, new_sword: Color):
+	player_color = new_body
+	sword_color = new_sword
+	body_color = new_body
+	_sword_color = new_sword
+	repainted.emit()
 
 
 func _physics_process(delta):
@@ -2491,7 +2515,7 @@ func _update_visuals():
 
 	var color = body_color
 	if _hurt_flash > 0.0 and fmod(HURT_FLASH_TIME - _hurt_flash, 0.2) < 0.1:
-		color = Color.WHITE
+		color = Color.WHITE if body_color.get_luminance() < FLASH_DARK_ABOVE else Color.BLACK
 	elif _dodge_flash > 0.0:
 		color = DODGE_COLOR
 	elif _dash_timer > 0.0:
@@ -2616,7 +2640,7 @@ func _setup_drink_bar():
 func _setup_hands():
 	for i in 2:
 		var hand = ColorRect.new()
-		hand.size = body.size * HAND_SIZE_RATIO
+		hand.size = Vector2.ONE * body.size.y * HAND_SIZE_RATIO
 		hand.pivot_offset = hand.size / 2
 		hand.top_level = true
 		hand.mouse_filter = Control.MOUSE_FILTER_IGNORE

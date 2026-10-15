@@ -20,7 +20,7 @@ const CAP = 160.0  # a one-way ledge on top of each wall, reaching out of the sh
 # Each shaft is exactly its beats wide at BPM (late presses catch up, see WALL RHYTHM).
 const WIDE_BEATS = 1.0  # the wide shaft's flight, in beats
 const NARROW_BEATS = 0.5
-const BODY = 2.0 * PLAYER_HALF
+const BODY = PLAYER_SIZE.x
 const WIDE_X = 300.0
 const NARROW_X = 800.0
 const COOP_X = 1350.0
@@ -111,7 +111,7 @@ func _ready():
 
 # Player 2 waits on the coop chimney's floor until player 1 comes in.
 func _park_bot():
-	players[1].global_position = Vector2(COOP_X + WALL + _coop - PLAYER_HALF - 10.0, GROUND_Y - PLAYER_HALF)
+	players[1].global_position = Vector2(COOP_X + WALL + _coop - PLAYER_SIZE.x / 2.0 - 10.0, GROUND_Y - PLAYER_HALF)
 	players[1].velocity = Vector2.ZERO
 
 

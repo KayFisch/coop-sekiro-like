@@ -89,7 +89,7 @@ autoload); code asks `Moves.on("pogo")`.
 | 4 | **Dash** | Low tunnel (64 px clearance, no jumping) over holes of 100 / 140 / 180 | Is a gravity-free dash of exactly 140 px readable? Should the dash carry momentum out of a hole? |
 | 5 | **Climb** | One-way ledges 110 apart (one jump each) and 220 apart (double jumps), drop-through | Is vertical play fun with this jump arc? Is dropping through (S) useful? |
 | 6 | **Sword** | Dummies on the ground, 150 up and 260 up | How do slash, upslash and dash-slash feel as movement tools? Targets name what hit them. |
-| 7 | **Walls** | A 130-wide chimney (90 px of travel for a 40 px body, inside the 110 px wall-jump flight; walk in under its left wall), and a tall wall beside the walkway at the top | Wall-jumping up a chimney alone. Slide or cling: which feels better? |
+| 7 | **Walls** | A 110-wide chimney (90 px of travel for a 20 px body, inside the ~108 px wall-jump flight; walk in under its left wall), and a tall wall beside the walkway at the top | Wall-jumping up a chimney alone. Slide or cling: which feels better? |
 | 8 | **Ledges** | Pillars of 180 / 200 / 280 / 330, with marks for "jump + grab" (206) and "double jump + grab" (313) | Does the grab reach feel generous or sloppy? Should climbing be automatic? |
 | 9 | **Pogo** | A 900 spike pit with lanterns every 180 px, then a 700 pit with only spikes | Does the pogo feel natural? Try it with and without the refreshes (F1). |
 | 10 | **Fall** | Lantern stairs up to a perch, then a 420 px drop onto a 60 px safe spot among spikes | Does fast fall help you aim a landing, or only speed it up? |
@@ -104,7 +104,7 @@ autoload); code asks `Moves.on("pogo")`.
 | 4 | **Rope** | Stand on the cyan pad together to be tied (Shackle's 300 px rope). Leapfrog a 560 px pit over one island. The far pad unties you | Does anchoring (block on the ground) and swinging feel good? The rope is brighter when taut. |
 | 5 | **Sync** | Two plates: land on them together | Shows how far apart the landings were, against Counterweight's 0.15 s window. Is that window fair? |
 | 6 | **Targets** | Dummies 60 / 240 / 380 up | Strikes out of a launch. What attack flows out of the rise? |
-| 7 | **Chimney** | 420 wide (a bell marks the top): too wide to wall-jump up alone, since you fall back before reaching the other wall | Is jumping off together easy to read? Is the clash's height and push-back right? |
+| 7 | **Chimney** | 380 wide (a bell marks the top): too wide to wall-jump up alone, since you fall back before reaching the other wall | Is jumping off together easy to read? Is the clash's height and push-back right? |
 | 8 | **Relay** | Bells to aim at (straight up, up and across), a 640 pit (beyond solo reach), and a high ledge over a lantern field for relaying straight down into a pogo chain | Is 0.25 s long enough to aim, short enough to flow? Which directions get used? |
 | 9 | **Partner pogo** | A 700 spike pit with a pillar in the middle for the partner to stand on | Does bouncing off a partner feel like teamwork? |
 

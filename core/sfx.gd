@@ -91,6 +91,9 @@ func _build_sounds():
 	_sounds["relay_strike"] = _clang(1000.0, 0.12)  # 3: the partner's strike throws the dasher
 	_sounds["relay_peak"] = _blip(1320.0, 0.07)  # 4: the throw's top
 	_sounds["metronome_off"] = _blip(440.0, 0.04)  # the metronome's off-beat, between the ticks (Metronome)
+	# The Beat clock's click (core/beat.gd): a short wooden tick, brighter and louder on the 1.
+	_sounds["beat_click"] = _blip(1400.0, 0.03)
+	_sounds["beat_accent"] = _blip(2100.0, 0.045)
 	_sounds["call_go"] = _notes([784.0, 1174.7], 0.09, true)
 	_sounds["clap"] = _clap(0.09)  # the grab's hands shutting on nothing
 	_sounds["guard_break"] = _clang(700.0, 0.3)  # Columna Bifrons's guard knocked open

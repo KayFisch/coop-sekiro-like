@@ -9,7 +9,7 @@ extends GymLevel
 ##               pit over the island, anchoring by blocking; the far pad unties you.
 ##  5 SYNC       two plates: land on them together (as Counterweight asks) and see how close.
 ##  6 TARGETS    dummies up to 380 up, for strikes out of a launch.
-##  7 CHIMNEY    420 wide: too wide to wall-jump alone; climbable with chimney clashes.
+##  7 CHIMNEY    380 wide: too wide to wall-jump alone; climbable with chimney clashes.
 ##  8 RELAY      bells to aim at, a 640 pit beyond a solo jump, and a high ledge over a lantern
 ##               field, for relaying straight down into a pogo chain.
 ##  9 PARTNER    a 700 spike pit with a pillar in the middle: stand on it, and be pogoed off.
@@ -30,7 +30,7 @@ const ROPE_LENGTH = Shackle.TETHER_LENGTH
 const PLATES = [Vector2(3760, 3860), Vector2(3900, 4000)]
 const COLOR_ROPE = Color(0.2, 0.95, 1.0)
 const COLOR_PLATE = Color(1.0, 0.55, 0.1)
-const WIDE_CHIMNEY = Vector2(4990, 5410)  # its inside
+const WIDE_CHIMNEY = Vector2(5030, 5410)  # its inside: 170 px for each to fly before they meet (20 px bodies)
 const WIDE_CHIMNEY_TOP = -250.0
 const ENTRANCE = 56.0  # the gap under the chimney's left wall: walk in, but no jumping through it
 const RELAY_PIT = Vector2(6400, 7040)

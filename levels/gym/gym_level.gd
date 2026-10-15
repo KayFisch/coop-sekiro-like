@@ -14,7 +14,8 @@ const GymCameraScript = preload("res://levels/gym/gym_camera.gd")
 const GymHudScript = preload("res://levels/gym/gym_hud.gd")
 
 const GROUND_Y = 600.0
-const PLAYER_HALF = 20.0  # half the player's body
+const PLAYER_SIZE = Player.BODY_SIZE  # the player's body (20 x 40): hazards and falls test this box
+const PLAYER_HALF = PLAYER_SIZE.y / 2.0  # half its height: feet to center, for standing someone on a floor
 const GRID = 32.0
 const LEDGE_THICKNESS = 12.0
 const CHECKPOINT_SIZE = Vector2(80, 320)  # the zone that sets it, standing on its floor
@@ -37,6 +38,9 @@ const COLOR_CHECKPOINT = Color(0.4, 1.0, 0.6)
 var bounds = Rect2(0, -500, 3000, 1220)  # the room; set in _build() before placing anything
 var players: Array = []
 var respawn_point = Vector2(120, GROUND_Y - PLAYER_HALF)
+# A checkpoint takes only once every player stands in its zone. Off, one player could die on
+# purpose to start over at the partner's checkpoint and skip a coop obstacle that way.
+var checkpoint_needs_all = false
 
 var _checkpoints: Array = []  # {zone: Rect2, spawn: Vector2, flag: ColorRect}
 var _measures: Array = []  # {from, to, text}: dimension lines, drawn by _overlay
@@ -106,17 +110,24 @@ func _ready():
 
 func _physics_process(_delta):
 	for p in players:
-		if p.global_position.y > bounds.end.y + PLAYER_HALF * 2.0:
+		if p.global_position.y > bounds.end.y + PLAYER_SIZE.y:
 			respawn(p)
-		var box = Rect2(p.global_position - Vector2.ONE * PLAYER_HALF, Vector2.ONE * PLAYER_HALF * 2.0)
 		for hazard in _spikes:
-			if hazard.intersects(box) and not p.just_pogoed():
+			if hazard.intersects(player_box(p)) and not p.just_pogoed():
 				Sfx.play("chip")
 				respawn(p)
 				break
-		for cp in _checkpoints:
-			if cp.zone.has_point(p.global_position) and respawn_point != cp.spawn:
-				_activate_checkpoint(cp)
+	for cp in _checkpoints:
+		if respawn_point == cp.spawn:
+			continue
+		var inside = players.filter(func(p): return cp.zone.has_point(p.global_position))
+		if inside.size() == players.size() or (not checkpoint_needs_all and not inside.is_empty()):
+			_activate_checkpoint(cp)
+
+
+# The player's body as a box, for touching hazards.
+func player_box(p) -> Rect2:
+	return Rect2(p.global_position - PLAYER_SIZE / 2.0, PLAYER_SIZE)
 
 
 func _unhandled_input(event):
