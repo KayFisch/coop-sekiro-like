@@ -345,3 +345,24 @@ Zur Farbfrage aus Bifrons Runde 4 (Grün = „zusammen parieren“ kollidiert mi
   zu nah an P1; mit schwarzen und weißen Spielern wäre es wieder frei.) Soll die Mitte
   zwischen Schwarz und Weiß andeuten: mittlere Helligkeit, deutlich gesättigter als Grau.
   Noch nicht entschieden.
+
+**BPM pro Level (Kay, 2026-10-09):** Langfristig sollen die Rhythmen an der Musik hängen.
+Jedes Level hat eine BPM-Variable, aus der Abstände und Geschwindigkeiten der Interaktionen
+berechnet werden (Schachtbreiten, Wurfweiten, Flugzeiten, ...). Andere Musik = anderes Tempo
+= alle Rhythmen ändern sich mit. Erster Schritt: `Metronome` (`levels/metronome.gd`) mit
+`bpm`, das Wall Gym rechnet seine Schachtbreiten daraus. Noch fest in Sekunden und nicht
+an BPM gebunden: Wall-Jump-Höhe/-Push, `WALL_FLIGHT_TIME`, `CHIMNEY_WINDOW`, das ganze
+Rhythmus-Relay (`RHYTHM_BEAT`). Bei viel langsamerem Tempo passen die nicht mehr.
+
+## 2026-10-15 (Kay): Platformer in Welten, passend zu den Bossen
+
+Das Platformer-Konzept würde ich mehr oder weniger in **Welten** aufteilen. Die Level wären dann
+an ihrem Boss orientiert und umgekehrt: Hindernisse aus den Platformer-Leveln kommen als
+einzelne, wiederkehrende Elemente in den Bosskampf. Eine Welt kann gerne mehrere Bosse haben,
+z. B. Boss 1, Boss 2 und am Ende den finalen Boss der Welt.
+- *Beispiel Pendel:* das schneller werdende Pendel aus dem Platformer (siehe „Pendelklingen“,
+  „Schaukel pumpen“) taucht im Bosskampf wieder auf: Man muss es bis zum Überschlag bringen, um
+  dem Boss zu schaden. Passt zu Sphaera.
+- *Beispiel Spiegel:* Nichos gespiegelter Bifrons (Schattenachse, Spiegelung an der x-Achse)
+  könnte das Thema einer ganzen Parkour-Welt sein. Das passt zur Idee der Weltschalter, die die
+  Welt umbauen: Der Schalter kippt zwischen Licht- und Schattenseite.
