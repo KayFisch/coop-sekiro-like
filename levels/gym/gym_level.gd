@@ -34,6 +34,9 @@ const COLOR_LABEL = Color(1, 1, 1, 0.8)
 const COLOR_HINT = Color(1, 1, 1, 0.5)
 const COLOR_MEASURE = Color(0.55, 0.8, 1.0, 0.6)
 const COLOR_CHECKPOINT = Color(0.4, 1.0, 0.6)
+# Physics layers of the platforms only one player stands on (BeatStep with an owner): the
+# level puts each in its player's mask, so player.gd needn't know them.
+const OWN_PLATFORM_LAYERS = {1: 5, 2: 6}
 
 var bounds = Rect2(0, -500, 3000, 1220)  # the room; set in _build() before placing anything
 var players: Array = []
@@ -93,6 +96,8 @@ func _ready():
 		p.position = respawn_point + Vector2((id - 1) * RESPAWN_SPREAD, 0.0)
 		add_child(p)
 		players.append(p)
+		if OWN_PLATFORM_LAYERS.has(id):
+			p.set_collision_mask_value(OWN_PLATFORM_LAYERS[id], true)
 
 	var camera = GymCameraScript.new()
 	camera.targets = players
@@ -110,6 +115,9 @@ func _ready():
 
 func _physics_process(_delta):
 	for p in players:
+		# Dropping through (down) lets go of the one-way platforms: of one's own ones too.
+		if OWN_PLATFORM_LAYERS.has(p.player_id):
+			p.set_collision_mask_value(OWN_PLATFORM_LAYERS[p.player_id], p.get_collision_mask_value(Player.PLATFORM_LAYER))
 		if p.global_position.y > bounds.end.y + PLAYER_SIZE.y:
 			respawn(p)
 		for hazard in _spikes:
@@ -134,6 +142,21 @@ func _unhandled_input(event):
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R:
 		for p in players:
 			respawn(p)
+
+
+# An obstacle touched: back to the checkpoint.
+func hazard_hit(p):
+	Sfx.play("chip")
+	respawn(p)
+
+
+# Adds an obstacle (levels/obstacles/), its `hit` signal putting whoever it hits back at the
+# checkpoint.
+func obstacle(node: Node2D) -> Node2D:
+	add_child(node)
+	if node.has_signal("hit"):
+		node.hit.connect(hazard_hit)
+	return node
 
 
 func respawn(p):

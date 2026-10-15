@@ -94,6 +94,13 @@ func _build_sounds():
 	# The Beat clock's click (core/beat.gd): a short wooden tick, brighter and louder on the 1.
 	_sounds["beat_click"] = _blip(1400.0, 0.03)
 	_sounds["beat_accent"] = _blip(2100.0, 0.045)
+	# The clockwork obstacles (levels/obstacles/), each with a sound of its own on its beat.
+	_sounds["hammer"] = _thud(140.0, 55.0, 0.25, 16.0, 0.7)  # a hammer hitting the floor
+	_sounds["step_on"] = _blip(880.0, 0.05)  # beat steps appearing
+	_sounds["bell"] = _bell(1046.5, 0.9, 4.5)  # a beat bell struck on the 1
+	_sounds["bell_dull"] = _thud(420.0, 300.0, 0.09, 45.0, 0.15)  # struck off the 1: a dull clack
+	_sounds["pendulum"] = _whoosh(0.28)  # a pendulum passing through the bottom
+	_sounds["big_bell"] = _with_echo(_bell(261.6, 1.6, 2.2), 0.35, 0.4, 1)  # the great bell: done
 	_sounds["call_go"] = _notes([784.0, 1174.7], 0.09, true)
 	_sounds["clap"] = _clap(0.09)  # the grab's hands shutting on nothing
 	_sounds["guard_break"] = _clang(700.0, 0.3)  # Columna Bifrons's guard knocked open
@@ -319,6 +326,24 @@ func _clash_hum(duration: float) -> PackedVector2Array:
 		s *= 0.8 + 0.2 * sin(TAU * 11.0 * t)
 		s *= minf(t / 0.01, 1.0) * minf((duration - t) / 0.05, 1.0)
 		out[i] = Vector2.ONE * s * 0.35
+	return out
+
+
+# A struck bell: inharmonic partials over the hum note, the higher ones dying first.
+func _bell(pitch: float, duration: float, decay: float) -> PackedVector2Array:
+	var out = _buffer(duration)
+	var partials = [[0.5, 0.25], [1.0, 0.5], [1.19, 0.3], [1.5, 0.22], [2.0, 0.2], [2.74, 0.12], [3.76, 0.08]]  # [ratio, gain]
+	for i in out.size():
+		var t = i / MIX_RATE
+		var s = 0.0
+		for p in partials:
+			s += sin(TAU * pitch * p[0] * t) * p[1] * exp(-t * decay * (0.6 + p[0] * 0.5))
+		s *= minf(t / 0.001, 1.0)
+		if t < 0.004:
+			s += randf_range(-1.0, 1.0) * 0.4 * (1.0 - t / 0.004)  # the strike
+		if t > duration - 0.05:
+			s *= (duration - t) / 0.05  # no click at the end
+		out[i] = Vector2.ONE * clampf(s * 0.6, -1.0, 1.0)
 	return out
 
 
