@@ -11,7 +11,7 @@ signal pogo_clashed(player)  # bounced off a partner's upslash (see _pogo_clash(
 
 enum Swing { SLASH, UPSLASH, DOWNSLASH }
 # Held in place for a moment by a clash with the partner (see _begin_hold()).
-enum Hold { NONE, CHIMNEY, RELAY_DASHER, RELAY_ANCHOR }
+enum Hold { NONE, RELAY_DASHER, RELAY_ANCHOR }
 
 # Which abilities are on is decided by the Moves autoload (core/moves.gd, F1 in game): every
 # ability below checks its switch there.
@@ -143,8 +143,10 @@ const FAST_FALL_MAX_SPEED = 1900.0
 # it or get refreshed by it again, so one wall alone can't be climbed (two facing ones can).
 # A wall you're merely next to only counts if you're moving into it: pressing toward it, or
 # still flying from the last wall jump (for WALL_FLIGHT_TIME). In that flight, holding back
-# toward the wall you left doesn't steer, so between two walls you can keep one direction held
-# and just time the jumps; a gap too wide to cross in that time ends the flight, and you drift back.
+# toward the wall you left, or holding nothing, doesn't steer, so between two walls you can keep
+# one direction held (or none) and just time the jumps. The flight is short: it carries you
+# across a narrow gap (half a beat) on its own; a wider one needs the stick held toward it
+# (SPEED is the push, so holding keeps the flight's timing). Once it ends you steer freely.
 # Walls and ledges refresh the dash (Moves "wall_refresh"), never the air jump.
 # Partners aren't walls.
 const WALL_PROBE = 4.0  # px: how close a wall has to be to stick to or jump off
@@ -153,10 +155,35 @@ const WALL_SLIDE_SPEED = 140.0
 const WALL_CLING_TIME = 1.2
 const WALL_COYOTE_TIME = 0.1  # a wall jump this soon after letting go of the wall still works
 const WALL_SPENT_RANGE = 24.0  # px: a wall on the spent side this close to where you jumped is the same wall
-const WALL_JUMP_HEIGHT = 110.0
+const WALL_JUMP_HEIGHT = 145.0  # its top ~0.4 s up, so a beat's flight lands near it; never cut short by letting go of jump
 const WALL_JUMP_PUSH = 360.0  # px/s away from the wall
 const WALL_JUMP_LOCK = 0.15
-const WALL_FLIGHT_TIME = 0.26  # how long a wall jump counts as flying at the next wall (~94 px)
+# Riding up a wall past its top hops you over onto it (no dead zone where the wall's too short to
+# jump off but you're too low to land on it).
+const WALL_TOP_HOP_SPEED = 300.0  # px/s over the edge...
+const WALL_TOP_HOP_RISE = 200.0  # ...rising at least this fast (~11 px up)...
+const WALL_TOP_HOP_TIME = 0.12  # ...unsteerable this long: ~35 px onto the top
+const WALL_FLIGHT_TIME = 0.3  # how long a wall jump flies on its own (~110 px: a narrow shaft's half beat and some, not a wide one's beat)
+const WALL_TURN_GRACE = 0.12  # s (Moves "wall_turn_grace"): this close to the next wall or the partner, holding back keeps flying there (~reaction time: steering early for the jump after)
+# WALL RHYTHM (Moves "wall_rhythm"): a wall jump is timed to the moment you hit the wall. Pressed
+# within WALL_RHYTHM_TOLERANCE of it (an early press waits for the wall, see JUMP_BUFFER_TIME),
+# it's a full one; earlier or later, weak (WALL_WEAK_HEIGHT), so mashing or hanging on sinks you.
+# So the rhythm is the walls': a shaft as wide as a beat's flight is climbed on every beat, one
+# half as wide twice as fast. The first wall jump of a climb starts the rhythm: it's always a
+# full one, and a level's Metronome starts ticking on it (landing stops it), unless the
+# partner is already climbing to it. A full jump that's off the beat (pressed late, or the wall
+# reached late or early) flies to the next wall a little faster or slower (_resync()), so it
+# arrives on the beat and nothing adds up and drifts off it. A ring around you closes on the next moment to jump
+# (reaching the wall, meeting the partner for a chimney clash) and flashes white for its window.
+const WALL_BEAT = 0.5  # a beat where the level has no Metronome (a chimney clash's throw): 120 per minute
+const WALL_RESYNC_MAX = 0.1  # s a flight is pulled at most toward arriving on the Metronome's half-beats (see _steer_tempo())
+const WALL_TEMPO_RANGE = 0.2  # the flight to the next wall goes at most 20% faster or slower to land on the beat
+const WALL_TEMPO_REACH = 1000.0  # px: a wall further than this isn't flown to on the beat
+const WALL_TEMPO_LONGEST = 1.0  # s a flight is steered on the beat at most (it's at a wall long before)
+const WALL_RHYTHM_TOLERANCE = 0.065  # s before or after hitting the wall that still counts
+const WALL_WEAK_HEIGHT = 0.0  # a mistimed wall jump goes this fraction as high: none, just the push off the wall
+const WALL_RING_RADIUS = 26.0  # the ring closes to this, just around the body...
+const WALL_RING_SHRINK = 220.0  # ...shrinking this many px/s toward it
 # LEDGE GRAB: in the air, pressing into a wall whose top edge is between a little above your
 # head and your middle, with room to stand up there: you catch the edge and hang. Up climbs at
 # once, and so does holding toward the wall once you've hung for LEDGE_MIN_HANG; jump jumps
@@ -192,14 +219,17 @@ const POGO_WINDOW = 0.15  # the box is checked this long from the press, whateve
 const POGO_GRACE = 0.1  # spikes touched this soon after a pogo don't count (see just_pogoed())
 const POGO_CLASH_TOLERANCE = 0.15
 # CHIMNEY CLASH (Moves "chimney_clash"): two players who both just wall-jumped, flying at each
-# other, clash in mid-air: held a moment, then thrown back toward the walls they came from,
-# higher than a wall jump goes. A chimney too wide to climb alone becomes a climb for two.
-# Players collide, so flying into each other counts as meeting even once the bump has stopped them.
-const CHIMNEY_WINDOW = 0.6  # s since each one's wall jump
-const CHIMNEY_REACH = Vector2(60.0, 60.0)
-const CHIMNEY_CLASH_TIME = 0.1
-const CHIMNEY_BOOST_HEIGHT = 160.0
-const CHIMNEY_PUSH = 380.0
+# other, clash in mid-air: each is the other's wall. Both wall-jump off each other, back toward
+# the walls they came from, exactly like a wall jump (same push, same height, no hold), so a
+# chimney twice as wide as one climbed alone is climbed in the same rhythm, the partner standing
+# in for the far wall. They meet when they touch (players collide; if not, when they'd touch).
+# Meeting isn't enough: both press jump, each within CHIMNEY_PRESS_TOLERANCE of the meeting (a
+# press there never air-jumps); without both presses they fly on and fall. With Moves
+# "wall_rhythm" on, each one's press is judged against the meeting like a wall jump's against
+# hitting the wall: within WALL_RHYTHM_TOLERANCE a full jump, else a weak one.
+const CHIMNEY_WINDOW = 0.7  # s since each one's wall jump: past the meeting and its press window
+const CHIMNEY_PRESS_TOLERANCE = 0.08  # s before or after meeting that a jump press still clashes (weak past WALL_RHYTHM_TOLERANCE)
+const CHIMNEY_REACH = Vector2(60.0, 60.0)  # once met, staying this close still lets a late press clash
 # MOMENTUM RELAY (Moves "momentum_relay"): a dash-slash into a partner who parries it: their
 # block press must come at most RELAY_PARRY_TOLERANCE before the blades meet (the dash-slash's
 # windup is the cue). Just holding block, or pressing too early, only stops the dash with a dull
@@ -215,6 +245,26 @@ const RELAY_EXIT_FRACTION = 0.45  # of the boost's speed kept once it ends
 const RELAY_RECOIL = 220.0
 const RELAY_PARRY_TOLERANCE = 0.2
 const RELAY_FAIL_BOUNCE = Vector2(260.0, -220.0)  # the dasher, off a block that wasn't a parry
+# RHYTHM RELAY (Moves "relay_rhythm"): the relay as a bar of four even beats, the partners taking
+# turns: 1 the dasher's windup, 2 the anchor's parry (the blades lock), 3 the anchor's strike,
+# which throws the dasher the way the anchor's stick points (4 ways: up, down, left, right; none:
+# straight on; the arrow on the dasher shows it), 4 the top of the throw, where the level asks the
+# dasher for something (a dash, a pogo point). The dasher doesn't aim. The dash-slash's windup
+# takes beat 1, and its run hardly any time, so the blades meet on beat 2 wherever the partner
+# stands within reach; the parry press has to be close to it too. A strike off beat 3, or none,
+# drops the dasher. Every beat sounds: 1 a tick, 2 the parry, 3 the strike, 4 a high tick.
+# The throw stops a little before beat 4 and the dasher hangs still around it (gravity off),
+# so a move on 4 has as much room early as late; any move ends the hang.
+# (While the switch is on, every dash-slash is this fast one, at a boss too.)
+const RHYTHM_BEAT = 0.25  # one beat
+const RHYTHM_TOLERANCE = 0.08  # the strike counts this far off beat 3, early or late
+# The hang at the top: from this long before beat 4 to this long after it. Longer before than
+# after, as falling the first few px after it barely counts as missing the top.
+const RHYTHM_HANG_BEFORE = 0.06
+const RHYTHM_HANG_AFTER = 0.02
+const RHYTHM_THROW_TIME = RHYTHM_BEAT - RHYTHM_HANG_BEFORE  # the throw's flight, RELAY_SPEED for this long
+const RHYTHM_DASH_TIME = 0.04  # the dash-slash's run, DASH_DISTANCE in this long (a plain dash: DASH_TIME)
+const RHYTHM_PARRY_TOLERANCE = 0.1  # the block press at most this long before the blades meet
 const GUARD_ANGLE = 0.55  # blocking: the sword held diagonally down...
 const GUARD_OFFSET = Vector2(6, -12)  # ...in front, from the chest (x mirrors with facing)
 const PARRY_FLICK_ANGLE = -1.3  # a perfect parry beats the blade up, to past its rest
@@ -347,10 +397,28 @@ var _wall_coyote = 0.0
 var _spent_wall_side = 0.0  # the wall last jumped off (see WALL_SPENT_RANGE), 0 once cleared
 var _spent_wall_x = 0.0
 var _wall_jump_time = -100.0
+var _wall_chain = false  # wall-jumped since last on the floor (see WALL RHYTHM)
+var wall_beat_time = -100.0  # the last wall jump, for WALL RHYTHM (a clash resets _wall_jump_time)
+var _wall_contact_time = -100.0  # when you last hit a wall (see WALL RHYTHM), stuck to it or not
+var _wall_contact_side = 0.0  # that wall's side
+var _wall_touch_side = 0.0  # the wall you're touching (and moving into) this frame, 0 if none
+var wall_jump_moment = -100.0  # when the last wall jump should have been pressed: hitting the wall, or the beat
+var wall_jump_off = 0.0  # s the last wall jump's press was off its moment (< 0 early)
+var wall_jump_strong = true  # the last wall jump was on time (a full one)
+var _jump_press_time = -100.0  # the last jump press
+var _chimney_meet_time = -100.0  # when this wall flight met the partner's (see CHIMNEY CLASH)
+var _beat_ring: Node2D  # the ring closing on the next moment to jump (see _update_beat_ring())
+var wall_rhythm_sound = true  # this player's wall jumps sound and show the ring (see WALL RHYTHM); a bot's may not
 var _wall_jump_dir = 0.0  # which way the last wall jump flew
 var _wall_jump_lock = 0.0
 var _wall_flight = 0.0  # > 0 while flying from a wall jump (see WALL_FLIGHT_TIME)
+var _turn_graced = false  # last frame, holding back was ignored just before the next wall (_turn_held())
+var _near_wall_dist = INF  # px: the closest the wall flown to has come since the last wall jump (Moves "wall_reach")
+var _near_wall_time = -100.0  # ...and when
 var _wall_held_away = 0.0  # a key held away from the wall since arriving on it (doesn't let go)
+var _tempo = 1.0  # times the usual sideways speed, flying to the next wall on the beat (see _resync())
+var _tempo_until = -100.0  # flying on the beat (see _resync()) until then at the latest; < 0 if not
+var chimney_clash_time = -100.0  # the last chimney clash
 var _ledge = false  # hanging from (or climbing over) a ledge
 var _ledge_side = 0.0
 var _ledge_hang = Vector2.ZERO
@@ -363,9 +431,14 @@ var _hold_timer = 0.0
 var _hold_release = Vector2.ZERO
 var _hold_partner = null
 var _relay_dir = Vector2.RIGHT
+var _relay_rhythm = false  # this relay is a rhythm relay (Moves "relay_rhythm" when it began)
+var _relay_parry_time = -100.0  # beat 2 of a rhythm relay
+var _rhythm_dash = false  # this dash-slash is a rhythm relay's: a beat's windup, then a quick run
 var _relay_arrow: ColorRect
-var _boost_timer = 0.0
+var _boost_timer = 0.0  # a rhythm relay's includes the hang at the top
 var _boost_velocity = Vector2.ZERO
+var _throw_left = 0.0  # px a rhythm relay's throw still has to go before the hang
+var rhythm_top_time = -100.0  # beat 4 of the last rhythm relay thrown (when it belongs)
 var _tell_ring: Node2D  # drawn around the partner (see _update_tell())
 var _tell_partner = null
 var _tell_left = 0.0  # seconds to the ring's close
@@ -418,6 +491,11 @@ func _ready():
 	_tell_ring.visible = false
 	_tell_ring.draw.connect(_draw_tell)
 	add_child(_tell_ring)
+	_beat_ring = Node2D.new()
+	_beat_ring.z_index = 5
+	_beat_ring.visible = false
+	_beat_ring.draw.connect(_draw_beat_ring)
+	add_child(_beat_ring)
 	_setup_call_label()
 	_update_player_collision()
 	Moves.changed.connect(_update_player_collision)
@@ -510,15 +588,36 @@ func _process_movement(delta):
 		_wall_side = 0.0
 		_spent_wall_side = 0.0
 		_wall_flight = 0.0
-	var holding_back = _wall_flight > 0.0 and direction != 0.0 and signf(direction) == -_wall_jump_dir
-	if holding_back:
+		if _wall_chain:
+			# The climb is over: the metronome stops, unless the partner is still climbing.
+			var metronome = _metronome()
+			if metronome and not _climbing_partner():
+				metronome.stop()
+		_wall_chain = false
+		_wall_touch_side = 0.0
+		_near_wall_dist = INF
+		_end_tempo()
+	else:
+		_track_wall_contact(direction)
+		_steer_tempo(direction)
+	# Flying off a wall, holding back toward it or nothing keeps the flight (see WALLS).
+	# Just before the next wall, holding back too (Moves "wall_turn_grace", see WALL_TURN_GRACE).
+	_turn_graced = _turn_held(direction)
+	var coasting = (_wall_flight > 0.0 and (direction == 0.0 or signf(direction) == -_wall_jump_dir)) \
+		or _turn_graced
+	if coasting:
 		facing = _wall_jump_dir  # holding toward the wall you left doesn't turn you around
 
 	if _boost_timer > 0.0:
 		velocity = _boost_velocity  # a relay boost: straight, gravity off
+		if _relay_rhythm:
+			# The throw covers exactly its distance, however the frames fall; then it hangs.
+			var step = minf(RELAY_SPEED, _throw_left / delta)
+			velocity = _boost_velocity.normalized() * step
+			_throw_left -= step * delta
 		return
 	if _dash_timer > 0.0:
-		velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
+		velocity = Vector2(_dash_dir * _dash_speed(), 0.0)
 		return
 	if not is_on_floor() and _knockback_timer <= 0.0:
 		if _try_ledge_grab(direction) or _update_wall(direction, delta):
@@ -526,10 +625,10 @@ func _process_movement(delta):
 
 	if _knockback_timer > 0.0:
 		velocity.x = move_toward(velocity.x, 0.0, KNOCKBACK_FRICTION * delta)
-	elif (_launch_timer > 0.0 and direction == 0.0) or _wall_jump_lock > 0.0 or holding_back:
+	elif (_launch_timer > 0.0 and direction == 0.0) or _wall_jump_lock > 0.0 or coasting:
 		pass  # a launch's sideways carry (until steered), or flying off a wall: keep it
 	else:
-		var target = direction * SPEED * (BLOCK_SPEED_FACTOR if is_blocking() else 1.0)
+		var target = direction * SPEED * _tempo * (BLOCK_SPEED_FACTOR if is_blocking() else 1.0)
 		if target != 0.0 and velocity.x != 0.0 and signf(target) != signf(velocity.x):
 			velocity.x *= 1.0 - TURN_SNAP  # turning around: drop the old way's speed
 		# Speeding up toward the target speed; slowing down (letting go) is quicker.
@@ -559,7 +658,12 @@ func _update_wall(direction: float, delta: float) -> bool:
 			_wall_held_away = 0.0  # let go of (or changed) the key held on arrival
 		var pressing_away = direction != 0.0 and signf(direction) == -_wall_side and _wall_held_away == 0.0
 		if mode == "off" or pressing_away or not _touching_wall(_wall_side):
+			var hop = mode != "off" and not pressing_away and velocity.y < 0.0
+			if hop:
+				_hop_over_wall_top()
 			_leave_wall()
+			if hop:
+				_wall_coyote = 0.0  # going over: a late press doesn't pull you back off it
 	elif mode != "off":
 		var in_flight = _wall_flight > 0.0
 		for side in _sides_moving_into(direction):
@@ -592,22 +696,69 @@ func _sides_moving_into(direction: float) -> Array:
 		sides.append(signf(direction))
 	if absf(velocity.x) >= WALL_ATTACH_SPEED:
 		sides.append(signf(velocity.x))
-	if _wall_flight > 0.0:
+	if _wall_flight > 0.0 or _turn_graced:  # (hitting the wall stops you: the grace still carries you into it)
 		sides.append(_wall_jump_dir)
 	return sides
 
 
+# Notes the moment you hit a wall (one you're moving into, not the one you jumped off), whether
+# you stick to it or not: the moment a wall jump off it is timed to (see WALL RHYTHM).
+func _track_wall_contact(direction: float):
+	var sides = _sides_moving_into(direction)
+	if _wall_side != 0.0:
+		sides.push_front(_wall_side)
+	var touching = 0.0
+	for side in sides:
+		if not _wall_spent(side) and _touching_wall(side):
+			touching = side
+			break
+	if touching != 0.0 and touching != _wall_touch_side:
+		_wall_contact_time = _now()
+		_wall_contact_side = touching
+		_end_tempo()  # arrived
+	_wall_touch_side = touching
+	# How close the wall flown to came (Moves "wall_reach"): turned back just short of it, a jump
+	# still pushes off it, timed to that closest moment.
+	if _wall_chain and _wall_reach() > 0.0 and not _wall_spent(_wall_jump_dir):
+		var gap = _wall_distance(_wall_jump_dir, WALL_PROBE + _wall_reach())
+		if gap < _near_wall_dist:
+			_near_wall_dist = gap
+			_near_wall_time = _now()
+
+
+# The Metronome's tick or off-beat nearest `t`; `t` itself if none is ticking.
+func _nearest_tick(t: float) -> float:
+	var metronome = _metronome()
+	if not (metronome and metronome.running):
+		return t
+	var step = metronome.beat_length() / 2.0
+	return metronome.origin + roundf((t - metronome.origin) / step) * step
+
+
+# px short of a wall (or the partner) a jump still pushes off, if you turned back early.
+func _wall_reach() -> float:
+	return float(Moves.value("wall_reach")) if Moves.on("wall_reach") else 0.0
+
+
 # A wall right beside you on `side`. Only the world counts: a partner isn't a wall.
 func _touching_wall(side: float) -> bool:
+	return _wall_distance(side, WALL_PROBE) < INF
+
+
+# px to the world on `side`, looking at most `reach` far; INF if nothing's there.
+func _wall_distance(side: float, reach: float) -> float:
 	var params = PhysicsTestMotionParameters2D.new()
 	params.from = global_transform
-	params.motion = Vector2(side * WALL_PROBE, 0.0)
+	params.motion = Vector2(side * reach, 0.0)
 	var partners: Array[RID] = []
 	for other in get_tree().get_nodes_in_group("players"):
 		if other != self:
 			partners.append(other.get_rid())
 	params.exclude_bodies = partners
-	return PhysicsServer2D.body_test_motion(get_rid(), params)
+	var result = PhysicsTestMotionResult2D.new()
+	if not PhysicsServer2D.body_test_motion(get_rid(), params, result):
+		return INF
+	return result.get_travel().length()
 
 
 # The wall on `side` is the one last jumped off (see WALL_SPENT_RANGE).
@@ -628,6 +779,14 @@ func _attach_wall(side: float):
 		refresh_dash()
 
 
+# Rode up the wall past its top: hop over onto it, rather than hang beside its edge with no
+# wall left to jump off and no way onto it.
+func _hop_over_wall_top():
+	velocity.x = _wall_side * WALL_TOP_HOP_SPEED
+	velocity.y = minf(velocity.y, -WALL_TOP_HOP_RISE)
+	_wall_jump_lock = maxf(_wall_jump_lock, WALL_TOP_HOP_TIME)
+
+
 func _leave_wall():
 	if _wall_side != 0.0:
 		_last_wall_side = _wall_side
@@ -645,11 +804,48 @@ func _wall_jump_side() -> float:
 	for side in _sides_moving_into(move_axis()):
 		if not _wall_spent(side) and _touching_wall(side):
 			return side
+	# Bounced off a wall you didn't stick to: a press late within the window still jumps off it.
+	if _wall_chain and _now() - _wall_contact_time <= WALL_RHYTHM_TOLERANCE \
+			and not _wall_spent(_wall_contact_side):
+		return _wall_contact_side
+	# Turned back just short of the wall you flew to (Moves "wall_reach"); still flying into it,
+	# an early press waits for the wall.
+	if _wall_chain and _near_wall_dist < INF and not _wall_spent(_wall_jump_dir) \
+			and velocity.x * _wall_jump_dir < WALL_ATTACH_SPEED \
+			and _wall_distance(_wall_jump_dir, WALL_PROBE + _wall_reach()) < INF:
+		return _wall_jump_dir
 	return 0.0
 
 
 func _wall_jump(side: float):
-	velocity = Vector2(-side * WALL_JUMP_PUSH, -sqrt(2.0 * GRAVITY * WALL_JUMP_HEIGHT))
+	var now = _now()
+	# Timed to hitting this wall; the first of a climb starts the rhythm instead.
+	var timed = _wall_chain
+	if _wall_chain:
+		wall_jump_moment = now
+		if _wall_contact_side == side and _wall_contact_time > maxf(_wall_jump_time, chimney_clash_time):
+			wall_jump_moment = _wall_contact_time
+		elif side == _wall_jump_dir and _near_wall_dist < INF:
+			# Never touched it: timed to the tick you'd have hit it on (the flight is steered onto
+			# them), else its closest moment.
+			wall_jump_moment = _nearest_tick(_near_wall_time)
+		wall_jump_off = _jump_press_time - wall_jump_moment
+	else:
+		wall_jump_off = 0.0
+		wall_jump_moment = now
+		var metronome = _metronome()
+		if metronome and not _climbing_partner():
+			metronome.restart(now)
+	_wall_chain = true
+	wall_beat_time = now
+	_chimney_meet_time = -100.0
+	wall_jump_strong = not Moves.on("wall_rhythm") or not timed \
+		or absf(wall_jump_off) <= WALL_RHYTHM_TOLERANCE
+	if Moves.on("wall_rhythm") and wall_rhythm_sound:
+		Sfx.play("relay_peak" if wall_jump_strong else "chip", -4.0)
+	var rise = sqrt(2.0 * GRAVITY * WALL_JUMP_HEIGHT * (1.0 if wall_jump_strong else WALL_WEAK_HEIGHT))
+	velocity = Vector2(-side * WALL_JUMP_PUSH, -rise)
+	_uncut_timer = rise / GRAVITY  # a tap goes as high as a hold: the timing decides, not the hold
 	facing = -side
 	_wall_side = 0.0
 	_wall_coyote = 0.0
@@ -658,12 +854,159 @@ func _wall_jump(side: float):
 	_wall_jump_lock = WALL_JUMP_LOCK
 	_wall_jump_time = _now()
 	_wall_jump_dir = -side
+	_near_wall_dist = INF
 	_wall_flight = WALL_FLIGHT_TIME
 	_wall_held_away = 0.0
 	_jump_buffer = 0.0
 	_launch_timer = 0.0
 	_boost_timer = 0.0
 	_dash_timer = 0.0
+	if Moves.on("wall_rhythm") and wall_jump_strong:
+		_resync()
+
+
+# A full wall jump (or chimney clash) just launched: its flight to the next moment to jump
+# (hitting a wall, meeting the partner) goes on the beat (_steer_tempo()), so neither late
+# presses nor a slow flight (steering) add up and drift off it.
+func _resync():
+	_tempo_until = _now() + WALL_TEMPO_LONGEST
+	_steer_tempo(move_axis())
+
+
+# Flying to the next moment to jump on the beat (see _resync()): when it would get there at the
+# usual speed, rounded to the Metronome's nearest half-beat (by at most WALL_RESYNC_MAX), is when
+# it's to get there; this sets the speed that does, within WALL_TEMPO_RANGE of the usual. Flying
+# on its own, the flight's; steered toward it, how fast holding the stick goes (any tilt toward
+# it flies at least half speed's worth of it). Held away or not at all, it doesn't steer for you.
+func _steer_tempo(direction: float):
+	if _tempo_until < 0.0:
+		return
+	var now = _now()
+	var metronome = _metronome()
+	var distance = _tempo_distance()
+	if now > _tempo_until or distance == INF or not (metronome and metronome.running):
+		_end_tempo()
+		return
+	var usual = distance / WALL_JUMP_PUSH
+	if usual <= get_physics_process_delta_time():
+		return  # there (or nearly): keep the speed it has
+	var arrive = now + usual + _seen_late()
+	var step = metronome.beat_length() / 2.0
+	var on_beat = metronome.origin + roundf((arrive - metronome.origin) / step) * step
+	var left = usual + clampf(on_beat - arrive, -WALL_RESYNC_MAX, WALL_RESYNC_MAX)
+	var k = clampf(usual / maxf(left, 0.001), 1.0 - WALL_TEMPO_RANGE, 1.0 + WALL_TEMPO_RANGE)
+	var on_its_own = _wall_jump_lock > 0.0 \
+		or (_wall_flight > 0.0 and (direction == 0.0 or signf(direction) == -_wall_jump_dir)) \
+		or _turn_held(direction)
+	if on_its_own and velocity.x * _wall_jump_dir > 0.0:
+		velocity.x = _wall_jump_dir * WALL_JUMP_PUSH * k
+	_tempo = 1.0
+	if direction * _wall_jump_dir > 0.0:
+		_tempo = k * WALL_JUMP_PUSH / (maxf(absf(direction), 0.5) * SPEED)
+
+
+# Moves "wall_turn_grace": holding back toward the wall you left (or nothing), WALL_TURN_GRACE or less before
+# reaching the next wall (or meeting the partner), keeps the flight going there: steering early
+# for the jump after doesn't turn you around short of it.
+func _turn_held(direction: float) -> bool:
+	if not Moves.on("wall_turn_grace") or not _wall_chain or _wall_jump_dir == 0.0:
+		return false
+	# (Letting go counts too: an analog stick turning back passes through the middle.)
+	if signf(direction) == _wall_jump_dir or velocity.x * _wall_jump_dir <= 0.0:
+		return false
+	var distance = _tempo_distance()
+	return distance != INF and distance / WALL_JUMP_PUSH <= WALL_TURN_GRACE
+
+
+func _tempo_distance() -> float:
+	var gap = _wall_distance(_wall_jump_dir, WALL_TEMPO_REACH)
+	if gap == INF:
+		return INF
+	for other in get_tree().get_nodes_in_group("players"):
+		var ahead = (other.global_position.x - global_position.x) * _wall_jump_dir
+		if other != self and not other.is_on_floor() and ahead > 0.0 and ahead < gap:
+			return maxf(ahead - body.size.x - WALL_PROBE, 0.0) / 2.0  # met once in reach (see _check_clashes)
+	return gap
+
+
+# s after reaching a wall that it's seen: up to a frame.
+func _seen_late() -> float:
+	return get_physics_process_delta_time() / 2.0
+
+
+# Back to the usual speed (see _resync()).
+func _end_tempo():
+	_tempo = 1.0
+	_tempo_until = -100.0
+
+
+# The level's Metronome, if it has one (see WALL RHYTHM).
+func _metronome():
+	return get_tree().get_first_node_in_group("metronome")
+
+
+# s of a beat: the metronome's, else WALL_BEAT.
+func _beat_length() -> float:
+	var metronome = _metronome()
+	return metronome.beat_length() if metronome else WALL_BEAT
+
+
+# s until the next moment to jump (see WALL RHYTHM), and s since the last one; -1 if none.
+func _jump_cues() -> Vector2:
+	var now = _now()
+	var left = INF
+	var since = INF
+	if _hold_kind != Hold.NONE or is_on_floor():
+		return Vector2(-1.0, -1.0)
+	if _wall_chain:
+		since = now - _wall_contact_time
+		if _wall_side == 0.0 and absf(velocity.x) > 1.0:  # flying (or steering) at a wall
+			var side = signf(velocity.x)
+			left = _wall_distance(side, absf(velocity.x) * _beat_length()) / absf(velocity.x)
+		since = minf(since, now - _chimney_meet_time)
+		var partner = _chimney_partner()
+		if partner and _chimney_meet_time < 0.0:
+			var gap = partner.global_position.x - global_position.x
+			var closing = velocity.x * signf(gap) - partner.velocity.x * signf(gap)
+			if closing > 1.0:
+				left = minf(left, maxf(absf(gap) - body.size.x, 0.0) / closing)
+	return Vector2(left if left < INF else -1.0, since if since < INF else -1.0)
+
+
+# The partner, if they're climbing (wall-jumped since they were last on the floor).
+func _climbing_partner():
+	for other in get_tree().get_nodes_in_group("players"):
+		if other != self and other._wall_chain and not other.is_on_floor():
+			return other
+	return null
+
+
+# The partner, if both of you are flying from a wall jump (a chimney clash in the making).
+func _chimney_partner():
+	if not Moves.on("chimney_clash") or not _in_wall_flight():
+		return null
+	for other in get_tree().get_nodes_in_group("players"):
+		if other != self and other._in_wall_flight():
+			return other
+	return null
+
+
+func _update_beat_ring():
+	_beat_ring.visible = Moves.on("wall_rhythm") and wall_rhythm_sound
+	if _beat_ring.visible:
+		_beat_ring.queue_redraw()
+
+
+# Closes on the next moment to jump, and flashes white for its window.
+func _draw_beat_ring():
+	var cues = _jump_cues()
+	var closed = cues.y >= 0.0 and cues.y <= WALL_RHYTHM_TOLERANCE
+	if not closed and cues.x < 0.0:
+		return
+	var radius = WALL_RING_RADIUS if closed else WALL_RING_RADIUS + cues.x * WALL_RING_SHRINK
+	var color = Color.WHITE if closed else body_color.lightened(0.4)
+	var alpha = 1.0 if closed else clampf(1.0 - cues.x / _beat_length(), 0.15, 0.8)
+	_beat_ring.draw_arc(Vector2.ZERO, radius, 0.0, TAU, 40, Color(color, alpha), 4.0 if closed else 2.0, true)
 
 
 # --- Ledges: grab, hang, climb -------------------------------------------------
@@ -767,6 +1110,7 @@ func _process_ledge(delta):
 func _process_actions():
 	if Input.is_action_just_pressed(_action("jump")):
 		_jump_buffer = JUMP_BUFFER_TIME
+		_jump_press_time = _now()
 	if _jump_buffer > 0.0:
 		_try_jump()
 
@@ -839,7 +1183,8 @@ func _try_jump():
 	elif Moves.on("wall_jump") and _wall_jump_side() != 0.0:
 		_wall_jump(_wall_jump_side())
 		return
-	elif Moves.on("double_jump") and _air_jumps > 0 and Input.is_action_just_pressed(_action("jump")):
+	elif Moves.on("double_jump") and _air_jumps > 0 and Input.is_action_just_pressed(_action("jump")) \
+			and not _chimney_partner():  # flying at the partner, it's the clash's press
 		_air_jumps -= 1
 		velocity.y = -sqrt(2.0 * GRAVITY * DOUBLE_JUMP_HEIGHT)
 	else:
@@ -870,6 +1215,7 @@ func _start_dash(direction: float):
 	_dash_cooldown = DASH_COOLDOWN
 	_dash_press_time = _now()
 	_dash_slash = false
+	_rhythm_dash = false
 	_launch_timer = 0.0
 	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
 	_passing = _pass_timer > 0.0 and _boss_ahead()  # right after a parry: through him
@@ -940,7 +1286,11 @@ func _start_swing(kind: Swing):
 # The dash-slash's windup: held in place, blade drawn back, then the dash (_process_windup()).
 func _begin_dash_slash():
 	_dash_slash = true
-	_windup_timer = DASH_SLASH_WINDUP
+	_rhythm_dash = Moves.on("momentum_relay") and Moves.on("relay_rhythm")
+	# A rhythm windup ends half a run early, so the blades meet on beat 2 on average.
+	_windup_timer = RHYTHM_BEAT - RHYTHM_DASH_TIME / 2.0 if _rhythm_dash else DASH_SLASH_WINDUP
+	if _rhythm_dash:
+		Sfx.play("relay_beat")  # beat 1
 	_dash_timer = 0.0
 	_attack_timer = 0.0
 	_attack_landed = false
@@ -959,8 +1309,8 @@ func _process_windup(delta):
 	if _windup_timer > 0.0:
 		return
 	_windup_timer = 0.0
-	_dash_timer = DASH_TIME
-	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
+	_dash_timer = RHYTHM_DASH_TIME if _rhythm_dash else DASH_TIME
+	velocity = Vector2(_dash_dir * _dash_speed(), 0.0)
 	swing_serial += 1
 	_trail_timer = 0.0
 	if _stretch_tween:
@@ -969,12 +1319,20 @@ func _process_windup(delta):
 	_stretch_tween = create_tween()
 	_stretch_tween.tween_property(body, "scale", Vector2.ONE, DASH_STRETCH_TIME) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	Sfx.play("stab", 1.0)
-	Sfx.play("slash", -2.0)
+	if _rhythm_dash:
+		Sfx.play("slash", -10.0)  # quiet: beat 2 is the parry's
+	else:
+		Sfx.play("stab", 1.0)
+		Sfx.play("slash", -2.0)
 
 
 func is_winding_up() -> bool:
 	return _windup_timer > 0.0
+
+
+# The speed of the dash running now: a rhythm relay's dash-slash covers the same ground faster.
+func _dash_speed() -> float:
+	return DASH_DISTANCE / RHYTHM_DASH_TIME if _rhythm_dash else DASH_SPEED
 
 
 func _swing_windup_time() -> float:
@@ -1098,6 +1456,8 @@ func _check_pogo(delta):
 		var hit = result.collider
 		if hit is BaseBoss:
 			continue  # the boss is never pogoed off
+		if hit.has_method("accepts_pogo") and not hit.accepts_pogo(self):
+			continue  # e.g. a lantern that only takes a pogo on the beat
 		if hit.is_in_group("boss") and not _attack_landed:
 			_attack_landed = true
 			hit.take_damage(_swing_damage() * GameManager.damage_multiplier(), self)
@@ -1179,39 +1539,73 @@ func _check_clashes():
 			if Moves.on("launch") and other.is_launch_ready():
 				_launch(other)
 				return
-			if Moves.on("momentum_relay") and other.is_relay_parry():
+			var tolerance = RHYTHM_PARRY_TOLERANCE if _rhythm_dash else RELAY_PARRY_TOLERANCE
+			if Moves.on("momentum_relay") and other.is_relay_parry(tolerance):
 				_start_relay(other)
 				return
 			if Moves.on("momentum_relay") and other.is_blocking():
 				_relay_blocked(other)
 				return
 		# Each pair is checked once, by the lower id. Flying at each other, or already bumped
-		# together (the bump stops them) after jumping off opposite walls.
+		# together (the bump stops them) after jumping off opposite walls. Met while turned back
+		# short of each other (Moves "wall_reach"), they fly apart: the press window still holds.
+		var met_now = _chimney_meet_time >= 0.0 and _now() - _chimney_meet_time <= CHIMNEY_PRESS_TOLERANCE
 		if Moves.on("chimney_clash") and player_id < other.player_id and _in_wall_flight() \
-				and other._in_wall_flight() and absf(gap.x) <= CHIMNEY_REACH.x \
+				and other._in_wall_flight() and (absf(gap.x) <= CHIMNEY_REACH.x or met_now) \
 				and absf(gap.y) <= CHIMNEY_REACH.y:
+			var touching = absf(gap.x) <= body.size.x + WALL_PROBE
 			var closing = gap.x * velocity.x > 0.0 and gap.x * other.velocity.x < 0.0
-			var bumped = _wall_jump_dir * gap.x > 0.0 and other._wall_jump_dir * gap.x < 0.0 \
-				and absf(gap.x) <= body.size.x + WALL_PROBE
-			if closing or bumped:
-				_chimney_clash(other)
-				return
+			var bumped = _wall_jump_dir * gap.x > 0.0 and other._wall_jump_dir * gap.x < 0.0
+			# Turned back just short of each other (Moves "wall_reach"): met where they turned.
+			var near = bumped and not closing and absf(gap.x) <= body.size.x + WALL_PROBE + 2.0 * _wall_reach()  # each that short
+			if (touching and (closing or bumped)) or near or _chimney_meet_time >= 0.0:  # once met, in reach is enough
+				var now = _now()
+				if _chimney_meet_time < 0.0:
+					# Never touched: timed to the tick they'd have met on (see _wall_jump()).
+					var meet = now if touching else _nearest_tick(now)
+					_chimney_meet_time = meet
+					other._chimney_meet_time = meet
+				# Both pressed jump around the meeting (see CHIMNEY CLASH); too late, they fly on.
+				if _pressed_near(_chimney_meet_time) and other._pressed_near(_chimney_meet_time):
+					_chimney_clash(other)
+					return
+
+
+func _pressed_near(t: float) -> bool:
+	return absf(_jump_press_time - t) <= CHIMNEY_PRESS_TOLERANCE
 
 
 func _in_wall_flight() -> bool:
 	return not is_on_floor() and _hold_kind == Hold.NONE and _now() - _wall_jump_time <= CHIMNEY_WINDOW
 
 
-# Both thrown back toward the walls they jumped from, higher.
+# Both wall-jump off each other, back toward the walls they came from (see CHIMNEY CLASH).
 func _chimney_clash(other):
 	var point = (global_position + other.global_position) / 2.0
-	var boost = -sqrt(2.0 * GRAVITY * CHIMNEY_BOOST_HEIGHT)
+	var meet = _chimney_meet_time
 	for p in [self, other]:
 		var back = signf(p.global_position.x - point.x)
-		p._begin_hold(Hold.CHIMNEY, CHIMNEY_CLASH_TIME, Vector2(back * CHIMNEY_PUSH, boost))
+		# Timed to the meeting, as a wall jump is to hitting the wall (see WALL RHYTHM).
+		p.wall_jump_moment = meet
+		p.wall_jump_off = p._jump_press_time - meet
+		p.wall_jump_strong = not Moves.on("wall_rhythm") or absf(p.wall_jump_off) <= WALL_RHYTHM_TOLERANCE
+		p.chimney_clash_time = _now()
+		if Moves.on("wall_rhythm") and p.wall_rhythm_sound:
+			Sfx.play("relay_peak" if p.wall_jump_strong else "chip", -4.0)
+		var rise = sqrt(2.0 * GRAVITY * WALL_JUMP_HEIGHT * (1.0 if p.wall_jump_strong else WALL_WEAK_HEIGHT))
+		p.velocity = Vector2(back * WALL_JUMP_PUSH, -rise)
+		p._uncut_timer = rise / GRAVITY
+		p.facing = back
+		p._wall_jump_lock = WALL_JUMP_LOCK
+		p._wall_jump_dir = back
+		p._near_wall_dist = INF
+		p._wall_flight = WALL_FLIGHT_TIME
 		p._wall_jump_time = -100.0  # one clash per wall jump
-		p._spent_wall_side = 0.0  # thrown back at the wall they came from: it's climbable again
+		p._jump_buffer = 0.0  # the clash's press is spent: it doesn't wall-jump on arrival
+		p._spent_wall_side = 0.0  # back at the wall they came from: it's climbable again
 		p._sword_flash = SWORD_FLASH_TIME
+		if Moves.on("wall_rhythm") and p.wall_jump_strong:
+			p._resync()
 	_spawn_sparks(point, 14, body_color.lerp(other.body_color, 0.5).lightened(0.5))
 	Sfx.play("parry_strong")
 	var cam = get_viewport().get_camera_2d()
@@ -1222,9 +1616,13 @@ func _chimney_clash(other):
 # Blades locked: the dasher aims while both are held, then boosts (see _release_hold()).
 func _start_relay(anchor):
 	_relay_dir = Vector2(_dash_dir, 0.0)
-	_begin_hold(Hold.RELAY_DASHER, RELAY_CLASH_TIME, Vector2.ZERO, anchor)
+	_relay_rhythm = _rhythm_dash
+	_relay_parry_time = _now()
+	# A rhythm relay waits for the anchor's strike, up to the late end of beat 3.
+	var clash_time = RHYTHM_BEAT + RHYTHM_TOLERANCE if _relay_rhythm else RELAY_CLASH_TIME
+	_begin_hold(Hold.RELAY_DASHER, clash_time, Vector2.ZERO, anchor)
 	# The anchor's hold outlasts the dasher's, so the dasher's release is what frees them.
-	anchor._begin_hold(Hold.RELAY_ANCHOR, RELAY_CLASH_TIME + 0.1)
+	anchor._begin_hold(Hold.RELAY_ANCHOR, clash_time + 0.1, Vector2.ZERO, self)
 	anchor.parry_press_time = -100.0  # one press parries one dash-slash
 	_sword_flash = SWORD_FLASH_TIME
 	anchor._sword_flash = SWORD_FLASH_TIME
@@ -1237,8 +1635,8 @@ func _start_relay(anchor):
 
 
 # The partner parried a dash-slash: blocked, with the press timed to the blades meeting.
-func is_relay_parry() -> bool:
-	return is_blocking() and _now() - parry_press_time <= RELAY_PARRY_TOLERANCE
+func is_relay_parry(tolerance = RELAY_PARRY_TOLERANCE) -> bool:
+	return is_blocking() and _now() - parry_press_time <= tolerance
 
 
 # Blocked but not parried: the dash stops dead with a dull clang, and the dasher bounces off.
@@ -1272,31 +1670,63 @@ func _begin_hold(kind: Hold, time: float, release = Vector2.ZERO, partner = null
 func _process_hold(delta):
 	velocity = Vector2.ZERO
 	_hold_timer -= delta
-	if _hold_kind == Hold.RELAY_DASHER:
+	if _hold_kind == Hold.RELAY_DASHER and not _relay_rhythm:
 		_relay_dir = _aim(_relay_dir)
+	if _hold_kind == Hold.RELAY_ANCHOR and _process_rhythm_strike():
+		return
 	if _hold_timer <= 0.0:
-		_release_hold()
+		if _hold_kind == Hold.RELAY_DASHER and _relay_rhythm:
+			_relay_dropped()  # no strike on the beat
+		else:
+			_release_hold()
+
+
+# The anchor's side of a rhythm relay: the stick aims the dasher, and the attack press strikes.
+# On beat 3 it throws them; off it, it drops them. True once struck.
+func _process_rhythm_strike() -> bool:
+	var dasher = _hold_partner
+	if not (dasher and is_instance_valid(dasher) and dasher._hold_kind == Hold.RELAY_DASHER \
+			and dasher._relay_rhythm):
+		return false
+	dasher._relay_dir = _aim_4(Vector2(dasher._dash_dir, 0.0))
+	if not Input.is_action_just_pressed(_action("attack")):
+		return false
+	if absf(_now() - dasher._relay_parry_time - RHYTHM_BEAT) <= RHYTHM_TOLERANCE:
+		dasher._release_hold()  # the throw; it frees this hold too, and pushes this player back
+		_start_swing(Swing.SLASH)
+		Sfx.play("relay_strike")  # beat 3
+	else:
+		dasher._relay_dropped()
+	return true
+
+
+# A rhythm relay without a strike on the beat: the blades come apart, and the dasher drops.
+func _relay_dropped():
+	var anchor = _hold_partner
+	_hold_kind = Hold.NONE
+	_hold_partner = null
+	if anchor and is_instance_valid(anchor) and anchor._hold_kind == Hold.RELAY_ANCHOR:
+		anchor._hold_kind = Hold.NONE
+		anchor._hold_partner = null
+	_spawn_sparks(global_position, 5, Color(0.6, 0.6, 0.6))
+	Sfx.play("chip")
 
 
 func _release_hold():
 	var kind = _hold_kind
 	_hold_kind = Hold.NONE
 	match kind:
-		Hold.CHIMNEY:
-			velocity = _hold_release
-			if velocity.x != 0.0:
-				facing = signf(velocity.x)
-				_wall_jump_dir = facing  # a flight back to the wall, like a wall jump's
-				_wall_flight = WALL_FLIGHT_TIME
-			_wall_jump_lock = WALL_JUMP_LOCK
-			_uncut_timer = -_hold_release.y / GRAVITY
 		Hold.RELAY_DASHER:
 			_boost_velocity = _relay_dir * RELAY_SPEED
 			_boost_timer = RELAY_BOOST_TIME
+			if _relay_rhythm:
+				_boost_timer = RHYTHM_BEAT + RHYTHM_HANG_AFTER  # the throw, then the hang
+				_throw_left = RELAY_SPEED * RHYTHM_THROW_TIME
+				rhythm_top_time = _now() + RHYTHM_BEAT
 			velocity = _boost_velocity
 			if _relay_dir.x != 0.0:
 				facing = signf(_relay_dir.x)
-			if Moves.on("relay_refresh_dash"):
+			if Moves.on("relay_refresh_dash") or _relay_rhythm:  # beat 4 may ask for a dash
 				_dash_ready = true
 				_dash_cooldown = 0.0
 			var anchor = _hold_partner
@@ -1318,6 +1748,16 @@ func _aim(fallback: Vector2) -> Vector2:
 	return Vector2.from_angle(snappedf(aim.angle(), PI / 4.0))
 
 
+# The direction held right now, snapped to 4 ways (up, down, left, right); `fallback` if none.
+func _aim_4(fallback: Vector2) -> Vector2:
+	var aim = Vector2(move_axis(), Input.get_axis(_action("up"), _action("down")))
+	if aim.length() < 0.5:
+		return fallback
+	if absf(aim.x) >= absf(aim.y):
+		return Vector2(signf(aim.x), 0.0)
+	return Vector2(0.0, signf(aim.y))
+
+
 # Stops everything the player was doing in the air: walls, ledges, clashes, boosts. For hits,
 # grabs, respawns and the like.
 func interrupt_movement():
@@ -1333,6 +1773,7 @@ func interrupt_movement():
 	_hold_kind = Hold.NONE
 	_hold_timer = 0.0
 	_hold_partner = null
+	_end_tempo()
 
 
 # What the player is doing, for readouts.
@@ -1431,7 +1872,14 @@ func _tick_timers(delta):
 	_attack_timer = maxf(_attack_timer - delta, 0.0)
 	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
 	_launch_timer = maxf(_launch_timer - delta, 0.0)
-	if _boost_timer > 0.0 and _boost_timer <= delta:
+	if _boost_timer > 0.0 and _relay_rhythm:
+		# A rhythm relay's throw (see _process_movement()), then the hang, ticking on 4.
+		var left = _boost_timer - delta
+		if _boost_timer > RHYTHM_HANG_AFTER and left <= RHYTHM_HANG_AFTER:
+			Sfx.play("relay_peak")
+		if left <= 0.0:
+			velocity = Vector2.ZERO  # the hang is over: falling from a standstill
+	elif _boost_timer > 0.0 and _boost_timer <= delta:
 		velocity = _boost_velocity * RELAY_EXIT_FRACTION  # the boost runs out: keep some of it
 	_boost_timer = maxf(_boost_timer - delta, 0.0)
 	_uncut_timer = maxf(_uncut_timer - delta, 0.0)
@@ -1816,10 +2264,10 @@ func _predict_contact(other) -> float:
 	if signf(gap.x) != _dash_dir or absf(gap.y) > LAUNCH_REACH.y:
 		return -1.0
 	var run = maxf(0.0, absf(gap.x) - LAUNCH_REACH.x)
-	var reach = _dash_timer * DASH_SPEED if dashing else DASH_DISTANCE
+	var reach = _dash_timer * _dash_speed() if dashing else DASH_DISTANCE
 	if run > reach or _boss_in_the_way(other.global_position.x):
 		return -1.0
-	return _windup_timer + run / DASH_SPEED
+	return _windup_timer + run / _dash_speed()
 
 
 # Every frame: the ring follows the prediction, and fades once there's none (the dash-slash is
@@ -1837,7 +2285,7 @@ func _update_tell(delta):
 		_tell_partner = partner
 		_tell_left = contact - TELL_LEAD
 		_tell_alpha = 1.0
-		if not _tell_sounded and _tell_left <= TELL_SOUND_TIME:
+		if not _tell_sounded and _tell_left <= TELL_SOUND_TIME and not _rhythm_dash:  # that has its beats
 			_tell_sounded = true
 			Sfx.play("tell", -3.0)
 	else:
@@ -1990,6 +2438,7 @@ func _update_sword_idle(delta: float):
 
 func _update_visuals():
 	_update_tell(get_physics_process_delta_time())
+	_update_beat_ring()
 	# Idle bob while standing still on the ground; ease back to rest otherwise.
 	var bob = 0.0
 	if is_on_floor() and absf(velocity.x) < 1.0 and not is_grabbed:

@@ -1,6 +1,7 @@
 extends Camera2D
 ## Follows the players around a gym: centered on them all, zooming out (down to MIN_ZOOM) to
-## keep two players who drift apart both on screen, never showing past the room's bounds.
+## keep two players who drift apart both on screen, never showing past the room's bounds. With
+## Moves "camera_p1" on, it follows player 1 alone (testing with a bot as player 2).
 ## shake() works like core/camera_shake.gd, so hits and launches still shake the view.
 
 const FOLLOW = 8.0  # how quickly it catches up (per second)
@@ -39,6 +40,8 @@ func snap():
 # [center, zoom]
 func _goal() -> Array:
 	var live = targets.filter(func(p): return is_instance_valid(p))
+	if Moves.on("camera_p1"):
+		live = live.filter(func(p): return p.player_id == 1)
 	if live.is_empty():
 		return [global_position, zoom.x]
 	var box = Rect2(live[0].global_position, Vector2.ZERO)

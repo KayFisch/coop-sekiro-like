@@ -86,6 +86,11 @@ func _build_sounds():
 	_sounds["thunk"] = _thud(90.0, 38.0, 0.35, 8.0, 0.6)  # the sphere landing on a pan
 	_sounds["tell"] = _zip(0.12)  # ends on the tell ring's close (TELL_SOUND_TIME in player.gd)
 	_sounds["call_tick"] = _blip(1100.0, 0.06)
+	# The rhythm relay's beats (see RHYTHM RELAY in player.gd); beat 2 is "parry_strong".
+	_sounds["relay_beat"] = _blip(660.0, 0.06)  # 1: the dash-slash winds up
+	_sounds["relay_strike"] = _clang(1000.0, 0.12)  # 3: the partner's strike throws the dasher
+	_sounds["relay_peak"] = _blip(1320.0, 0.07)  # 4: the throw's top
+	_sounds["metronome_off"] = _blip(440.0, 0.04)  # the metronome's off-beat, between the ticks (Metronome)
 	_sounds["call_go"] = _notes([784.0, 1174.7], 0.09, true)
 	_sounds["clap"] = _clap(0.09)  # the grab's hands shutting on nothing
 	_sounds["guard_break"] = _clang(700.0, 0.3)  # Columna Bifrons's guard knocked open

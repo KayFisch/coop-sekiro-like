@@ -21,6 +21,7 @@ const FLOAT_TIME = 0.8
 var mode = Mode.DUMMY
 var caption = ""
 var is_on = false
+var pogo_filter = Callable()  # if set: called with the player, says whether a pogo off this counts
 
 var _body: ColorRect
 
@@ -51,6 +52,11 @@ func _ready():
 		l.position = Vector2(size.x / 2.0 + 8.0, -8.0)
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(l)
+
+
+# Asked by a player's downslash before it bounces off this (see _check_pogo() in player.gd).
+func accepts_pogo(player) -> bool:
+	return pogo_filter.is_null() or pogo_filter.call(player)
 
 
 # Called by a player's blade (see _process_attack() in player.gd).

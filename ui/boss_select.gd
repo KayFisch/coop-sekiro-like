@@ -7,6 +7,8 @@ const FIGHTS = [
 	{"name": "Sphaera Pendula", "arena": "The Scales", "scene": "res://levels/scales/scales.tscn"},
 	{"name": "Movement Gym", "arena": "1 player", "scene": "res://levels/gym/movement_gym.tscn"},
 	{"name": "Duo Gym", "arena": "2 players", "scene": "res://levels/gym/coop_gym.tscn"},
+	{"name": "Relay Gym", "arena": "1 player + bot", "scene": "res://levels/gym/relay_gym.tscn"},
+	{"name": "Wall Gym", "arena": "1 player + bot", "scene": "res://levels/gym/wall_gym.tscn"},
 	{"name": "Columna Bifrons", "arena": "The Threshold (test)", "scene": "res://levels/threshold/threshold.tscn"},
 ]
 

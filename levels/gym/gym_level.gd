@@ -264,6 +264,20 @@ func target(pos: Vector2, mode = GymTarget.Mode.DUMMY, caption = "") -> GymTarge
 	return t
 
 
+# A label fixed on screen, under the HUD's title (for a room's own readout).
+func screen_label(font_size = 18) -> Label:
+	var layer = CanvasLayer.new()
+	add_child(layer)
+	var l = Label.new()
+	l.position = Vector2(16, 64)
+	l.add_theme_font_size_override("font_size", font_size)
+	l.add_theme_constant_override("outline_size", 4)
+	l.add_theme_color_override("font_outline_color", Color.BLACK)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(l)
+	return l
+
+
 func _rect(pos: Vector2, size: Vector2, color: Color) -> ColorRect:
 	var r = ColorRect.new()
 	r.position = pos
