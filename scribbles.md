@@ -379,3 +379,15 @@ sein, und das passt perfekt zum Sync-Thema (zwei Hälften, die zusammengehören)
   das der Sync-Moment: die beiden Hälften treffen sich an der Spiegellinie.
 - *Zwei Bildschirme* sind lokal selten; für Online-Koop wäre es natürlich. Nicht davon abhängig
   machen.
+
+## 2026-10-15 (Nicho): Beat-Dash-Level gespiegelt
+
+- Wie beim Bosskampf könnte der Bildschirm gespiegelt sein: Jeder Spieler hat seine Seite
+  (oben Licht, unten Schatten).
+- Aus einer Richtung kommen Hindernisse, über die man springen muss; aus einer anderen
+  vielleicht Projektile, die man angreifen oder parieren muss.
+- Es könnte Stellen geben, an denen die Spieler die Seiten wechseln oder zusammen auf eine Seite
+  kommen, um besonders schwere Hindernisse oder Angriffe zu schaffen.
+
+→ Prototyp Beat-Runner in `TASKS.md`; der Spiegel-Bildschirm (`ui/mirror_view.gd`, Branch
+`nicho/pep-test`) wäre die Grundlage.
