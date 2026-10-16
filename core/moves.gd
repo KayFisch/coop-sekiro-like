@@ -42,6 +42,7 @@ const ENTRIES = [
 	{"key": "bifrons_window", "label": "Bifrons: partner hits on the beat, or after it", "default": "beat", "options": ["beat", "after"]},
 	{"key": "bifrons_stand_in", "label": "Bifrons: a stand-in plays the player starting there (alone)", "default": "off", "options": ["off", "left", "right"]},
 	{"key": "bifrons_face", "label": "Bifrons: players always face him (dash goes where you hold)", "default": true},
+	{"key": "bifrons_rules", "label": "Bifrons: rules: sync is life + posture, no potions (sync), or health + old sync (hp); from R", "default": "sync", "options": ["sync", "hp"]},
 	{"key": "mirror_view", "label": "Bifrons: mirrored screen (P1 light above the floor, P2 its shadow below)", "default": false},
 	{"key": "call", "label": "Call countdown (P1 Enter, P2 LB)", "default": true},
 	{"key": "swap_controls", "label": "Swap P1 / P2 controls (P1 on the pad)", "default": false},
@@ -114,7 +115,8 @@ func _input(event):
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	if event.physical_keycode == KEY_F1:
-		_set_panel(not panel_open)
+		if not Tuning.panel_open:
+			_set_panel(not panel_open)
 		get_viewport().set_input_as_handled()
 		return
 	if not panel_open:

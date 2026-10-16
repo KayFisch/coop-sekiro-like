@@ -1,6 +1,8 @@
 extends CanvasLayer
 ## Top-of-screen HUD (player health bars and potions, sync meter, boss bar) plus the
 ## end-of-game overlay. Bars are polled every frame; the overlay reacts to GameManager.state_changed.
+## When the fight runs on sync as life (GameManager.rules) there's no health: instead the two
+## sync meters meet in the middle, the players' filling out to the left, his to the right.
 ## On canvas layer 2 (hud.tscn): over the mirrored screen (ui/mirror_view.gd, layer 1).
 
 const BAR_HEIGHT = 16.0
@@ -18,6 +20,14 @@ const POTION_USED_COLOR = Color(0.3, 0.3, 0.33)
 const SYNC_LOW_COLOR = Color(0.45, 0.45, 0.48)  # the gold bar starts out grey...
 const SYNC_HIGH_COLOR = Color(1.0, 0.78, 0.2)  # ...and warms to gold as sync fills
 const SEPARATOR_COLOR = Color(1, 1, 1, 0.2)
+# Sync as life: the two meters, each this wide, side by side from the middle.
+const DUEL_HALF_WIDTH = 300.0
+const DUEL_HEIGHT = 18.0
+const TEAM_COLOR = Color(0.9, 0.88, 0.8)
+const TEAM_SYNC_MODE_COLOR = Color(1.0, 0.78, 0.2)
+const CHAOS_COLOR = Color(1.0, 0.2, 0.25)
+const BOSS_SYNC_COLOR = Color(0.8, 0.22, 0.3)
+const TICK_COLOR = Color(1, 1, 1, 0.5)
 
 var _rows: Array = []  # one Dictionary per player: player, fill, hp_label, potions, status
 var _sync_fill: ColorRect
@@ -27,6 +37,7 @@ var _boss_hp_label: Label
 var _boss_name: Label
 var _overlay: ColorRect
 var _overlay_label: Label
+var _duel = {}  # sync as life: team_fill, boss_fill, ticks, labels
 
 
 func _ready():
@@ -36,15 +47,21 @@ func _ready():
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 
-	_build_player_rows(root)
-	_build_sync_bar(root)
-	_build_boss_bar(root)
+	if GameManager.rules != null:
+		_build_sync_duel(root)
+	else:
+		_build_player_rows(root)
+		_build_sync_bar(root)
+		_build_boss_bar(root)
 	_build_controls_hint(root)
 	_build_overlay(root)
 	GameManager.state_changed.connect(_on_state_changed)
 
 
 func _process(_delta):
+	if GameManager.rules != null:
+		_update_sync_duel(GameManager.rules)
+		return
 	for row in _rows:
 		var p = row.player
 		if not is_instance_valid(p):
@@ -128,6 +145,60 @@ func _build_boss_bar(root):
 	_boss_hp_label = _label(box, Vector2(BOSS_BAR_WIDTH + 6, 22), "")
 
 
+# Sync as life: the players' meter on the left, filling out from the middle; his on the right,
+# full to the right end, emptying toward the middle. Ticks: where the players' chaos ends and
+# where their sync mode does (both move with Tuning).
+func _build_sync_duel(root):
+	var w = DUEL_HALF_WIDTH
+	var box = _anchored_box(root, 0.5, -w, w)
+	_label(box, Vector2(0, 0), "P1 + P2")
+	var boss_name = _label(box, Vector2(w, 0), "")
+	boss_name.size = Vector2(w, 20)
+	boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_rect(box, Vector2(0, 24), Vector2(2.0 * w, DUEL_HEIGHT), BAR_BG_COLOR)
+	_duel.team_fill = _rect(box, Vector2(w, 24), Vector2(0, DUEL_HEIGHT), TEAM_COLOR)
+	_duel.boss_fill = _rect(box, Vector2(w, 24), Vector2(0, DUEL_HEIGHT), BOSS_SYNC_COLOR)
+	_rect(box, Vector2(w - 1, 18), Vector2(2, DUEL_HEIGHT + 12), Color.WHITE)
+	_duel.chaos_tick = _rect(box, Vector2(0, 22), Vector2(2, DUEL_HEIGHT + 4), TICK_COLOR)
+	_duel.mode_tick = _rect(box, Vector2(0, 22), Vector2(2, DUEL_HEIGHT + 4), TICK_COLOR)
+	_duel.team_state = _label(box, Vector2(0, 46), "", 16)
+	_duel.boss_state = _label(box, Vector2(w, 46), "", 16)
+	_duel.boss_state.size = Vector2(w, 20)
+	_duel.boss_state.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_duel.boss_name = boss_name
+
+
+func _update_sync_duel(rules):
+	var w = DUEL_HALF_WIDTH
+	var team = w * rules.team / rules.MAX
+	_duel.team_fill.position.x = w - team
+	_duel.team_fill.size.x = team
+	_duel.boss_fill.size.x = w * rules.boss_sync / rules.MAX
+	_duel.chaos_tick.position.x = w - w * Tuning.value("chaos_exit") / rules.MAX - 1.0
+	_duel.mode_tick.position.x = w - w * Tuning.value("sync_mode_exit") / rules.MAX - 1.0
+	var flicker = fmod(Time.get_ticks_msec() / 1000.0, 0.3) < 0.15
+	if rules.team_chaos:
+		_duel.team_fill.color = CHAOS_COLOR if flicker else CHAOS_COLOR.darkened(0.5)
+		_duel.team_state.text = "CHAOS: no blocking, a hit kills"
+		_duel.team_state.modulate = CHAOS_COLOR
+	elif rules.sync_mode:
+		_duel.team_fill.color = TEAM_SYNC_MODE_COLOR
+		_duel.team_state.text = "SYNC MODE"
+		_duel.team_state.modulate = TEAM_SYNC_MODE_COLOR
+	else:
+		_duel.team_fill.color = TEAM_COLOR
+		_duel.team_state.text = ""
+	if rules.boss_chaos:
+		_duel.boss_fill.color = CHAOS_COLOR if flicker else CHAOS_COLOR.darkened(0.5)
+		_duel.boss_state.text = "SPLIT: the next hit kills"
+		_duel.boss_state.modulate = CHAOS_COLOR
+	else:
+		_duel.boss_fill.color = BOSS_SYNC_COLOR
+		_duel.boss_state.text = ""
+	if is_instance_valid(GameManager.boss):
+		_duel.boss_name.text = GameManager.boss.get_display_name()
+
+
 func _build_controls_hint(root):
 	var hint = Label.new()
 	hint.text = "P1: A/D move · W jump · R-Shift dash · Space attack · ↑ + Space upslash · S + Space (air) downslash" \
@@ -135,7 +206,7 @@ func _build_controls_hint(root):
 		+ "P2 (pad): stick move · A jump · RB dash · X attack · up + X upslash · down + X (air) downslash" \
 		+ " · RT block/parry · Y potion · LB call\n" \
 		+ "Dash + attack: dash-slash. Into your partner's upslash: launch · into their block: relay · press as the ring closes" \
-		+ " · Downslash onto their upslash: pogo clash      F1: switches · Esc: boss select"
+		+ " · Downslash onto their upslash: pogo clash      F1: switches · F2: tuning · Esc: boss select"
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.modulate = Color(1, 1, 1, 0.6)
 	hint.anchor_top = 1.0

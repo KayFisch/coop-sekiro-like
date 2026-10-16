@@ -8,6 +8,8 @@ A small boss built to answer questions, not a finished fight:
 4. **What happens when both players are on one side of him** (player - player - boss: "ppe"),
    and how does a fight get from one to the other and back?
 5. **How should he move**, and what does he do when one player walks off?
+6. **Can sync be life?** No health, no potions: one sync for both players, one for him, and a
+   posture each, by the same rules on both sides ("Sync as life", below).
 
 They come out of `scribbles.md` (2026-09-30 to 2026-10-02). The name is a working title.
 
@@ -342,6 +344,51 @@ So attacking him means being attacked, and that's the opening: you parry his ans
 partner hits. Provoking is how a pair starts an exchange on its own beat. And greed is a trade:
 a swing at him while he draws back the sword that's yours lands (rule 2), but it isn't over when
 that sword comes.
+
+## Sync as life ("bifrons_rules")
+
+On "sync" (the default) nobody has health and there are no potions (`core/sync_rules.gd`). On
+"hp" the fight runs the old way: health, potions, and the sync meter in GameManager, whose
+multiplier is left as it was. The switch counts from the next start (R).
+
+**The meters.** At the top two meters meet in the middle: the players' shared sync on the left,
+filling out to the left; his on the right, full at the start and emptying toward the middle.
+The players start halfway (50 of 100). Each of the three has a posture: a ring around the body
+that shrinks toward it as posture goes, hidden while posture is full.
+
+**One set of rules for both sides:**
+
+| What happens | to the side it happens to |
+|---|---|
+| a hit lands, unblocked | loses sync (a heavy strike twice as much) |
+| blocked | loses posture |
+| parried | loses a little posture; a parry never breaks it |
+| a coop parry (two blades at once, each parried by its player) | the parriers win sync |
+| a sync hit (through the guard the partner's parry broke) | the hitters win sync: more on the beat, less after |
+| a hit out of sync | wins nothing (it only costs the one it lands on) |
+| a window nobody used, while someone other than the parrier was in reach | the players lose sync |
+
+- **His guard** blocks or parries by chance (half and half). A block doesn't knock your blade
+  back but costs him more posture; a parry knocks it back and costs him little.
+- **He wins sync** only the way the players do: parrying both your hits at once, or one strike
+  of his hitting you both. Neither happens often.
+- **A coop parry** of his strike staggers him for 1 s, not 2.2: it's no posture break.
+- **Posture** comes back from 1 s after the last loss, the faster the more sync (players 20 per
+  second at full sync, him 30, a tenth of that at none). **Broken** by a block: staggered
+  (players 0.8 s, him 2.5 s), all sync gone; posture comes back full. That's the deathblow of
+  Sekiro: on him it opens chaos, and the next hit kills.
+- **No sync is chaos.** The players can't block (parries still work), and the next hit that isn't
+  parried ends the fight. It's over, like a revive, once their sync is back to 25, which only coop
+  parries and sync hits bring. For him: split, no guard, the next hit that lands kills him.
+- **Full sync is the sync mode**, the players' second phase: their hits cost him three times as
+  much sync and posture, until their sync falls below 70. Rings and meter turn gold. It's a
+  stand-in: the sync mode itself (the two of you joined into one, see the scribble of
+  2026-10-02) is still to build.
+- **The beat:** when your partner's parry opens his guard on your side, your sword lights violet
+  for 0.12 s. A hit landing in that time is on the beat.
+- **Every number is on the F2 panel** (saved to `user://tuning.cfg`, reset on its last row).
+- Testing alone: the stand-in never attacks, so the windows your parries open for it close
+  unused and cost sync.
 
 ## Testing alone ("bifrons_stand_in")
 

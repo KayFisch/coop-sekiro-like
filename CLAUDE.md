@@ -55,7 +55,8 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
 docs/                                design docs: concept.md, boss_*.md (one per boss), parkour_gyms.md,
                                      art_brief.md (sizes, colors, poses: for generating sprites)
-core/                                autoloads: GameManager, Sfx, Moves, Pads
+core/                                autoloads: GameManager, Sfx, Moves, Pads, Tuning;
+                                     sync_rules.gd (sync as life, Bifrons)
 actors/player/                       player.gd (+ scene)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
@@ -135,6 +136,13 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   `user://moves.cfg` with a `VERSION`: bump it when defaults change; code asks
   `Moves.on("pogo")`). The fight kit is on by default, the platforming kit is off. `Pads` gives
   each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device).
+  `Tuning` (F2 panel of numbers to tune while playing, saved to `user://tuning.cfg`; code asks
+  `Tuning.value("hit_sync_loss")` each time it needs one).
+- `core/sync_rules.gd` (`SyncRules`): sync as life, for now only in Bifrons's fight (Moves
+  "bifrons_rules"): no health, no potions, a shared sync for the players and one for the boss,
+  a posture each, chaos at no sync, sync mode at full. The boss creates it and hands it to
+  `GameManager.rules`; while that's set, `Player.take_damage()` and the boss's hits go through it,
+  and the HUD shows the two meters instead of health.
 - `actors/player/player.gd`: one large script (~2000 lines) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
   potions, defensive queries the boss uses (`is_perfect_parry()` etc.), and some boss-specific

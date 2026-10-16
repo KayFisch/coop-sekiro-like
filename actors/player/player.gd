@@ -343,6 +343,8 @@ var _body_rest = Vector2.ZERO
 var _stretch_tween: Tween
 var _is_dead = false
 var _sword_color: Color
+var _cue_timer = 0.0  # cue_sync()
+var _cue_color = Color.WHITE
 var _hands: Array = []  # [ColorRect, ColorRect]
 var _was_on_floor = false
 var _air_time = 0.0  # seconds since leaving the ground
@@ -1489,7 +1491,8 @@ func _track_landing():
 
 func is_blocking() -> bool:
 	return not is_grabbed and not is_drinking() and not is_staggered() and not is_tumbling() \
-		and not _is_swinging() and Input.is_action_pressed(_action("block"))
+		and not _is_swinging() and Input.is_action_pressed(_action("block")) \
+		and (GameManager.rules == null or GameManager.rules.can_block())  # no blocking in chaos
 
 
 func is_perfect_parry() -> bool:
@@ -1556,6 +1559,8 @@ func end_gather():
 
 
 func on_perfect_parry(strong: bool):
+	if GameManager.rules:
+		GameManager.rules.player_parried(self)
 	parry_press_time = -100.0  # one press parries one hit
 	_last_block_press = -100.0  # a landed parry isn't mashing: the next press may parry at once
 	_sword_flash = SWORD_FLASH_TIME
@@ -1573,6 +1578,12 @@ func on_perfect_parry(strong: bool):
 			_pass_timer = 0.0
 
 
+# The sword lit in `color` for `duration`: the moment to strike (a sync hit's beat).
+func cue_sync(duration: float, color: Color):
+	_cue_timer = duration
+	_cue_color = color
+
+
 # burst: a ring bursting off the player and a whoosh on top of the flash (Cubus's grab).
 func on_grab_dodged(burst = false):
 	_dodge_flash = DODGE_FLASH_TIME
@@ -1585,8 +1596,15 @@ func on_grab_dodged(burst = false):
 func take_damage(amount: float, knockback = Vector2.ZERO, chip = false, ignore_invuln = false):
 	if _is_dead or (_invuln_timer > 0.0 and not ignore_invuln):
 		return
-	if not invincible:
+	var lethal = false
+	if GameManager.rules:
+		# Sync as life (core/sync_rules.gd): a hit costs the pair's sync, a block this one's posture.
+		var rules = GameManager.rules
+		lethal = rules.player_blocked(self, amount) if chip else rules.player_hit(self, amount)
+	elif not invincible:
 		hp = maxf(hp - amount, 0.0)
+	if lethal:
+		hp = 0.0
 	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
 	_dash_timer = 0.0
 	interrupt_movement()
@@ -2050,8 +2068,11 @@ func _update_visuals():
 	# A dash-slash draws the blade out long and white-hot (its hitbox scales along with it).
 	sword_pivot.scale = Vector2(facing * (DASH_SLASH_REACH if dash_slashing else 1.0), 1.0)
 	sword_pivot.rotation = _sword_angle() * facing
+	_cue_timer = maxf(_cue_timer - get_physics_process_delta_time(), 0.0)
 	if _sword_flash > 0.0:
 		sword.color = Color.WHITE
+	elif _cue_timer > 0.0:
+		sword.color = _cue_color
 	elif dash_slashing:
 		sword.color = _sword_color.lerp(Color.WHITE, DASH_SLASH_GLOW)
 	elif _windup_timer > 0.0:

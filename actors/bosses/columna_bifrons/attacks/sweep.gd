@@ -140,7 +140,7 @@ func _settle():
 		boss.set_stagger_pose(-_first, boss.POSE_PROP)
 		Sfx.play("counter_hit", -2.0)
 		boss.shake(12.0)
-		finish_with_stagger(STAGGER_TIME)
+		finish_with_stagger(boss.coop_stagger(STAGGER_TIME))
 		return
 	phase = Phase.AFTER
 	_after_since = _time

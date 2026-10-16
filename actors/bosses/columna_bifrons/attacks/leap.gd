@@ -113,7 +113,7 @@ func update(delta: float):
 	if both:
 		both_parried.emit()
 		Sfx.play("counter_hit", -2.0)
-		finish_with_stagger(STAGGER_TIME)
+		finish_with_stagger(boss.coop_stagger(STAGGER_TIME))
 	else:
 		finish(RECOVER_TIME)
 

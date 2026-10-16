@@ -224,6 +224,7 @@ const COLOR_OPEN = Color(1.0, 0.95, 0.6)  # "hit here, now": a broken guard's fl
 const COLOR_PARRY = Color(1.0, 0.7, 0.3)  # sparks off his own parry
 const COLOR_PLAYER_PARRY = Color(1.0, 0.85, 0.4)  # sparks off a player's
 const COLOR_PROVOKED = Color(0.75, 0.33, 0.16)  # his body, the closer he is to striking back
+const COLOR_SYNC_BEAT = Color(0.7, 0.45, 1.0)  # sync as life: the partner's sword, on the beat to hit
 const WARD_TINT = 0.85  # how far a sword's crossguard and edge take its player's color: whose it is
 const HAND_SIZE = 16.0
 const HAND_DARKEN = 0.25
@@ -260,6 +261,11 @@ var _open_from = {LEFT: 0.0, RIGHT: 0.0}
 var _open_until = {LEFT: 0.0, RIGHT: 0.0}
 var _open_shown = {LEFT: true, RIGHT: true}  # the opening has made its sound and sparks
 var _opened_by = {LEFT: null, RIGHT: null}  # the player whose parry broke it
+var _open_used = {LEFT: false, RIGHT: false}  # a sync hit came through it
+var _open_judged = {LEFT: true, RIGHT: true}  # its closing has been seen (_judge_windows())
+# Sync as life (core/sync_rules.gd, Moves "bifrons_rules" on "sync"), or null: the old rules,
+# health and the sync meter in GameManager.
+var rules: SyncRules = null
 var _strikes_by = {LEFT: 0, RIGHT: 0}  # strikes of each sword so far (orient())
 
 # Moving.
@@ -289,6 +295,16 @@ func _ready():
 	var stand_in = BifronsStandIn.new()
 	stand_in.boss = self
 	add_child(stand_in)
+	if Moves.value("bifrons_rules") == "sync":
+		rules = SyncRules.new()
+		rules.boss = self
+		add_child(rules)
+		GameManager.rules = rules
+
+
+func _exit_tree():
+	if rules != null and GameManager.rules == rules:
+		GameManager.rules = null
 
 
 func get_max_hp() -> float:
@@ -312,7 +328,19 @@ func get_attack_pool() -> Array:
 		if attack.has_signal("strike_parried"):
 			attack.strike_parried.connect(func(_player): sync_event.emit("bifrons_parried"))
 			attack.both_parried.connect(sync_event.emit.bind("bifrons_both_parried"))
+			attack.both_parried.connect(_on_both_parried)
 	return pool
+
+
+func _on_both_parried():
+	if rules != null:
+		rules.coop_parried()
+
+
+# How long a parry of both swords by both players staggers him: his own number, or the sync
+# rules' (there a coop parry wins sync, and its stagger is shorter).
+func coop_stagger(own: float) -> float:
+	return rules.coop_stagger() if rules != null else own
 
 
 # What he picks from: each attack's weight for the situation he's in (see ATTACKS), as long as
@@ -388,6 +416,8 @@ func _physics_process(delta):
 	if hp <= 0.0:
 		return
 	_run_dash()
+	if rules != null:
+		_judge_windows()
 	if state == State.IDLE and _shove_due:
 		_shove()
 	elif state == State.IDLE and _is_reactive() and _provocations >= _patience:
@@ -621,7 +651,8 @@ func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0):
 
 # True while that sword is back at its flank, ready: it parries its player's sword hits.
 func is_guarding(blade: int) -> bool:
-	return hp > 0.0 and state != State.STAGGER and _at_guard[blade] and not is_open(blade)
+	return hp > 0.0 and state != State.STAGGER and _at_guard[blade] and not is_open(blade) \
+		and (rules == null or rules.boss_guards())  # no guard in chaos
 
 
 # True while that sword's guard is broken and open: the other player's hits are sync hits.
@@ -641,6 +672,8 @@ func break_guard(blade: int, duration: float, delay = 0.0, by = null):
 	_open_until[blade] = _open_from[blade] + duration
 	_open_shown[blade] = false
 	_opened_by[blade] = by
+	_open_used[blade] = false
+	_open_judged[blade] = false
 	if delay <= 0.0:
 		_show_open(blade)
 
@@ -649,11 +682,31 @@ func _show_open(blade: int):
 	_open_shown[blade] = true
 	Sfx.play("guard_break", -2.0)
 	spawn_sparks(_flank(blade_side(blade), global_position.y), 12, COLOR_PLATE)
+	if rules != null:
+		# The beat for the partner's hit: their sword lights up while a hit is on it.
+		for p in get_players():
+			if p != _opened_by[blade]:
+				p.cue_sync(Tuning.value("sync_beat_time"), COLOR_SYNC_BEAT)
+
+
+# Sync as life: a window that closed with no sync hit through it, while someone other than the
+# parrier was in reach to make one, costs the players sync.
+func _judge_windows():
+	for blade in BLADES:
+		if _open_judged[blade] or anim_time < _open_until[blade]:
+			continue
+		_open_judged[blade] = true
+		var could = get_players().any(func(p): return p != _opened_by[blade] and distance_to(p) <= STRIKE_RANGE)
+		if not _open_used[blade] and could:
+			rules.missed_window()
 
 
 # source: the player whose sword hit landed. Through a guard their partner's parry broke it's a
 # sync hit; a sword that fights them parries it, if it's guarding; anything else is hit.
 func take_damage(amount: float, source = null):
+	if rules != null and source != null and hp > 0.0:
+		_struck_by_rules(amount, source)
+		return
 	if source == null or hp <= 0.0 or state == State.STAGGER:
 		super(amount, source)
 		return
@@ -674,6 +727,55 @@ func take_damage(amount: float, source = null):
 		shake(3.0)
 		spawn_sparks(at, 8, COLOR_EXECUTE)
 		super(amount, source)
+
+
+# Sync as life (core/sync_rules.gd): the same three cases, but they cost his sync or posture, and
+# a guard that's up parries the hit by chance, or else blocks it. Staggered or in chaos he has no
+# guard; a hit that lands in chaos kills him.
+func _struck_by_rules(amount: float, source):
+	_slowed_until = anim_time + SLOWED_TIME
+	var at = _flank(side_of(source), source.global_position.y)
+	var open = BLADES.filter(func(blade): return is_open(blade) and _opened_by[blade] != source)
+	var guards = BLADES.filter(func(blade): return ward_of(blade) == source and is_guarding(blade))
+	var lethal = false
+	if not open.is_empty():
+		var blade = open[0]
+		_open_used[blade] = true
+		var on_beat = anim_time - _open_from[blade] <= Tuning.value("sync_beat_time")
+		rules.sync_hit(on_beat)
+		Sfx.play("sync_hit")
+		shake(6.0)
+		spawn_sparks(at, 16, COLOR_OPEN)
+		if on_beat:
+			Sfx.play("on_beat", -4.0)
+			spawn_sparks(at, 12, COLOR_SYNC_BEAT)
+		lethal = rules.boss_struck(amount * SYNC_HIT_FACTOR)
+	elif not guards.is_empty():
+		if randf() < Tuning.value("boss_parry_chance"):
+			_parry(guards[0], source, at)
+			rules.boss_parried(source)
+		else:
+			_block(guards[0], source, at)
+			rules.boss_blocked(amount)
+		return
+	else:
+		Sfx.play("sync_hit", -6.0)
+		shake(3.0)
+		spawn_sparks(at, 8, COLOR_EXECUTE)
+		lethal = rules.boss_struck(amount)
+	super.take_damage(hp if lethal else 0.0, source)
+
+
+# Sync as life: he takes a player's sword hit on a sword that fights them, without parrying it.
+# Their blade isn't knocked back, and it costs him posture. In the reactive mode it wears on his
+# patience like a parry.
+func _block(blade: int, _player, at: Vector2):
+	Sfx.play("chip", -4.0)
+	shake(2.0)
+	spawn_sparks(at, 6, COLOR_PLATE)
+	if _is_reactive():
+		_provocations += 1
+		_provoker = blade
 
 
 # He parries a player's sword hit with a sword that fights them: the hit is lost and the

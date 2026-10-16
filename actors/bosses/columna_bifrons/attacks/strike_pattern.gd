@@ -261,7 +261,7 @@ func _land(index: int):
 		both_parried.emit()
 		Sfx.play("counter_hit", -2.0)
 		boss.shake(12.0)
-		finish_with_stagger(BOTH_STAGGER_TIME)
+		finish_with_stagger(boss.coop_stagger(BOTH_STAGGER_TIME))
 		return
 	if sword == BOTH:
 		if not both:

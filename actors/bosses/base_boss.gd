@@ -341,10 +341,20 @@ func _enter_stagger(finished_attack: Attack, duration: float, tumble: bool, knoc
 	_stagger_knock = knock
 	body.position = body_rest
 	glow.color.a = 0.0
-	finished_attack.cleanup()
+	if finished_attack:
+		finished_attack.cleanup()
 	reset_pose()
 	_reset_body_shape()
 	Sfx.play("stagger", -2.0)
+
+
+# Staggered at once, whatever he's doing (his posture broken, see core/sync_rules.gd).
+func stagger_now(duration: float):
+	var attack = current_attack
+	current_attack = null
+	if attack:
+		attack.interrupt()
+	_enter_stagger(null, duration, false, Vector2.ZERO)
 
 
 # --- Health ---
