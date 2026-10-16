@@ -391,3 +391,67 @@ sein, und das passt perfekt zum Sync-Thema (zwei Hälften, die zusammengehören)
 
 → Prototyp Beat-Runner in `TASKS.md`; der Spiegel-Bildschirm (`ui/mirror_view.gd`, Branch
 `nicho/pep-test`) wäre die Grundlage.
+
+## 2026-10-15 (Kay, mit Claude): Jump'n'Run-Hindernisse mit Rhythmus
+
+Für den Koop-Platformer („Prototyp Koop-Jump'n'Run“) brauchen wir mehr Möglichkeiten für Level,
+aber keine neuen Movement-Fähigkeiten: Die machen einen allein zu mobil und geben im Bosskampf
+zu viele Optionen. Grundidee daher: neue Dinge in der Welt, auf die die vorhandenen Verben
+(Schlag, Parry, Block, Pogo, Dash-Slash, Launch, Relay) wirken, mit rhythmischer Komponente. So
+trainiert der Platformer nebenbei den Bosskampf.
+
+**Die Welt hat einen Takt**
+- *Taktblöcke:* Plattformen existieren nur auf bestimmten Schlägen (wie Celestes Beat-Blöcke).
+  Koop-Variante: je Spieler Blöcke in seiner Farbe, abwechselnd.
+  Kay: viele interessante Optionen.
+- *Stampfer / Sägen im Takt:* schlagen auf dem Beat zu, durch kommt man auf dem Offbeat.
+  Kay: leicht und simpel.
+- *Tempowechsel:* Ein Abschnitt zieht das Tempo an, Ruhezonen bremsen; wirkt sich auf den
+  Rhythmus der Spieler aus. Kay: sehr interessant, muss aber klar gekennzeichnet sein.
+
+**Die Umgebung parieren**
+- *Kanonen-Relay:* Eine Kanone feuert im Takt, P1 pariert zu P2, P2 pariert in einen Schalter
+  oder eine brüchige Wand. Kay: cool, muss aber wirklich als Koop funktionieren (nicht von
+  einem allein lösbar).
+- *Pendelklingen:* Ein Parry stoppt das Pendel oder kehrt es für ein paar Schläge um; einer
+  hält auf, der andere läuft durch. Passt zu Sphaera. Kay: cool.
+- *Rammkolben:* Block hält ihn nur und schiebt einen zurück, ein perfekter Parry schlägt ihn
+  zurück und verriegelt ihn für N Schläge. Kay: nicht super spannend, aber okay.
+- *Spiegel / Lichtstrahl* (geparkt, war unklar formuliert): Ein Strahl pulsiert im Takt; wer
+  blockt, lenkt ihn mit dem Schwert um (z. B. auf einen Kristall, der etwas öffnet). Erstmal
+  zurückgestellt.
+
+**Schalter mit Rhythmus**
+- *Ruf und Antwort (Simon says):* Ein Tor spielt eine Folge vor, die Spieler spielen sie nach,
+  aufgeteilt auf beide („ich, du, ich, ich, du“). Kay: cool; soll Parry UND Schlag abfragen,
+  also ein Rhythmus aus Instrumenten (z. B. Schlag = Trommel, Parry = Glocke).
+- *Weltschalter:* Jeder Schlag auf einen Hebel kippt die Welt zwischen zwei Zuständen; einer
+  spielt den Hebel im Rhythmus, der andere läuft durch die sich umbauende Welt.
+  Kay: interessant; Variante: muss von beiden gleichzeitig aktiviert werden.
+
+**Bewegliche Teile im Takt antreiben**
+- *Schaukel pumpen:* Schlag/Parry im Umkehrpunkt verstärkt die Schaukel; einer pumpt, der
+  andere springt am höchsten Punkt ab. Kay: gut; gekoppelt an die Musik: Man muss immer
+  schneller schlagen, und die Musik wird auch schneller.
+- *Ruder-Aufzug:* Ein Schlag auf dem Beat hebt ihn eine Stufe, daneben fällt er zurück;
+  abwechselnd schlagen bringt ihn doppelt so schnell hoch. Kay: cool.
+
+**Mini-Wächter**
+- *Wächterstatue:* bewacht eine Lücke mit genau einer Attacke im festen Takt, in derselben
+  Farbsprache wie die Bosse. Der Trick ist, die Attacke zu nutzen (parierte Klinge als
+  Pogo-Fläche, Hieb als Launch). Kay: klingt cool.
+- *Vokabeltrainer:* Jede Telegraph-Farbe der Bosse bekommt einen Abschnitt, in dem man die
+  Antwort lernt. Kay: gehört ins Tutorial, um die „Farbvokabeln“ der Bosse beizubringen.
+
+**Noch nicht kommentiert**
+- *Metronom-Schalter:* Ein Schlag öffnet eine Tür für N hörbare Schläge, Schalter beim Partner
+  verlängern (Kette über den Raum).
+- *Gleichzeitig / versetzt:* zwei Glocken auf denselben Schlag (Sync) oder genau einen Schlag
+  versetzt.
+- *Waage im Takt:* die Waage aus dem Duo Gym, aber die Schalen schwingen selbst.
+- *Dirigent und Läufer:* Einer gibt an einer Trommel das Tempo der Welt vor, der andere läuft.
+- *Echo-Plattform:* Wo der Partner einen Schlag vorher stand, entsteht kurz eine Plattform.
+
+→ Taktblöcke, Stampfer und Tempowechsel überschneiden sich mit Nichos Beat-Runner (`TASKS.md`):
+Dasselbe Metronom könnte beide tragen, also absprechen. Für den Moment brauchen wir nur wenige
+davon; die Auswahl folgt.
