@@ -48,6 +48,13 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   room switch something on while it runs without saving it. `GymLevel` has a new option
   `checkpoint_needs_all` (off by default): a checkpoint takes only once every player is in it.
 
+### For Nicho, from Kay (2026-10-16)
+
+- An open question for you on how the bosses look: Kay found two-headed beings in many myths
+  and sees four ways (A: a boss per creature from all mythologies, B: one creature for all,
+  C: one mythology, D: freestyle). Kay leans to A. `scribbles.md` (2026-10-16), `TASKS.md`
+  → "Offene Grundsatzfragen".
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
