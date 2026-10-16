@@ -54,19 +54,25 @@ text = "KitShaft: WIDE, NARROW, COOP.\nTheir widths follow the room's BPM\n(sele
 [node name="ShaftWide" type="Node2D" parent="."]
 script = ExtResource("shaft")
 position = Vector2(260, 448)
-height = 800.0
+height = 800
+entrance = 1
+caps = 3
 
 [node name="ShaftNarrow" type="Node2D" parent="."]
 script = ExtResource("shaft")
 position = Vector2(900, 448)
 kind = 1
-height = 800.0
+height = 800
+entrance = 1
+caps = 3
 
 [node name="ShaftCoop" type="Node2D" parent="."]
 script = ExtResource("shaft")
 position = Vector2(1500, 448)
 kind = 2
-height = 800.0
+height = 800
+entrance = 1
+caps = 3
 
 [node name="Goal" type="Node2D" parent="."]
 script = ExtResource("goal")

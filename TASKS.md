@@ -282,7 +282,7 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     `KitPendulum`, `KitBeatStep` (Rhythmus: Muster über N Takte + Versatz), `KitShaft`
     (Wandsprung-Schacht wide/narrow/coop, Breite aus BPM und der schmalen Spielerbreite),
     `KitGoal`. Alle zeichnen sich im Editor, die Takt-Teile bewegen sich dort sogar.
-  - Leerer erster Raum: `levels/horologium/horologium.tscn` (Menü „Horologium“), Vorlage
+  - Erster Raum: `levels/horologium/horologium1.tscn` (Menü „Horologium“), Vorlage
     `levels/kit/room_template.tscn`, Beispiele unter „Kit: showcase“ (`levels/kit/showcase/`:
     Auswahlraum, ein Raum pro Teil).
   - Takt-Uhr `Beat` (Autoload, 150 BPM), Anzeige `BeatDisplay`. `Moves.override()`: ein Raum
@@ -297,6 +297,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     Parry wirft sie zurück wie eine Billardkugel an der Bande (waagrecht dreht um, senkrecht
     bleibt), Block halten zerschellt sie, sonst tot. Wände zerschellen sie, Einweg-Plattformen nicht.
     Showcase-Raum `cannon`. Headless getestet (P2 → P1 → Ziel), Gefühl noch ungetestet.
+  - Dazu (2026-10-16): `KitElevator` (Aufzug auf eine Schlagfolge wie `1-2-1-2-3`, 3 = beide;
+    Treffer: eine Stufe hoch, Fehler: zwei runter und einen Takt Pause), `KitText`
+    (Infotext), `KitBlock` mit `look` und `edges`, `KitSpikes` mit `timed`, `KitShaft` mit
+    Eingang/Kappen links oder rechts, verschieden hohen Wänden, Wanddicke. Showcase-Räume
+    `elevator` und `walls`. Headless getestet, Gefühl ungetestet.
   - Als Nächstes (Ideen, nicht gebaut): Pendel-Schaukel (pumpen und abspringen), Ruder-Aufzug,
     Weltschalter.
   - Offen: `Metronome` (Wall Gym, Echtzeit, startet beim Wall Jump) und `Beat` laufen

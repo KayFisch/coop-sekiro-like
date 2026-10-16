@@ -1,0 +1,67 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
+[ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="block"]
+[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
+[ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
+[ext_resource type="Script" uid="uid://b1lkskcjxdrt7" path="res://levels/kit/text.gd" id="text"]
+[ext_resource type="Script" uid="uid://c7rop6fvluq2p" path="res://levels/kit/elevator.gd" id="elevator"]
+
+[node name="Room" type="Node2D"]
+script = ExtResource("room")
+title = "KIT: ELEVATOR"
+next_room = "res://levels/kit/showcase/hub.tscn"
+
+[node name="Floor" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(0, 600)
+size = Vector2(1152, 48)
+
+[node name="WallLeft" type="Node2D" parent="."]
+script = ExtResource("block")
+size = Vector2(32, 600)
+edges = 0
+
+[node name="WallRight" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(1120, 0)
+size = Vector2(32, 600)
+edges = 0
+
+[node name="Ceiling" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(32, 0)
+size = Vector2(1088, 32)
+edges = 2
+
+[node name="SpawnP1" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(96, 600)
+
+[node name="SpawnP2" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(160, 600)
+player = 1
+
+[node name="Info" type="Node2D" parent="."]
+script = ExtResource("text")
+position = Vector2(96, 64)
+text = "KitElevator: both of you on it, and it starts on the next 1.
+Strike (attack) on the beat as its front says: blue P1, orange P2, green both.
+A hit: up a stage. A miss: down two, and a bar off to gather yourselves."
+
+[node name="Elevator" type="Node2D" parent="."]
+script = ExtResource("elevator")
+position = Vector2(480, 580)
+stage_height = 40
+
+[node name="Ledge" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(640, 220)
+size = Vector2(480, 24)
+edges = 1
+
+[node name="Goal" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(1000, 104)
+size = Vector2(96, 116)

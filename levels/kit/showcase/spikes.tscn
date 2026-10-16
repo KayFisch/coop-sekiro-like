@@ -56,7 +56,8 @@ offset_top = 80
 offset_right = 700
 offset_bottom = 200
 theme_override_font_sizes/font_size = 13
-text = "KitSpikes: touch them and you both start over."
+text = "KitSpikes: touch them and you both start over.
+The second ones are timed: out on the 1 for a beat, down the rest of the bar."
 
 [node name="Spikes" type="Node2D" parent="."]
 script = ExtResource("spikes")
@@ -66,4 +67,6 @@ length = 128.0
 [node name="Spikes2" type="Node2D" parent="."]
 script = ExtResource("spikes")
 position = Vector2(704, 600)
-length = 160.0
+length = 128
+timed = true
+pattern = Array[int]([1])

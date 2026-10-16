@@ -1,0 +1,89 @@
+[gd_scene format=3 uid="uid://c4a6os4pm2b51"]
+
+[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="1_xe7g6"]
+[ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="2_b4pyg"]
+[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="3_yhj5c"]
+[ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="4_qwdt1"]
+[ext_resource type="Script" uid="uid://dvbwd8xl60vxo" path="res://levels/kit/spikes.gd" id="5_tic34"]
+[ext_resource type="Script" uid="uid://ckvdfhkffdnk" path="res://levels/kit/door.gd" id="6_yhj5c"]
+[ext_resource type="Script" uid="uid://wl8345mfe2ny" path="res://levels/kit/switch.gd" id="7_qwdt1"]
+[ext_resource type="Script" uid="uid://bxf8rg7fj0rdn" path="res://levels/kit/beat_step.gd" id="8_qwdt1"]
+
+[node name="Room" type="Node2D" unique_id=1579540189]
+script = ExtResource("1_xe7g6")
+title = "NEW ROOM"
+size = Vector2(544, 648)
+
+[node name="Floor" type="Node2D" parent="." unique_id=1887441776]
+position = Vector2(0, 600)
+script = ExtResource("2_b4pyg")
+size = Vector2(512, 48)
+
+[node name="WallLeft" type="Node2D" parent="." unique_id=342333394]
+script = ExtResource("2_b4pyg")
+size = Vector2(32, 600)
+
+[node name="WallRight" type="Node2D" parent="." unique_id=1047487139]
+position = Vector2(512, 0)
+script = ExtResource("2_b4pyg")
+size = Vector2(32, 648)
+
+[node name="Ceiling" type="Node2D" parent="." unique_id=692135062]
+script = ExtResource("2_b4pyg")
+size = Vector2(512, 32)
+
+[node name="SpawnP1" type="Node2D" parent="." unique_id=1757394027]
+position = Vector2(96, 600)
+script = ExtResource("3_yhj5c")
+
+[node name="SpawnP2" type="Node2D" parent="." unique_id=1666884223]
+position = Vector2(160, 600)
+script = ExtResource("3_yhj5c")
+player = 1
+
+[node name="Goal" type="Node2D" parent="." unique_id=205975358]
+position = Vector2(448, 512)
+script = ExtResource("4_qwdt1")
+size = Vector2(64, 87)
+
+[node name="KitBlock" type="Node2D" parent="." unique_id=1245524043]
+position = Vector2(256, 32)
+script = ExtResource("2_b4pyg")
+size = Vector2(32, 482)
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock2" type="Node2D" parent="." unique_id=846619252]
+position = Vector2(416, 32)
+script = ExtResource("2_b4pyg")
+size = Vector2(104, 482)
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitSpikes" type="Node2D" parent="." unique_id=1261332843]
+position = Vector2(288, 32)
+script = ExtResource("5_tic34")
+length = 480.0
+facing = 3
+metadata/_custom_type_script = "uid://dvbwd8xl60vxo"
+
+[node name="KitSpikes2" type="Node2D" parent="." unique_id=1764067553]
+position = Vector2(416, 32)
+script = ExtResource("5_tic34")
+length = 480.0
+facing = 2
+metadata/_custom_type_script = "uid://dvbwd8xl60vxo"
+
+[node name="KitDoor" type="Node2D" parent="." unique_id=84695884]
+position = Vector2(416, 512)
+script = ExtResource("6_yhj5c")
+size = Vector2(32, 88)
+metadata/_custom_type_script = "uid://ckvdfhkffdnk"
+
+[node name="KitSwitch" type="Node2D" parent="." unique_id=209634785]
+position = Vector2(352, 256)
+script = ExtResource("7_qwdt1")
+metadata/_custom_type_script = "uid://wl8345mfe2ny"
+
+[node name="KitBeatStep" type="Node2D" parent="." unique_id=138119226]
+position = Vector2(312, 376)
+script = ExtResource("8_qwdt1")
+metadata/_custom_type_script = "uid://bxf8rg7fj0rdn"

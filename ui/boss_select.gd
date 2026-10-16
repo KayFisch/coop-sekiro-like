@@ -9,7 +9,7 @@ const FIGHTS = [
 	{"name": "Duo Gym", "arena": "2 players", "scene": "res://levels/gym/coop_gym.tscn"},
 	{"name": "Relay Gym", "arena": "1 player + bot", "scene": "res://levels/gym/relay_gym.tscn"},
 	{"name": "Wall Gym", "arena": "1 player + bot", "scene": "res://levels/gym/wall_gym.tscn"},
-	{"name": "Horologium", "arena": "2 players", "scene": "res://levels/horologium/horologium.tscn"},
+	{"name": "Horologium", "arena": "2 players", "scene": "res://levels/horologium/horologium1.tscn"},
 	{"name": "Kit: showcase", "arena": "2 players", "scene": "res://levels/kit/showcase/hub.tscn"},
 	{"name": "Columna Bifrons", "arena": "The Threshold (test)", "scene": "res://levels/threshold/threshold.tscn"},
 ]

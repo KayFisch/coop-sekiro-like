@@ -4,7 +4,8 @@ extends Node2D
 ## A room for two, like Celeste's: a passage you get through together, or you both start over.
 ## Build it in the Godot editor from the kit's pieces (levels/kit/, see docs/level_kit.md) as
 ## children of this node: KitSpawn (one per player), KitBlock, KitSpikes, KitSwitch + KitDoor,
-## KitHammer, KitPendulum, KitBeatStep, KitCannon, KitShaft, KitGoal. F6 plays the open room.
+## KitHammer, KitPendulum, KitBeatStep, KitCannon, KitElevator, KitShaft, KitText, KitGoal. F6 plays
+## the open room.
 ## When either player dies (an obstacle, spikes, falling out the bottom), both go back to their
 ## spawns and the room's switches and doors start over; the clock (Beat) runs on. R does the
 ## same. Both in the goal: done, and `next_room` loads.
@@ -36,9 +37,9 @@ const COLOR_DONE = Color(0.4, 1.0, 0.6)
 		queue_redraw()
 ## The room's size from its top-left corner (this node's position). One screen is 1152 x 648;
 ## bigger rooms scroll.
-@export var size = VIEW:
+@export_custom(PROPERTY_HINT_RANGE, "32,4096,1,or_greater,suffix:px") var size = VIEW:  # whole px
 	set(v):
-		size = Vector2(maxf(v.x, GRID), maxf(v.y, GRID))
+		size = Vector2(maxf(roundf(v.x), GRID), maxf(roundf(v.y), GRID))
 		queue_redraw()
 ## Loaded once both players reach the goal (unless the goal has a `next_room` of its own).
 @export_file("*.tscn") var next_room = ""

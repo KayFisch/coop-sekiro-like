@@ -1,0 +1,103 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
+[ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="block"]
+[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
+[ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
+[ext_resource type="Script" uid="uid://b1lkskcjxdrt7" path="res://levels/kit/text.gd" id="text"]
+[ext_resource type="Script" uid="uid://c7rop6fvluq2p" path="res://levels/kit/elevator.gd" id="elevator"]
+
+[node name="Room" type="Node2D"]
+script = ExtResource("room")
+title = "KIT: WALLS & TEXT"
+next_room = "res://levels/kit/showcase/hub.tscn"
+
+[node name="Floor" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(0, 600)
+size = Vector2(1152, 48)
+
+[node name="WallLeft" type="Node2D" parent="."]
+script = ExtResource("block")
+size = Vector2(32, 600)
+edges = 0
+
+[node name="WallRight" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(1120, 0)
+size = Vector2(32, 600)
+edges = 0
+
+[node name="Ceiling" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(32, 0)
+size = Vector2(1088, 32)
+edges = 2
+
+[node name="SpawnP1" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(96, 600)
+
+[node name="SpawnP2" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(160, 600)
+player = 1
+
+[node name="Info" type="Node2D" parent="."]
+script = ExtResource("text")
+position = Vector2(96, 64)
+text = "KitBlock: look (plain, brick, dark) and edges (the bright surface lines, any sides).
+KitText: notes like this one (text, font_size, color, width to wrap, align)."
+
+[node name="Plain" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(256, 472)
+size = Vector2(128, 128)
+
+[node name="PlainText" type="Node2D" parent="."]
+script = ExtResource("text")
+position = Vector2(320, 440)
+text = "plain, top"
+align = 1
+
+[node name="Brick" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(448, 408)
+size = Vector2(128, 192)
+look = 1
+edges = 0
+
+[node name="BrickText" type="Node2D" parent="."]
+script = ExtResource("text")
+position = Vector2(512, 376)
+text = "brick, none"
+align = 1
+
+[node name="Dark" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(640, 344)
+size = Vector2(128, 256)
+look = 2
+edges = 0
+
+[node name="DarkText" type="Node2D" parent="."]
+script = ExtResource("text")
+position = Vector2(704, 312)
+text = "dark, none"
+align = 1
+
+[node name="Framed" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(832, 280)
+size = Vector2(64, 320)
+edges = 15
+
+[node name="FramedText" type="Node2D" parent="."]
+script = ExtResource("text")
+position = Vector2(864, 248)
+text = "all four"
+align = 1
+
+[node name="Goal" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(960, 472)
