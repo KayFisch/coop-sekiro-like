@@ -35,13 +35,14 @@ bigger (`size`); bigger rooms scroll, the camera keeping both players in view.
 | **KitSpawn** | Where a player starts, and starts over. Position: on the floor, at the feet. | `player`: P1 or P2. One of each. |
 | **KitBlock** | Wall, floor, ceiling; or a one-way platform (jump up through it, down to drop). Position: top-left. | `size`; `one_way`; `owner_id` (one-way only): Both, P1 (carries only P1, blue) or P2 (only P2, orange). |
 | **KitSpikes** | Touch them and you both start over. Position: one end of the base. | `length`, `facing` (up, down, left, right). |
-| **KitSwitch** | A switch wired to doors. Position: a plate's on the floor; a struck one's at its middle. | `trigger`: STRIKE (hit it with the blade) or PLATE (stand on it). `who`: anyone, P1 or P2. `mode`: TOGGLE, ONCE, TIMED (`timed_bars`), HOLD (plate: while stood on). `on_the_one`: a strike only counts on the 1 (±0.1 s); off it, it's out of tune until after the next 1. `targets`: the doors (*Add Element*, then *Assign* and pick the door). The editor draws the wires. |
+| **KitSwitch** | A switch wired to doors. Position: a plate's on the floor; a struck one's or a target's at its middle. | `trigger`: STRIKE (hit it with the blade), PLATE (stand on it) or BALL (a target: only a KitCannon's ball counts). `who`: anyone, P1 or P2 (a target: who parried the ball last). `mode`: TOGGLE, ONCE, TIMED (`timed_bars`), HOLD (plate: while stood on). `on_the_one`: a strike only counts on the 1 (±0.1 s); off it, it's out of tune until after the next 1. `targets`: the doors (*Add Element*, then *Assign* and pick the door). The editor draws the wires. |
 | **KitDoor** | What a switch opens. Position: top-left. | `size`; `kind`: SOLID (switched: opens) or PLATFORM (switched: appears, one-way); `owner_id` (a platform's); `needs`: any switch, or all of them (two plates far apart, one each); `inverted` (open until switched: it shuts). A door shutting on a player kills. |
 | **KitHammer** | A hammer slamming down from the ceiling on its beats; deadly while falling, down, and rising until it clears your head. Can't be jumped over. Position: on the floor, in its middle; put a KitBlock as the ceiling `clearance` above. | `pattern`, `bars`, `offset` (see *Rhythms*), `width`, `clearance`, `hold_beats` (how long it lies down), `rise_beats`. |
 | **KitPendulum** | A blade on a rod swinging with the clock (bottom on the 1 and the 3, turning points on the 2 and the 4). Rod and blade kill. A perfect parry locks it and holds the parrier for one swing; a block knocks you away. Position: the pivot. | `length`, `amplitude_deg`, `bars` (per swing: 2 is half as fast), `offset` (2: starts the other way). |
+| **KitCannon** | Fires a ball on its beats, in a straight line, no gravity. A perfect parry sends it back off you like a billiard ball off the cushion (angle in = angle out: across turns round, up or down stays), so it zigzags on between the two of you, rising or falling, until it reaches a BALL target. Holding block shatters it; neither, and it kills. Walls, floors and shut doors shatter it; it flies through one-way platforms. Position: the pivot; the editor draws its aim, a tick per beat of flight. | `angle_deg` (0 right, 90 up, -30 down to the right), `speed` (px per beat), `pattern`, `bars`, `offset`. |
 | **KitBeatStep** | A one-way platform that's there only on its beats; blinks in its last beat. Position: top-left. | `pattern`, `bars`, `offset`, `owner_id`, `width`. |
 | **KitShaft** | Two facing walls for wall jumps, as wide as the tempo says. Position: the left wall's top-left; the walls stand `height` tall on a floor there. | `kind`: WIDE (a beat's flight: hold toward the far wall), NARROW (half a beat: no steering), COOP (two wide ones: too wide alone, a chimney clash in the middle). `height`, `entrance` (a way in under the left wall), `caps` (ledges on top), `rhythm` (F1 wall rhythm). A room with a shaft switches on what wall jumps need while it runs, and ticks a metronome at its BPM. |
-| **KitGoal** | Both in it: the room is done. Position: top-left. | `size`. |
+| **KitGoal** | Both in it: the room is done. Position: top-left. | `size`; `label` (written in it instead of GOAL); `next_room` (loaded instead of the room's: a room with several ways out). |
 
 ### Rhythms
 
@@ -89,6 +90,14 @@ uses; a room with a shaft runs one at its BPM next to `Beat`.
 
 ## Examples
 
-- `levels/kit/kit_showcase.tscn` (menu: "Kit: showcase"): every piece once, in a row.
-- `levels/kit/kit_shafts.tscn` (menu: "Kit: shafts"): WIDE, NARROW and COOP side by side, the
-  goal on top of the coop one. Change the room's BPM and watch them change.
+`levels/kit/showcase/` (menu: "Kit: showcase"): one small room per piece, entered from a
+selection room (`hub.tscn`) with a goal for each, on a shelf: jump up into one together. Each
+room's goal brings you back to the selection room. A new piece gets a room there and a goal in
+the hub.
+
+- `spikes`, `hammer`, `switch` (a struck lamp, timed), `plates` (one for each of you, the door
+  needs both), `pendulum`, `beat_step`.
+- `shafts`: WIDE, NARROW and COOP side by side, the goal on top of the coop one. Change the
+  room's BPM and watch them change.
+- `cannon`: P2 parries the ball on the right ledge, P1 on the left one, into the target that
+  opens the door to the goal.

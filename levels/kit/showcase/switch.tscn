@@ -1,0 +1,76 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
+[ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="block"]
+[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
+[ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
+[ext_resource type="Script" uid="uid://dvbwd8xl60vxo" path="res://levels/kit/spikes.gd" id="spikes"]
+[ext_resource type="Script" uid="uid://wl8345mfe2ny" path="res://levels/kit/switch.gd" id="switch"]
+[ext_resource type="Script" uid="uid://ckvdfhkffdnk" path="res://levels/kit/door.gd" id="door"]
+[ext_resource type="Script" uid="uid://btpulu6oae8b8" path="res://levels/kit/hammer.gd" id="hammer"]
+[ext_resource type="Script" uid="uid://crtxthel6s5ds" path="res://levels/kit/pendulum.gd" id="pendulum"]
+[ext_resource type="Script" uid="uid://bxf8rg7fj0rdn" path="res://levels/kit/beat_step.gd" id="beat_step"]
+
+[node name="Room" type="Node2D"]
+script = ExtResource("room")
+title = "KIT: SWITCH"
+next_room = "res://levels/kit/showcase/hub.tscn"
+
+[node name="Floor" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(0, 600)
+size = Vector2(1152, 48)
+
+[node name="WallLeft" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(0, 0)
+size = Vector2(32, 600)
+
+[node name="WallRight" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(1120, 0)
+size = Vector2(32, 600)
+
+[node name="Ceiling" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(32, 0)
+size = Vector2(1088, 32)
+
+[node name="SpawnP1" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(96, 600)
+
+[node name="SpawnP2" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(160, 600)
+player = 1
+
+[node name="Goal" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(1000, 472)
+
+[node name="Info" type="Label" parent="."]
+modulate = Color(1, 1, 1, 0.6)
+offset_left = 96
+offset_top = 80
+offset_right = 700
+offset_bottom = 200
+theme_override_font_sizes/font_size = 13
+text = "KitSwitch, STRIKE, TIMED 1 bar, wired to a KitDoor:
+hit it with the blade, then through the door before it shuts."
+
+[node name="Lamp" type="Node2D" parent="."]
+script = ExtResource("switch")
+position = Vector2(560, 572)
+mode = 2
+targets = Array[NodePath]([NodePath("../Door")])
+
+[node name="DoorTop" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(800, 32)
+size = Vector2(32, 408)
+
+[node name="Door" type="Node2D" parent="."]
+script = ExtResource("door")
+position = Vector2(800, 440)
+size = Vector2(32, 160)

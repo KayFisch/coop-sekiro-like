@@ -3,7 +3,9 @@ class_name KitSwitch
 extends Node2D
 ## A switch wired to doors (`targets`: KitDoors; the editor draws the wires).
 ##  STRIKE: hit with the blade, like a boss. PLATE: a plate on the floor, pressed by standing on it.
-## `who`: anyone, or only P1 or only P2 (a P1 plate ignores P2, a P2 lamp ignores P1's blade).
+##  BALL: a target, hit by a KitCannon's ball (and by nothing else).
+## `who`: anyone, or only P1 or only P2 (a P1 plate ignores P2, a P2 lamp ignores P1's blade, a
+## P2 target counts only a ball P2 parried last).
 ## `mode`:
 ##  TOGGLE  each strike / each step onto it flips it.
 ##  ONCE    on for good once triggered.
@@ -12,16 +14,17 @@ extends Node2D
 ## `on_the_one`: a strike counts only on the 1 (within ON_ONE_WINDOW); off it, a dull clack and
 ## the switch is out of tune until after the next 1, so mashing gets nothing. TIMED then runs
 ## from that 1. Floats how far off the strike was, in ms.
-## Put a plate's position on the floor, a struck one's at its middle.
+## Put a plate's position on the floor, a struck one's or a target's at its middle.
 
 signal changed(on)
 
-enum Trigger { STRIKE, PLATE }
+enum Trigger { STRIKE, PLATE, BALL }
 enum Mode { TOGGLE, ONCE, TIMED, HOLD }
 
 const ON_ONE_WINDOW = 0.1  # s either side of the 1
 const LAMP_SIZE = 26.0
 const PLATE_SIZE = Vector2(64, 8)
+const TARGET_RADIUS = 26.0  # a ball touching this counts
 const COLOR_OFF = Color(0.5, 0.5, 0.56)
 const COLOR_ON = Color(1.0, 0.82, 0.3)
 const COLOR_DETUNED = Color(0.3, 0.28, 0.3)
@@ -71,6 +74,8 @@ func _ready():
 		var door = get_node_or_null(path)
 		if door and door.has_method("add_switch"):
 			door.add_switch(self)
+	if trigger == Trigger.BALL:
+		add_to_group("kit_ball_targets")
 	if trigger == Trigger.STRIKE:
 		var box = StrikeBox.new()
 		box.switch = self
@@ -120,6 +125,15 @@ func _update_plate():
 		Mode.TOGGLE:
 			if stepped_on:
 				_set_on(not on)
+
+
+# A KitCannon's ball asks.
+func ball_touches(point: Vector2, radius: float) -> bool:
+	return global_position.distance_to(point) <= TARGET_RADIUS + radius
+
+
+func ball_hit(ball):
+	_struck(ball)
 
 
 func _struck(source):
@@ -195,6 +209,13 @@ func _draw():
 	if trigger == Trigger.PLATE:
 		draw_rect(Rect2(-PLATE_SIZE.x / 2.0, -PLATE_SIZE.y + (3.0 if _pressed else 0.0), PLATE_SIZE.x, PLATE_SIZE.y), color)
 		draw_rect(Rect2(-PLATE_SIZE.x / 2.0 - 4.0, -2.0, PLATE_SIZE.x + 8.0, 2.0), COLORS_WHO[who])
+	elif trigger == Trigger.BALL:
+		draw_circle(Vector2.ZERO, TARGET_RADIUS, color)
+		draw_circle(Vector2.ZERO, TARGET_RADIUS * 0.62, COLOR_DETUNED)
+		draw_circle(Vector2.ZERO, TARGET_RADIUS * 0.3, color)
+		draw_arc(Vector2.ZERO, TARGET_RADIUS, 0.0, TAU, 32, COLORS_WHO[who], 2.0)
+		if on_the_one:
+			draw_string(ThemeDB.fallback_font, Vector2(-4, 5), "1", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0, 0, 0, 0.7))
 	else:
 		var s = LAMP_SIZE / sqrt(2.0)
 		var diamond = PackedVector2Array([Vector2(0, -s), Vector2(s, 0), Vector2(0, s), Vector2(-s, 0)])

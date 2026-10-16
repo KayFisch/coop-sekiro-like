@@ -283,7 +283,8 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     (Wandsprung-Schacht wide/narrow/coop, Breite aus BPM und der schmalen Spielerbreite),
     `KitGoal`. Alle zeichnen sich im Editor, die Takt-Teile bewegen sich dort sogar.
   - Leerer erster Raum: `levels/horologium/horologium.tscn` (Menü „Horologium“), Vorlage
-    `levels/kit/room_template.tscn`, Beispiele „Kit: showcase“ und „Kit: shafts“.
+    `levels/kit/room_template.tscn`, Beispiele unter „Kit: showcase“ (`levels/kit/showcase/`:
+    Auswahlraum, ein Raum pro Teil).
   - Takt-Uhr `Beat` (Autoload, 150 BPM), Anzeige `BeatDisplay`. `Moves.override()`: ein Raum
     schaltet F1-Schalter vorübergehend ein (Schächte: Wandsprung), ohne sie zu speichern.
   - Außerhalb von `levels/kit/` und `levels/horologium/` angefasst: `core/beat.gd` (neu),
@@ -292,8 +293,12 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     (schmale Spieler: Gefahrenbox, Kamine 110/380, Wall-Gym-Schächte; `checkpoint_needs_all`;
     eigene Physik-Layer pro Spieler), `actors/player/` nur Nichos Patch aus 70470c7
     (`BODY_SIZE` 20×40), Zeichen für Zeichen übernommen.
-  - Als Nächstes (Ideen, nicht gebaut): Pendel-Schaukel (pumpen und abspringen), Kanone +
-    Ziel (Kugel parieren zum Partner, weiter ins Ziel), Ruder-Aufzug, Weltschalter.
+  - `KitCannon` + Ziel (`KitSwitch` mit `trigger` BALL): Kugel im Takt, geradeaus; perfekter
+    Parry wirft sie zurück wie eine Billardkugel an der Bande (waagrecht dreht um, senkrecht
+    bleibt), Block halten zerschellt sie, sonst tot. Wände zerschellen sie, Einweg-Plattformen nicht.
+    Showcase-Raum `cannon`. Headless getestet (P2 → P1 → Ziel), Gefühl noch ungetestet.
+  - Als Nächstes (Ideen, nicht gebaut): Pendel-Schaukel (pumpen und abspringen), Ruder-Aufzug,
+    Weltschalter.
   - Offen: `Metronome` (Wall Gym, Echtzeit, startet beim Wall Jump) und `Beat` laufen
     nebeneinander. Später zusammenführen?
 - [ ] **Concept aufräumen** (`docs/concept.md`). Befund vom Review 2026-09-30:

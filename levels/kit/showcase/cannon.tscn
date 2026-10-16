@@ -1,0 +1,100 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
+[ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="block"]
+[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
+[ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
+[ext_resource type="Script" uid="uid://wl8345mfe2ny" path="res://levels/kit/switch.gd" id="switch"]
+[ext_resource type="Script" uid="uid://ckvdfhkffdnk" path="res://levels/kit/door.gd" id="door"]
+[ext_resource type="Script" uid="uid://cxd52s36iesb1" path="res://levels/kit/cannon.gd" id="cannon"]
+
+[node name="Room" type="Node2D"]
+script = ExtResource("room")
+title = "KIT: CANNON"
+next_room = "res://levels/kit/showcase/hub.tscn"
+size = Vector2(1152, 960)
+
+[node name="Ceiling" type="Node2D" parent="."]
+script = ExtResource("block")
+size = Vector2(1152, 32)
+
+[node name="Floor" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(0, 920)
+size = Vector2(1152, 40)
+
+[node name="WallLeft" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(0, 32)
+size = Vector2(32, 888)
+
+[node name="WallRight" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(1120, 32)
+size = Vector2(32, 888)
+
+[node name="SpawnP1" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(100, 920)
+
+[node name="SpawnP2" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(860, 920)
+player = 1
+
+[node name="Info" type="Label" parent="."]
+modulate = Color(1, 1, 1, 0.6)
+offset_left = 560
+offset_top = 60
+offset_right = 940
+offset_bottom = 160
+theme_override_font_sizes/font_size = 13
+text = "KitCannon: parry the ball (block in time)
+and it bounces off you like off a cushion.
+P2 on the right ledge, P1 on the left one,
+then into the target: it opens the door."
+
+[node name="Step1" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(32, 808)
+size = Vector2(128, 12)
+one_way = true
+
+[node name="Step2" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(128, 690)
+size = Vector2(96, 12)
+one_way = true
+
+[node name="LedgeP1" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(224, 560)
+size = Vector2(256, 12)
+one_way = true
+
+[node name="LedgeP2" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(736, 792)
+size = Vector2(144, 12)
+one_way = true
+
+[node name="Cannon" type="Node2D" parent="."]
+script = ExtResource("cannon")
+position = Vector2(576, 900)
+
+[node name="Target" type="Node2D" parent="."]
+script = ExtResource("switch")
+position = Vector2(900, 268)
+trigger = 2
+mode = 1
+targets = Array[NodePath]([NodePath("../Door")])
+
+[node name="Door" type="Node2D" parent="."]
+script = ExtResource("door")
+position = Vector2(960, 32)
+size = Vector2(32, 888)
+
+[node name="Goal" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(1000, 792)
+size = Vector2(112, 128)

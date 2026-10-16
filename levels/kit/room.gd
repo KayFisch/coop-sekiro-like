@@ -4,7 +4,7 @@ extends Node2D
 ## A room for two, like Celeste's: a passage you get through together, or you both start over.
 ## Build it in the Godot editor from the kit's pieces (levels/kit/, see docs/level_kit.md) as
 ## children of this node: KitSpawn (one per player), KitBlock, KitSpikes, KitSwitch + KitDoor,
-## KitHammer, KitPendulum, KitBeatStep, KitShaft, KitGoal. F6 plays the open room.
+## KitHammer, KitPendulum, KitBeatStep, KitCannon, KitShaft, KitGoal. F6 plays the open room.
 ## When either player dies (an obstacle, spikes, falling out the bottom), both go back to their
 ## spawns and the room's switches and doors start over; the clock (Beat) runs on. R does the
 ## same. Both in the goal: done, and `next_room` loads.
@@ -40,7 +40,7 @@ const COLOR_DONE = Color(0.4, 1.0, 0.6)
 	set(v):
 		size = Vector2(maxf(v.x, GRID), maxf(v.y, GRID))
 		queue_redraw()
-## Loaded once both players reach the goal.
+## Loaded once both players reach the goal (unless the goal has a `next_room` of its own).
 @export_file("*.tscn") var next_room = ""
 ## F1 switches this room needs on (e.g. "double_jump", "ledge_grab"), on while it runs and back
 ## as they were after. Shafts add the wall-jump ones themselves.
@@ -171,17 +171,19 @@ func start_over():
 		create_tween().tween_property(_flash, "modulate:a", 0.0, FLASH_TIME)
 
 
-func _on_goal():
+func _on_goal(goal):
 	_cleared = true
 	Sfx.play("big_bell", 0.0)
 	var t = Beat.time()
-	var done = _hud_label(Vector2.ZERO, "%s  ·  done\n%d:%04.1f  ·  %d deaths" % [title, floori(t / 60.0), fmod(t, 60.0), deaths], 30)
+	var next = goal.next_room if goal.next_room != "" else next_room
+	var text = goal.label.to_upper() if goal.label != "" else "%s  ·  done\n%d:%04.1f  ·  %d deaths" % [title, floori(t / 60.0), fmod(t, 60.0), deaths]
+	var done = _hud_label(Vector2.ZERO, text, 30)
 	done.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	done.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	done.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	done.modulate = COLOR_DONE
-	if next_room != "":
-		get_tree().create_timer(NEXT_ROOM_DELAY).timeout.connect(func(): get_tree().change_scene_to_file(next_room))
+	if next != "":
+		get_tree().create_timer(NEXT_ROOM_DELAY).timeout.connect(func(): get_tree().change_scene_to_file(next))
 	else:
 		done.text += "\n\nEsc: back to the menu"
 

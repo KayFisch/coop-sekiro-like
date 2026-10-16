@@ -1,73 +1,70 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://br8ajngcdlchd"]
 
-[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
 [ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="block"]
-[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
 [ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
-[ext_resource type="Script" uid="uid://dvbwd8xl60vxo" path="res://levels/kit/spikes.gd" id="spikes"]
-[ext_resource type="Script" uid="uid://wl8345mfe2ny" path="res://levels/kit/switch.gd" id="switch"]
-[ext_resource type="Script" uid="uid://ckvdfhkffdnk" path="res://levels/kit/door.gd" id="door"]
-[ext_resource type="Script" uid="uid://btpulu6oae8b8" path="res://levels/kit/hammer.gd" id="hammer"]
-[ext_resource type="Script" uid="uid://crtxthel6s5ds" path="res://levels/kit/pendulum.gd" id="pendulum"]
-[ext_resource type="Script" uid="uid://bxf8rg7fj0rdn" path="res://levels/kit/beat_step.gd" id="beat_step"]
+[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
 [ext_resource type="Script" uid="uid://b0v0acmbw3tiw" path="res://levels/kit/shaft.gd" id="shaft"]
+[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
 
-[node name="Room" type="Node2D"]
+[node name="Room" type="Node2D" unique_id=1395689657]
 script = ExtResource("room")
 title = "KIT SHAFTS"
 size = Vector2(2400, 1296)
 
-[node name="Floor" type="Node2D" parent="."]
-script = ExtResource("block")
+[node name="Floor" type="Node2D" parent="." unique_id=1362509231]
 position = Vector2(0, 1248)
+script = ExtResource("block")
 size = Vector2(2400, 48)
 
-[node name="WallLeft" type="Node2D" parent="."]
+[node name="WallLeft" type="Node2D" parent="." unique_id=1081558690]
 script = ExtResource("block")
-position = Vector2(0, 0)
 size = Vector2(32, 1248)
 
-[node name="WallRight" type="Node2D" parent="."]
-script = ExtResource("block")
+[node name="WallRight" type="Node2D" parent="." unique_id=607187002]
 position = Vector2(2368, 0)
+script = ExtResource("block")
 size = Vector2(32, 1248)
 
-[node name="SpawnP1" type="Node2D" parent="."]
-script = ExtResource("spawn")
+[node name="SpawnP1" type="Node2D" parent="." unique_id=109925254]
 position = Vector2(80, 1248)
-
-[node name="SpawnP2" type="Node2D" parent="."]
 script = ExtResource("spawn")
+
+[node name="SpawnP2" type="Node2D" parent="." unique_id=1103081954]
 position = Vector2(140, 1248)
+script = ExtResource("spawn")
 player = 1
 
-[node name="Info" type="Label" parent="."]
+[node name="Info" type="Label" parent="." unique_id=1728995348]
 modulate = Color(1, 1, 1, 0.6)
-offset_left = 240
-offset_top = 200
-offset_right = 500
-offset_bottom = 260
+offset_left = 240.0
+offset_top = 200.0
+offset_right = 500.0
+offset_bottom = 260.0
 theme_override_font_sizes/font_size = 13
-text = "KitShaft: WIDE, NARROW, COOP.\nTheir widths follow the room's BPM\n(select Room, change bpm)."
+text = "KitShaft: WIDE, NARROW, COOP.
+Their widths follow the room's BPM
+(select Room, change bpm)."
 
-[node name="ShaftWide" type="Node2D" parent="."]
-script = ExtResource("shaft")
+[node name="ShaftWide" type="Node2D" parent="." unique_id=1450120676]
 position = Vector2(260, 448)
+script = ExtResource("shaft")
 height = 800.0
 
-[node name="ShaftNarrow" type="Node2D" parent="."]
-script = ExtResource("shaft")
+[node name="ShaftNarrow" type="Node2D" parent="." unique_id=113396085]
 position = Vector2(900, 448)
+script = ExtResource("shaft")
 kind = 1
 height = 800.0
 
-[node name="ShaftCoop" type="Node2D" parent="."]
-script = ExtResource("shaft")
+[node name="ShaftCoop" type="Node2D" parent="." unique_id=1711313309]
 position = Vector2(1500, 448)
+script = ExtResource("shaft")
 kind = 2
 height = 800.0
 
-[node name="Goal" type="Node2D" parent="."]
-script = ExtResource("goal")
+[node name="Goal" type="Node2D" parent="." unique_id=358909784]
 position = Vector2(1940, 320)
+script = ExtResource("goal")
 size = Vector2(128, 128)
+label = null
+next_room = null

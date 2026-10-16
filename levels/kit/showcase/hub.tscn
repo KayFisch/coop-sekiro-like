@@ -1,0 +1,154 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
+[ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="block"]
+[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
+[ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
+
+[node name="Room" type="Node2D"]
+script = ExtResource("room")
+title = "KIT SHOWCASE"
+
+[node name="Floor" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(0, 600)
+size = Vector2(1152, 48)
+
+[node name="WallLeft" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(0, 0)
+size = Vector2(32, 600)
+
+[node name="WallRight" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(1120, 0)
+size = Vector2(32, 600)
+
+[node name="Ceiling" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(32, 0)
+size = Vector2(1088, 32)
+
+[node name="SpawnP1" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(544, 600)
+
+[node name="SpawnP2" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(608, 600)
+player = 1
+
+[node name="Info" type="Label" parent="."]
+modulate = Color(1, 1, 1, 0.6)
+offset_left = 96
+offset_top = 200
+offset_right = 1056
+offset_bottom = 260
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+text = "One room for each piece of the kit. Jump up into one together to try it;
+its goal brings you back here. Esc: menu."
+
+[node name="ShelfSpikes" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(64, 500)
+size = Vector2(112, 12)
+one_way = true
+
+[node name="GoalSpikes" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(72, 404)
+size = Vector2(96, 96)
+label = "Spikes"
+next_room = "res://levels/kit/showcase/spikes.tscn"
+
+[node name="ShelfHammer" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(192, 500)
+size = Vector2(112, 12)
+one_way = true
+
+[node name="GoalHammer" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(200, 404)
+size = Vector2(96, 96)
+label = "Hammer"
+next_room = "res://levels/kit/showcase/hammer.tscn"
+
+[node name="ShelfSwitch" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(320, 500)
+size = Vector2(112, 12)
+one_way = true
+
+[node name="GoalSwitch" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(328, 404)
+size = Vector2(96, 96)
+label = "Switch"
+next_room = "res://levels/kit/showcase/switch.tscn"
+
+[node name="ShelfPlates" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(448, 500)
+size = Vector2(112, 12)
+one_way = true
+
+[node name="GoalPlates" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(456, 404)
+size = Vector2(96, 96)
+label = "Plates"
+next_room = "res://levels/kit/showcase/plates.tscn"
+
+[node name="ShelfPendulum" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(576, 500)
+size = Vector2(112, 12)
+one_way = true
+
+[node name="GoalPendulum" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(584, 404)
+size = Vector2(96, 96)
+label = "Pendulum"
+next_room = "res://levels/kit/showcase/pendulum.tscn"
+
+[node name="ShelfBeatsteps" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(704, 500)
+size = Vector2(112, 12)
+one_way = true
+
+[node name="GoalBeatsteps" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(712, 404)
+size = Vector2(96, 96)
+label = "Beat steps"
+next_room = "res://levels/kit/showcase/beat_step.tscn"
+
+[node name="ShelfShafts" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(832, 500)
+size = Vector2(112, 12)
+one_way = true
+
+[node name="GoalShafts" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(840, 404)
+size = Vector2(96, 96)
+label = "Shafts"
+next_room = "res://levels/kit/showcase/shafts.tscn"
+
+[node name="ShelfCannon" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(960, 500)
+size = Vector2(112, 12)
+one_way = true
+
+[node name="GoalCannon" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(968, 404)
+size = Vector2(96, 96)
+label = "Cannon"
+next_room = "res://levels/kit/showcase/cannon.tscn"

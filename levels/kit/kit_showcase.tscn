@@ -1,183 +1,188 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://c6427nfwq5sy8"]
 
-[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
+[ext_resource type="Script" uid="uid://bxf8rg7fj0rdn" path="res://levels/kit/beat_step.gd" id="beat_step"]
 [ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="block"]
-[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
-[ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
-[ext_resource type="Script" uid="uid://dvbwd8xl60vxo" path="res://levels/kit/spikes.gd" id="spikes"]
-[ext_resource type="Script" uid="uid://wl8345mfe2ny" path="res://levels/kit/switch.gd" id="switch"]
 [ext_resource type="Script" uid="uid://ckvdfhkffdnk" path="res://levels/kit/door.gd" id="door"]
+[ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
 [ext_resource type="Script" uid="uid://btpulu6oae8b8" path="res://levels/kit/hammer.gd" id="hammer"]
 [ext_resource type="Script" uid="uid://crtxthel6s5ds" path="res://levels/kit/pendulum.gd" id="pendulum"]
-[ext_resource type="Script" uid="uid://bxf8rg7fj0rdn" path="res://levels/kit/beat_step.gd" id="beat_step"]
-[ext_resource type="Script" uid="uid://b0v0acmbw3tiw" path="res://levels/kit/shaft.gd" id="shaft"]
+[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
+[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
+[ext_resource type="Script" uid="uid://dvbwd8xl60vxo" path="res://levels/kit/spikes.gd" id="spikes"]
+[ext_resource type="Script" uid="uid://wl8345mfe2ny" path="res://levels/kit/switch.gd" id="switch"]
 
-[node name="Room" type="Node2D"]
+[node name="Room" type="Node2D" unique_id=258603919]
 script = ExtResource("room")
 title = "KIT SHOWCASE"
 size = Vector2(2304, 648)
 
-[node name="Floor" type="Node2D" parent="."]
-script = ExtResource("block")
+[node name="Floor" type="Node2D" parent="." unique_id=713026118]
 position = Vector2(0, 600)
+script = ExtResource("block")
 size = Vector2(2304, 48)
 
-[node name="WallLeft" type="Node2D" parent="."]
+[node name="WallLeft" type="Node2D" parent="." unique_id=110978666]
 script = ExtResource("block")
-position = Vector2(0, 0)
 size = Vector2(32, 600)
 
-[node name="WallRight" type="Node2D" parent="."]
-script = ExtResource("block")
+[node name="WallRight" type="Node2D" parent="." unique_id=761061718]
 position = Vector2(2272, 0)
+script = ExtResource("block")
 size = Vector2(32, 600)
 
-[node name="SpawnP1" type="Node2D" parent="."]
-script = ExtResource("spawn")
+[node name="SpawnP1" type="Node2D" parent="." unique_id=516998506]
 position = Vector2(80, 600)
-
-[node name="SpawnP2" type="Node2D" parent="."]
 script = ExtResource("spawn")
+
+[node name="SpawnP2" type="Node2D" parent="." unique_id=1278667187]
 position = Vector2(140, 600)
+script = ExtResource("spawn")
 player = 1
 
-[node name="Info1" type="Label" parent="."]
+[node name="Info1" type="Label" parent="." unique_id=2102571485]
 modulate = Color(1, 1, 1, 0.6)
-offset_left = 240
-offset_top = 380
-offset_right = 500
-offset_bottom = 440
+offset_left = 240.0
+offset_top = 380.0
+offset_right = 500.0
+offset_bottom = 440.0
 theme_override_font_sizes/font_size = 13
 text = "KitSpikes"
 
-[node name="Spikes" type="Node2D" parent="."]
-script = ExtResource("spikes")
+[node name="Spikes" type="Node2D" parent="." unique_id=1369007908]
 position = Vector2(288, 600)
+script = ExtResource("spikes")
 
-[node name="Info2" type="Label" parent="."]
+[node name="Info2" type="Label" parent="." unique_id=806494656]
 modulate = Color(1, 1, 1, 0.6)
-offset_left = 496
-offset_top = 300
-offset_right = 756
-offset_bottom = 360
+offset_left = 496.0
+offset_top = 300.0
+offset_right = 756.0
+offset_bottom = 360.0
 theme_override_font_sizes/font_size = 13
-text = "KitHammer, pattern [1]\nunder a KitBlock ceiling"
+text = "KitHammer, pattern [1]
+under a KitBlock ceiling"
 
-[node name="HammerCeiling" type="Node2D" parent="."]
-script = ExtResource("block")
+[node name="HammerCeiling" type="Node2D" parent="." unique_id=2026767108]
 position = Vector2(496, 448)
+script = ExtResource("block")
 size = Vector2(160, 32)
 
-[node name="Hammer" type="Node2D" parent="."]
-script = ExtResource("hammer")
+[node name="Hammer" type="Node2D" parent="." unique_id=1908115075]
 position = Vector2(576, 600)
+script = ExtResource("hammer")
 
-[node name="Info3" type="Label" parent="."]
+[node name="Info3" type="Label" parent="." unique_id=1453396057]
 modulate = Color(1, 1, 1, 0.6)
-offset_left = 700
-offset_top = 300
-offset_right = 960
-offset_bottom = 360
+offset_left = 700.0
+offset_top = 300.0
+offset_right = 960.0
+offset_bottom = 360.0
 theme_override_font_sizes/font_size = 13
-text = "KitSwitch: strike,\nTIMED 1 bar,\nwired to a KitDoor"
+text = "KitSwitch: strike,
+TIMED 1 bar,
+wired to a KitDoor"
 
-[node name="Lamp" type="Node2D" parent="."]
-script = ExtResource("switch")
+[node name="Lamp" type="Node2D" parent="." unique_id=1046157062]
 position = Vector2(760, 572)
+script = ExtResource("switch")
 mode = 2
 targets = Array[NodePath]([NodePath("../Door")])
 
-[node name="DoorTop" type="Node2D" parent="."]
-script = ExtResource("block")
+[node name="DoorTop" type="Node2D" parent="." unique_id=1096582114]
 position = Vector2(840, 0)
+script = ExtResource("block")
 size = Vector2(32, 440)
 
-[node name="Door" type="Node2D" parent="."]
-script = ExtResource("door")
+[node name="Door" type="Node2D" parent="." unique_id=1425540936]
 position = Vector2(840, 440)
+script = ExtResource("door")
 size = Vector2(32, 160)
 
-[node name="Info4" type="Label" parent="."]
+[node name="Info4" type="Label" parent="." unique_id=1431619878]
 modulate = Color(1, 1, 1, 0.6)
-offset_left = 960
-offset_top = 300
-offset_right = 1220
-offset_bottom = 360
+offset_left = 960.0
+offset_top = 300.0
+offset_right = 1220.0
+offset_bottom = 360.0
 theme_override_font_sizes/font_size = 13
-text = "Plates for P1 and P2\n(TIMED 2 bars):\nthe door needs both"
+text = "Plates for P1 and P2
+(TIMED 2 bars):
+the door needs both"
 
-[node name="PlateP1" type="Node2D" parent="."]
-script = ExtResource("switch")
+[node name="PlateP1" type="Node2D" parent="." unique_id=1118573609]
 position = Vector2(1000, 600)
+script = ExtResource("switch")
 trigger = 1
 who = 1
 mode = 2
 timed_bars = 2
 targets = Array[NodePath]([NodePath("../Door2")])
 
-[node name="PlateP2" type="Node2D" parent="."]
-script = ExtResource("switch")
+[node name="PlateP2" type="Node2D" parent="." unique_id=278047594]
 position = Vector2(1110, 600)
+script = ExtResource("switch")
 trigger = 1
 who = 2
 mode = 2
 timed_bars = 2
 targets = Array[NodePath]([NodePath("../Door2")])
 
-[node name="Door2Top" type="Node2D" parent="."]
-script = ExtResource("block")
+[node name="Door2Top" type="Node2D" parent="." unique_id=1174222900]
 position = Vector2(1200, 0)
+script = ExtResource("block")
 size = Vector2(32, 440)
 
-[node name="Door2" type="Node2D" parent="."]
-script = ExtResource("door")
+[node name="Door2" type="Node2D" parent="." unique_id=2090206941]
 position = Vector2(1200, 440)
+script = ExtResource("door")
 size = Vector2(32, 160)
 needs = 1
 
-[node name="Info5" type="Label" parent="."]
+[node name="Info5" type="Label" parent="." unique_id=667019864]
 modulate = Color(1, 1, 1, 0.6)
-offset_left = 1380
-offset_top = 60
-offset_right = 1640
-offset_bottom = 120
+offset_left = 1380.0
+offset_top = 60.0
+offset_right = 1640.0
+offset_bottom = 120.0
 theme_override_font_sizes/font_size = 13
 text = "KitPendulum: parry it to hold it for a swing"
 
-[node name="PendulumCeiling" type="Node2D" parent="."]
-script = ExtResource("block")
+[node name="PendulumCeiling" type="Node2D" parent="." unique_id=1755847182]
 position = Vector2(1340, 0)
+script = ExtResource("block")
 size = Vector2(400, 40)
 
-[node name="Pendulum" type="Node2D" parent="."]
-script = ExtResource("pendulum")
+[node name="Pendulum" type="Node2D" parent="." unique_id=389948536]
 position = Vector2(1540, 40)
+script = ExtResource("pendulum")
 length = 520.0
 amplitude_deg = 40.0
 
-[node name="Info6" type="Label" parent="."]
+[node name="Info6" type="Label" parent="." unique_id=1930455278]
 modulate = Color(1, 1, 1, 0.6)
-offset_left = 1770
-offset_top = 300
-offset_right = 2030
-offset_bottom = 360
+offset_left = 1770.0
+offset_top = 300.0
+offset_right = 2030.0
+offset_bottom = 360.0
 theme_override_font_sizes/font_size = 13
 text = "KitBeatStep [1, 2] / [3, 4]"
 
-[node name="StepA" type="Node2D" parent="."]
-script = ExtResource("beat_step")
+[node name="StepA" type="Node2D" parent="." unique_id=1018503880]
 position = Vector2(1780, 520)
-
-[node name="StepB" type="Node2D" parent="."]
 script = ExtResource("beat_step")
+
+[node name="StepB" type="Node2D" parent="." unique_id=2050470019]
 position = Vector2(1870, 440)
+script = ExtResource("beat_step")
 pattern = Array[int]([3, 4])
 
-[node name="Plateau" type="Node2D" parent="."]
-script = ExtResource("block")
+[node name="Plateau" type="Node2D" parent="." unique_id=1124932464]
 position = Vector2(1960, 400)
+script = ExtResource("block")
 size = Vector2(312, 200)
 
-[node name="Goal" type="Node2D" parent="."]
-script = ExtResource("goal")
+[node name="Goal" type="Node2D" parent="." unique_id=1484937592]
 position = Vector2(2140, 272)
+script = ExtResource("goal")
+label = null
+next_room = null
