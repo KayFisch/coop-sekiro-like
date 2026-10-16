@@ -67,6 +67,7 @@ const ENTRIES = [
 var panel_open = false
 
 var _values = {}
+var _overridden = {}  # key -> its own value, while a level overrides it (override())
 var _tab = 0  # index into TABS
 var _selected = 0  # row on the open tab
 var _was_paused = false
@@ -102,6 +103,7 @@ func value(key: String):
 
 func set_value(key: String, v):
 	_values[key] = v
+	_overridden.erase(key)  # set by hand: it's the player's own value now
 	_save()
 	changed.emit()
 
@@ -110,8 +112,24 @@ func _save():
 	var cfg = ConfigFile.new()
 	cfg.set_value("meta", "version", VERSION)
 	for e in ENTRIES:
-		cfg.set_value("moves", e.key, _values[e.key])
+		cfg.set_value("moves", e.key, _overridden.get(e.key, _values[e.key]))
 	cfg.save(SAVE_PATH)
+
+
+# A level switches something on for as long as it runs (e.g. wall jumps in a room with a
+# shaft), without saving it: clear_overrides() puts back the player's own values.
+func override(key: String, v):
+	if not _overridden.has(key):
+		_overridden[key] = _values.get(key)
+	_values[key] = v
+	changed.emit()
+
+
+func clear_overrides():
+	for key in _overridden:
+		_values[key] = _overridden[key]
+	_overridden.clear()
+	changed.emit()
 
 
 func reset_defaults():

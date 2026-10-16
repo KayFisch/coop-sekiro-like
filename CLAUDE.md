@@ -39,13 +39,14 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
 
 - **`Beat`** (`core/beat.gd`) is a new autoload: one clock (150 BPM) that a level starts and
   everything in time asks, with a click (M) and a display (`ui/beat_display.gd`). It's meant for
-  your beat-runner too: please use it rather than a second clock (`docs/level_horologium.md`).
+  your beat-runner too: please use it rather than a second clock (`docs/level_kit.md`).
 - `kay/coop-platformer` now has your slimmer players: the changes to `actors/player/` from
   70470c7 taken character for character (`git apply -3`), so they merge without conflicts.
   The gyms are adapted to 20 px bodies (chimneys 110 and 380 wide).
-- `GymLevel` has a new option `checkpoint_needs_all` (off by default): a checkpoint takes only
-  once every player stands in it. And `obstacle()` for the new clockwork obstacles
-  (`levels/obstacles/`).
+- A level kit for building coop rooms by hand in the Godot editor (`levels/kit/`, `KitRoom` and
+  `Kit*` pieces, `docs/level_kit.md`); Kay builds Horologium with it. `Moves.override()` lets a
+  room switch something on while it runs without saving it. `GymLevel` has a new option
+  `checkpoint_needs_all` (off by default): a checkpoint takes only once every player is in it.
 
 ## The project
 
@@ -71,8 +72,8 @@ core/                                autoloads: GameManager, Sfx, Moves, Pads, B
 actors/player/                       player.gd (+ scene)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
-                                     gym/ (movement test rooms), horologium/ (coop platformer level),
-                                     obstacles/ (clockwork obstacles on the Beat clock)
+                                     gym/ (movement test rooms), kit/ (level kit: rooms built in
+                                     the editor), horologium/ (coop platformer level, kit rooms)
 ui/                                  boss select, HUD, beat display
 assets/                              empty for now: everything is procedural
 ```
@@ -99,6 +100,7 @@ Move files with `git mv`, or in the Godot editor, never one without the other.
   once it runs. Delete it after merging.
 - Don't have both people touching `player.gd` or the same `.tscn` at the same time (claim it in
   `TASKS.md`). Scene files merge badly; prefer building nodes in code, as the existing scripts do.
+  Rooms built with the level kit are the exception: scenes by design, one person per room.
 - Claude commits or pushes only when asked.
 
 ### Commit messages
@@ -185,10 +187,12 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
 - `levels/`: `GymLevel` (`gym/gym_level.gd`) is the base of the gyms and the platformer levels:
   it builds rooms from code (`solid()`, `ledge()`, `checkpoint()`, `measure()`, ...), spawns the
   players, respawns them at checkpoints (`checkpoint_needs_all`: only once both are there) and
-  gives each player a physics layer of their own (`OWN_PLATFORM_LAYERS`). `obstacles/`: the
-  clockwork obstacles, each working out its state from `Beat` alone (`Clockwork` base:
-  `BeatHammer`, `BeatStep`, `BeatPendulum`; `BeatBell` is a `GymTarget`). `horologium/`: the
-  first coop platformer level (`docs/level_horologium.md`).
+  gives each player a physics layer of their own (`OWN_PLATFORM_LAYERS`). `kit/`: the level kit
+  (`docs/level_kit.md`), `@tool` nodes placed by hand in the Godot editor: `KitRoom` (the scene's
+  root: spawns the players, both start over when one dies, the goal loads `next_room`) and its
+  pieces (`KitBlock`, `KitSpikes`, `KitSwitch` wired to `KitDoor`, `KitShaft`, ...); the ones on
+  the clock extend `Clockwork` and work out their state from `Beat` alone (in the editor, from a
+  stand-in clock at the room's BPM). `horologium/`: the coop platformer's rooms.
 
 ## Conventions
 

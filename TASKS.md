@@ -271,22 +271,30 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     `user://wall_log.jsonl` (Schacht, Erfolg/Absturz, alle Drücke, Kontakte, Treffen, Sprünge,
     ms ab dem ersten Wall Jump = Schlag 0; Abweichung zum Kontakt bis ±500 ms und zum
     nächsten Tick/Off-Beat). Kay testet blind nach Metronom.
-  **Erstes Level: Horologium** (2026-10-15, headless getestet, **Gefühl noch testen**), ein
-  Uhrturm, in dem alles auf einer gemeinsamen Uhr schlägt; fürs Standard-Kit, keine neuen
-  Fähigkeiten. Doku: `docs/level_horologium.md` (mit „What to look for“ und „Next, not built“).
-  - Takt-Uhr `Beat` (Autoload, 150 BPM), Anzeige `BeatDisplay`. Vier Hindernisse in
-    `levels/obstacles/`: Hammer, Taktstufe (Uhr/Ruf, P1/P2/beide), Taktglocke, Pendel.
-  - Räume: Vorhalle, Hammerwerk (einer, Welle, Kanon), Glockenschacht (Aufwärmen, Aufstieg mit
-    „ich läute, du kletterst“), Pendelgang, Glockenstube.
-  - Außerhalb von `levels/horologium/` angefasst: `core/beat.gd` (neu), `project.godot`
-    (Autoload), `core/sfx.gd` (Klick und Hindernis-Sounds), `ui/beat_display.gd` (neu),
-    `ui/boss_select.gd` (Eintrag), `levels/obstacles/` (neu), `levels/gym/` (schmale Spieler:
-    Gefahrenbox, Kamine 110/380, Wall-Gym-Schächte; `checkpoint_needs_all`, `obstacle()`,
-    eigene Physik-Layer pro Spieler), `actors/player/` nur Nichos Patch aus 70470c7 (`BODY_SIZE`
-    20×40), Zeichen für Zeichen übernommen.
-  - Offen: Ein Launch (340) ist höher als ein Schachtabschnitt (232), damit kommt einer ohne
-    Glocke eine Etage hoch (der andere braucht sie weiter). So lassen oder Abschnitte anders?
-  - Offen: `Metronome` (Wall Gym, 120 BPM, Echtzeit, startet beim Wall Jump) und `Beat` laufen
+  **Horologium und der Level-Baukasten** (2026-10-15). Erste Fassung (fertige Räume mit Hammer,
+  Glockenschacht, Pendelgang) nach Kays Test verworfen: kaum Koop nötig, nur Ausweichen. Neu:
+  Räume wie bei Celeste (schwere Passage, stirbt einer, fangen beide am Raumanfang an), die Kay
+  selbst im Godot-Editor baut. Doku: `docs/level_kit.md`.
+  - Baukasten `levels/kit/`: `KitRoom` (Raum, BPM, gemeinsamer Tod, Ziel → nächster Raum),
+    `KitSpawn`, `KitBlock` (Wand/Boden, Einweg-Plattform, auch nur für P1/P2), `KitSpikes`,
+    `KitSwitch` (schlagen oder Platte, für alle/P1/P2, Toggle/Einmal/Zeit/Halten, „auf die 1“)
+    + `KitDoor` (Tür oder Plattform, „irgendein“ oder „alle“ Schalter), `KitHammer`,
+    `KitPendulum`, `KitBeatStep` (Rhythmus: Muster über N Takte + Versatz), `KitShaft`
+    (Wandsprung-Schacht wide/narrow/coop, Breite aus BPM und der schmalen Spielerbreite),
+    `KitGoal`. Alle zeichnen sich im Editor, die Takt-Teile bewegen sich dort sogar.
+  - Leerer erster Raum: `levels/horologium/horologium.tscn` (Menü „Horologium“), Vorlage
+    `levels/kit/room_template.tscn`, Beispiele „Kit: showcase“ und „Kit: shafts“.
+  - Takt-Uhr `Beat` (Autoload, 150 BPM), Anzeige `BeatDisplay`. `Moves.override()`: ein Raum
+    schaltet F1-Schalter vorübergehend ein (Schächte: Wandsprung), ohne sie zu speichern.
+  - Außerhalb von `levels/kit/` und `levels/horologium/` angefasst: `core/beat.gd` (neu),
+    `project.godot` (Autoload), `core/sfx.gd` (Klick und Hindernis-Sounds), `core/moves.gd`
+    (`override()`), `ui/beat_display.gd` (neu), `ui/boss_select.gd` (Einträge), `levels/gym/`
+    (schmale Spieler: Gefahrenbox, Kamine 110/380, Wall-Gym-Schächte; `checkpoint_needs_all`;
+    eigene Physik-Layer pro Spieler), `actors/player/` nur Nichos Patch aus 70470c7
+    (`BODY_SIZE` 20×40), Zeichen für Zeichen übernommen.
+  - Als Nächstes (Ideen, nicht gebaut): Pendel-Schaukel (pumpen und abspringen), Kanone +
+    Ziel (Kugel parieren zum Partner, weiter ins Ziel), Ruder-Aufzug, Weltschalter.
+  - Offen: `Metronome` (Wall Gym, Echtzeit, startet beim Wall Jump) und `Beat` laufen
     nebeneinander. Später zusammenführen?
 - [ ] **Concept aufräumen** (`docs/concept.md`). Befund vom Review 2026-09-30:
   - Vision und technische Spezifikation sind vermischt: „Moveset“ hat genaue Werte

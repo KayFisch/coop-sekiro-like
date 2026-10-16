@@ -34,7 +34,7 @@ const COLOR_LABEL = Color(1, 1, 1, 0.8)
 const COLOR_HINT = Color(1, 1, 1, 0.5)
 const COLOR_MEASURE = Color(0.55, 0.8, 1.0, 0.6)
 const COLOR_CHECKPOINT = Color(0.4, 1.0, 0.6)
-# Physics layers of the platforms only one player stands on (BeatStep with an owner): the
+# Physics layers of the platforms only one player stands on (the kit's, see KitRoom): the
 # level puts each in its player's mask, so player.gd needn't know them.
 const OWN_PLATFORM_LAYERS = {1: 5, 2: 6}
 
@@ -142,21 +142,6 @@ func _unhandled_input(event):
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R:
 		for p in players:
 			respawn(p)
-
-
-# An obstacle touched: back to the checkpoint.
-func hazard_hit(p):
-	Sfx.play("chip")
-	respawn(p)
-
-
-# Adds an obstacle (levels/obstacles/), its `hit` signal putting whoever it hits back at the
-# checkpoint.
-func obstacle(node: Node2D) -> Node2D:
-	add_child(node)
-	if node.has_signal("hit"):
-		node.hit.connect(hazard_hit)
-	return node
 
 
 func respawn(p):

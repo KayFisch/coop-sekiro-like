@@ -10,6 +10,8 @@ const FIGHTS = [
 	{"name": "Relay Gym", "arena": "1 player + bot", "scene": "res://levels/gym/relay_gym.tscn"},
 	{"name": "Wall Gym", "arena": "1 player + bot", "scene": "res://levels/gym/wall_gym.tscn"},
 	{"name": "Horologium", "arena": "2 players", "scene": "res://levels/horologium/horologium.tscn"},
+	{"name": "Kit: showcase", "arena": "2 players", "scene": "res://levels/kit/kit_showcase.tscn"},
+	{"name": "Kit: shafts", "arena": "2 players", "scene": "res://levels/kit/kit_shafts.tscn"},
 	{"name": "Columna Bifrons", "arena": "The Threshold (test)", "scene": "res://levels/threshold/threshold.tscn"},
 ]
 

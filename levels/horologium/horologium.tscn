@@ -1,6 +1,44 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://b0f880gh1unrv" path="res://levels/horologium/horologium.gd" id="1_level"]
+[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
+[ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="block"]
+[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
+[ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
 
-[node name="Horologium" type="Node2D"]
-script = ExtResource("1_level")
+
+[node name="Room" type="Node2D"]
+script = ExtResource("room")
+title = "HOROLOGIUM 1"
+
+[node name="Floor" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(0, 600)
+size = Vector2(1152, 48)
+
+[node name="WallLeft" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(0, 0)
+size = Vector2(32, 600)
+
+[node name="WallRight" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(1120, 0)
+size = Vector2(32, 600)
+
+[node name="Ceiling" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(32, 0)
+size = Vector2(1088, 32)
+
+[node name="SpawnP1" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(96, 600)
+
+[node name="SpawnP2" type="Node2D" parent="."]
+script = ExtResource("spawn")
+position = Vector2(160, 600)
+player = 1
+
+[node name="Goal" type="Node2D" parent="."]
+script = ExtResource("goal")
+position = Vector2(1000, 472)
