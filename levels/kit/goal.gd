@@ -9,7 +9,7 @@ signal reached(goal)
 
 const COLOR = Color(0.4, 1.0, 0.6)
 
-@export_custom(PROPERTY_HINT_RANGE, "32,320,1,or_greater,suffix:px") var size = Vector2(96, 128):  # whole px
+@export_custom(PROPERTY_HINT_RANGE, "32,320,8,or_greater,suffix:px") var size = Vector2(96, 128):  # whole px
 	set(v):
 		size = Vector2(maxf(roundf(v.x), 32.0), maxf(roundf(v.y), 32.0))
 		queue_redraw()

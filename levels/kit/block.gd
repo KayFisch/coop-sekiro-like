@@ -16,7 +16,7 @@ const COLORS_ONE_WAY = [Color(0.32, 0.32, 0.36), Color(0.2, 0.4, 0.85), Color(0.
 const EDGE = 2.0  # px, an edge line's thickness
 const BRICK = Vector2(32, 16)
 
-@export_custom(PROPERTY_HINT_RANGE, "4,640,1,or_greater,suffix:px") var size = Vector2(128, 32):  # whole px
+@export_custom(PROPERTY_HINT_RANGE, "8,640,8,or_greater,suffix:px") var size = Vector2(128, 32):  # whole px
 	set(v):
 		size = Vector2(maxf(roundf(v.x), 4.0), maxf(roundf(v.y), 4.0))
 		queue_redraw()

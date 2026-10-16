@@ -20,7 +20,7 @@ const OUTLINE = 4
 		color = v
 		queue_redraw()
 ## Lines longer than this wrap (0: only where you break them).
-@export_range(0, 1152, 1, "or_greater", "suffix:px") var width = 0:
+@export_range(0, 640, 8, "or_greater", "suffix:px") var width = 0:
 	set(v):
 		width = v
 		queue_redraw()

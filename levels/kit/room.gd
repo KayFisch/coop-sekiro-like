@@ -37,7 +37,7 @@ const COLOR_DONE = Color(0.4, 1.0, 0.6)
 		queue_redraw()
 ## The room's size from its top-left corner (this node's position). One screen is 1152 x 648;
 ## bigger rooms scroll.
-@export_custom(PROPERTY_HINT_RANGE, "32,4096,1,or_greater,suffix:px") var size = VIEW:  # whole px
+@export_custom(PROPERTY_HINT_RANGE, "32,2304,8,or_greater,suffix:px") var size = VIEW:  # whole px
 	set(v):
 		size = Vector2(maxf(roundf(v.x), GRID), maxf(roundf(v.y), GRID))
 		queue_redraw()

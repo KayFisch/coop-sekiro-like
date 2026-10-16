@@ -20,7 +20,7 @@ const DEADLY = 0.5  # out at least this far (of HEIGHT): they kill
 const COLOR = Color(0.78, 0.32, 0.3)
 const COLOR_HOLES = Color(0.1, 0.08, 0.08)
 
-@export_range(16, 2048, 16) var length = 96:
+@export_range(16, 640, 16, "or_greater") var length = 96:
 	set(v):
 		length = v
 		queue_redraw()

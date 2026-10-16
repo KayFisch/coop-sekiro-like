@@ -18,7 +18,7 @@ const COLOR_EDGE = Color(0.85, 0.87, 0.95)
 const OPEN_ALPHA = 0.5  # the outline of an open door, or of a platform that isn't there
 const Player = preload("res://actors/player/player.gd")
 
-@export_custom(PROPERTY_HINT_RANGE, "4,640,1,or_greater,suffix:px") var size = Vector2(32, 128):  # whole px
+@export_custom(PROPERTY_HINT_RANGE, "8,640,8,or_greater,suffix:px") var size = Vector2(32, 128):  # whole px
 	set(v):
 		size = Vector2(maxf(roundf(v.x), 4.0), maxf(roundf(v.y), 4.0))
 		queue_redraw()

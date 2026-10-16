@@ -26,7 +26,7 @@ static var _sounded_beat = -1  # one appearing sound per beat, however many step
 	set(v):
 		owner_id = v
 		queue_redraw()
-@export_range(16, 640, 8) var width = 80.0:
+@export_range(16, 640, 8, "or_greater") var width = 80.0:
 	set(v):
 		width = v
 		queue_redraw()

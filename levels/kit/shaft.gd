@@ -33,17 +33,17 @@ const Player = preload("res://actors/player/player.gd")
 	set(v):
 		kind = v
 		queue_redraw()
-@export_range(128, 3200, 16) var height = 640:
+@export_range(128, 1280, 16, "or_greater") var height = 640:
 	set(v):
 		height = v
 		queue_redraw()
 ## How much lower the left wall's top is than the shaft's top.
-@export_range(0, 1600, 16, "or_greater") var left_drop = 0:
+@export_range(0, 640, 16, "or_greater") var left_drop = 0:
 	set(v):
 		left_drop = v
 		queue_redraw()
 ## How much lower the right wall's top is.
-@export_range(0, 1600, 16, "or_greater") var right_drop = 0:
+@export_range(0, 640, 16, "or_greater") var right_drop = 0:
 	set(v):
 		right_drop = v
 		queue_redraw()
@@ -66,7 +66,7 @@ const Player = preload("res://actors/player/player.gd")
 	set(v):
 		caps = v
 		queue_redraw()
-@export_range(32, 640, 16) var cap_length = 160:
+@export_range(32, 640, 16, "or_greater") var cap_length = 160:
 	set(v):
 		cap_length = v
 		queue_redraw()

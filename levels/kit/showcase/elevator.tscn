@@ -10,22 +10,23 @@
 [node name="Room" type="Node2D"]
 script = ExtResource("room")
 title = "KIT: ELEVATOR"
+size = Vector2(1152, 1008)
 next_room = "res://levels/kit/showcase/hub.tscn"
 
 [node name="Floor" type="Node2D" parent="."]
 script = ExtResource("block")
-position = Vector2(0, 600)
+position = Vector2(0, 960)
 size = Vector2(1152, 48)
 
 [node name="WallLeft" type="Node2D" parent="."]
 script = ExtResource("block")
-size = Vector2(32, 600)
+size = Vector2(32, 960)
 edges = 0
 
 [node name="WallRight" type="Node2D" parent="."]
 script = ExtResource("block")
 position = Vector2(1120, 0)
-size = Vector2(32, 600)
+size = Vector2(32, 960)
 edges = 0
 
 [node name="Ceiling" type="Node2D" parent="."]
@@ -36,32 +37,50 @@ edges = 2
 
 [node name="SpawnP1" type="Node2D" parent="."]
 script = ExtResource("spawn")
-position = Vector2(96, 600)
+position = Vector2(80, 960)
 
 [node name="SpawnP2" type="Node2D" parent="."]
 script = ExtResource("spawn")
-position = Vector2(160, 600)
+position = Vector2(136, 960)
 player = 1
 
 [node name="Info" type="Node2D" parent="."]
 script = ExtResource("text")
-position = Vector2(96, 64)
-text = "KitElevator: both of you on it, and it starts on the next 1.
-Strike (attack) on the beat as its front says: blue P1, orange P2, green both.
-A hit: up a stage. A miss: down two, and a bar off to gather yourselves."
+position = Vector2(400, 640)
+text = "KitElevator: both of you on it, and the one its wheel glows for strikes it: it starts.
+Then strike the wheel on the beat, as it told you just before: blue P1, orange P2, green both.
+A hit: up a stage. A miss: down two, and it stops; strike again to go on.
+This one: \"1.t.-2.t.-\": a strike a bar, told two beats ahead."
 
-[node name="Elevator" type="Node2D" parent="."]
+[node name="ElevatorSlow" type="Node2D" parent="."]
 script = ExtResource("elevator")
-position = Vector2(480, 580)
+position = Vector2(192, 940)
 stage_height = 40
 
-[node name="Ledge" type="Node2D" parent="."]
+[node name="Middle" type="Node2D" parent="."]
 script = ExtResource("block")
-position = Vector2(640, 220)
-size = Vector2(480, 24)
-edges = 1
+position = Vector2(352, 580)
+size = Vector2(464, 24)
+
+[node name="InfoFast" type="Node2D" parent="."]
+script = ExtResource("text")
+position = Vector2(64, 280)
+text = "This one: \"1t2t-1t2t-\":
+a strike every other beat,
+told one ahead."
+
+[node name="ElevatorFast" type="Node2D" parent="."]
+script = ExtResource("elevator")
+position = Vector2(656, 560)
+sequence = "1t2t-1t2t-1t2t-1t2t-1"
+stage_height = 40
+
+[node name="Top" type="Node2D" parent="."]
+script = ExtResource("block")
+position = Vector2(816, 200)
+size = Vector2(304, 24)
 
 [node name="Goal" type="Node2D" parent="."]
 script = ExtResource("goal")
-position = Vector2(1000, 104)
+position = Vector2(1000, 84)
 size = Vector2(96, 116)

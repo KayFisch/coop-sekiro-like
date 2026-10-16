@@ -24,7 +24,7 @@ const COLOR_HELD = Color(1.0, 0.85, 0.4)  # sparks of the locked blades, and the
 const COLOR_ARC = Color(1.0, 0.4, 0.3, 0.3)  # the editor: the blade's path
 
 ## Pivot to the blade's middle.
-@export_range(80, 900, 8) var length = 300.0:
+@export_range(80, 640, 8, "or_greater") var length = 300.0:
 	set(v):
 		length = v
 		queue_redraw()

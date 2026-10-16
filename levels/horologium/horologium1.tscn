@@ -1,44 +1,159 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://typbylb7mqw"]
 
-[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
+[ext_resource type="Script" uid="uid://c7rop6fvluq2p" path="res://levels/kit/elevator.gd" id="5_iorjr"]
 [ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="block"]
-[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
 [ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
+[ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
+[ext_resource type="Script" uid="uid://cghcbfvat4lml" path="res://levels/kit/spawn.gd" id="spawn"]
 
-
-[node name="Room" type="Node2D"]
+[node name="Room" type="Node2D" unique_id=939367137]
 script = ExtResource("room")
 title = "HOROLOGIUM 1"
+size = Vector2(1152, 3072)
 
-[node name="Floor" type="Node2D" parent="."]
+[node name="Floor" type="Node2D" parent="." unique_id=1205480639]
+position = Vector2(0, 3008)
 script = ExtResource("block")
-position = Vector2(0, 600)
-size = Vector2(1152, 48)
+size = Vector2(712, 64)
 
-[node name="WallLeft" type="Node2D" parent="."]
+[node name="Floor2" type="Node2D" parent="." unique_id=384073746]
+position = Vector2(712, 3008)
 script = ExtResource("block")
-position = Vector2(0, 0)
-size = Vector2(32, 600)
+size = Vector2(440, 64)
 
-[node name="WallRight" type="Node2D" parent="."]
+[node name="Floor3" type="Node2D" parent="." unique_id=305607756]
+position = Vector2(640, 2216)
 script = ExtResource("block")
+size = Vector2(488, 24)
+look = 2
+
+[node name="Floor4" type="Node2D" parent="." unique_id=812985551]
+position = Vector2(672, 2240)
+script = ExtResource("block")
+size = Vector2(416, 24)
+look = 2
+edges = 0
+
+[node name="Floor5" type="Node2D" parent="." unique_id=417650510]
+position = Vector2(752, 2264)
+script = ExtResource("block")
+size = Vector2(64, 16)
+look = 2
+edges = 0
+
+[node name="Floor7" type="Node2D" parent="." unique_id=1742699175]
+position = Vector2(776, 2280)
+script = ExtResource("block")
+size = Vector2(16, 632)
+look = 2
+edges = 0
+
+[node name="Floor8" type="Node2D" parent="." unique_id=373960207]
+position = Vector2(968, 2280)
+script = ExtResource("block")
+size = Vector2(16, 632)
+look = 2
+edges = 0
+
+[node name="Floor9" type="Node2D" parent="." unique_id=835903715]
+position = Vector2(632, 2896)
+script = ExtResource("block")
+size = Vector2(488, 16)
+edges = 0
+
+[node name="Floor10" type="Node2D" parent="." unique_id=1773741772]
+position = Vector2(752, 2880)
+script = ExtResource("block")
+size = Vector2(64, 16)
+look = 2
+edges = 0
+
+[node name="Floor11" type="Node2D" parent="." unique_id=8157809]
+position = Vector2(944, 2880)
+script = ExtResource("block")
+size = Vector2(64, 16)
+look = 2
+edges = 0
+
+[node name="Floor6" type="Node2D" parent="." unique_id=1510742218]
+position = Vector2(944, 2264)
+script = ExtResource("block")
+size = Vector2(64, 16)
+look = 2
+edges = 0
+
+[node name="WallLeft" type="Node2D" parent="." unique_id=709225148]
+script = ExtResource("block")
+size = Vector2(32, 2800)
+
+[node name="WallRight" type="Node2D" parent="." unique_id=165040538]
 position = Vector2(1120, 0)
-size = Vector2(32, 600)
-
-[node name="Ceiling" type="Node2D" parent="."]
 script = ExtResource("block")
+size = Vector2(32, 4000)
+
+[node name="Ceiling" type="Node2D" parent="." unique_id=1496543414]
 position = Vector2(32, 0)
+script = ExtResource("block")
 size = Vector2(1088, 32)
 
-[node name="SpawnP1" type="Node2D" parent="."]
+[node name="SpawnP1" type="Node2D" parent="." unique_id=1418149349]
+position = Vector2(16, 2992)
 script = ExtResource("spawn")
-position = Vector2(96, 600)
 
-[node name="SpawnP2" type="Node2D" parent="."]
+[node name="SpawnP2" type="Node2D" parent="." unique_id=53802309]
+position = Vector2(16, 2928)
 script = ExtResource("spawn")
-position = Vector2(160, 600)
 player = 1
 
-[node name="Goal" type="Node2D" parent="."]
+[node name="Goal" type="Node2D" parent="." unique_id=1295620838]
+position = Vector2(1024, 32)
 script = ExtResource("goal")
-position = Vector2(1000, 472)
+
+[node name="KitBlock" type="Node2D" parent="." unique_id=229781723]
+position = Vector2(0, 2800)
+script = ExtResource("block")
+size = Vector2(32, 80)
+edges = 0
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock3" type="Node2D" parent="." unique_id=1491603883]
+position = Vector2(448, 2272)
+script = ExtResource("block")
+size = Vector2(16, 640)
+edges = 0
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock4" type="Node2D" parent="." unique_id=810441470]
+position = Vector2(624, 2272)
+script = ExtResource("block")
+size = Vector2(16, 640)
+edges = 0
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock5" type="Node2D" parent="." unique_id=1011944797]
+position = Vector2(624, 2216)
+script = ExtResource("block")
+size = Vector2(16, 56)
+edges = 0
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock6" type="Node2D" parent="." unique_id=669649780]
+position = Vector2(448, 2216)
+script = ExtResource("block")
+size = Vector2(16, 56)
+edges = 0
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock2" type="Node2D" parent="." unique_id=41764147]
+position = Vector2(-8, 2864)
+script = ExtResource("block")
+size = Vector2(8, 152)
+edges = 0
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitElevator" type="Node2D" parent="." unique_id=1237087984]
+position = Vector2(464, 3008)
+script = ExtResource("5_iorjr")
+sequence = "1-2-1-1-2-2-1-2-3"
+stage_height = 88
+metadata/_custom_type_script = "uid://c7rop6fvluq2p"
