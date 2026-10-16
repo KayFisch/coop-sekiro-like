@@ -128,8 +128,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   - *Allein gelassen:* ab wann ein Schwert wechselt und zurückwechselt (`TURN_TIME` 1,5 s,
     `RETURN_DISTANCE` 300), wie oft er zum Entfernten rusht (Gewicht von `RUSH`).
 - [ ] **Stoß von Bifrons umbauen** (offen, niemand; Nicho, 2026-10-02, nach dem Test):
-  - Kein Stich mehr: Er schubst die Spieler mit der flachen Seite weg, die Schwerter stehen
-    dabei senkrecht.
+  - ~~Kein Stich mehr: Er schubst die Spieler mit der flachen Seite weg, die Schwerter stehen
+    dabei senkrecht.~~ Erledigt auf `nicho/pep-test` (2026-10-16), dazu stärkerer Rückstoß
+    (etwa 230 statt 130 px).
   - Nur, wenn er nah am Rand des Raums steht.
   - Nicht mehr, weil die Spieler nah an ihm sind: In ppe müssen sie nah stehen (sonst erreicht
     ihn der hintere nicht). Heute löst genau das den Stoß aus (0,7 s näher als 62 px, oder nach
