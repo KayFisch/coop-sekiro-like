@@ -39,7 +39,7 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
 
 - On `nicho/pep-test`, Bifrons's fight now runs on **sync as life** by default (F1,
   "bifrons_rules": "sync"; "hp" is the old way): no health and no potions, the two of you share
-  one sync meter and the boss has his own, everyone has a posture (a ring around the body),
+  one sync meter and the boss has his own, everyone has a posture (a bar under the meters),
   and the same rules hold for players and boss. No sync is "chaos" (no blocking, one more hit
   ends it), full sync is the sync mode. Nicho's decisions are in the scribble of 2026-10-16, the
   rules in `docs/boss_columna_bifrons.md` ("Sync as life"). Cubus and Sphaera are untouched.
