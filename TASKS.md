@@ -115,8 +115,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Die Stellschrauben stehen oben in `columna_bifrons.gd` unter „Moving“, mit den aktuellen
   Werten in `docs/boss_columna_bifrons.md` → „Tuning“ (beides auf dem Branch):
   - *Abstand:* ab wann er zurückweicht und wie weit (`CROWD_DISTANCE` 62, `FIT_DISTANCE` 90),
-    ab wann er nachrückt (`BLADE_REACH` 215, `REACH_MARGIN` 30), wie weit er neben der Mitte
-    zwischen den Spielern stehen darf (`PLACE_SLACK` 28).
+    ab wann er nachrückt (`BLADE_REACH` 215, `REACH_MARGIN` 30).
+  - *Drift* (seit 2026-10-16, damit er weniger rumsteht): Abstand zum näheren Spieler, der
+    ständig wandert (`DRIFT_NEAR` 80 bis `DRIFT_FAR` 170, `DRIFT_SPEED` 0,6, `DRIFT_PAUSE`
+    0,5 s), zwischen zwei Spielern bis `PEP_DRIFT` 60 px neben der Mitte; wer im Weg steht,
+    wird mitgeschoben, nach `PUSH_PATIENCE` 2 s weggestoßen (`PUSH_PACE` 0,5).
   - *Tempo:* Gehen (`WALK_SPEED` 110), während Attacken (`ATTACK_PACE` 0,5), gebremst durch
     Treffer (`SLOWED_FACTOR` 0,3 für `SLOWED_TIME` 0,6 s).
   - *Hiebdash:* kurzer Schritt, langer Dash, Zielabstand (`LUNGE_SHORT` 14, `LUNGE_LONG` 160,
