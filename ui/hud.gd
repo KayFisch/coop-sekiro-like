@@ -182,6 +182,12 @@ func _build_sync_duel(root):
 	_rect(box, Vector2(w, y), Vector2(w, POSTURE_HEIGHT), BAR_BG_COLOR)
 	var boss_fill = _rect(box, Vector2(w, y), Vector2(w, POSTURE_HEIGHT), POSTURE_COLOR)
 	_duel.postures.append([null, boss_fill, false])
+	# How fast posture comes back just now (it follows sync): the players' left of their bars,
+	# his right of his.
+	_duel.team_regen = _label(box, Vector2(-112, y - 5), "", 12)
+	_duel.boss_regen = _label(box, Vector2(2.0 * w + 8, y - 5), "", 12)
+	for label in [_duel.team_regen, _duel.boss_regen]:
+		label.modulate = Color(1, 1, 1, 0.7)
 	_rect(box, Vector2(w - 1, 18), Vector2(2, y - 18 + players.size() * (POSTURE_HEIGHT + POSTURE_GAP)), Color.WHITE)
 	var state_y = y + maxi(players.size(), 1) * (POSTURE_HEIGHT + POSTURE_GAP) + 2.0
 	_duel.team_state = _label(box, Vector2(0, state_y), "", 16)
@@ -193,17 +199,17 @@ func _build_sync_duel(root):
 
 func _update_sync_duel(rules):
 	var w = DUEL_HALF_WIDTH
-	var team = w * rules.team / rules.MAX
+	var team = w * rules.team_share()
 	_duel.team_fill.position.x = w - team
 	_duel.team_fill.size.x = team
-	_duel.boss_fill.size.x = w * rules.boss_sync / rules.MAX
-	_duel.chaos_tick.position.x = w - w * Tuning.value("chaos_exit") / rules.MAX - 1.0
-	_duel.mode_tick.position.x = w - w * Tuning.value("sync_mode_exit") / rules.MAX - 1.0
+	_duel.boss_fill.size.x = w * rules.boss_share()
+	_duel.chaos_tick.position.x = w - w * Tuning.value("chaos_exit") / 100.0 - 1.0
+	_duel.mode_tick.position.x = w - w * Tuning.value("sync_mode_exit") / 100.0 - 1.0
 	for entry in _duel.postures:
 		var actor = entry[0] if entry[0] != null else GameManager.boss
 		if not is_instance_valid(actor):
 			continue
-		var share = rules.posture_of(actor) / rules.POSTURE_MAX
+		var share = rules.posture_share(actor)
 		var fill: ColorRect = entry[1]
 		fill.size.x = w * share
 		fill.position.x = w - fill.size.x if entry[2] else w
@@ -229,6 +235,9 @@ func _update_sync_duel(rules):
 		_duel.boss_state.text = ""
 	if is_instance_valid(GameManager.boss):
 		_duel.boss_name.text = GameManager.boss.get_display_name()
+		_duel.boss_regen.text = "regen %d%%" % roundi(100.0 * rules.regen_share(GameManager.boss))
+	if not GameManager.players.is_empty():
+		_duel.team_regen.text = "regen %d%%" % roundi(100.0 * rules.regen_share(GameManager.players[0]))
 
 
 func _build_controls_hint(root):

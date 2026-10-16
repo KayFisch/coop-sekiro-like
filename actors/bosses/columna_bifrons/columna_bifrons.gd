@@ -61,18 +61,18 @@ const SWEEP = preload("attacks/sweep.gd")
 const LEAP = preload("attacks/leap.gd")
 const SHOVE = preload("attacks/shove.gd")
 const ATTACKS = {
-	"SINGLE": {"weight": 1.0, "repeats": true, "strikes": [[5, LEFT]]},
-	"DOUBLE": {"weight": 0.5, "strikes": [[5, LEFT], [4, RIGHT]]},
-	"TRIPLE": {"weight": 2.0, "repeats": true, "strikes": [[5, RIGHT], [4, RIGHT], [4, LEFT]]},
-	"QUAD": {"weight": 1.5, "strikes": [[6, LEFT], [4, LEFT], [4, RIGHT], [4, BOTH]]},
+	"SINGLE": {"weight": 1.0, "repeats": true, "strikes": [[3, LEFT]]},
+	"DOUBLE": {"weight": 0.5, "strikes": [[3, LEFT], [2, RIGHT]]},
+	"TRIPLE": {"weight": 2.0, "repeats": true, "strikes": [[4, RIGHT], [3, RIGHT], [3, LEFT]]},
+	"QUAD": {"weight": 1.5, "strikes": [[5, LEFT], [3, LEFT], [3, RIGHT], [3, BOTH]]},
 	"LONG": {"weight": 1.0, "strikes": [
-		[9, RIGHT], [4, RIGHT], [4, LEFT], [4, RIGHT], [4, RIGHT], [4, LEFT], [4, BOTH]]},
-	"BOTH": {"weight": 0.5, "strikes": [[6, BOTH]]},
+		[6, RIGHT], [3, RIGHT], [3, LEFT], [4, RIGHT], [3, RIGHT], [3, LEFT], [4, BOTH]]},
+	"BOTH": {"weight": 0.5, "strikes": [[4, BOTH]]},
 	# He charges past one player, so both are on one side of him, and brings both swords down
 	# on them.
-	"CROSSING": {"weight": {"pep": 2.0, "pep_cornered": 6.0}, "strikes": [[5, RIGHT, CHARGE], [6, BOTH]]},
+	"CROSSING": {"weight": {"pep": 2.0, "pep_cornered": 6.0}, "strikes": [[4, RIGHT, CHARGE], [4, BOTH]]},
 	# He dashes over to the player who's away, and strikes them.
-	"RUSH": {"weight": {"alone": 2.0}, "strikes": [[7, RIGHT, RUSH]]},
+	"RUSH": {"weight": {"alone": 2.0}, "strikes": [[5, RIGHT, RUSH]]},
 	# One sword, from one side of him through to the other.
 	"SWEEP": {"weight": {"pep": 1.5}, "attack": SWEEP},
 	# He jumps and comes down between the players: his way of getting them back on both sides
@@ -96,8 +96,8 @@ const TEST_ONLY_PATTERN = [] # "TRIPLE", "QUAD", "SINGLE", "LONG", "SWEEP"
 # afresh with every attack. Once that many are parried and he's free, he strikes back at the
 # player whose hit he parried last: with one of the same attacks, turned so its first strike is
 # theirs, and that strike comes quickly (ANSWER_WAIT). Then the series runs to its end, as ever.
-const REACTIVE_WAIT_MIN = 0.5
-const REACTIVE_WAIT_MAX = 0.9
+const REACTIVE_WAIT_MIN = 0.3
+const REACTIVE_WAIT_MAX = 0.7
 const PATIENCE = [1, 1, 2]
 const ANSWER_WAIT = 4  # StrikePattern.TIME_UNITs until an answer's first strike lands, at most
 
@@ -737,9 +737,9 @@ func take_damage(amount: float, source = null):
 		super(amount, source)
 
 
-# Sync as life (core/sync_rules.gd): the same three cases, but they cost his sync or posture, and
-# a guard that's up parries the hit by chance, or else blocks it. Staggered or in chaos he has no
-# guard; a hit that lands in chaos kills him.
+# Sync as life (core/sync_rules.gd): the same three cases, but they cost his sync and posture (a
+# sync hit its own amount, not SYNC_HIT_FACTOR), and a guard that's up parries the hit by chance,
+# or else blocks it. Staggered or in chaos he has no guard; a hit that lands in chaos kills him.
 func _struck_by_rules(amount: float, source):
 	_slowed_until = anim_time + SLOWED_TIME
 	var at = _flank(side_of(source), source.global_position.y)
@@ -757,7 +757,7 @@ func _struck_by_rules(amount: float, source):
 		if on_beat:
 			Sfx.play("on_beat", -4.0)
 			spawn_sparks(at, 12, COLOR_SYNC_BEAT)
-		lethal = rules.boss_struck(amount * SYNC_HIT_FACTOR)
+		lethal = rules.boss_struck(amount, true)
 	elif not guards.is_empty():
 		if randf() < Tuning.value("boss_parry_chance"):
 			_parry(guards[0], source, at)
@@ -770,7 +770,7 @@ func _struck_by_rules(amount: float, source):
 		Sfx.play("sync_hit", -6.0)
 		shake(3.0)
 		spawn_sparks(at, 8, COLOR_EXECUTE)
-		lethal = rules.boss_struck(amount)
+		lethal = rules.boss_struck(amount, false)
 	super.take_damage(hp if lethal else 0.0, source)
 
 

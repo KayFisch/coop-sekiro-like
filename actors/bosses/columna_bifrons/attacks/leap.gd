@@ -17,9 +17,9 @@ const LEFT = StrikePattern.LEFT
 const RIGHT = StrikePattern.RIGHT
 
 # --- Tuning ---
-const WINDUP_UNITS = 7  # StrikePattern.TIME_UNITs until he lands
-const RISE_TIME = 0.3  # from the floor up to HEIGHT, and over to where he'll come down
-const HANG_TIME = 0.3  # up there, before he drops (in StrikePattern.FALL_TIME)
+const WINDUP_UNITS = 6  # StrikePattern.TIME_UNITs until he lands
+const RISE_TIME = 0.22  # from the floor up to HEIGHT, and over to where he'll come down
+const HANG_TIME = 0.2  # up there, before he drops (in StrikePattern.FALL_TIME)
 const HEIGHT = 200.0  # how high he gets: his feet clear the players' heads
 const AHEAD = 50.0  # both players on one side: he lands at most this far past the nearer one
 const REACH = 80.0  # a player this close to where he lands is under the swords

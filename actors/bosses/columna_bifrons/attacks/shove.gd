@@ -1,9 +1,10 @@
 class_name Shove
 extends Attack
-## White blades, lowered and drawn back -> thrust. Columna Bifrons making room without giving
-## ground: he draws both swords back, level, and thrusts them out at the players they fight.
-## It's no strike: no damage, nothing to parry, no guard broken. It throws back every player a
-## blade reaches (a dash carries a player through it). It comes when he wants room and a hop
+## White blades, upright and drawn in against him -> shoved out. Columna Bifrons making room
+## without giving ground: he pulls both swords in, pointing up, and shoves them out flat at the
+## players they fight. It's no strike: no damage, nothing to parry, no guard broken. It throws
+## back every player within its reach on a side a blade is shoved to (a dash carries a player
+## through it). It comes when he wants room and a hop
 ## back would take him away from the middle of the room (see "MAKING ROOM" in
 ## columna_bifrons.gd).
 
@@ -13,17 +14,21 @@ const LEFT = StrikePattern.LEFT
 const RIGHT = StrikePattern.RIGHT
 
 # --- Tuning ---
-const WINDUP_TIME = 0.5  # the swords drawn back: the cue
-const THRUST_TIME = 0.08  # ...and out
+const WINDUP_TIME = 0.5  # the swords drawn in: the cue
+const THRUST_TIME = 0.1  # ...and shoved out
 const HOLD_TIME = 0.25  # held out, before they come back
 const NEAR = 150.0  # he only shoves while a player is this close to him: it's for making room
-const REACH = 215.0  # a player this close, on a side a blade is thrust to, is thrown back...
-const PUSH = Vector2(700.0, -160.0)  # ...at this speed (px/s): about 130 px, and off the floor
-const PUSH_TIME = 0.05  # the thrust keeps pushing this long
+const REACH = 215.0  # a player this close, on a side a blade is shoved to, is thrown back...
+const PUSH = Vector2(1050.0, -260.0)  # ...at this speed (px/s): about 220 px, and off the floor
+const PUSH_TIME = 0.05  # the shove keeps pushing this long
+# The swords: upright, the flat of the blade toward the players. Drawn in against his flanks,
+# then shoved out. x, y = the hand from his center; z = the blade's angle (upright).
+const POSE_DRAWN = Vector3(14.0, 34.0, -1.571)
+const POSE_SHOVED = Vector3(80.0, 30.0, -1.571)
 const RECOVER_TIME = 0.4
 const LEAN = 16.0  # px his body rears back by, and then into the thrust (players on one side)
 const PULL_IN = Vector2(0.92, 1.05)  # his body, drawn in (a player on each side)
-const SPREAD = Vector3(0.0, -18.0, 0.0)  # the sword that reaches across thrusts above the other
+const SPREAD = Vector3(16.0, -10.0, 0.0)  # the sword that reaches across stands out past the other
 const COLOR = Color(0.95, 0.97, 1.0)  # white: nothing to parry
 
 var _name: String
@@ -62,10 +67,10 @@ func get_telegraph_duration() -> float:
 	return WINDUP_TIME
 
 
-# Both swords lowered at the players, then drawn far back, his body with them.
+# Both swords upright, drawn in against him, his body with them.
 func update_telegraph(progress: float):
 	var draw = smoothstep(0.1, 0.8, progress)
-	_pose(boss.POSE_LANCE_LOW.lerp(boss.POSE_LANCE_BACK, draw), false)
+	_pose(boss.POSE_GUARD.lerp(POSE_DRAWN, draw), false)
 	_lean(-draw)
 	for blade in [LEFT, RIGHT]:
 		boss.tint_sword(blade, boss.COLOR_SWORD.lerp(COLOR, 0.4 + 0.6 * progress))
@@ -83,7 +88,7 @@ func execute():
 func update(delta: float):
 	_time += delta
 	var out = clampf(_time / THRUST_TIME, 0.0, 1.0)
-	_pose(boss.POSE_LANCE_BACK.lerp(boss.POSE_LANCE, out), true)
+	_pose(POSE_DRAWN.lerp(POSE_SHOVED, out), true)
 	_lean(lerpf(-1.0, 0.6, out))
 	for blade in [LEFT, RIGHT]:
 		boss.tint_sword(blade, COLOR)
@@ -99,7 +104,7 @@ func time_to_strike(_player) -> float:
 	return INF
 
 
-# Every player on a side a blade is thrust to, and within its reach, is thrown back. It pushes
+# Every player on a side a blade is shoved to, and within its reach, is thrown back. It pushes
 # for a few frames (PUSH_TIME): a player with their partner right behind them can't move until
 # the partner has.
 func _push():
