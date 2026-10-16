@@ -497,3 +497,44 @@ das Chaos weg und leerer Sync ist direkt der Tod? Die Zahlen (F2).
 → Umgesetzt auf `nicho/pep-test`: `core/sync_rules.gd`, Regeln in
 `docs/boss_columna_bifrons.md` → „Sync as life“. Der eigentliche Sync-Modus (zwei Spieler werden
 einer) ist noch zu bauen.
+
+## 2026-10-15 (Kay): Platformer in Welten, passend zu den Bossen
+
+Das Platformer-Konzept würde ich mehr oder weniger in **Welten** aufteilen. Die Level wären dann
+an ihrem Boss orientiert und umgekehrt: Hindernisse aus den Platformer-Leveln kommen als
+einzelne, wiederkehrende Elemente in den Bosskampf. Eine Welt kann gerne mehrere Bosse haben,
+z. B. Boss 1, Boss 2 und am Ende den finalen Boss der Welt. Das Welten-Konzept würde genauso für
+die Beat-Saber-Alternative funktionieren (Nichos Beat-Runner, `TASKS.md`).
+- *Beispiel Pendel:* das schneller werdende Pendel aus dem Platformer (siehe „Pendelklingen“,
+  „Schaukel pumpen“) taucht im Bosskampf wieder auf: Man muss es bis zum Überschlag bringen, um
+  dem Boss zu schaden. Passt zu Sphaera.
+- *Beispiel Spiegel:* Nichos gespiegelter Bifrons (Schattenachse, Spiegelung an der x-Achse)
+  könnte das Thema einer ganzen Parkour-Welt sein. Das passt zur Idee der Weltschalter, die die
+  Welt umbauen: Der Schalter kippt zwischen Licht- und Schattenseite.
+
+## 2026-10-16 (Kay): Woher kommen die Boss-Designs? Zweiköpfige Wesen aus Mythen
+
+Schon beschlossen: Bosse sind meistens zweiseitig; der Look wahrscheinlich schwarz-weiß / Yin
+und Yang. Offen: wie die Bosse genau aussehen. Zur Inspiration: In vielen Mythologien gibt es
+zweiköpfige oder zweigesichtige Wesen, Monster und Götter. Daraus vier Wege:
+
+- **A: Aus allen Mythologien sammeln.** Jede Kreatur wird ein eigener Boss, in unseren Stil
+  übersetzt. Gibt gleich verschiedene Designs, und potenziell ein Thema pro Welt (eine Welt
+  pro Mythologie, passt zu „Platformer in Welten“ vom 2026-10-15).
+- **B: Eine besonders passende Kreatur** als Inspiration für alle Designs.
+- **C: Eine Mythologie** auswählen und alle Designs daraus nehmen.
+- **D: Komplett frei** designen.
+
+Kay findet **A** sehr interessant. Nicho: was meinst du?
+
+Erste Kandidaten zum Weiterdenken (Claude, ungeprüft gesammelt):
+- *Janus* (römisch): zwei Gesichter, nach vorn und hinten; „bifrons“ ist sein Beiname, Columna
+  Bifrons ist schon halb er.
+- *Orthros* (griechisch): zweiköpfiger Hund, Bruder des Kerberos.
+- *Ardhanarishvara* (hinduistisch): halb Shiva, halb Parvati, längs geteilt: zwei Hälften in
+  einem Körper, nah an Yin und Yang.
+- *Gandabherunda* (indisch): zweiköpfiger Vogel.
+- *Fuxi und Nüwa* (chinesisch): ein Paar mit verschlungenen Schlangenleibern.
+- *Amphisbaena* (griechisch-römisch): Schlange mit einem Kopf an jedem Ende.
+- *Doppelköpfige Schlange* (aztekisch).
+- *Ettin* (englische Folklore): zweiköpfiger Riese.

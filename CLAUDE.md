@@ -49,6 +49,13 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
 - `player.gd` on the branch got small hooks for it (`take_damage()`, `is_blocking()`,
   `on_perfect_parry()`, a sword cue): they do nothing unless a fight sets `GameManager.rules`.
 
+### For Nicho, from Kay (2026-10-16)
+
+- An open question for you on how the bosses look: Kay found two-headed beings in many myths
+  and sees four ways (A: a boss per creature from all mythologies, B: one creature for all,
+  C: one mythology, D: freestyle). Kay leans to A. `scribbles.md` (2026-10-16), `TASKS.md`
+  → "Offene Grundsatzfragen".
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The

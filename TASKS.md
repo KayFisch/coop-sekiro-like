@@ -14,6 +14,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Stand nach dem Durchsprechen (Scribble vom 2026-10-02, „Was ist der Rest des Spiels?“):
   lineare Story und Roguelike mit Mobs fallen wohl raus; im Rennen sind Fokus auf Bosse, eine
   Aufwärmphase als Auto-Runner/Beat-Saber, Platformer und der Berg mit Fortschrittsverlust.
+- [ ] **Woher kommen die Boss-Designs?** (Kay, 2026-10-16) Zweiköpfige Wesen aus Mythen: A aus
+  allen Mythologien (ein Boss je Kreatur, evtl. eine Welt je Mythologie), B eine Kreatur für
+  alle, C eine Mythologie, D frei. Kay neigt zu A. Details: `scribbles.md`, 2026-10-16.
 - [ ] _(weitere eintragen)_
 
 ## Entscheidungen
