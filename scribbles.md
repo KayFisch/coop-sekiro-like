@@ -455,3 +455,45 @@ trainiert der Platformer nebenbei den Bosskampf.
 → Taktblöcke, Stampfer und Tempowechsel überschneiden sich mit Nichos Beat-Runner (`TASKS.md`):
 Dasselbe Metronom könnte beide tragen, also absprechen. Für den Moment brauchen wir nur wenige
 davon; die Auswahl folgt.
+
+## 2026-10-16 (Nicho, mit Claude): Sync als Leben, die Umstellung
+
+Ausgangspunkt: Der alte Sync (0 bis 100, Multiplikator ×1,5/×2) wird zu leicht voll und
+belohnt Spielen ohne Partner (Mashen ist gleich schnell). Er wird für den Test gestrichen; das
+alte System bleibt umschaltbar und wird später mit den Erkenntnissen angepasst.
+
+**Anforderungen:** schwerer und länger bis voll; Sieg ohne Sync bleibt möglich; ohne Sync nie
+schneller und nie sicherer als mit; Sync-Spiel fühlt sich besser an. Dazu (Claude, Nicho
+einverstanden): jede Bewegung der Leiste lesbar; kein Strudel ohne Ausgang; eine Belohnung pro
+Zustand; wenige Regeln, für jeden Boss gleich.
+
+**Entscheidungen (Nicho):**
+- Keine Gesundheit, keine Tränke. Ein Sync für beide Spieler, Start in der Mitte; der Boss
+  startet voll (zwei Wesen, schon zusammen) und verliert nur, außer durch einen eigenen
+  Koop-Parry (beide Spieler greifen gleichzeitig an, er pariert beide) oder einen Schlag, der
+  beide trifft.
+- Dazu Haltung wie in Sekiro. Sync und Haltung sind nicht zu viele Leisten (Sekiro hat vier);
+  Haltung kann anders aussehen, z. B. ein Kreis, der schrumpft.
+- Sync verfällt nicht über Zeit; Haltung regeneriert, umso langsamer, je weniger Sync.
+- Gleiche Folgen für Spieler und Boss. Eingehend: ungeblockt = Sync-Schaden, geblockt =
+  Haltungsschaden, pariert = weniger Haltungsschaden (kann nicht brechen), Koop-Parry =
+  Sync-Gewinn. Ausgehend: nicht im Sync = kein Gewinn, im Sync = Gewinn, Fenster verpasst =
+  Verlust.
+- Haltung gebrochen = Stagger und aller Sync weg, wie der Todesstoß in Sekiro.
+- Leerer Sync = Chaos, wie ein Revive: kein Blocken, der nächste unparierte Treffer tötet; vorbei
+  erst, wenn genug Sync zurück ist (Belohnungen bleiben gleich). Vertauschte Steuerung höchstens
+  als Mechanik eines Bosses.
+- Voller Sync = Sync-Modus, die zweite Phase; ab da soll der Kampf nicht mehr lang sein. Ihn zu
+  erreichen ist nicht nötig, also umso mehr Belohnung für sehr sync-fokussiertes Spiel.
+- Ein Koop-Parry ist kein Haltungsbruch: kein oder nur kurzer Stagger.
+- Sync-Hit genau auf dem Beat bringt mehr als daneben (wie Parry gegen Block), sichtbar am
+  Schwert (Aufleuchten im Moment, in dem man treffen müsste).
+- Blocken abhängig vom Sync: verworfen (arbeitet gegen den Sync-Aufbau). Multiplikator: weg.
+- Übertrag aus dem Zwischenlevel: erstmal egal, später gedeckelt möglich.
+
+**Offen:** Ist „nicht blocken“ als Folge des Chaos genug, oder kommt noch etwas dazu, oder fällt
+das Chaos weg und leerer Sync ist direkt der Tod? Die Zahlen (F2).
+
+→ Umgesetzt auf `nicho/pep-test`: `core/sync_rules.gd`, Regeln in
+`docs/boss_columna_bifrons.md` → „Sync as life“. Der eigentliche Sync-Modus (zwei Spieler werden
+einer) ist noch zu bauen.

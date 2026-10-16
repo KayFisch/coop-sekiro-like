@@ -35,6 +35,20 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
+### For Kay, from Nicho (2026-10-16)
+
+- On `nicho/pep-test`, Bifrons's fight now runs on **sync as life** by default (F1,
+  "bifrons_rules": "sync"; "hp" is the old way): no health and no potions, the two of you share
+  one sync meter and the boss has his own, everyone has a posture (a ring around the body),
+  and the same rules hold for players and boss. No sync is "chaos" (no blocking, one more hit
+  ends it), full sync is the sync mode. Nicho's decisions are in the scribble of 2026-10-16, the
+  rules in `docs/boss_columna_bifrons.md` ("Sync as life"). Cubus and Sphaera are untouched.
+- New on the branch: an **F2 panel** to tune numbers while playing (`core/tuning.gd`, a new
+  autoload, saved to `user://tuning.cfg`), for now holding the sync rules. It could take numbers
+  of yours too.
+- `player.gd` on the branch got small hooks for it (`take_damage()`, `is_blocking()`,
+  `on_perfect_parry()`, a sword cue): they do nothing unless a fight sets `GameManager.rules`.
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The

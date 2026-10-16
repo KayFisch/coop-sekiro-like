@@ -84,12 +84,19 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Treffer-Fenster: Nicho tendiert nach dem Solo-Test zu **„beat“** (mit „after“ wartet man nach
   dem Parry erst, und bis man selbst wieder dran ist, dauert es zu lang; „beat“ hält das
   Ganze schneller). Noch mit Kay zu besprechen.
-- [ ] **Sync-Modus** (offen, niemand; Hauptaufgabe neben den Zwischen-Prototypen). Der
+- [ ] **Sync-Modus** (@Nicho; Hauptaufgabe neben den Zwischen-Prototypen). Der
   fehlende Teil des Proof of Concept: in ppe, beide nebeneinander, werden zwei Spieler mit zwei
   Schwertern zu einem mit einem großen Schwert, und der Boss muss sich verteidigen. Ideen:
   Scribble vom 2026-10-02 („Sync-Modus: Verbindung und Movement“). Dazu gehört die
   **schmalere Spieler-Hitbox** (Spieler als zwei Hälften, die zusammen ein Quadrat bilden):
   auf `nicho/pep-test` gemacht (2026-10-14), 20×40 statt 40×40 (`Player.BODY_SIZE`).
+  **Vorstufe: Sync als Leben** (2026-10-16, Branch `nicho/pep-test`, Schalter
+  `bifrons_rules`, Standard „sync“): keine Gesundheit, keine Tränke, ein Sync für beide Spieler,
+  einer für den Boss, Haltung für alle drei, gleiche Regeln für beide Seiten; Chaos bei leerem
+  Sync (Revive), Sync-Modus bei vollem (vorerst nur: Treffer zählen dreifach). Alle Zahlen in F2.
+  Entscheidungen: Scribble vom 2026-10-16; Regeln: `docs/boss_columna_bifrons.md` → „Sync as
+  life“. Das alte System (HP + alter Sync) bleibt auf „hp“ und wird später mit den Erkenntnissen
+  angepasst.
 - [ ] **Prototyp Beat-Runner** (@Nicho): die andere Antwort auf „Was ist zwischen den
   Bossen?“, etwas zwischen Beat Saber und Geometry Dash (Auto-Runner, Dinge fliegen im Rhythmus
   auf die Spieler zu, parieren und schlagen; vielleicht zwei Lanes für pep/ppe). Siehe Scribble
