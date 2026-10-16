@@ -28,15 +28,6 @@ const CHIP_DAMAGE = 4.0
 const SLASH_DAMAGE = 10.0
 const TOGETHER_TIME = 0.15  # two hits (or parries) this close are one beat, on both players
 
-# The posture ring around each body: from its outer radius at full posture in to the inner one,
-# hugging the body, as posture goes. Hidden while posture is full.
-const RING_RADII = {"player": Vector2(23.0, 44.0), "boss": Vector2(84.0, 125.0)}
-const RING_WIDTH = {"player": 2.0, "boss": 3.0}
-const COLOR_POSTURE = Color(0.85, 0.85, 0.9)
-const COLOR_POSTURE_LOW = Color(1.0, 0.55, 0.2)  # a quarter left: the next blocks break it
-const COLOR_SYNC_MODE = Color(1.0, 0.8, 0.3)
-const COLOR_CHAOS = Color(1.0, 0.2, 0.25)
-
 var team = 50.0  # the players' sync, 0..MAX
 var boss_sync = MAX
 var team_chaos = false
@@ -149,15 +140,9 @@ func _actors() -> Array:
 	return actors
 
 
-# The first time an actor is seen: full posture, a ring, and for a player no potions.
+# The first time an actor is seen: full posture, and for a player no potions.
 func _meet(actor):
 	_posture[actor] = POSTURE_MAX
-	var ring = Ring.new()
-	ring.rules = self
-	ring.actor = actor
-	ring.kind = "boss" if actor == boss else "player"
-	ring.z_index = -1 if actor == boss else 3
-	actor.add_child(ring)
 	if actor != boss:
 		actor.potions = 0
 
@@ -234,30 +219,3 @@ func _set_boss(v: float):
 	elif boss_chaos and boss_sync >= Tuning.value("chaos_exit"):
 		boss_chaos = false
 
-
-# A posture ring: shrinks toward the body as posture goes; gold around the players in sync mode,
-# flickering red around whoever is in chaos.
-class Ring extends Node2D:
-	var rules
-	var actor
-	var kind = "player"
-
-	func _process(_delta):
-		queue_redraw()
-
-	func _draw():
-		var share = rules.posture_of(actor) / SyncRules.POSTURE_MAX
-		var radii = SyncRules.RING_RADII[kind]
-		var color = SyncRules.COLOR_POSTURE if share > 0.25 else SyncRules.COLOR_POSTURE_LOW
-		var alpha = 0.0 if share >= 1.0 else lerpf(0.9, 0.35, share)
-		var chaos = rules.boss_chaos if kind == "boss" else rules.team_chaos
-		if chaos:
-			color = SyncRules.COLOR_CHAOS
-			alpha = 0.9 if fmod(rules._time, 0.2) < 0.1 else 0.3
-		elif kind == "player" and rules.sync_mode:
-			color = SyncRules.COLOR_SYNC_MODE
-			alpha = 0.6 + 0.3 * sin(rules._time * TAU * 2.0)
-		if alpha <= 0.0:
-			return
-		draw_arc(Vector2.ZERO, lerpf(radii.x, radii.y, share), 0.0, TAU, 48, Color(color, alpha),
-			SyncRules.RING_WIDTH[kind], true)

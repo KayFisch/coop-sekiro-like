@@ -2,7 +2,8 @@ extends CanvasLayer
 ## Top-of-screen HUD (player health bars and potions, sync meter, boss bar) plus the
 ## end-of-game overlay. Bars are polled every frame; the overlay reacts to GameManager.state_changed.
 ## When the fight runs on sync as life (GameManager.rules) there's no health: instead the two
-## sync meters meet in the middle, the players' filling out to the left, his to the right.
+## sync meters meet in the middle, the players' filling out to the left, his to the right, and
+## under each its side's posture (P1's and P2's, his).
 ## On canvas layer 2 (hud.tscn): over the mirrored screen (ui/mirror_view.gd, layer 1).
 
 const BAR_HEIGHT = 16.0
@@ -26,8 +27,14 @@ const DUEL_HEIGHT = 18.0
 const TEAM_COLOR = Color(0.9, 0.88, 0.8)
 const TEAM_SYNC_MODE_COLOR = Color(1.0, 0.78, 0.2)
 const CHAOS_COLOR = Color(1.0, 0.2, 0.25)
-const BOSS_SYNC_COLOR = Color(0.8, 0.22, 0.3)
+const BOSS_SYNC_COLOR = Color(0.55, 0.54, 0.5)  # like the players', in the background
 const TICK_COLOR = Color(1, 1, 1, 0.5)
+# Posture: a thin bar under the sync meter on each side, P1's and P2's on the left, his on the
+# right, full out to the end like the sync meters.
+const POSTURE_HEIGHT = 8.0
+const POSTURE_GAP = 3.0
+const POSTURE_COLOR = Color(0.75, 0.75, 0.8)
+const POSTURE_LOW_COLOR = Color(1.0, 0.55, 0.2)  # a quarter left: the next blocks break it
 
 var _rows: Array = []  # one Dictionary per player: player, fill, hp_label, potions, status
 var _sync_fill: ColorRect
@@ -158,11 +165,27 @@ func _build_sync_duel(root):
 	_rect(box, Vector2(0, 24), Vector2(2.0 * w, DUEL_HEIGHT), BAR_BG_COLOR)
 	_duel.team_fill = _rect(box, Vector2(w, 24), Vector2(0, DUEL_HEIGHT), TEAM_COLOR)
 	_duel.boss_fill = _rect(box, Vector2(w, 24), Vector2(0, DUEL_HEIGHT), BOSS_SYNC_COLOR)
-	_rect(box, Vector2(w - 1, 18), Vector2(2, DUEL_HEIGHT + 12), Color.WHITE)
 	_duel.chaos_tick = _rect(box, Vector2(0, 22), Vector2(2, DUEL_HEIGHT + 4), TICK_COLOR)
 	_duel.mode_tick = _rect(box, Vector2(0, 22), Vector2(2, DUEL_HEIGHT + 4), TICK_COLOR)
-	_duel.team_state = _label(box, Vector2(0, 46), "", 16)
-	_duel.boss_state = _label(box, Vector2(w, 46), "", 16)
+	# Posture bars: one row per player on the left, his on the right of the first row.
+	var y = 24.0 + DUEL_HEIGHT + POSTURE_GAP
+	var players = GameManager.players.duplicate()
+	players.sort_custom(func(a, b): return a.player_id < b.player_id)
+	_duel.postures = []  # [actor, fill, grows_left]
+	for i in players.size():
+		var row_y = y + i * (POSTURE_HEIGHT + POSTURE_GAP)
+		_rect(box, Vector2(0, row_y), Vector2(w, POSTURE_HEIGHT), BAR_BG_COLOR)
+		var fill = _rect(box, Vector2(0, row_y), Vector2(w, POSTURE_HEIGHT), POSTURE_COLOR)
+		var tag = _label(box, Vector2(-26, row_y - 5), "P%d" % players[i].player_id, 12)
+		tag.modulate = Color(1, 1, 1, 0.7)
+		_duel.postures.append([players[i], fill, true])
+	_rect(box, Vector2(w, y), Vector2(w, POSTURE_HEIGHT), BAR_BG_COLOR)
+	var boss_fill = _rect(box, Vector2(w, y), Vector2(w, POSTURE_HEIGHT), POSTURE_COLOR)
+	_duel.postures.append([null, boss_fill, false])
+	_rect(box, Vector2(w - 1, 18), Vector2(2, y - 18 + players.size() * (POSTURE_HEIGHT + POSTURE_GAP)), Color.WHITE)
+	var state_y = y + maxi(players.size(), 1) * (POSTURE_HEIGHT + POSTURE_GAP) + 2.0
+	_duel.team_state = _label(box, Vector2(0, state_y), "", 16)
+	_duel.boss_state = _label(box, Vector2(w, state_y), "", 16)
 	_duel.boss_state.size = Vector2(w, 20)
 	_duel.boss_state.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_duel.boss_name = boss_name
@@ -176,6 +199,15 @@ func _update_sync_duel(rules):
 	_duel.boss_fill.size.x = w * rules.boss_sync / rules.MAX
 	_duel.chaos_tick.position.x = w - w * Tuning.value("chaos_exit") / rules.MAX - 1.0
 	_duel.mode_tick.position.x = w - w * Tuning.value("sync_mode_exit") / rules.MAX - 1.0
+	for entry in _duel.postures:
+		var actor = entry[0] if entry[0] != null else GameManager.boss
+		if not is_instance_valid(actor):
+			continue
+		var share = rules.posture_of(actor) / rules.POSTURE_MAX
+		var fill: ColorRect = entry[1]
+		fill.size.x = w * share
+		fill.position.x = w - fill.size.x if entry[2] else w
+		fill.color = POSTURE_COLOR if share > 0.25 else POSTURE_LOW_COLOR
 	var flicker = fmod(Time.get_ticks_msec() / 1000.0, 0.3) < 0.15
 	if rules.team_chaos:
 		_duel.team_fill.color = CHAOS_COLOR if flicker else CHAOS_COLOR.darkened(0.5)

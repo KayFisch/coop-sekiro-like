@@ -8,7 +8,7 @@ extends Node
 ## "sync"). Sync and posture both run from 0 to 100.
 
 const SAVE_PATH = "user://tuning.cfg"
-const VERSION = 1  # bumped when a default changes: an older save is dropped once
+const VERSION = 2  # bumped when a default changes: an older save is dropped once
 const PANEL_MARGIN = Vector2(48, 16)
 const PANEL_FONT_SIZE = 15
 const PANEL_MIN_FONT_SIZE = 10
@@ -21,16 +21,16 @@ const LIST_TOP = 34.0  # below the title
 # groups the ones below it; "column": 1 starts the panel's second column.
 const ENTRIES = [
 	{"header": "PLAYERS, HIT BY HIM"},
-	{"key": "hit_sync_loss", "label": "hit, unblocked: sync lost (a heavy strike: twice)", "default": 10.0, "step": 1.0, "min": 0.0, "max": 100.0},
+	{"key": "hit_sync_loss", "label": "hit, unblocked: sync lost (a heavy strike: twice)", "default": 6.0, "step": 1.0, "min": 0.0, "max": 100.0},
 	{"key": "block_posture_loss", "label": "blocked: posture lost", "default": 20.0, "step": 1.0, "min": 0.0, "max": 100.0},
 	{"key": "parry_posture_loss", "label": "parried: posture lost (never breaks it)", "default": 5.0, "step": 1.0, "min": 0.0, "max": 100.0},
-	{"key": "coop_parry_gain", "label": "coop parry (both swords, both of you): sync gained", "default": 10.0, "step": 1.0, "min": 0.0, "max": 100.0},
+	{"key": "coop_parry_gain", "label": "coop parry (both swords, both of you): sync gained", "default": 6.0, "step": 1.0, "min": 0.0, "max": 100.0},
 	{"key": "coop_parry_stagger", "label": "coop parry: his stagger (s)", "default": 1.0, "step": 0.1, "min": 0.0, "max": 5.0},
 	{"header": "PLAYERS, HITTING HIM"},
-	{"key": "sync_hit_gain", "label": "sync hit on the beat: sync gained", "default": 6.0, "step": 1.0, "min": 0.0, "max": 100.0},
-	{"key": "sync_hit_late_gain", "label": "sync hit off the beat: sync gained", "default": 3.0, "step": 1.0, "min": 0.0, "max": 100.0},
+	{"key": "sync_hit_gain", "label": "sync hit on the beat: sync gained", "default": 4.0, "step": 1.0, "min": 0.0, "max": 100.0},
+	{"key": "sync_hit_late_gain", "label": "sync hit off the beat: sync gained", "default": 2.0, "step": 1.0, "min": 0.0, "max": 100.0},
 	{"key": "sync_beat_time", "label": "on the beat: this long after his guard opens (s)", "default": 0.12, "step": 0.01, "min": 0.0, "max": 0.5},
-	{"key": "missed_window_loss", "label": "window missed (partner in reach): sync lost", "default": 2.0, "step": 1.0, "min": 0.0, "max": 100.0},
+	{"key": "missed_window_loss", "label": "window missed (partner in reach): sync lost", "default": 1.0, "step": 0.5, "min": 0.0, "max": 100.0},
 	{"header": "CHAOS AND SYNC MODE"},
 	{"key": "team_sync_start", "label": "players' sync at the start", "default": 50.0, "step": 5.0, "min": 1.0, "max": 99.0},
 	{"key": "chaos_exit", "label": "chaos: over once the players' sync is back to", "default": 25.0, "step": 1.0, "min": 1.0, "max": 99.0},

@@ -352,9 +352,11 @@ On "sync" (the default) nobody has health and there are no potions (`core/sync_r
 multiplier is left as it was. The switch counts from the next start (R).
 
 **The meters.** At the top two meters meet in the middle: the players' shared sync on the left,
-filling out to the left; his on the right, full at the start and emptying toward the middle.
-The players start halfway (50 of 100). Each of the three has a posture: a ring around the body
-that shrinks toward it as posture goes, hidden while posture is full.
+filling out to the left; his on the right, in a dimmer shade of the same, full at the start
+and emptying toward the middle. The players start halfway (50 of 100). Each of the three has a
+posture, a thin bar under the sync meters, full out to the end like them: P1's and P2's under
+the players' meter, his under his (orange with a quarter left). How posture should look in the
+end is for later.
 
 **One set of rules for both sides:**
 
@@ -381,14 +383,17 @@ that shrinks toward it as posture goes, hidden while posture is full.
   parried ends the fight. It's over, like a revive, once their sync is back to 25, which only coop
   parries and sync hits bring. For him: split, no guard, the next hit that lands kills him.
 - **Full sync is the sync mode**, the players' second phase: their hits cost him three times as
-  much sync and posture, until their sync falls below 70. Rings and meter turn gold. It's a
+  much sync and posture, until their sync falls below 70. The meter turns gold. It's a
   stand-in: the sync mode itself (the two of you joined into one, see the scribble of
   2026-10-02) is still to build.
 - **The beat:** when your partner's parry opens his guard on your side, your sword lights violet
   for 0.12 s. A hit landing in that time is on the beat.
 - **Every number is on the F2 panel** (saved to `user://tuning.cfg`, reset on its last row).
-- Testing alone: the stand-in never attacks, so the windows your parries open for it close
-  unused and cost sync.
+- Testing alone: the stand-in strikes through the guard your parries open for it, three times
+  in four; the windows it leaves unused cost sync.
+- The players' sync moves in steps of a few points: a hit costs 6, a sync hit wins 4 on the beat
+  and 2 after it, a coop parry 6, a missed window costs 1 (halved after the first test, where it
+  moved too fast).
 
 ## Testing alone ("bifrons_stand_in")
 
@@ -402,7 +407,9 @@ own buttons, so everything that happens to them is the game's own (`stand_in.gd`
 - it gets hurt, and **below 20 health, with a potion left, it runs away from him** (480 px, or
   to the wall) **and drinks**, then comes back: his strikes at it are left out, its sword turns
   on you, he may rush it ("Left alone");
-- it never attacks.
+- **when your parry opens his guard on its side, it strikes through, three times in four**
+  (`SYNC_HIT_CHANCE`), after a reaction of up to 0.08 s, so some of its sync hits are on the
+  beat and some after it; it doesn't attack otherwise.
 
 ## The mirrored screen ("mirror_view")
 

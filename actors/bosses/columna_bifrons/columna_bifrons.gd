@@ -660,6 +660,14 @@ func is_open(blade: int) -> bool:
 	return anim_time >= _open_from[blade] and anim_time < _open_until[blade]
 
 
+# The sword whose guard is open for `player`'s sync hit (another player's parry broke it), or 0.
+func window_for(player) -> int:
+	for blade in BLADES:
+		if is_open(blade) and _opened_by[blade] != player:
+			return blade
+	return 0
+
+
 # True from the parry that breaks that sword's guard until it's back: open, or about to be.
 func is_breaking(blade: int) -> bool:
 	return anim_time < _open_until[blade]

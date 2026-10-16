@@ -3,8 +3,9 @@ extends Node
 ## Testing alone (Moves "bifrons_stand_in"): plays one of the two players in the fight with
 ## Columna Bifrons, so one person can play the other. It presses that player's own buttons, so
 ## everything that happens to them is the game's own: it walks to keep its distance to him,
-## meets each of his strikes with a parry, a block or nothing (by chance), and when its health
-## is low it runs off to drink a potion. It never attacks.
+## meets each of his strikes with a parry, a block or nothing (by chance), strikes through his
+## guard when its partner's parry opens it (a sync hit), and when its health is low it runs off
+## to drink a potion. It doesn't attack otherwise.
 
 enum Plan { NOTHING, PARRY, BLOCK }
 
@@ -15,6 +16,11 @@ const PARRY_CHANCE = 0.75
 const BLOCK_CHANCE = 0.15
 const PARRY_LEAD = 0.08  # s before a strike lands that it presses block to parry (the window is 0.133 s)
 const BLOCK_LEAD = 0.35  # ...and to only block: too early for a parry
+# When its partner's parry opens his guard on its side, it strikes through that often, pressing
+# attack after a reaction of up to REACT_TIME (a hit lands about 0.1 s after the press, so a
+# quick one is on the beat and a slow one after it).
+const SYNC_HIT_CHANCE = 0.75
+const REACT_TIME = 0.08
 # Where it stands, from his center: where a player's sword would reach him, and not so close
 # that he steps back (ColumnaBifrons.CROWD_DISTANCE). With its partner on the same side of him
 # it stands closer if it's the one in front (so the partner's sword reaches him from behind
@@ -41,6 +47,8 @@ var _last_due = INF
 var _walk = 0.0  # the way it's walking: -1, 1, or 0
 var _fleeing = false
 var _potion_wait = 0.0
+var _window = 0  # the open guard it has seen (ColumnaBifrons.window_for()), or 0
+var _strike_in = -1.0  # s until it presses attack, or < 0: no strike coming
 
 
 func _physics_process(delta):
@@ -55,9 +63,12 @@ func _physics_process(delta):
 		_last_due = INF
 		_walk = 0.0
 		_fleeing = false
+		_window = 0
+		_strike_in = -1.0
 	if player == null:
 		return
 	_defend(player)
+	_strike(player, delta)
 	_move(player, delta)
 
 
@@ -87,6 +98,21 @@ func _defend(player):
 	elif _plan == Plan.BLOCK:
 		lead = BLOCK_LEAD
 	_hold(player, "block", due <= lead)
+
+
+# Its sword: a guard of his newly open for it gets a sync hit (by chance), after a reaction.
+# The press is let go the frame after, so the next one counts as a new press.
+func _strike(player, delta: float):
+	_hold(player, "attack", false)
+	var window = boss.window_for(player)
+	if window != 0 and window != _window and randf() < SYNC_HIT_CHANCE:
+		_strike_in = randf() * REACT_TIME
+	_window = window
+	if _strike_in < 0.0:
+		return
+	_strike_in -= delta
+	if _strike_in < 0.0 and not _held.get(player._action("block"), false):
+		_hold(player, "attack", true)
 
 
 # Its feet: to its distance from him, or away from him to drink.
