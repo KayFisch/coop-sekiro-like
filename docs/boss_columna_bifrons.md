@@ -82,15 +82,17 @@ Three ways lead from one to the other. Two are his:
 
 ### The crossing: pep to ppe
 
-A pattern of two strikes. First **the charge**: one sword is lowered, the point on its player,
-and drawn far back into him, quickly, while he rears back (yellow, 1 s in all); then it's thrust
-(red, 0.28 s). It's parried like any strike. 0.1 s after it lands he follows it through, 230 px
-in 0.25 s, his body no obstacle meanwhile:
-
-- a player next to him is passed, and both players are now on one side of him;
-- a player who backs off ahead of him isn't, nor one who stood further away than about 150 px:
-  he ends up on top of them, and they're pushed out ahead of him. Stepping toward him is what
-  gets such a player past.
+A pattern of three. First **the push**: one sword upright, drawn in against him (white, 0.6 s),
+then shoved out flat: its player is thrown back some 230 px. No damage, nothing to parry. Then
+**the charge** at that player: the same sword lowered at them and drawn far back into him while
+he rears back (yellow, 0.8 s), then thrust (red, 0.28 s), and as it comes he lunges after them
+(up to 160 px). From that distance the thrust can be seen coming: its point isn't on the player
+all through the windup, as it was when it came from close by (Nicho, 2026-10-16). It's parried
+like any strike. 0.1 s after it lands he follows it through in 0.25 s, his body no obstacle
+meanwhile, to 70 px past its player (230 px at least, 360 at most): even a player the thrust
+hit, and threw back, is passed, and both players are now on one side of him. A player who
+backs off further than that ahead of him isn't: he ends up on top of them, and they're pushed
+out ahead of him.
 
 Then, 1.2 s later, **both swords** (green) on wherever the players now are, and with them he
 comes back at the players: a short step or a long one (see "the lunge"), right up to the nearer
@@ -126,21 +128,28 @@ player rule in `player.gd`, so it holds for Cubus too.)
 **Where he stands.** Where his blades reach the players, and not right up against one:
 
 - **A player on each side**, close enough together for his blades to reach both (430 px apart
-  at most): in the middle between them. He walks there once he's 28 px off it.
+  at most): around the middle between them, off it by his drift (below), up to 60 px toward one
+  of them as long as the other stays well in reach.
 - **Otherwise** (both on one side, only one to fight, or too far apart) he goes by the nearer
   player: **closer than 62 px, he steps back** until they're 90 away; **out of his blades'
-  reach (215), he walks up** until they're well in it (185); in between he stays where he is.
+  reach (215), he walks up** until they're well in it (185); in between he drifts.
+- **His drift** (Nicho, 2026-10-16: "less standing around"): the distance he keeps from the
+  nearer player keeps changing, between 80 and 170 px, gliding toward one picked at random
+  (0.6 of that span per second), and after a pause of up to 0.5 s toward the next. So he steps
+  up to them and back from them, about as often.
+- **Pushing through:** a player in his way doesn't stop him. Walking into one, he slows to half
+  his pace and pushes them along; after 2 s of that he shoves them out of the way (the shove,
+  on their side only).
 - **With the players between him and a wall** he backs away from them toward the middle third
   of the room, as far as the nearer one stays well in reach (185): that gives them room, and
-  draws them out. It's the only time he walks for the room's sake: he never walks into a player
-  to get to the middle.
+  draws them out. It's the only time he walks for the room's sake.
 
 He walks (110 px/s) between his attacks, and at half that through their windups. **Sword hits
 slow him** to a third for 0.6 s each, so a player can hold him back. **He starts an attack only
 while a player is in his range** (375 px, see the lunge).
 
-(Distances are between his center and a player's. Touching is 52; a player's sword reaches him
-from 118; two players side by side both reach him with the nearer one at 78.)
+(Distances are between his center and a player's. Touching is 42; a player's sword reaches him
+from 118; two players side by side (20 wide each) both reach him with the nearer one at 98.)
 
 **The lunge.** With every cut he moves at the player it's for while the blade comes (the last
 0.28 s): a short step (14 px), or as far as it takes to have the players on that side 105 px
@@ -148,9 +157,9 @@ away as it lands, 160 px at most. He never gets closer to anyone than 72 px that
 strike reaches a player up to 375 px away, and stepping back out of a strike takes more than a
 step. Then he stands until that blade moves again: that's when the players hit him.
 
-**A long windup** (a single cut with a wait of 6 or more: the first strike of QUAD and LONG)
-brings him up to the player it's for: he walks at them all through it (70 px/s) until he has
-reached them, and then lunges. Both players have to move with him.
+**A long windup** (a single cut with a wait of 6 or more; with Nicho's current table, none)
+brings him up to the player it's for: he walks at them all through it (70 px/s), into them if
+they stand their ground (pushing them), and then lunges. Both players have to move with him.
 
 **Making room.** When a player has stayed closer than 62 px for 0.7 s (at most every 4 s), and
 after a strike of both swords that didn't stagger him, he wants room. With the players on one
@@ -304,18 +313,19 @@ A series is a list of strikes, each `[wait, sword]` or `[wait, sword, kind]`. `w
 time until the strike lands, counted from the series' start or the strike before, in units of
 0.2 s (`StrikePattern.TIME_UNIT`): a rough 1-10 scale, 4 = 0.8 s, a quick follow-up; 9 = 1.8 s,
 a long windup. Below 3 a strike can't be read any more. `sword` is which of his swords strikes
-(left, right, both), at its own player; `kind` is `CUT` (the default), `CHARGE` or `RUSH`.
+(left, right, both), at its own player; `kind` is `CUT` (the default), `CHARGE`, `RUSH` or
+`PUSH` (a shove of that player, no strike: the crossing). The numbers are Nicho's of 2026-10-16.
 
 | Name | What | Weight in pep | in ppe | left alone |
 |---|---|---|---|---|
-| SINGLE | 5 left | 1 | 1 | 1 |
-| DOUBLE | 5 left, 4 right | 0.5 | 0.5 | 0.5 |
-| TRIPLE | 5 right, 4 right, 4 left | 2 | 2 | 2 |
-| QUAD | 6 left, 4 left, 4 right, 4 both | 1.5 | 1.5 | 1.5 |
-| LONG | 9 right, 4 right, 4 left, 4 right, 4 right, 4 left, 4 both | 1 | 1 | 1 |
-| BOTH | 6 both | 0.5 | 0.5 | 0.5 |
-| CROSSING | 5 right (charge), 6 both | 2 (cornered: 6) | - | - |
-| RUSH | 7 right (rush) | - | - | 2 |
+| SINGLE | 3 left | 0 | 0 | 0 |
+| DOUBLE | 3 left, 3 right | 0.5 | 0.5 | 0.5 |
+| TRIPLE | 4 right, 4 right, 2 left | 2 | 2 | 2 |
+| QUAD | 4 left, 2 left, 2 right, 3 both | 1.5 | 1.5 | 1.5 |
+| LONG | 5 right, 3 right, 3 left, 4 right, 3 right, 3 left, 4 both | 1 | 1 | 1 |
+| BOTH | 4 both | 0.5 | 0.5 | 0.5 |
+| CROSSING | 3 right (push), 4 right (charge), 4 both | 2 (cornered: 6) | - | - |
+| RUSH | 5 right (rush) | - | - | 2 |
 | SWEEP | the sweep, above | 1.5 | - | - |
 | LEAP | the leap, above | - (cornered: 6) | 2.5 (cornered: 6) | - |
 | SHOVE | the shove, above | when he wants room | when he wants room | when he wants room |
@@ -450,7 +460,7 @@ same distances.
 | Sweep: until it reaches the first player / on to the second | `Sweep.WINDUP_UNITS`, `TRAVEL_TIME` | 5 (1.0 s) / 0.26 s |
 | Sweep: blade away / propped / swinging back | `Sweep.AWAY_TIME`, `PROP_TIME`, `RETURN_TIME` | 1.4 / 1.4 / 0.3 s |
 | How often each attack comes, and where | the weights in `ColumnaBifrons.ATTACKS` | see the table above |
-| Charge: how far, how long after the thrust, how fast | `CHARGE_DISTANCE`, `CHARGE_DELAY`, `CHARGE_TIME` | 230 px / 0.1 / 0.25 s |
+| Charge: how far (at least / past its player / at most), how long after the thrust, how fast | `CHARGE_DISTANCE`, `CHARGE_BEYOND`, `CHARGE_MOST`, `CHARGE_DELAY`, `CHARGE_TIME` | 230 / 70 / 360 px, 0.1 s, 0.25 s |
 | Charge: how far he rears back | `StrikePattern.CHARGE_LEAN`, `POSE_LANCE_BACK` | 24 px, hand 18 px behind his middle |
 | The sword that reaches across: where it strikes from, and lands | `POSE_SLASH_RAISED`, `_COILED`, `_DOWN` | over his shoulder |
 | A blade's edge in its player's color | `EDGE_WIDTH` | 4 px of 12 |
@@ -458,7 +468,8 @@ same distances.
 | Leap: how close to where he lands a player is hit | `Leap.REACH` | 80 px |
 | Leap: knockback of a hit / push on a parry | `Leap.KNOCKBACK`, `PARRIED_PUSH` | x1.6 / 220 px/s |
 | Where he stands: steps back from / to; walks up from / to | `CROWD_DISTANCE`, `FIT_DISTANCE`; `BLADE_REACH`, `REACH_MARGIN` | 62 / 90; 215 / 185 px |
-| Where he stands: how far off the middle before he walks | `PLACE_SLACK` | 28 px |
+| His drift: distances to the nearer player / speed / pause; off the middle between two | `DRIFT_NEAR`, `DRIFT_FAR`, `DRIFT_SPEED`, `DRIFT_PAUSE`; `PEP_DRIFT` | 80 / 170 px, 0.6 of that per s, 0.5 s; 60 px |
+| Pushing through: touching / his pace / how long before he shoves | `TOUCH_DISTANCE`, `PUSH_PACE`, `PUSH_PATIENCE` | 50 px / half / 2 s |
 | Walking: between attacks / during them | `WALK_SPEED`, `ATTACK_PACE` | 110 px/s / x0.5 |
 | Walking: slowed by a sword hit | `SLOWED_FACTOR`, `SLOWED_TIME` | x0.3 for 0.6 s |
 | Lunge: short / long / where the players are when it lands / never closer than | `LUNGE_SHORT`, `LUNGE_LONG`, `STRIKE_DISTANCE`, `CLOSEST` | 14 / 160 / 105 / 72 px |

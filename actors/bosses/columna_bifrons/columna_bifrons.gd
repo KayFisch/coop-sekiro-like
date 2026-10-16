@@ -31,6 +31,7 @@ const RIGHT = StrikePattern.RIGHT
 const BOTH = StrikePattern.BOTH
 const CUT = StrikePattern.CUT
 const CHARGE = StrikePattern.CHARGE
+const PUSH = StrikePattern.PUSH
 const RUSH = StrikePattern.RUSH
 const BLADES = [LEFT, RIGHT]  # his two swords, named for the hand that holds each
 const SIDES = [LEFT, RIGHT]
@@ -61,16 +62,16 @@ const SWEEP = preload("attacks/sweep.gd")
 const LEAP = preload("attacks/leap.gd")
 const SHOVE = preload("attacks/shove.gd")
 const ATTACKS = {
-	"SINGLE": {"weight": 1.0, "repeats": true, "strikes": [[3, LEFT]]},
-	"DOUBLE": {"weight": 0.5, "strikes": [[3, LEFT], [2, RIGHT]]},
-	"TRIPLE": {"weight": 2.0, "repeats": true, "strikes": [[4, RIGHT], [3, RIGHT], [3, LEFT]]},
-	"QUAD": {"weight": 1.5, "strikes": [[5, LEFT], [3, LEFT], [3, RIGHT], [3, BOTH]]},
+	"SINGLE": {"weight": 0.0, "repeats": true, "strikes": [[3, LEFT]]},
+	"DOUBLE": {"weight": 0.5, "strikes": [[3, LEFT], [3, RIGHT]]},
+	"TRIPLE": {"weight": 2.0, "repeats": true, "strikes": [[4, RIGHT], [4, RIGHT], [2, LEFT]]},
+	"QUAD": {"weight": 1.5, "strikes": [[4, LEFT], [2, LEFT], [2, RIGHT], [3, BOTH]]},
 	"LONG": {"weight": 1.0, "strikes": [
-		[6, RIGHT], [3, RIGHT], [3, LEFT], [4, RIGHT], [3, RIGHT], [3, LEFT], [4, BOTH]]},
+		[5, RIGHT], [3, RIGHT], [3, LEFT], [4, RIGHT], [3, RIGHT], [3, LEFT], [4, BOTH]]},
 	"BOTH": {"weight": 0.5, "strikes": [[4, BOTH]]},
-	# He charges past one player, so both are on one side of him, and brings both swords down
-	# on them.
-	"CROSSING": {"weight": {"pep": 2.0, "pep_cornered": 6.0}, "strikes": [[4, RIGHT, CHARGE], [4, BOTH]]},
+	# He shoves one player away, goes after them with a thrust and charges past them, so both
+	# are on one side of him, and brings both swords down on them.
+	"CROSSING": {"weight": {"pep": 2.0, "pep_cornered": 6.0}, "strikes": [[3, RIGHT, PUSH], [4, RIGHT, CHARGE], [4, BOTH]]},
 	# He dashes over to the player who's away, and strikes them.
 	"RUSH": {"weight": {"alone": 2.0}, "strikes": [[5, RIGHT, RUSH]]},
 	# One sword, from one side of him through to the other.
@@ -112,26 +113,43 @@ const SYNC_HIT_FACTOR = 2.5  # a sync hit's damage, times the sword hit's own
 # --- Moving ---
 # WHERE HE STANDS: where his blades reach the players, and not right up against one.
 # - A player on each side, close enough together for his blades to reach both: in the middle
-#   between them (once he's PLACE_SLACK off it, he walks there).
+#   between them, give or take his drift (below).
 # - Else (both on one side, only one to fight, or too far apart) he goes by the nearer one:
 #   closer than CROWD_DISTANCE, he steps back to FIT_DISTANCE; out of his blades' reach, he
-#   walks up until they're REACH_MARGIN inside it; in between he's fine where he is.
+#   walks up until they're REACH_MARGIN inside it; in between he drifts (below).
 # - Fine where he is, with the players between him and a wall, he backs toward the room's
 #   middle third, as far as the nearer one stays REACH_MARGIN inside his reach.
+# - Fine where he is, he doesn't stand still: the distance he keeps from the nearer player
+#   drifts, between DRIFT_NEAR and DRIFT_FAR, gliding toward one picked at random (DRIFT_SPEED:
+#   the share of that span per second), and after a pause of up to DRIFT_PAUSE toward the next.
+#   So he steps up to them and back from them. Between two players he drifts off the middle the
+#   same way, by up to PEP_DRIFT, as long as the farther one stays well in his reach; the nearer
+#   one he pushes, if they stand their ground.
 # He walks between his attacks, and at ATTACK_PACE through their windups. Sword hits slow him
 # down for a moment, so a player can hold him. He starts an attack only while a player is in
 # his range.
-# (Distances are between his center and a player's. Touching is 52; a player's sword reaches
-# him from 118, and two players side by side both reach him with the nearer one at 78.)
+# PUSHING THROUGH. A player in his way doesn't stop him: walking into one (TOUCH_DISTANCE), he
+# slows to PUSH_PACE and his body pushes them along (see _keep_out_of_boss() in player.gd);
+# after PUSH_PATIENCE of that he shoves them out of the way (attacks/shove.gd, their side only).
+# (Distances are between his center and a player's. Touching is 42; a player's sword reaches
+# him from 118, and two players side by side (20 wide each) both reach him with the nearer one
+# at 98.)
 const CROWD_DISTANCE = 62.0
 const FIT_DISTANCE = 90.0
 const REACH_MARGIN = 30.0
-const PLACE_SLACK = 28.0
 const WALK_SPEED = 110.0  # px/s
 const ATTACK_PACE = 0.5  # of his walking speed, while he's in an attack
 const SLOWED_FACTOR = 0.3  # of his walking speed, for SLOWED_TIME after a sword hit
 const SLOWED_TIME = 0.6
 const RANGE_RECHECK = 0.2  # nobody in range when an attack is due: he looks again this much later
+const DRIFT_SPEED = 0.6
+const DRIFT_PAUSE = 0.5  # s
+const DRIFT_NEAR = 80.0
+const DRIFT_FAR = 170.0
+const PEP_DRIFT = 60.0
+const TOUCH_DISTANCE = 50.0  # touching is 42: his half-width and a player's
+const PUSH_PACE = 0.5  # of his speed, pushing a player along
+const PUSH_PATIENCE = 2.0  # s
 const WALL_ROOM = 90.0  # his flanks stay this far from the walls: room for both players behind him
 # WITH A STRIKE HE LUNGES at the player it's for, while the blade comes: a short step, or as far
 # as it takes to have the players on that side STRIKE_DISTANCE away as it lands, LUNGE_LONG at
@@ -143,7 +161,8 @@ const LUNGE_LONG = 160.0
 const STRIKE_RANGE = BLADE_REACH + LUNGE_LONG
 const CLOSEST = 72.0  # no lunge or advance takes him closer to a player than this
 # A LONG WINDUP (a single cut with a wait of LONG_WINDUP or more): he walks at the player it's
-# for all through it, until he has reached them, and then lunges. Both players have to move.
+# for all through it, into them if they don't give way (PUSHING THROUGH), and then lunges. Both
+# players have to move.
 const LONG_WINDUP = 6
 const ADVANCE_SPEED = 70.0
 # MAKING ROOM. He wants room when he's been crowded (a player closer than CROWD_DISTANCE) for
@@ -162,11 +181,16 @@ const BACK_OFF_DISTANCE = 110.0
 const BACK_OFF_DELAY = 0.1
 const BACK_OFF_TIME = 0.2
 const BACK_OFF_HOP = 22.0  # px off the floor at the top of it
-# THE CHARGE (a strike of kind CHARGE): a thrust, to be parried like any strike, and CHARGE_DELAY
-# after it lands he follows it through, CHARGE_DISTANCE in CHARGE_TIME, his body no obstacle
-# meanwhile. A player close enough is passed and ends up on his other side: both players on one
+# THE CHARGE (a strike of kind CHARGE): a thrust, to be parried like any strike, lunging at the
+# player as it comes like a cut; CHARGE_DELAY after it lands he follows it through in
+# CHARGE_TIME, his body no obstacle meanwhile: to CHARGE_BEYOND past that player, at least
+# CHARGE_DISTANCE and at most CHARGE_MOST (a hit throws its player back: he goes after them). In the crossing a PUSH comes
+# first (a shove of that player, StrikePattern.PUSH): the thrust then comes from a distance,
+# and its player sees it coming. A player close enough is passed and ends up on his other side: both players on one
 # side (ppe). One who backs off ahead of him, or stands too far away, isn't.
 const CHARGE_DISTANCE = 230.0
+const CHARGE_BEYOND = 70.0
+const CHARGE_MOST = 360.0
 const CHARGE_DELAY = 0.1
 const CHARGE_TIME = 0.25
 const CHARGE_MIN_ROOM = 150.0  # he charges toward the side that has at least this much room
@@ -272,12 +296,16 @@ var _strikes_by = {LEFT: 0, RIGHT: 0}  # strikes of each sword so far (orient())
 var _dash = null  # {from, to, since, time, hop}: a charge or a backing off, under way
 # What he's walking for (see _place()): to the middle between the players, back from one who's
 # too close, or up to one who's out of reach. Each lasts until he's there.
-var _centering = false
 var _backing = false
 var _closing = false
 var _ghost_until = 0.0  # anim_time until which his body blocks nobody
 var _slowed_until = 0.0
 var _crowded_for = 0.0  # how long a player has been closer than CROWD_DISTANCE
+var _drift = 0.5  # where his drift is (see "WHERE HE STANDS"): 0 near, 1 far; around the middle...
+var _drift_to = 0.5  # ...gliding to here...
+var _drift_wait = 0.0  # ...and once there, waiting this long for the next
+var _pushing_for = 0.0  # how long he has been pushing a player along (see "PUSHING THROUGH")
+var _shove_side = 0  # the side a shove is due on: that player's in his way (0: both sides)
 var _room_ready = 0.0  # anim_time from which crowding may make him make room again
 var _shove_due = false  # he wants room, and it's the shove: as soon as he's free
 
@@ -416,6 +444,7 @@ func _physics_process(delta):
 	if hp <= 0.0:
 		return
 	_run_dash()
+	_drift_on(delta)
 	if rules != null:
 		_judge_windows()
 	if state == State.IDLE and _shove_due:
@@ -543,6 +572,7 @@ func orient(strikes: Array) -> int:
 	var way = 1
 	var first = strikes[0][1]
 	var kind = strikes[0][2] if strikes[0].size() > 2 else CUT
+	var charge = strikes.filter(func(strike): return strike.size() > 2 and strike[2] == CHARGE)
 	if kind == RUSH and first != BOTH:
 		for blade in BLADES:
 			if _turned[blade]:
@@ -560,8 +590,9 @@ func orient(strikes: Array) -> int:
 				way = -1
 		var there = can_strike(first * way)
 		var other_there = can_strike(-first * way)
-		var cramped = kind == CHARGE and _charge_room(first * way) < CHARGE_MIN_ROOM \
-			and _charge_room(-first * way) >= CHARGE_MIN_ROOM
+		var charging = 0 if charge.is_empty() else charge[0][1]  # the charge's sword, as written
+		var cramped = charging != 0 and _charge_room(charging * way) < CHARGE_MIN_ROOM \
+			and _charge_room(-charging * way) >= CHARGE_MIN_ROOM
 		if other_there and (not there or cramped):
 			way = -way
 	for strike in strikes:
@@ -803,6 +834,8 @@ func _parry(blade: int, player, at: Vector2):
 func _shove():
 	_shove_due = false
 	var shove = find_attack("SHOVE")
+	shove.only_side = _shove_side
+	_shove_side = 0
 	if shove.fits(self):
 		_choose_target()
 		_begin_telegraph(shove)
@@ -875,14 +908,13 @@ func _place() -> float:
 		var middle = (near.global_position.x + fought[1].global_position.x) / 2.0
 		_backing = false
 		_closing = false
-		if absf(middle - x) > PLACE_SLACK:
-			_centering = true
-		elif absf(middle - x) < 1.0:
-			_centering = false
-		return middle if _centering else x
+		# Off the middle by his drift, toward one of them (into them, if they don't give way: he
+		# pushes them, see "PUSHING THROUGH"), as long as the other stays well in reach.
+		var half = absf(fought[1].global_position.x - near.global_position.x) / 2.0
+		var most = clampf(BLADE_REACH - REACH_MARGIN - half, 0.0, PEP_DRIFT)
+		return middle + (2.0 * _drift - 1.0) * most
 	# By the nearer one: back from them until they're at his distance, or up to them until they're
 	# well in reach.
-	_centering = false
 	if gap < CROWD_DISTANCE:
 		_backing = true
 	elif gap >= FIT_DISTANCE:
@@ -906,14 +938,45 @@ func _place() -> float:
 			goal = well_in_reach
 		if (goal - x) * side < 0.0:
 			return goal
-	return x
+	# Else his drift: the distance to keep from the nearer one just now.
+	return near.global_position.x - side * lerpf(DRIFT_NEAR, DRIFT_FAR, _drift)
+
+
+# One frame of his drift: gliding to where it's headed, or waiting there for the next.
+func _drift_on(delta: float):
+	if _drift == _drift_to:
+		_drift_wait -= delta
+		if _drift_wait <= 0.0:
+			_drift_to = randf()
+			_drift_wait = randf_range(0.0, DRIFT_PAUSE)
+	else:
+		_drift = move_toward(_drift, _drift_to, DRIFT_SPEED * delta)
 
 
 # One frame of walking to his place, at `pace` times his speed.
 func walk(delta: float, pace = 1.0):
 	if _dash != null:
 		return
-	global_position.x = move_toward(global_position.x, clamp_x(_place()), WALK_SPEED * pace * _pace() * delta)
+	var x = global_position.x
+	var goal = clamp_x(_place())
+	pace *= _pushing(signf(goal - x), delta)
+	global_position.x = move_toward(x, goal, WALK_SPEED * pace * _pace() * delta)
+
+
+# Walking `way`: into a player? Then slower, and after PUSH_PATIENCE a shove of that side is due
+# (see "PUSHING THROUGH"). Returns his pace for it.
+func _pushing(way: float, delta: float) -> float:
+	var touching = way != 0.0 and get_players().any(
+		func(p): return side_of(p) == way and distance_to(p) <= TOUCH_DISTANCE)
+	if not touching:
+		_pushing_for = 0.0
+		return 1.0
+	_pushing_for += delta
+	if _pushing_for >= PUSH_PATIENCE and not _shove_due:
+		_pushing_for = 0.0
+		_shove_due = true
+		_shove_side = int(way)
+	return PUSH_PACE
 
 
 # No room to keep his distance by walking (see "CORNERED").
@@ -948,18 +1011,18 @@ func _room_toward(side: int) -> float:
 	return maxf(room, 0.0)
 
 
-# A long windup: one frame of walking at that sword's player. False once he has reached them.
+# A long windup: one frame of walking at that sword's player, into them if they don't give way
+# (pushing them along). False if there's nobody to walk at.
 func advance_on(blade: int, delta: float) -> bool:
 	var ward = ward_of(blade)
 	if ward == null:
 		return false
 	if _dash != null:
 		return true
-	var side = side_of(ward)
 	var x = global_position.x
-	var goal = clamp_x(x + side * _room_toward(side))
-	global_position.x = move_toward(x, goal, ADVANCE_SPEED * _pace() * delta)
-	return not is_equal_approx(global_position.x, goal)
+	var pace = _pushing(side_of(ward), delta)
+	global_position.x = move_toward(x, clamp_x(ward.global_position.x), ADVANCE_SPEED * pace * _pace() * delta)
+	return true
 
 
 # Where a strike of that sword (or of BOTH) takes him (see "WITH A STRIKE HE LUNGES"). `rush`:
@@ -995,7 +1058,12 @@ func _charge_room(blade: int) -> float:
 
 # He follows his thrust through, past that sword's player (see "THE CHARGE").
 func charge_through(blade: int):
-	_dash_to(global_position.x + blade_side(blade) * CHARGE_DISTANCE, CHARGE_TIME)
+	var way = blade_side(blade)
+	var length = CHARGE_DISTANCE
+	var ward = ward_of(blade)
+	if ward != null and side_of(ward) == way:
+		length = clampf(distance_to(ward) + CHARGE_BEYOND, CHARGE_DISTANCE, CHARGE_MOST)
+	_dash_to(global_position.x + way * length, CHARGE_TIME)
 	ghost(CHARGE_TIME)
 	pop_body(Vector2(1.2, 0.9), CHARGE_TIME)
 	Sfx.play("swing", -3.0)
