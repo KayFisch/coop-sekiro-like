@@ -472,9 +472,15 @@ Nicho, 2026-10-17 (`core/sync_bond.gd`; numbers on F2, tab "sync mode"). With th
   grey puff; a normal attack, which his guard meets as ever), and they lose 5 sync. Bound, a
   swing deals no hit of its own: only the pair's strike does. A block press lets a drawn sabre go.
 - **Parrying, bound:** his strikes of both swords take both parries; a lone parry is only a block.
-- **Him, in their sync mode:** every cut comes with both swords at once, he picks only his series
-  of plain cuts (no crossing, sweep, leap or rush: nothing that throws the two apart), and his
-  waits and pauses are 1.4 times as long.
+- **Him, in their sync mode: on the defensive.** Every cut comes with both swords at once, he picks
+  only his series of plain cuts (no crossing, sweep, leap or rush: nothing that throws the two
+  apart), his waits and pauses are 1.4 times as long, and between two attacks he stays on guard
+  2 s longer. While one of them draws back he holds off his next attack (up to 1.5 s in a row):
+  the players are the ones attacking now. (Nicho, 2026-10-17: he struck so fast there was no
+  time to draw back.)
+- **Time** (F2 "sync_slow_speed", 1 by default: off): set lower (0.5: half), time runs slow while
+  one of the bound draws back, the screen faintly pink. It slows everything, the players' own
+  movement too, so it's there to compare with the defensive boss.
 - **The mirrored screen** (F1 "sync_merge_view", off by default): bound, the two halves become one:
   the shadow comes up into the light half (outlined pale, to read on the dark) and the shadow
   half dims out of focus, almost as the screen was before the split.

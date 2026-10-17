@@ -25,6 +25,8 @@ const BLEND_SHARE = 0.32  # how far up the body the partner's color flows in, bo
 const BLEND_TIME = 0.45  # ...over this long
 const CUE_TIME = 0.28  # s a cue's ring takes to spread and fade
 const FLASH_ALPHA = 0.22  # the screen's pink flash on the big cue and a heavy strike
+const SLOW_EASE = 0.2  # each frame the time's speed goes this share of the way to where it's headed
+const SLOW_TINT = 0.05  # the screen's faint pink while time runs slow
 
 var rules  # the SyncRules it belongs to
 var bound = false
@@ -64,6 +66,10 @@ func now() -> float:
 	return _time
 
 
+func _exit_tree():
+	Engine.time_scale = 1.0  # a fight left mid-draw doesn't stay slow
+
+
 func _process(delta):
 	_time += delta
 	var players = _players()
@@ -78,8 +84,12 @@ func _process(delta):
 		_marks[p].visibility_layer = p.visibility_layer
 		_marks[p].queue_redraw()
 	_floor.queue_redraw()
+	# Time runs slow while one of the bound draws back (Tuning "sync_slow_speed"; 1: not at all).
+	var drawing = bound and players.any(func(p): return p.is_charging())
+	var speed = Tuning.value("sync_slow_speed") if drawing else 1.0
+	Engine.time_scale = speed if absf(Engine.time_scale - speed) < 0.01 else lerpf(Engine.time_scale, speed, SLOW_EASE)
 	_flash_left = maxf(_flash_left - delta, 0.0)
-	_flash.color.a = FLASH_ALPHA * _flash_left / 0.2
+	_flash.color.a = maxf(FLASH_ALPHA * _flash_left / 0.2, SLOW_TINT * (1.0 - Engine.time_scale) * 2.0)
 	_rings = _rings.filter(func(r): return _time - r[3] < CUE_TIME)
 	if players.size() < 2:
 		_unbind()

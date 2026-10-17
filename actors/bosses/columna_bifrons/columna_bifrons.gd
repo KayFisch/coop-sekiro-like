@@ -311,6 +311,7 @@ var _room_ready = 0.0  # anim_time from which crowding may make him make room ag
 var _shove_due = false  # he wants room, and it's the shove: as soon as he's free
 
 # The reactive mode (see REACTIVE_WAIT).
+var _held_off = 0.0  # the players' sync mode: how long he has held off his next attack (see _physics_process())
 var _provocations = 0  # hits parried since his last attack began
 var _patience = 2  # how many of those he lets go before striking back
 var _provoker = RIGHT  # the sword that parried the last one: its player is who he strikes back at
@@ -413,7 +414,10 @@ func get_repeatable_attacks() -> Array:
 
 func get_idle_pause() -> float:
 	var pause = randf_range(REACTIVE_WAIT_MIN, REACTIVE_WAIT_MAX) if _is_reactive() else super()
-	return pause * (Tuning.value("sync_mode_tempo") if in_sync_mode() else 1.0)
+	if in_sync_mode():
+		# On the defensive: slower, and a longer pause on guard between his attacks.
+		return pause * Tuning.value("sync_mode_tempo") + Tuning.value("sync_guard_pause")
+	return pause
 
 
 # The players' sync mode (core/sync_rules.gd): he strikes with both swords at once, and slower.
@@ -462,6 +466,14 @@ func _physics_process(delta):
 	# Nobody in his range: no attack (he walks up to them instead, see walk()).
 	if state == State.IDLE and timer <= delta and not _fought().any(in_range):
 		timer = RANGE_RECHECK
+	# The players' sync mode: he's on the defensive. While one of them draws back, he holds off his
+	# next attack, on guard (up to "sync_hold_off" in a row).
+	if state != State.IDLE:
+		_held_off = 0.0
+	elif in_sync_mode() and get_players().any(func(p): return p.is_charging()):
+		_held_off += delta
+		if timer <= delta and _held_off < Tuning.value("sync_hold_off"):
+			timer = RANGE_RECHECK
 	super(delta)
 	if hp <= 0.0:
 		return
