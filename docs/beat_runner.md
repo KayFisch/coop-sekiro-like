@@ -50,8 +50,8 @@ Code: `levels/runner/` (`runner.gd`, `runner.tscn`). Select screen: entry 6. Bra
 ## Numbers (F2, the runner's page)
 
 Tempo (seconds per unit, units between patterns, the relay's delay, the speed-up), speeds
-(orbs 420 px/s, shards 650, blocks 560, the world 300), the meter (what each answer gains or costs), and how
-often something comes between two patterns. F2 in this level shows only these.
+(orbs 420 px/s, shards 650, blocks 560, the world 300), the meter (what each answer gains or
+costs), and how often something comes between two patterns. F2 in this level shows only these.
 
 ## To find out together
 
