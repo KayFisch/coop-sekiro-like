@@ -28,8 +28,14 @@ his tempo, his sides, his partner's hit.
   the boss fight**: with Bifrons on "after" (`bifrons_window`), 0.24 s (his guard opens 0.18 s
   after the parry, and "on the beat" is the 0.12 s after that, `sync_beat_time`); it can be hit
   until his guard would close again (0.48 s). On "beat" it's 0.06 s: you hit with the parry.
-  With the two on two sides that's half the circle (about 1800 px/s); on one side, the long way
-  round (337 degrees, about 3400 px/s). It leaves a trail so it can be followed.
+  **Its pace: very fast over your half, then slowing down smoothly from the line on**, to come
+  slowly where your partner is to hit it (600 px/s). It slows down over at least the last 140 px
+  before that spot. With the two on two sides that's half the circle: about 2160 px/s, slowing
+  down just before the line and crossing it at about 1060. On one side it's the long way round
+  (337 degrees): about 4760 px/s over your half, then slowing down along your partner's whole
+  half. How fast it is before is whatever keeps the timing. Past the spot it glides on toward the
+  line, slower and slower; missed, it fades out on its way. Its trail reaches back to where it was
+  0.07 s before: long while it's fast, short as it slows down.
 - **Sides, as with him: diagonal by default**, one of you on each side of the circle: P1's things
   come from P1's side, P2's from the other. Changing sides only comes with his moves for it:
   - **his crossing** (pep to ppe): a long green arrow, level, for one of you, then a heavy green
@@ -56,9 +62,10 @@ his tempo, his sides, his partner's hit.
 Switches (F1, "Ring: ..."): violet shards from parries, his side changes (crossing, sweep,
 leap), his both-sword strikes as green pairs, bars, endless. Numbers (F2, the ring's page): his
 tempo and the gap between patterns, how often a grey shard or a bar comes between them, the
-circle's radius, speeds, the perfect and good windows, the meter. The violet shard's timing comes
-from Bifrons's own switches and numbers (`bifrons_window`, F2 `sync_beat_time`), so the two
-fights keep the same rhythm. Bifrons's weights decide how often the crossing and the leap come
+circle's radius, speeds (the violet shard's: where it's to be hit, and over how much of the
+circle at least it slows down to that), the perfect and good windows, the meter. The violet
+shard's timing comes from Bifrons's own switches and numbers (`bifrons_window`, F2
+`sync_beat_time`), so the two fights keep the same rhythm. Bifrons's weights decide how often the crossing and the leap come
 (as in his fight: a crossing in about one pattern of five).
 
 ## Colors
@@ -69,6 +76,9 @@ yours alone, violet is your partner's gift, yellow is yours to parry.
 
 ## Rounds
 
+- **Round 5** (Nicho, 2026-10-17): the violet shard no longer runs at one speed: very fast over
+  the parrier's half, then (smoothly) slower from the line on, slow where it's to be hit, with the
+  same timing.
 - **Round 4** (Nicho, 2026-10-17): violet shards appear where the parry was and visibly run
   along the circle (the long way when both are on one side, so faster), timed like the boss
   fight's partner hit. Things come as in the boss fight: diagonal by default, P1 on one side and

@@ -13,10 +13,11 @@ extends Node2D
 ## - between patterns, a grey shard: hit it on your own (along its cut); shards never hit anyone.
 ## A parried yellow arrowhead sends a violet shard to the partner (Moves "ring_relay"): it comes
 ## up where the parry was and runs along the circle, over the parrier's half, through the line
-## and on along the partner's half, until it's hit or reaches the line again. It meets the
-## partner's side of the circle as long after the parry as the partner's hit comes after a parry
-## in the boss fight (Moves "bifrons_window", Tuning "sync_beat_time"): the longer way when the
-## two are on one side, so faster.
+## and on along the partner's half, until it's hit (missed, it fades out on its way to the line).
+## It meets the partner's side of the circle as long after the parry as the partner's hit comes
+## after a parry in the boss fight (Moves "bifrons_window", Tuning "sync_beat_time"). It's very
+## fast over the parrier's half and slows down from the line on, to come slowly where it's to be
+## hit (Tuning "ring_relay_slow"); the longer way when the two are on one side, so faster still.
 ## Sides: as with him, the two stand diagonally, one on each side of the circle. His crossing puts
 ## them on one side: a green arrow for one of them, then a heavy pair for both on the other's
 ## side (dash over). His leap brings them apart again, as a sweep: a green arrow slanting down at
@@ -38,7 +39,7 @@ const ARROW_LENGTH = 46.0  # the green arrows'
 const HEAVY_SIZE = 1.5  # the crossing's heavy pair is this much bigger...
 const HEAVY_LOSS = 2.0  # ...and costs this much more taken
 const RELAY_EARLY = 0.05  # s before its beat a violet shard counts as at its meeting point
-const RELAY_TRAIL = 0.8  # radians of the circle a violet shard's trail covers
+const RELAY_TRAIL = 0.07  # s: a violet shard's trail reaches back to where it was this long ago
 const MARK_TIME = 1.0  # s before its beat a thing marks where it'll meet the circle
 const LEAD_IN = 2.0  # s before the first beat
 const LOOKAHEAD = 3.0  # s planned ahead
@@ -338,7 +339,10 @@ func arc_point(side: float, u: float) -> Vector2:
 
 func _fly(orb):
 	if orb.done:
-		orb.position += orb.drift * get_physics_process_delta_time()
+		if orb.kind == Kind.RELAY and not orb.split:
+			_place(orb)  # a violet shard missed runs on along the circle as it fades
+		else:
+			orb.position += orb.drift * get_physics_process_delta_time()
 		orb.modulate.a = maxf(orb.modulate.a - 2.5 * get_physics_process_delta_time(), 0.0)
 		if orb.modulate.a <= 0.0:
 			_orbs.erase(orb)
@@ -400,7 +404,7 @@ func relay_late() -> float:
 # A yellow arrowhead parried: a violet shard for the partner, born where the parry was (on that
 # side of the circle). It runs along the circle so as to meet it on the partner's side (where
 # they belong just now) relay_delay() later: half the circle when they're on the other side, the
-# long way round when they're on the same one.
+# long way round when they're on the same one. Fast, then slowing down (_pace_relay()).
 func _send_relay(parried):
 	var shard = Orb.new()
 	shard.ring = self
@@ -415,8 +419,27 @@ func _send_relay(parried):
 	shard.end_u = TAU - a
 	shard.born = _time
 	shard.beat = _time + relay_delay()
-	shard.speed = shard.meet_u / relay_delay()  # radians per second
+	_pace_relay(shard)
 	_launch(shard)
+
+
+# Its pace: fast over the parrier's half, then slowing down, from the line on but over at least
+# "ring_relay_brake" px, to "ring_relay_slow" where it's to be hit; past that it glides on toward
+# the line, slower and slower. Slowing down, its speed eases from the one to the other in time (a
+# smoothstep), so it covers that stretch at their mean. How fast it has to be before is what makes
+# it meet the circle on its beat.
+func _pace_relay(shard):
+	var time = relay_delay()
+	var slow = minf(Tuning.value("ring_relay_slow") / radius(), 0.5 * shard.meet_u / time)  # radians/s
+	shard.brake_u = maxf(minf(PI - chest_angle(), shard.meet_u - Tuning.value("ring_relay_brake") / radius()), 0.0)
+	var before = shard.brake_u
+	var braking = shard.meet_u - shard.brake_u
+	# before / fast + 2 * braking / (fast + slow) = time, solved for fast:
+	var b = time * slow - before - 2.0 * braking
+	var fast = (-b + sqrt(b * b + 4.0 * time * before * slow)) / (2.0 * time)
+	shard.speed = fast
+	shard.slow = slow
+	shard.brake_time = 2.0 * braking / (fast + slow)
 
 
 func _relay(orb):
@@ -437,7 +460,7 @@ func _relay(orb):
 			_gain("ring_relay_gain", orb, "")
 			_end(orb, Vector2.ZERO)
 			return
-	if off > relay_late() and orb.travelled(_time) >= orb.end_u:
+	if off > relay_late():  # his guard would be closed again
 		_lose("ring_miss_loss", orb, "MISSED")
 		_end(orb, Vector2.ZERO)
 
@@ -711,7 +734,10 @@ class Orb extends Node2D:
 	var first = 0  # whose half it was first in
 	var beat = 0.0  # when it meets the circle (the sweep: the first time)
 	var side = 1.0  # the side it comes from (a violet shard: where it was born): -1 left, 1 right
-	var speed = 0.0  # px/s (a violet shard: radians/s along the circle)
+	var speed = 0.0  # px/s (a violet shard: radians/s along the circle, while it's fast)
+	var slow = 0.0  # a violet shard: radians/s where it's to be hit...
+	var brake_u = 0.0  # ...slowing down to that from here (radians along its way)...
+	var brake_time = 0.0  # ...over this long (s)
 	var pair = -1
 	var heavy = false  # the crossing's pair
 	var target = 0  # a violet shard: whose it is
@@ -726,9 +752,21 @@ class Orb extends Node2D:
 	var drift = Vector2.ZERO  # done: how it drifts off as it fades
 	var result = ""  # what became of it last (the text shown)
 
-	# A violet shard: radians along its way at run time `t`.
+	# A violet shard: radians along its way at run time `t` (BeatRing._pace_relay()).
 	func travelled(t: float) -> float:
-		return clampf(speed * (t - born), 0.0, end_u)
+		var s = t - born
+		var fast_time = brake_u / speed
+		var u: float
+		if s < fast_time:
+			u = speed * s
+		elif s < fast_time + brake_time:
+			var q = (s - fast_time) / brake_time  # its speed: lerp(speed, slow, smoothstep(q))
+			u = brake_u + speed * (s - fast_time) + (slow - speed) * brake_time * (q * q * q - q * q * q * q / 2.0)
+		else:
+			# Past where it's to be hit: gliding on toward the line, slower and slower.
+			var left = end_u - meet_u
+			u = end_u - left * exp(-slow * (s - fast_time - brake_time) / left)
+		return clampf(u, 0.0, end_u)
 
 	func color() -> Color:
 		match kind:
@@ -793,12 +831,13 @@ class Orb extends Node2D:
 				draw_colored_polygon(PackedVector2Array([ahead * r * 1.2, -ahead * r + across * r, -ahead * r * 0.3,
 					-ahead * r - across * r]), c)
 
-	# A violet shard's trail along the circle behind it, in this half only.
+	# A violet shard's trail along the circle behind it, back to where it was RELAY_TRAIL ago (long
+	# while it's fast, short as it slows down), in this half only.
 	func _draw_trail(c: Color):
 		var u = travelled(ring._time)
 		var a = ring.chest_angle()
 		var start = 0.0 if lane == first else PI - a  # where this half's part of its way begins
-		var from = maxf(u - BeatRing.RELAY_TRAIL, start)
+		var from = maxf(travelled(ring._time - BeatRing.RELAY_TRAIL), start)
 		if u - from < 0.02:
 			return
 		var points = PackedVector2Array()

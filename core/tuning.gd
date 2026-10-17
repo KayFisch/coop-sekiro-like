@@ -95,6 +95,8 @@ const ENTRIES = [
 	{"key": "ring_orb_speed", "label": "an arrowhead, a shard or a green arrow (px/s)", "default": 380.0, "step": 20.0, "min": 100.0, "max": 2000.0, "page": "ring"},
 	{"key": "ring_sweep_speed", "label": "a sweep (px/s)", "default": 520.0, "step": 20.0, "min": 100.0, "max": 2000.0, "page": "ring"},
 	{"key": "ring_bar_speed", "label": "a bar (px/s)", "default": 300.0, "step": 20.0, "min": 50.0, "max": 2000.0, "page": "ring"},
+	{"key": "ring_relay_slow", "label": "a violet shard where it's to be hit (px/s)", "default": 600.0, "step": 50.0, "min": 100.0, "max": 3000.0, "page": "ring"},
+	{"key": "ring_relay_brake", "label": "...slowing to that from the line on, over at least (px)", "default": 140.0, "step": 10.0, "min": 0.0, "max": 600.0, "page": "ring"},
 	{"key": "ring_perfect", "label": "perfect: this close to its beat (s, either side)", "default": 0.07, "step": 0.01, "min": 0.01, "max": 0.5, "page": "ring"},
 	{"key": "ring_good", "label": "good: this close (s)", "default": 0.16, "step": 0.01, "min": 0.01, "max": 1.0, "page": "ring"},
 	{"header": "RING: THE METER (OF 100)", "page": "ring", "column": 1},
