@@ -3,10 +3,11 @@ class_name KitCannon
 extends Clockwork
 ## A cannon firing a ball on its beats, in a straight line (`angle_deg`, `speed`), no gravity.
 ## The ball is a billiard ball and you are the cushion: a perfect parry (block pressed in time,
-## is_perfect_parry() as against the bosses) sends it back off you, angle in = angle out, as off
-## an upright wall: across goes the other way, up or down stays as it was. So it zigzags on
-## between the two of you, rising (or falling) as it goes, and you keep it going from both sides
-## until it reaches a KitSwitch with `trigger` BALL, the target.
+## is_perfect_parry() as against the bosses) sends it back off you, angle in = angle out, off
+## the side of you it meets: from the side, across goes the other way and up or down stays; from
+## above or below, up and down turn round and across stays. So it zigzags on between the two of
+## you, side by side or one above the other, drifting as it goes, and you keep it going from
+## both sides until it reaches a KitSwitch with `trigger` BALL, the target.
 ##  - Only blocking (block held): the ball shatters on your blade, nothing else happens.
 ##  - Neither: it kills.
 ##  - A wall, floor or ceiling (KitBlock, a shut KitDoor) shatters it; one-way platforms it
@@ -97,7 +98,7 @@ class Ball extends Node2D:
 			var box = cannon.player_box(p)
 			var d = _closest(box, global_position).distance_to(global_position)
 			if d <= BALL_RADIUS + PARRY_REACH and p.is_perfect_parry():
-				_bounce_off(p)
+				_bounce_off(p, box)
 			elif d > BALL_RADIUS:
 				continue
 			elif p.is_blocking():
@@ -110,15 +111,20 @@ class Ball extends Node2D:
 				return true
 		return false
 
-	# Angle in = angle out, off an upright wall facing the ball: across turns round, away from
-	# the parrier; up or down stays. (Coming straight down or up, it goes straight back.)
-	func _bounce_off(p):
-		var away = signf(global_position.x - p.global_position.x)
-		if away == 0.0:
-			away = -signf(velocity.x)
-		if absf(velocity.x) < 1.0:
-			velocity.y = -velocity.y
-		velocity.x = absf(velocity.x) * away
+	# Angle in = angle out, off the side of the parrier's box the ball is past furthest (its
+	# sides: across turns round, away from them; its top or bottom: up and down turn round).
+	func _bounce_off(p, box: Rect2):
+		var off = global_position - box.get_center()
+		var past = off.abs() - box.size / 2.0  # how far out past each side, across and up
+		var vertical = past.y > past.x  # above or below
+		if absf(velocity.y if vertical else velocity.x) < 1.0:
+			vertical = not vertical  # flying along that side: it goes straight back
+		if vertical:
+			var away = signf(off.y) if off.y != 0.0 else -signf(velocity.y)
+			velocity.y = absf(velocity.y) * away
+		else:
+			var away = signf(off.x) if off.x != 0.0 else -signf(velocity.x)
+			velocity.x = absf(velocity.x) * away
 		player_id = p.player_id
 		_ignore[p] = Beat.time() + IGNORE_TIME
 		p.on_perfect_parry(false)

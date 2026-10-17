@@ -19,6 +19,7 @@ const GRID = 32.0
 const FALL_MARGIN = 40.0  # px below the room's bottom that counts as fallen out
 const NEXT_ROOM_DELAY = 1.5  # s from reaching the goal to the next room
 const FLASH_TIME = 0.25  # the screen flashes when you start over
+const BACKDROP_Z = -100  # the background and grid's draw layer: under background blocks (KitBlock.BACKGROUND_Z)
 const COLOR_BACKGROUND = Color(0.06, 0.06, 0.08)
 const COLOR_GRID = Color(1, 1, 1, 0.035)
 const COLOR_GRID_MAJOR = Color(1, 1, 1, 0.07)  # every 5 cells (160 px)
@@ -41,11 +42,15 @@ const COLOR_DONE = Color(0.4, 1.0, 0.6)
 	set(v):
 		size = Vector2(maxf(roundf(v.x), GRID), maxf(roundf(v.y), GRID))
 		queue_redraw()
+		if _backdrop:
+			_backdrop.queue_redraw()
 ## Loaded once both players reach the goal (unless the goal has a `next_room` of its own).
 @export_file("*.tscn") var next_room = ""
 ## F1 switches this room needs on (e.g. "double_jump", "ledge_grab"), on while it runs and back
 ## as they were after. Shafts add the wall-jump ones themselves.
 @export var moves_on: Array[String] = []
+## The music (Beat.TRACKS), in time with the clock; it plays on into a next room with the same.
+@export_enum("none", "arcade_psytrance") var music: String = "none"
 
 var players: Array = []
 var deaths = 0
@@ -54,6 +59,7 @@ var _cleared = false
 var _last_kill_frame = -1
 var _deaths_label: Label
 var _flash: ColorRect
+var _backdrop: Node2D  # draws the background and grid, under everything
 
 
 # The physics layer of one-way platforms carrying both (0), only P1 (1) or only P2 (2). The
@@ -63,9 +69,13 @@ static func platform_layer(owner_id: int) -> int:
 
 
 func _ready():
+	_backdrop = Node2D.new()
+	_backdrop.z_index = BACKDROP_Z
+	_backdrop.draw.connect(_draw_backdrop)
+	add_child(_backdrop, false, INTERNAL_MODE_FRONT)  # internal: never saved into the scene
 	if Engine.is_editor_hint():
 		return
-	Beat.start(bpm, self)
+	Beat.start(bpm, self, "" if music == "none" else music)
 	var pieces = _descendants(self)
 	_switch_on_moves(pieces)
 	if pieces.any(func(n): return n.has_method("needed_moves")):  # a KitShaft
@@ -224,23 +234,28 @@ func _hud_label(pos: Vector2, text: String, font_size: int) -> Label:
 	return l
 
 
-# The background and the grid; in the editor also the room's bounds and the first screen.
-func _draw():
+# The background and the grid, on the backdrop: under every piece, background blocks too.
+func _draw_backdrop():
 	var room = Rect2(Vector2.ZERO, size)
-	draw_rect(room, COLOR_BACKGROUND)
+	_backdrop.draw_rect(room, COLOR_BACKGROUND)
 	var i = 0
 	var x = 0.0
 	while x <= size.x:
-		draw_line(Vector2(x, 0), Vector2(x, size.y), COLOR_GRID_MAJOR if i % 5 == 0 else COLOR_GRID)
+		_backdrop.draw_line(Vector2(x, 0), Vector2(x, size.y), COLOR_GRID_MAJOR if i % 5 == 0 else COLOR_GRID)
 		x += GRID
 		i += 1
 	# Horizontal lines count up from the floor (the room's bottom), so the major ones mark heights of 160, 320, ...
 	i = 0
 	var y = size.y
 	while y >= 0.0:
-		draw_line(Vector2(0, y), Vector2(size.x, y), COLOR_GRID_MAJOR if i % 5 == 0 else COLOR_GRID)
+		_backdrop.draw_line(Vector2(0, y), Vector2(size.x, y), COLOR_GRID_MAJOR if i % 5 == 0 else COLOR_GRID)
 		y -= GRID
 		i += 1
+
+
+# In the editor, the room's bounds and its title.
+func _draw():
+	var room = Rect2(Vector2.ZERO, size)
 	if Engine.is_editor_hint():
 		draw_rect(room, COLOR_BOUNDS, false, 2.0)
 		draw_string(ThemeDB.fallback_font, Vector2(4, -8), "%s · %d BPM · %d x %d" % [title, roundi(bpm), roundi(size.x), roundi(size.y)],

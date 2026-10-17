@@ -9,12 +9,17 @@ extends Clockwork
 ##   -         on to the next bar (the rest of this one is empty)
 ## e.g. "1.t.-2.t.-1.t.-" (a strike a bar, told two beats ahead) or "1t2t-1t2t" (every other
 ## beat, told one ahead). Spaces are ignored.
-##  - It starts with the first strike: both of you on it, the player of the first number strikes
-##    the wheel (whenever you like; its hub glows their colour). That beat is the sequence's
-##    first, and the rest follows from there in time.
+##  - It starts when you strike it: both of you on it, either of you strikes the wheel (whenever
+##    you like; its hub glows the colour of who has the first strike). Then an intermission: the
+##    rest of that bar it does nothing, the next whole bar it flashes yellow on the 1 and the 3;
+##    from the 1 after that the sequence plays, its bars on the metronome's bars. While
+##    it plays, the wheel pulses white with the metronome, strong on the 1 and the 3, faint on the
+##    2 and the 4; on a tell's beat it flashes in the tell's colour instead.
 ##  - A strike counts by its press, on its beat (within HIT_WINDOW); the blade lands a moment
 ##    later. A miss (nobody, the wrong one, a strike off its beat): down two stages, two strikes
-##    back, and it stops; strike again (the hub shows who) and it goes on from there.
+##    back (it flashes red), the same intermission from the missed beat, then on from there by
+##    itself. Back on the ground, it shuts off: strike it to start it again.
+##  - Off it (with no doors), it stops: strike again and it boots up again.
 ##  - Its doors (`doors`) are shut from the first strike until it's at the top.
 ## Place it at the platform's top-left, at the bottom; the editor draws its track up to the top
 ## and the sequence under it, a square a beat.
@@ -35,6 +40,7 @@ const COLOR_RAIL = Color(1, 1, 1, 0.12)
 const COLORS_STEP = [Color(0.4, 0.4, 0.4), Color(0.3, 0.55, 1.0), Color(1.0, 0.58, 0.18), Color(0.35, 0.95, 0.45)]  # -, P1, P2, both (green)
 const COLOR_MISS = Color(1.0, 0.25, 0.2)
 const COLOR_DONE = Color(1.0, 0.82, 0.3)
+const COLOR_BOOT = Color(1.0, 0.92, 0.2)  # the bar it boots up
 const COLOR_DOOR = Color(0.5, 0.46, 0.62)
 const WHEEL_RADIUS = 16.0
 const WHEEL_HEIGHT = 22.0  # its middle above the platform: a standing player's chest, where the blade cuts
@@ -43,6 +49,10 @@ const WHEEL_TURN = TAU / WHEEL_SPOKES  # a notch a strike
 const WHEEL_SPEED = 14.0  # how fast it catches up with its notch (1/s)
 const COLOR_WHEEL = Color(0.72, 0.62, 0.42)
 const HALO = 9.0  # px the tell's light reaches past the rim
+const COLOR_PULSE = Color(1, 1, 1)  # the metronome pulse: the rim brightens toward this
+const PULSE_STRONG = 0.8  # how far the rim brightens on the 1 and the 3
+const PULSE_FAINT = 0.12  # ... and on the 2 and the 4 (barely)
+const PULSE_HALO = 0.4  # the pulse's halo, at full pulse
 
 
 # What the blade hits (it looks for a body in the "boss" group, see _process_attack() in player.gd).
@@ -86,6 +96,8 @@ var _y = 0.0  # px up from the bottom, now
 var _running = false
 var _done = false
 var _start = 0  # the Beat index the sequence's first beat fell on (the strikes' beats count from it)
+var _boot_end = 0  # the Beat index an intermission (booting up, or after a miss) ends on: a 1
+var _resume_beat = 0  # the Beat index it plays on from, after booting up or a miss: strikes before count for nothing
 var _hits = {}  # player id -> their press time, struck in time for the strike being played
 var _pressed_at = {}  # player id -> when they last pressed attack (Beat time)
 var _wrong = false  # someone struck who shouldn't, or off the beat
@@ -95,6 +107,7 @@ var _door_shapes: Array = []
 var _shut = 0.0  # the doors: 0 open, 1 shut
 var _wheel_angle = 0.0  # drawn; catches up with _stage's notch
 var _wheel_flash = 0.0
+var _stacked: Array = []  # [on top, below]: held together while it rises (see _move())
 
 
 func _parse(text: String):
@@ -169,7 +182,11 @@ func _strike_beat() -> int:
 func _physics_process(delta):
 	if in_editor():
 		return
-	_move(delta)
+	_play()
+	_move(delta)  # after: the board check sees the platform where the players last followed it
+
+
+func _play():
 	if _done or not Beat.running or _strikes.is_empty():
 		return
 	var t = Beat.time()
@@ -202,17 +219,30 @@ func _on_board(p) -> bool:
 	return x > -ON_MARGIN and x < width + ON_MARGIN and feet <= global_position.y - _y + THICKNESS  # a frame behind it rising
 
 
+# Standing on the other player's head (else squeezed between them and the rising platform, the
+# one below gets pushed out through it).
+func _on_partner(p) -> bool:
+	if not p.is_on_floor():
+		return false
+	for i in p.get_slide_collision_count():
+		var c = p.get_slide_collision(i)
+		if c.get_normal().y < -0.7 and c.get_collider() != null and c.get_collider().is_in_group("players"):
+			return true
+	return false
+
+
 func _struck(p):
 	if p == null or not "player_id" in p:
 		return
 	_wheel_flash = 0.12
 	if _done or _strikes.is_empty() or not Beat.running:
-		play_near("chip", -8.0)
 		return
 	var pressed = _pressed_at.get(p.player_id, Beat.time())
 	var who = _strikes[_stage][1]
 	if not _running:
-		_boot(p, pressed, who)
+		_boot(pressed)
+		return
+	if pressed < Beat.beat_time(_resume_beat) - HIT_WINDOW:  # booting up, or off after a miss
 		return
 	var off = pressed - Beat.beat_time(_strike_beat())
 	if absf(off) <= HIT_WINDOW and (who == 3 or who == p.player_id):
@@ -223,20 +253,35 @@ func _struck(p):
 		_wrong = true
 
 
-# Stopped: the strike it's waiting for starts it, its beat the one it was pressed nearest to.
-func _boot(p, pressed: float, who: int):
-	if not players().all(_on_board) or not (who == 3 or who == p.player_id):
-		play_near("chip", -8.0)
+# Stopped: a strike by either of you starts it, in the beat it was pressed in (not the nearest:
+# late on a 4 is still that bar, not the next one's 1).
+func _boot(pressed: float):
+	if not players().all(_on_board):
 		return
-	for id in _hits.keys():  # both at once: the other one's strike has to be close
-		if absf(_hits[id] - pressed) > HIT_WINDOW * 2.0:
-			_hits.erase(id)
-	_hits[p.player_id] = pressed
-	if not _hit():
-		return
-	_start = roundi(Beat.beats_at(pressed)) - _strikes[_stage][0]
 	_running = true
-	_judge()
+	_intermission(floori(Beat.beats_at(pressed)))
+	play_near("bell", -10.0)
+
+
+# Booting up, or after a miss: from beat `from`, the rest of its bar and one whole bar more
+# (flashing yellow on that bar's 1 and 3); from the 1 after that, the sequence's bar with the
+# strike it's on plays, its bars on the metronome's ("t.1-": the tell on the 1, the strike on the 3).
+func _intermission(from: int):
+	_boot_end = (floori(from / float(BAR)) + 2) * BAR  # Beat counts 0, 4, 8... are the 1s
+	_resume_beat = _boot_end
+	_start = _resume_beat - floori(_strikes[_stage][0] / float(BAR)) * BAR
+	_clear()
+
+
+# The yellow flash on the 1 and the 3 of an intermission's whole bar: 1 on the beat, gone by the
+# next.
+func _boot_flash() -> float:
+	if not _running or in_editor():
+		return 0.0
+	var b = Beat.beats_at(Beat.time()) - (_boot_end - BAR)
+	if b < 0.0 or b >= BAR or floori(b) % 2 == 1:
+		return 0.0
+	return 1.0 - fmod(b, 1.0)
 
 
 func _hit() -> bool:
@@ -256,10 +301,15 @@ func _judge():
 		else:
 			play_near("bell", -6.0)
 		return
+	# Back on the ground: it shuts off (strike it to boot it up again). Above it: the same
+	# intermission as booting up, from the missed beat, then on from the strike it's back at.
+	var missed = _strike_beat()
 	_stage = maxi(_stage - 2, 0)
-	_running = false
 	_miss_flash = MISS_FLASH
-	play_near("bell_dull", -2.0)
+	if _stage == 0:
+		_running = false
+		return
+	_intermission(missed)
 
 
 func _clear():
@@ -269,10 +319,27 @@ func _clear():
 
 func _move(delta: float):
 	var goal = _stage * stage_height
+	var was = _y
 	if _y < goal:
 		_y = minf(_y + stage_height / RISE_TIME * delta, goal)
 	elif _y > goal:
 		_y = maxf(_y - FALL_SPEED * delta, goal)
+	# The platform carries who stands on it, but not who stands on their head: squeezed between
+	# the two, the one below would be pushed out through the platform. So while it rises, the one
+	# on top is held on the other's head, and they don't collide.
+	if _y > was:
+		if _stacked.is_empty():
+			for p in players():
+				if _on_partner(p) and _on_board(p):
+					var below = players().filter(func(o): return o != p)[0]
+					p.add_collision_exception_with(below)
+					below.add_collision_exception_with(p)
+					_stacked.append([p, below])
+		for pair in _stacked:
+			pair[0].global_position.y = pair[1].global_position.y - Player.BODY_SIZE.y - (_y - was)
+			pair[0].velocity.y = 0.0
+	else:
+		_unstack()
 	_body.position.y = THICKNESS / 2.0 - _y
 	var shut = 1.0 if (_running or _stage > 0) and not _done else 0.0
 	_shut = move_toward(_shut, shut, delta / DOOR_TIME)
@@ -280,8 +347,17 @@ func _move(delta: float):
 		door.set_deferred("disabled", _shut < 0.5)
 
 
+func _unstack():
+	for pair in _stacked:
+		if is_instance_valid(pair[0]) and is_instance_valid(pair[1]):
+			pair[0].remove_collision_exception_with(pair[1])
+			pair[1].remove_collision_exception_with(pair[0])
+	_stacked.clear()
+
+
 # The room starts over.
 func reset_piece():
+	_unstack()
 	_stage = 0
 	_y = 0.0
 	_running = false
@@ -316,8 +392,10 @@ func _draw():
 		_draw_sequence(Vector2(0, THICKNESS + 6.0))
 	var y = -_y
 	var face = COLOR_PLATFORM.lerp(COLOR_MISS, _miss_flash / MISS_FLASH * 0.6)
+	var boot = _boot_flash()
+	face = face.lerp(COLOR_BOOT, 0.4 * boot)
 	draw_rect(Rect2(0, y, width, THICKNESS), face)
-	draw_rect(Rect2(0, y, width, 2.0), COLOR_EDGE)
+	draw_rect(Rect2(0, y, width, 2.0), COLOR_EDGE.lerp(COLOR_BOOT, boot))
 	if doors and (_shut > 0.0 or in_editor()):
 		var dh = door_height * (1.0 if in_editor() else _shut)
 		for x in [0.0, width - DOOR_THICKNESS]:
@@ -331,13 +409,28 @@ func _draw():
 
 
 # The wheel to strike: on a post from the platform, turned a notch a strike. Stopped, its hub
-# glows the colour of who strikes next; on a tell, all of it shines in that colour.
+# glows the colour of who strikes next; struck to start, it flashes yellow once; on a tell, all
+# of it shines in that colour.
+# The wheel's white pulse with the metronome, 0 to 1, fading over the beat: strong on the 1 and
+# the 3, faint on the 2 and the 4. Only once the sequence plays: not while it's off, at the top,
+# or in an intermission (the rest of a bar: nothing; the whole bar: the yellow flash).
+func _pulse() -> float:
+	if not _running or _strikes.is_empty():
+		return 0.0
+	var b = Beat.beats_at(Beat.time())
+	if b < _boot_end:
+		return 0.0
+	var fade = pow(1.0 - fmod(b, 1.0), 2.0)
+	return fade * (PULSE_STRONG if floori(b) % 2 == 0 else PULSE_FAINT)  # Beat counts 0, 2, 4...: the 1s and 3s
+
+
 func _draw_wheel(at: Vector2):
 	draw_line(at, at + Vector2(0, WHEEL_HEIGHT), COLOR_PLATFORM.lightened(0.2), 4.0)
 	var rim = COLOR_WHEEL.lightened(0.5 * _wheel_flash / 0.12)
 	rim = rim.lerp(COLOR_MISS, _miss_flash / MISS_FLASH)
 	var hub = COLOR_WHEEL.darkened(0.3)
 	var tell = [] if in_editor() else _tell_now()
+	var boot = _boot_flash()
 	if _done:
 		hub = COLOR_DONE
 		rim = COLOR_DONE
@@ -345,8 +438,16 @@ func _draw_wheel(at: Vector2):
 		draw_circle(at, WHEEL_RADIUS + HALO, Color(tell[0], 0.35 * tell[1]))
 		rim = rim.lerp(tell[0], tell[1])
 		hub = tell[0]
+	elif boot > 0.0:
+		draw_circle(at, WHEEL_RADIUS + HALO, Color(COLOR_BOOT, 0.35 * boot))
+		rim = rim.lerp(COLOR_BOOT, boot)
+		hub = COLORS_STEP[_strikes[_stage][1]]  # who strikes once it's up
 	elif not _running and not _strikes.is_empty():
 		hub = COLORS_STEP[_strikes[_stage][1]]
+	var pulse = _pulse()
+	if pulse > 0.0 and tell.is_empty() and not _done:  # on a tell's beat, the tell is the flash
+		rim = rim.lerp(COLOR_PULSE, pulse)
+		draw_circle(at, WHEEL_RADIUS + HALO * 0.6, Color(COLOR_PULSE, PULSE_HALO * pulse))
 	draw_arc(at, WHEEL_RADIUS - 2.0, 0.0, TAU, 32, rim, 4.0)
 	for i in WHEEL_SPOKES:
 		var d = Vector2.from_angle(_wheel_angle + i * WHEEL_TURN)
