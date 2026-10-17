@@ -53,6 +53,9 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   sync mode); posture is lost in three sizes, by parrying (both sides alike), blocking (only
   the one who blocks) or being hit; sync only by a hit; posture comes back 2 s after the last
   attack. Nicho's scribble of 2026-10-17 has it all.
+- Also on `nicho/posture-rules`, in `player.gd`: the swords are a little broader (8 px), with a
+  crossguard and a point (`_setup_sword()`, hitbox unchanged), and `blade_point()` for the new
+  sync energy (`actors/player/sync_wave.gd`): a parry's energy runs visibly to the partner's sword.
 
 ## The project
 
