@@ -108,6 +108,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   abgezweigt, braucht den Spiegel-Bildschirm): geteilter Bildschirm, die Spieler laufen von
   selbst, Projektile zum Parieren und zum Zerschlagen, ein Parry schickt dem Partner ein
   schnelles Projektil, selten Hindernisse zum Drüberspringen. Muster aus Bifrons' Tabelle.
+  Nicho nach dem ersten Ausprobieren: das Prinzip wirkt eher „meh“. Deshalb ein zweiter
+  Prototyp daneben, **Beat-Ring** (gleicher Branch, Eintrag 7, `docs/beat_ring.md`): im
+  Bossraum frei bewegen, ein Kreis um die Mitte markiert den Beat, Dinge kommen von überall,
+  was keiner nimmt, fliegt durch die Linie zum Partner (nur noch perfekt fangbar), Balken von
+  den Seiten (springen oder unten bleiben).
 - [ ] **Bifrons' Patterns überarbeiten: Abstand schaffen, dann nachsetzen** (@Nicho). Siehe
   Scribble vom 2026-10-17.
 - [ ] **Spiegel-Bildschirm** (@Nicho), Branch `nicho/pep-test`, Schalter `mirror_view` (F1,
