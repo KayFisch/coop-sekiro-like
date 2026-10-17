@@ -56,6 +56,10 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
 - Also on `nicho/posture-rules`, in `player.gd`: the swords are a little broader (8 px), with a
   crossguard and a point (`_setup_sword()`, hitbox unchanged), and `blade_point()` for the new
   sync energy (`actors/player/sync_wave.gd`): a parry's energy runs visibly to the partner's sword.
+- Also there: a first **sync mode** (`core/sync_bond.gd`). `player.gd` got `bond`: while it's set,
+  attack is held to draw back and let go to strike (`_process_charge()`), and the sword becomes a
+  sabre (`set_sabre()`); nothing changes while it's null. F1 and F2 now show one tab at a time
+  (Q / E): new switches and numbers need a "tab".
 
 ## The project
 

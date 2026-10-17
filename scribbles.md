@@ -599,3 +599,48 @@ Claude dazu:
   Rolle. Hebel: Pausen in seinen Patterns, die Haltungsgrößen, seine Haltung (200).
 - Ihr startet bei 50 % Sync, also mit kaum Haltungsregeneration (5 %), bis ihr Sync aufbaut.
   Gewollt? Sonst: Start-Sync höher oder die 50 %-Grenze tiefer (beides in F2).
+
+## 2026-10-17 (Nicho): Sync-Modus
+
+- Die pinke Farbe bleibt (die Energiewelle sieht sehr gut aus und hilft sehr).
+- Wird der Sync-Modus erreicht, bekommen beide Spieler an ihren Füßen das Signal, dass sie sich
+  verbinden können. Kommen sie zusammen, verbinden sich beide Charaktere: wie Yin und Yang fließt
+  das Weiße etwas ins Schwarze und umgekehrt, über die Bodenlinie.
+- Bewegung im verbundenen Zustand: noch offen.
+- Schlagen und Parieren:
+  - Beide Schwerter werden größer und säbelartiger, mit schwarz-weißem Design.
+  - Beide können ihr Schwert durch gedrückt gehaltenen Schlag ausholen; maximal ausgeholt gibt
+    es einen kleinen Hinweis. Sind beide ausgeholt, kommt kurz nach dem späteren ein größerer
+    Hinweis, bei dem beide loslassen müssen.
+  - In Sync: ein heftiger Angriff. Außer Sync: Sie schlagen zwar zu, aber man sieht, dass es kein
+    krasser Schlag war, und sie verlieren Sync.
+  - Im Sync-Modus schwingt der Boss wohl immer beide Schwerter zusammen (die Schwerter könnten
+    dabei näher zusammen sein, damit es weniger wirr aussieht).
+  - Erfolgreich parieren nur, wenn beide in Sync parieren, wie sonst bei heftigen Angriffen.
+  - Der Stand-in reagiert einfach immer perfekt auf den Spieler.
+  - Screen Shake oder ein anderer Effekt?
+  - Überlegung: Im Sync-Modus verschmelzen die getrennten Ebenen zu einer, beide stehen wie im
+    alten ppe zusammen. Dann wächst bei der Vereinigung nicht der Fuß zusammen, sondern der
+    Schatten geht ins Weiße über, und die ganze untere Ebene geht aus dem Fokus: der Bildschirm
+    fast wie vor dem Split.
+  - Ein In-Sync-Schlag könnte auch dann Sync-Schaden machen, wenn der Boss pariert, wie ein
+    normaler Treffer, der durchgeht.
+  - Das Angriffsmuster des Bosses muss wohl angepasst werden, weil die Angriffe vielleicht zu
+    schnell kommen, um auszuholen. Vielleicht hat der Boss sichtbar Probleme, die Angriffe zu
+    parieren, und deshalb einen größeren Cooldown bis zur nächsten Aktion: der Kampf wird etwas
+    langsamer.
+- F1 und F2 in Tabs / Kategorien, damit nicht immer alles gleichzeitig offen ist.
+
+Umgesetzt auf `nicho/posture-rules` (`docs/boss_columna_bifrons.md` → „The sync mode“). Claude
+dazu:
+- Verbunden wird, wer nah genug zusammensteht (30 px, beide am Boden); über 90 px auseinander
+  löst es sich. Bewegung bleibt vorerst, wie sie ist.
+- Die Verschmelzung der Spiegelhälften ist ein Schalter (`sync_merge_view`, aus): ausprobieren
+  und vergleichen.
+- Der In-Sync-Schlag, den er pariert, kostet ihn den Sync eines normalen Treffers und lässt ihn
+  taumeln (0,8 s); euch kostet er nichts.
+- Getrennte Schläge im Sync-Modus sind jetzt normale Angriffe; vorher machte der Sync-Modus jeden
+  Treffer heftig. Sonst lohnt sich das Verbinden nicht.
+- Im Sync-Modus nimmt er nur seine Patterns aus normalen Schlägen (alle mit beiden Schwertern),
+  nichts, was euch auseinanderwirft (Crossing, Sweep, Sprung, Rush), und alles 1,4-mal so
+  langsam.
