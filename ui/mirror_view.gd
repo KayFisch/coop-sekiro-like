@@ -34,6 +34,12 @@ const LINE_WIDTH = 2.0
 # read on the pale ground.
 const OUTLINE_COLOR = Color(0.1, 0.1, 0.12)
 const OUTLINE_WIDTH = 1.5  # px on screen
+# The sync mode, bound (core/sync_bond.gd, Moves "sync_merge_view"): the two halves become one. The
+# shadow joins the light half (with a pale outline there, to read on the dark), and the shadow half
+# dims out of focus.
+const MERGE_TIME = 0.5  # s
+const MERGE_OUTLINE = Color(0.85, 0.83, 0.78)
+const MERGE_DIM = Color(0.3, 0.3, 0.33)  # the shadow half, merged: its colors times this
 
 const OUTLINE_SHADER = """
 shader_type canvas_item;
@@ -60,6 +66,8 @@ void fragment() {
 var _halves = []  # top, bottom: {"viewport": SubViewport, "picture": TextureRect, "ground": TextureRect}
 var _line: ColorRect
 var _outline: ShaderMaterial
+var _outline_light: ShaderMaterial  # the light half's, merged
+var _merge = 0.0  # 0: two halves, 1: one (see MERGE_TIME)
 var _colors = {}  # player -> [body, sword] from before the mirror
 var _marks = {}  # player -> the Callable marking what they add later
 
@@ -124,6 +132,9 @@ func _build():
 	_outline.shader = Shader.new()
 	_outline.shader.code = OUTLINE_SHADER
 	_outline.set_shader_parameter("outline_color", OUTLINE_COLOR)
+	_outline_light = ShaderMaterial.new()
+	_outline_light.shader = _outline.shader
+	_outline_light.set_shader_parameter("outline_color", MERGE_OUTLINE)
 	for i in 2:
 		var shadow = i == 1
 		var ground = TextureRect.new()
@@ -203,5 +214,21 @@ func _layout():
 			rect.position = Vector2(0.0, half.y * i)
 			rect.size = half
 	_outline.set_shader_parameter("width", OUTLINE_WIDTH * scale)
+	_outline_light.set_shader_parameter("width", OUTLINE_WIDTH * scale)
+	_merge_halves()
 	_line.position = Vector2(0.0, half.y - LINE_WIDTH / 2.0)
 	_line.size = Vector2(screen.x, LINE_WIDTH)
+
+
+# Bound in the sync mode (with Moves "sync_merge_view"): the shadow comes up into the light half,
+# and the shadow half dims away.
+func _merge_halves():
+	var rules = GameManager.rules
+	var bound = Moves.on("sync_merge_view") and rules != null and rules.bond != null and rules.bond.bound
+	_merge = move_toward(_merge, 1.0 if bound else 0.0, get_process_delta_time() / MERGE_TIME)
+	var top = _halves[0]
+	top.viewport.canvas_cull_mask = WORLD | LIGHT | (SHADOW if _merge > 0.0 else 0)
+	top.picture.material = _outline_light if _merge > 0.0 else null
+	var dim = Color.WHITE.lerp(MERGE_DIM, _merge)
+	_halves[1].picture.modulate = dim
+	_halves[1].ground.modulate = dim

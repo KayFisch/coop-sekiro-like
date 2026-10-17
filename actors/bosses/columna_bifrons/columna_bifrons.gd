@@ -61,6 +61,7 @@ const MAX_HP = 1600.0
 const SWEEP = preload("attacks/sweep.gd")
 const LEAP = preload("attacks/leap.gd")
 const SHOVE = preload("attacks/shove.gd")
+const SYNC_WAVE = preload("res://actors/player/sync_wave.gd")
 const ATTACKS = {
 	"SINGLE": {"weight": 0.0, "repeats": true, "strikes": [[3, LEFT]]},
 	"DOUBLE": {"weight": 0.0, "strikes": [[3, LEFT], [3, RIGHT]]},
@@ -97,7 +98,7 @@ const TEST_ONLY_PATTERN = [] # "TRIPLE", "QUAD", "SINGLE", "LONG", "SWEEP"
 # afresh with every attack. Once that many are parried and he's free, he strikes back at the
 # player whose hit he parried last: with one of the same attacks, turned so its first strike is
 # theirs, and that strike comes quickly (ANSWER_WAIT). Then the series runs to its end, as ever.
-const REACTIVE_WAIT_MIN = 0.5
+const REACTIVE_WAIT_MIN = 0.7
 const REACTIVE_WAIT_MAX = 1.7
 const PATIENCE = [1, 1, 2]
 const ANSWER_WAIT = 4  # StrikePattern.TIME_UNITs until an answer's first strike lands, at most
@@ -380,6 +381,13 @@ func get_attack_weights() -> Dictionary:
 		var attack = find_attack(attack_name)
 		var fits = attack == null or attack.fits(self)
 		weights[attack_name] = _weight_in(attack_name, situation) if fits else 0.0
+	if in_sync_mode():
+		# The players' sync mode: only his series of plain cuts (StrikePattern makes them strikes of
+		# both swords), nothing that throws the two apart.
+		for attack_name in weights:
+			var strikes = ATTACKS[attack_name].get("strikes", [])
+			if strikes.is_empty() or strikes.any(func(strike): return strike.size() > 2 and strike[2] != StrikePattern.CUT):
+				weights[attack_name] = 0.0
 	if not TEST_ONLY_PATTERN.is_empty():
 		for attack_name in weights:
 			if not attack_name in TEST_ONLY_PATTERN:
@@ -404,9 +412,23 @@ func get_repeatable_attacks() -> Array:
 
 
 func get_idle_pause() -> float:
-	if _is_reactive():
-		return randf_range(REACTIVE_WAIT_MIN, REACTIVE_WAIT_MAX)
-	return super()
+	var pause = randf_range(REACTIVE_WAIT_MIN, REACTIVE_WAIT_MAX) if _is_reactive() else super()
+	return pause * (Tuning.value("sync_mode_tempo") if in_sync_mode() else 1.0)
+
+
+# The players' sync mode (core/sync_rules.gd): he strikes with both swords at once, and slower.
+func in_sync_mode() -> bool:
+	return rules != null and rules.sync_mode
+
+
+# The two bound in it (core/sync_bond.gd): his strikes of both swords take both their parries.
+func is_bound() -> bool:
+	return rules != null and rules.bond != null and rules.bond.bound
+
+
+# One StrikePattern.TIME_UNIT in seconds just now: longer in the players' sync mode.
+func time_unit() -> float:
+	return StrikePattern.TIME_UNIT * (Tuning.value("sync_mode_tempo") if in_sync_mode() else 1.0)
 
 
 # Players keep their eyes on him (see _process_movement() in player.gd): he passes them, and
@@ -671,7 +693,7 @@ func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0, heavy =
 		if p in judged.parriers:
 			p.on_perfect_parry(strong)
 			spawn_sparks(p.global_position + Vector2(0.0, -24.0), 10, COLOR_PLAYER_PARRY)
-		elif p.is_blocking():
+		elif p.is_blocking() or p in judged.get("blocked", []):  # (a lone parry, bound: a block)
 			p.take_damage(BLOCKED_DAMAGE * damage, knockback_for(p, BLOCKED_KNOCKBACK * knock), true)
 		else:
 			p.take_damage(BLADE_DAMAGE * damage, knockback_for(p, BLADE_KNOCKBACK * knock))
@@ -733,7 +755,7 @@ func break_guard(blade: int, duration: float, delay = 0.0, by = null):
 	if by != null:
 		for p in get_players():
 			if p != by:
-				SyncWave.send(by, p, delay, Tuning.value("sync_beat_time"), ARENA_FLOOR_Y, get_parent())
+				SYNC_WAVE.send(by, p, delay, Tuning.value("sync_beat_time"), ARENA_FLOOR_Y, get_parent())
 	if delay <= 0.0:
 		_show_open(blade)
 
@@ -747,7 +769,7 @@ func _show_open(blade: int):
 	# SyncWave arrives).
 	for p in get_players():
 		if p != _opened_by[blade]:
-			p.cue_sync(Tuning.value("sync_beat_time"), SyncWave.COLOR)
+			p.cue_sync(Tuning.value("sync_beat_time"), SYNC_WAVE.COLOR)
 
 
 # Sync as life: a window that closed with no sync hit through it, while someone other than the
@@ -781,7 +803,7 @@ func take_damage(amount: float, source = null):
 		sync_event.emit("bifrons_sync_hit")
 		Sfx.play("sync_hit")
 		shake(6.0)
-		spawn_sparks(at, 16, SyncWave.COLOR)  # the parry's energy, passed on into him
+		spawn_sparks(at, 16, SYNC_WAVE.COLOR)  # the parry's energy, passed on into him
 		super(amount * SYNC_HIT_FACTOR, source)
 	elif not guards.is_empty():
 		_parry(guards[0], source, at)
@@ -820,16 +842,42 @@ func _struck_by_rules(amount: float, source):
 		rules.sync_hit(on_beat)
 		Sfx.play("sync_hit")
 		shake(6.0)
-		spawn_sparks(at, 16, SyncWave.COLOR)  # the parry's energy, passed on into him
+		spawn_sparks(at, 16, SYNC_WAVE.COLOR)  # the parry's energy, passed on into him
 		if on_beat:
 			Sfx.play("on_beat", -4.0)
-			spawn_sparks(at, 14, SyncWave.CORE)
+			spawn_sparks(at, 14, SYNC_WAVE.CORE)
 		lethal = rules.boss_struck()
 	else:
 		Sfx.play("sync_hit", -6.0)
 		shake(3.0)
 		spawn_sparks(at, 8, COLOR_EXECUTE)
 		lethal = rules.boss_struck()
+	super.take_damage(hp if lethal else 0.0, source)
+
+
+# Sync mode: the bound pair's strike, let go together on the big cue (core/sync_bond.gd). His
+# guard can't stop it: met by a blade that's guarding, it still costs him a normal hit's sync and
+# he reels ("sync_strike_reel"); else it lands heavy. Either way a big blow.
+func take_pair_strike(source):
+	if rules == null or hp <= 0.0:
+		return
+	_slowed_until = anim_time + SLOWED_TIME
+	var at = _flank(side_of(source), source.global_position.y)
+	var pair = get_players()
+	var guards = BLADES.filter(func(blade): return ward_of(blade) in pair and is_guarding(blade))
+	shake(14.0)
+	spawn_sparks(at, 28, SYNC_WAVE.COLOR)
+	spawn_sparks(at, 18, SYNC_WAVE.CORE)
+	Sfx.play("grand_impact", -2.0)
+	var lethal = false
+	if not guards.is_empty():
+		_flick_until[guards[0]] = anim_time + PARRY_FLICK_TIME
+		Sfx.play("parry_strong", -2.0)
+		lethal = rules.pair_strike_parried()
+		if not lethal and state != State.STAGGER:
+			stagger_now(Tuning.value("sync_strike_reel"))
+	else:
+		lethal = rules.boss_struck(true)
 	super.take_damage(hp if lethal else 0.0, source)
 
 

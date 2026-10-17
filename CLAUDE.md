@@ -79,7 +79,7 @@ docs/                                design docs: concept.md, boss_*.md (one per
                                      art_brief.md (sizes, colors, poses: for generating sprites),
                                      beat_runner.md, beat_ring.md
 core/                                autoloads: GameManager, Sfx, Moves, Pads, Tuning;
-                                     sync_rules.gd (sync as life, Bifrons)
+                                     sync_rules.gd (sync as life, Bifrons), sync_bond.gd (sync mode)
 actors/player/                       player.gd (+ scene), sync_wave.gd (the parry's energy to the partner)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
@@ -162,7 +162,8 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device).
   `Tuning` (F2 panel of numbers to tune while playing, saved to `user://tuning.cfg`; code asks
   `Tuning.value("his_heavy_damage")` each time it needs one; a page per level: the runner's and the
-  ring's in theirs, the sync rules elsewhere).
+  ring's in theirs, the sync rules elsewhere). Both panels show one tab at a time (Q / E): an
+  entry's "tab" (F1), a header's "tab" (F2).
 - `core/sync_rules.gd` (`SyncRules`): sync as life, for now only in Bifrons's fight (Moves
   "bifrons_rules"): no health, no potions, a shared sync for the players and one for the boss,
   a posture each, chaos at no sync, sync mode at full. Attacks are normal or heavy (his: both
@@ -171,6 +172,11 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   The boss creates it and hands it to `GameManager.rules`; while that's set,
   `Player.take_damage()` and the boss's hits go through it (`ColumnaBifrons.land()` says whether
   a strike is heavy: `landing_heavy`), and the HUD shows the two meters instead of health.
+- `core/sync_bond.gd` (`SyncBond`, the rules' `bond`): the sync mode itself. Players standing
+  together bind (`Player.bond`, sabres via `set_sabre()`), hold attack to draw back
+  (`Player._process_charge()`), let go together on the big cue for a heavy strike
+  (`ColumnaBifrons.take_pair_strike()`); he slows down and strikes with both swords
+  (`in_sync_mode()`, `time_unit()`).
 - `actors/player/player.gd`: one large script (~2000 lines) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
   potions, defensive queries the boss uses (`is_perfect_parry()` etc.), and some boss-specific

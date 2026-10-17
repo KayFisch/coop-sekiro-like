@@ -22,9 +22,10 @@ const LIST_TOP = 34.0  # below the title
 # Each number: key, what the panel calls it, default, step, and its range. A "header" row only
 # groups the ones below it; "column": 1 starts the panel's second column. "page": the panel
 # shows the numbers of the level it's opened in: "runner" in the beat-runner, "ring" in the
-# beat-ring, else "sync".
+# beat-ring, else "sync". "tab": a page's numbers come in tabs (Q / E or Tab switch), one shown
+# at a time; a header's tab holds for the ones after it, until the next header that names one.
 const ENTRIES = [
-	{"header": "SYNC LOST: HEAVY (HIS: BOTH SWORDS; YOURS: SYNC MODE)"},
+	{"header": "SYNC LOST: HEAVY (HIS: BOTH SWORDS; YOURS: TOGETHER)", "tab": "damage"},
 	{"key": "his_heavy_damage", "label": "his heavy attack lands: your sync lost", "default": 18.0, "step": 1.0, "min": 0.0, "max": 1000.0},
 	{"key": "his_normal_share", "label": "...his normal one: this share of that", "default": 0.33, "step": 0.01, "min": 0.0, "max": 1.0},
 	{"key": "their_heavy_damage", "label": "your heavy attack lands: his sync lost", "default": 18.0, "step": 1.0, "min": 0.0, "max": 1000.0},
@@ -33,28 +34,28 @@ const ENTRIES = [
 	{"key": "posture_small", "label": "small: a normal attack parried (both) or blocked", "default": 5.0, "step": 1.0, "min": 0.0, "max": 1000.0},
 	{"key": "posture_medium", "label": "medium: hit by a normal one; a heavy one parried/blocked", "default": 15.0, "step": 1.0, "min": 0.0, "max": 1000.0},
 	{"key": "posture_large", "label": "large: hit by a heavy attack", "default": 30.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"header": "POSTURE HE LOSES (THERE ARE TWO OF YOU)"},
+	{"header": "POSTURE HE LOSES (THERE ARE TWO OF YOU)", "column": 1},
 	{"key": "boss_posture_small", "label": "small: a normal attack parried (both) or blocked", "default": 5.0, "step": 1.0, "min": 0.0, "max": 1000.0},
 	{"key": "boss_posture_medium", "label": "medium: hit by a normal one; a heavy one parried/blocked", "default": 15.0, "step": 1.0, "min": 0.0, "max": 1000.0},
 	{"key": "boss_posture_large", "label": "large: hit by a heavy attack", "default": 30.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"header": "PLAYERS WIN SYNC BACK (HE DOESN'T)"},
+	{"header": "HIS GUARD"},
+	{"key": "boss_parry_chance", "label": "a hit at his guard: chance he parries, not blocks", "default": 0.5, "step": 0.05, "min": 0.0, "max": 1.0},
+	{"header": "PLAYERS WIN SYNC BACK (HE DOESN'T)", "tab": "sync and posture"},
 	{"key": "sync_hit_gain", "label": "sync hit on the beat: sync gained", "default": 4.0, "step": 1.0, "min": 0.0, "max": 1000.0},
 	{"key": "sync_hit_late_gain", "label": "sync hit off the beat: sync gained", "default": 2.0, "step": 1.0, "min": 0.0, "max": 1000.0},
 	{"key": "sync_beat_time", "label": "on the beat: this long after his guard opens (s)", "default": 0.12, "step": 0.01, "min": 0.0, "max": 0.5},
 	{"key": "missed_window_loss", "label": "window missed (partner in reach): sync lost", "default": 1.0, "step": 0.5, "min": 0.0, "max": 100.0},
 	{"key": "coop_parry_gain", "label": "coop parry (both swords, both of you): sync gained", "default": 6.0, "step": 1.0, "min": 0.0, "max": 1000.0},
 	{"key": "coop_parry_stagger", "label": "coop parry: his stagger (s)", "default": 1.0, "step": 0.1, "min": 0.0, "max": 5.0},
-	{"header": "CHAOS AND SYNC MODE", "column": 1},
+	{"header": "CHAOS AND SYNC MODE"},
 	{"key": "team_sync_start", "label": "players' sync at the start (% of their meter)", "default": 50.0, "step": 5.0, "min": 1.0, "max": 99.0},
 	{"key": "chaos_exit", "label": "chaos over once sync is back to (% of the meter)", "default": 25.0, "step": 1.0, "min": 1.0, "max": 99.0},
 	{"key": "sync_mode_exit", "label": "sync mode over when sync falls below (% of the meter)", "default": 70.0, "step": 1.0, "min": 1.0, "max": 99.0},
-	{"header": "METERS: HOW MANY POINTS EACH HOLDS"},
+	{"header": "METERS: HOW MANY POINTS EACH HOLDS", "column": 1},
 	{"key": "team_sync_max", "label": "players' sync", "default": 100.0, "step": 10.0, "min": 20.0, "max": 1000.0},
 	{"key": "boss_sync_max", "label": "his sync", "default": 200.0, "step": 10.0, "min": 20.0, "max": 1000.0},
 	{"key": "player_posture_max", "label": "a player's posture", "default": 100.0, "step": 10.0, "min": 20.0, "max": 1000.0},
 	{"key": "boss_posture_max", "label": "his posture", "default": 200.0, "step": 10.0, "min": 20.0, "max": 1000.0},
-	{"header": "HIS GUARD"},
-	{"key": "boss_parry_chance", "label": "a hit at his guard: chance he parries, not blocks", "default": 0.5, "step": 0.05, "min": 0.0, "max": 1.0},
 	{"header": "POSTURE BACK"},
 	{"key": "posture_quiet_time", "label": "only after this long with no attack, in or out (s)", "default": 2.0, "step": 0.1, "min": 0.0, "max": 10.0},
 	{"key": "player_posture_regen", "label": "players: posture back per second, at full sync", "default": 20.0, "step": 1.0, "min": 0.0, "max": 200.0},
@@ -64,7 +65,19 @@ const ENTRIES = [
 	{"key": "posture_regen_least", "label": "...the floor: this share of the full rate", "default": 0.05, "step": 0.05, "min": 0.0, "max": 1.0},
 	{"key": "player_break_stagger", "label": "player's posture broken: their stagger (s)", "default": 0.8, "step": 0.1, "min": 0.0, "max": 5.0},
 	{"key": "boss_break_stagger", "label": "his posture broken: his stagger (s)", "default": 2.5, "step": 0.1, "min": 0.0, "max": 6.0},
-	{"header": "RUNNER: TEMPO", "page": "runner"},
+	{"header": "SYNC MODE: BINDING", "tab": "sync mode"},
+	{"key": "sync_connect_distance", "label": "bound once you stand this close (px apart)", "default": 30.0, "step": 2.0, "min": 4.0, "max": 200.0},
+	{"key": "sync_break_distance", "label": "...and apart again past this (px)", "default": 90.0, "step": 5.0, "min": 10.0, "max": 400.0},
+	{"header": "THE PAIR'S STRIKE"},
+	{"key": "sync_charge_time", "label": "attack held: sabre fully drawn back after (s)", "default": 0.45, "step": 0.05, "min": 0.05, "max": 2.0},
+	{"key": "sync_cue_delay", "label": "both drawn: the big cue this long after the later (s)", "default": 0.15, "step": 0.01, "min": 0.0, "max": 1.0},
+	{"key": "sync_release_window", "label": "let go on the cue: this close to it, either side (s)", "default": 0.1, "step": 0.01, "min": 0.01, "max": 0.5},
+	{"key": "sync_strike_reach", "label": "it reaches him from this far (px from his middle)", "default": 150.0, "step": 10.0, "min": 40.0, "max": 400.0},
+	{"key": "pair_miss_loss", "label": "let go out of sync: your sync lost", "default": 5.0, "step": 1.0, "min": 0.0, "max": 100.0},
+	{"header": "HIM, IN YOUR SYNC MODE", "column": 1},
+	{"key": "sync_mode_tempo", "label": "his waits and pauses, times (slower)", "default": 1.4, "step": 0.1, "min": 0.5, "max": 4.0},
+	{"key": "sync_strike_reel", "label": "your strike together through his guard: he reels (s)", "default": 0.8, "step": 0.1, "min": 0.0, "max": 3.0},
+	{"header": "RUNNER: TEMPO", "page": "runner", "tab": "runner"},
 	{"key": "runner_unit", "label": "seconds per unit of a pattern's waits (Bifrons: 0.2)", "default": 0.2, "step": 0.01, "min": 0.08, "max": 0.5, "page": "runner"},
 	{"key": "runner_gap", "label": "units between two patterns", "default": 5.0, "step": 1.0, "min": 1.0, "max": 20.0, "page": "runner"},
 	{"key": "runner_relay_units", "label": "a parry until the partner's shard is due (units)", "default": 2.0, "step": 1.0, "min": 1.0, "max": 6.0, "page": "runner"},
@@ -86,7 +99,7 @@ const ENTRIES = [
 	{"header": "RUNNER: BETWEEN PATTERNS (MIXED)", "page": "runner", "column": 1},
 	{"key": "runner_extra_chance", "label": "chance of a shard or a block", "default": 0.4, "step": 0.05, "min": 0.0, "max": 1.0, "page": "runner"},
 	{"key": "runner_block_share", "label": "of those, a block", "default": 0.3, "step": 0.05, "min": 0.0, "max": 1.0, "page": "runner"},
-	{"header": "RING: HIS PATTERNS", "page": "ring"},
+	{"header": "RING: HIS PATTERNS", "page": "ring", "tab": "ring"},
 	{"key": "ring_unit", "label": "seconds per unit of his waits (his own: 0.2)", "default": 0.2, "step": 0.01, "min": 0.08, "max": 0.6, "page": "ring"},
 	{"key": "ring_gap", "label": "units between two of his patterns", "default": 5.0, "step": 1.0, "min": 1.0, "max": 20.0, "page": "ring"},
 	{"key": "ring_extra_chance", "label": "between two: chance of a grey shard or a bar", "default": 0.4, "step": 0.05, "min": 0.0, "max": 1.0, "page": "ring"},
@@ -118,6 +131,7 @@ var panel_open = false
 
 var _values = {}
 var _selected = 0
+var _tab_of = {}  # page -> the index of the tab shown
 var _was_paused = false
 var _layer: CanvasLayer
 var _title: Label
@@ -149,9 +163,9 @@ func set_value(key: String, v: float):
 	_save()
 
 
-# The numbers on the page shown, back to their defaults.
+# The numbers on the tab shown, back to their defaults.
 func reset_defaults():
-	for e in _page_entries():
+	for e in _tab_entries():
 		if e.has("key"):
 			_values[e.key] = e.default
 	_save()
@@ -176,9 +190,37 @@ func _page_entries() -> Array:
 	return ENTRIES.filter(func(e): return e.get("page", "sync") == page)
 
 
-# The panel's selectable rows: every number on the page, then "reset".
+# The page's entries, each with the tab it's on: [entry, tab].
+func _tabbed() -> Array:
+	var out = []
+	var tab = ""
+	for e in _page_entries():
+		tab = e.get("tab", tab)
+		out.append([e, tab])
+	return out
+
+
+func _tabs() -> Array:
+	var tabs = []
+	for pair in _tabbed():
+		if not pair[1] in tabs:
+			tabs.append(pair[1])
+	return tabs
+
+
+func _tab_index() -> int:
+	return clampi(_tab_of.get(_page(), 0), 0, _tabs().size() - 1)
+
+
+# The entries on the tab shown.
+func _tab_entries() -> Array:
+	var tab = _tabs()[_tab_index()]
+	return _tabbed().filter(func(pair): return pair[1] == tab).map(func(pair): return pair[0])
+
+
+# The panel's selectable rows: every number on the tab, then "reset".
 func _rows() -> Array:
-	return _page_entries().filter(func(e): return e.has("key")) + [null]
+	return _tab_entries().filter(func(e): return e.has("key")) + [null]
 
 
 func _save():
@@ -200,6 +242,13 @@ func _input(event):
 		get_viewport().set_input_as_handled()
 		return
 	if not panel_open:
+		return
+	if event.physical_keycode in [KEY_Q, KEY_E, KEY_TAB]:
+		var step = -1 if event.physical_keycode == KEY_Q or (event.physical_keycode == KEY_TAB and event.shift_pressed) else 1
+		_tab_of[_page()] = posmod(_tab_index() + step, _tabs().size())
+		_selected = 0
+		get_viewport().set_input_as_handled()
+		_refresh()
 		return
 	var rows = _rows()
 	match event.physical_keycode:
@@ -270,11 +319,16 @@ func _panel_label(at: Vector2) -> Label:
 
 
 func _refresh():
-	_title.text = "TUNING: %s   (↑/↓ pick · ←/→ change, Shift: x10 · F2 close)   a changed number shows its default" 		% {"runner": "BEAT-RUNNER", "ring": "BEAT-RING"}.get(_page(), "SYNC RULES")
+	var tabs = _tabs()
+	var shown = []
+	for i in tabs.size():
+		shown.append(("[%s]" if i == _tab_index() else "%s") % tabs[i].to_upper())
+	_title.text = "TUNING: %s   %s   (Q/E tab · ↑/↓ pick · ←/→ change, Shift x10 · F2 close · (n): default)" \
+		% [{"runner": "BEAT-RUNNER", "ring": "BEAT-RING"}.get(_page(), "SYNC RULES"), "  ".join(shown) if tabs.size() > 1 else ""]
 	var lines = [[[], []], [[], []]]  # per column: names, values
 	var column = 0
 	var selected = _rows()[_selected]
-	for e in _page_entries():
+	for e in _tab_entries():
 		if e.has("header"):
 			column = e.get("column", column)
 			if not lines[column][0].is_empty():
@@ -287,7 +341,7 @@ func _refresh():
 		var changed = not is_equal_approx(v, e.default)
 		lines[column][0].append(("▶  " if e == selected else "    ") + e.label)
 		lines[column][1].append(("(%s)  " % _shown(e, e.default) if changed else "") + _shown(e, v))
-	lines[1][0].append_array(["", ("▶  " if selected == null else "    ") + "Reset all to defaults (Enter)"])
+	lines[1][0].append_array(["", ("▶  " if selected == null else "    ") + "Reset this tab to defaults (Enter)"])
 	lines[1][1].append_array(["", ""])
 	for i in 2:
 		_columns[i][0].text = "\n".join(lines[i][0])

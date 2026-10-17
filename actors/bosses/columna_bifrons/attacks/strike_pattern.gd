@@ -129,6 +129,11 @@ func start(boss_node, player_nodes: Array):
 	_swords = _strikes.map(func(strike): return strike[1] * way)
 	_kinds = _strikes.map(func(strike): return strike[2] if strike.size() > 2 else CUT)
 	_waits = _strikes.map(func(strike): return strike[0])
+	if boss.in_sync_mode():
+		# The players' sync mode: every cut comes with both swords at once.
+		for i in _swords.size():
+			if _kinds[i] == CUT:
+				_swords[i] = BOTH
 	_waits[0] = lead
 	_contacts = _waits.duplicate()
 	_time = 0.0
@@ -237,7 +242,7 @@ func _leave_out_absent():
 func _schedule(index: int):
 	var landing = _contacts[index - 1] if index > 0 else 0.0
 	for i in range(index, _waits.size()):
-		landing += _waits[i] * TIME_UNIT
+		landing += _waits[i] * boss.time_unit()
 		_contacts[i] = landing
 
 
@@ -258,6 +263,14 @@ func _land(index: int):
 		_parried[blade] = judged[blade].parried
 		_thrust[blade] = _kinds[index] == CHARGE
 	var both = sword == BOTH and _parried[LEFT] and _parried[RIGHT]
+	if sword == BOTH and not both and boss.is_bound():
+		# The two bound (core/sync_bond.gd): a strike of both swords takes both their parries; a
+		# lone one is only a block.
+		for blade in striking:
+			judged[blade]["blocked"] = judged[blade].parriers
+			judged[blade]["parriers"] = []
+			judged[blade]["parried"] = false
+			_parried[blade] = false
 	# A strike of both swords is a heavy attack for the sync rules, on one player or on two.
 	for blade in ([LEFT] if on_one else striking):
 		if on_one:

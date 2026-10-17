@@ -223,7 +223,8 @@ func _update_sync_duel(rules):
 		_duel.team_state.modulate = CHAOS_COLOR
 	elif rules.sync_mode:
 		_duel.team_fill.color = TEAM_SYNC_MODE_COLOR
-		_duel.team_state.text = "SYNC MODE: your hits are heavy"
+		var bound = rules.bond != null and rules.bond.bound
+		_duel.team_state.text = "BOUND: hold attack together, let go on the big cue" if bound 			else "SYNC MODE: stand together to bind"
 		_duel.team_state.modulate = TEAM_SYNC_MODE_COLOR
 	else:
 		_duel.team_fill.color = TEAM_COLOR

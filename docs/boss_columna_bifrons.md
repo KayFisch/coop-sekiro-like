@@ -382,7 +382,8 @@ the players can win sync back and he can't, and that he has more of it: 200 to t
 
 Attacks are **normal or heavy**. His heavy ones are those of both swords (green: a strike of both,
 at one player or at two, and the leap); his single-sword strikes are normal, the sweep too. The
-players' attacks are normal, and heavy all through their sync mode.
+players' attacks are normal; heavy only as the bound pair's strike let go together in their sync
+mode (below).
 
 **Posture** comes in three sizes. As there are two players to attack him, his sizes are set
 apart from theirs on F2 (both 5, 15 and 30 by default):
@@ -416,9 +417,8 @@ than the parrier was in reach, costs them 1. He wins none back.
   isn't parried ends the fight. It's over, like a revive, once their sync is back to a quarter.
   He, split, has no guard, and the next hit that lands kills him; as he wins no sync back, it
   lasts: breaking his posture is the deathblow of Sekiro.
-- **Full sync is the sync mode**, the players' second phase: their attacks are heavy until their
-  sync falls below 70 %. The meter turns gold. It's a stand-in: the sync mode itself (the two of
-  you joined into one, see the scribble of 2026-10-02) is still to build.
+- **Full sync is the sync mode**, the players' second phase, until their sync falls below 70 %.
+  The meter turns gold. What happens in it: "The sync mode", below.
 - **The beat:** a parry's energy runs over to the partner (`actors/player/sync_wave.gd`): hot
   pink, from the parrier's sword down through them into the floor, along it (on the mirrored
   screen: along the line), and up the partner from their feet into their sword, arriving as the
@@ -442,6 +442,38 @@ Before 2026-10-17 the rules were otherwise: posture lost only by the one hit, bl
 in amounts per action; a sync hit cost him more than another hit; the sync mode tripled the
 players' hits; he won sync back from a coop parry of his own or one strike hitting both players;
 posture came back 1 s after the last loss, its rate following sync to the power 2.
+
+## The sync mode (bound)
+
+Nicho, 2026-10-17 (`core/sync_bond.gd`; numbers on F2, tab "sync mode"). With their sync full:
+
+- **The sign:** a pink ring pulses at both players' feet: they can join. Standing together (30 px
+  apart or less, both on the floor) **binds** them: a pink flash, and each takes on some of the
+  other's color from the feet up (a third of the body): white flows into black and black into
+  white, across the floor line on the mirrored screen. A pink line runs along the floor between
+  them. Apart again (past 90 px), or out of the sync mode, they're unbound. How they move bound
+  is still open: for now each moves as ever.
+- **Sabres:** bound, their swords become sabres: longer, curved, half light and half dark.
+- **The pair's strike:** hold attack to draw the sabre back over the shoulder (0.45 s to full);
+  fully drawn, a small cue (a pink ring at its point, a tick). Once both are, 0.15 s after the
+  later one comes **the big cue** (bigger rings, a pink flash, the line along the floor lights
+  up): both let go on it (within 0.1 s either side) and they **land a heavy strike together**,
+  with a big blow (shake, pink and white sparks, a pink flash). His guard can't stop it: met by a
+  guarding blade it still costs him a normal hit's sync (and a parried heavy one's posture) and he
+  **reels** (0.8 s). Out of sync (too early, too late, alone) each strikes on their own, weakly (a
+  grey puff; a normal attack, which his guard meets as ever), and they lose 5 sync. Bound, a
+  swing deals no hit of its own: only the pair's strike does. A block press lets a drawn sabre go.
+- **Parrying, bound:** his strikes of both swords take both parries; a lone parry is only a block.
+- **Him, in their sync mode:** every cut comes with both swords at once, he picks only his series
+  of plain cuts (no crossing, sweep, leap or rush: nothing that throws the two apart), and his
+  waits and pauses are 1.4 times as long.
+- **The mirrored screen** (F1 "sync_merge_view", off by default): bound, the two halves become one:
+  the shadow comes up into the light half (outlined pale, to read on the dark) and the shadow
+  half dims out of focus, almost as the screen was before the split.
+- **The stand-in** plays it perfectly: it goes to its partner to bind, parries every strike, draws
+  back when its partner does and lets go right on the big cue (or when the partner lets go early).
+- Separate swings outside the bond are normal attacks in the sync mode too (before 2026-10-17 the
+  sync mode made every hit heavy).
 
 ## Testing alone ("bifrons_stand_in")
 

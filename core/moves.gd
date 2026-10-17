@@ -15,57 +15,60 @@ const PANEL_MARGIN = Vector2(80, 16)
 const PANEL_FONT_SIZE = 17
 const PANEL_MIN_FONT_SIZE = 10
 
-# Each switch: key, what the panel calls it, and its default (a bool, or one of `options`).
+# Each switch: key, what the panel calls it, its default (a bool, or one of `options`), and the
+# panel's tab it's on (Q / E or Tab switch tabs; one is shown at a time).
 # The fight kit is on by default; the platforming kit is off, for the gyms (see docs/concept.md).
 const ENTRIES = [
-	{"key": "double_jump", "label": "Double jump", "default": false},
-	{"key": "dash", "label": "Dash (the way you face)", "default": true},
-	{"key": "dash_slash", "label": "Dash-slash", "default": true},
-	{"key": "upslash_hop", "label": "Upslash hop", "default": false},
-	{"key": "fast_fall", "label": "Fast fall (hold down in the air)", "default": false},
-	{"key": "wall", "label": "Wall: slide or cling", "default": "off", "options": ["off", "slide", "cling"]},
-	{"key": "wall_jump", "label": "Wall jump", "default": false},
-	{"key": "wall_refresh", "label": "Wall / ledge refreshes the dash", "default": false},
-	{"key": "ledge_grab", "label": "Ledge grab + climb", "default": false},
-	{"key": "pogo", "label": "Pogo clash (downslash onto your partner's upslash)", "default": true},
-	{"key": "pogo_environment", "label": "Pogo off targets, spikes, lanterns (gyms)", "default": false},
-	{"key": "pogo_refresh_air_jump", "label": "   that pogo refreshes the air jump", "default": false},
-	{"key": "pogo_refresh_dash", "label": "   that pogo refreshes the dash", "default": false},
-	{"key": "launch", "label": "Launch (dash-slash into an upslash)", "default": true},
-	{"key": "momentum_relay", "label": "Momentum relay (dash-slash into a block)", "default": true},
-	{"key": "relay_refresh_dash", "label": "   relay refreshes the dash", "default": false},
-	{"key": "chimney_clash", "label": "Chimney clash (wall jumps meeting)", "default": false},
-	{"key": "players_collide", "label": "Players collide (stand on, bump into each other)", "default": true},
-	{"key": "boss_body", "label": "Boss body blocks players (Cubus, Bifrons)", "default": true},
-	{"key": "parry_pass", "label": "Dash-parry: a parry landed mid-dash goes through the boss", "default": true},
-	{"key": "bifrons_mode", "label": "Bifrons: set patterns, or reactive (hit him and he strikes back)", "default": "patterns", "options": ["patterns", "reactive"]},
-	{"key": "bifrons_window", "label": "Bifrons: partner hits on the beat, or after it", "default": "beat", "options": ["beat", "after"]},
-	{"key": "bifrons_guard_break", "label": "Bifrons: a parry breaks his other guard (off: the window stays, but only a hit he can't parry lands)", "default": true},
-	{"key": "bifrons_stand_in", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, runner", "default": "off", "options": ["off", "left", "right"]},
-	{"key": "bifrons_face", "label": "Bifrons: players always face him (dash goes where you hold)", "default": true},
-	{"key": "bifrons_rules", "label": "Bifrons: rules: sync is life + posture, no potions (sync), or health + old sync (hp); from R", "default": "sync", "options": ["sync", "hp"]},
-	{"key": "swings_hold_posture", "label": "Sync rules: your own swings hold your posture regen back too (his attacks never do)", "default": true},
-	{"key": "mirror_view", "label": "Bifrons: mirrored screen (P1 light above the floor, P2 its shadow below)", "default": false},
-	{"key": "runner_patterns", "label": "Runner: Bifrons's patterns only, or mixed with shards and blocks", "default": "mixed", "options": ["mixed", "bifrons"]},
-	{"key": "runner_relay", "label": "Runner: a parried orb goes on to the partner as a shard to hit", "default": true},
-	{"key": "runner_rally", "label": "Runner: ...and hitting that shard sends an orb back (a rally)", "default": false},
-	{"key": "runner_blocks", "label": "Runner: now and then a block to jump", "default": true},
-	{"key": "runner_speedup", "label": "Runner: the tempo rises as the run goes on", "default": false},
-	{"key": "runner_metronome", "label": "Runner: a tick on every beat", "default": false},
-	{"key": "runner_endless", "label": "Runner: endless (an empty meter doesn't end the run)", "default": false},
-	{"key": "ring_relay", "label": "Ring: a parried yellow one sends a violet shard to the partner", "default": true},
-	{"key": "ring_changes", "label": "Ring: his crossing (both to one side), sweep and leap (apart again)", "default": true},
-	{"key": "ring_pairs", "label": "Ring: his strikes with both swords, as green pairs to parry together", "default": true},
-	{"key": "ring_bars", "label": "Ring: now and then a bar from a side (low: jump, high: stay down)", "default": true},
-	{"key": "ring_endless", "label": "Ring: endless (an empty meter doesn't end the run)", "default": false},
-	{"key": "call", "label": "Call countdown (P1 Enter, P2 LB)", "default": true},
-	{"key": "swap_controls", "label": "Swap P1 / P2 controls (P1 on the pad)", "default": false},
+	{"key": "double_jump", "label": "Double jump", "default": false, "tab": "movement"},
+	{"key": "dash", "label": "Dash (the way you face)", "default": true, "tab": "movement"},
+	{"key": "dash_slash", "label": "Dash-slash", "default": true, "tab": "movement"},
+	{"key": "upslash_hop", "label": "Upslash hop", "default": false, "tab": "movement"},
+	{"key": "fast_fall", "label": "Fast fall (hold down in the air)", "default": false, "tab": "movement"},
+	{"key": "wall", "label": "Wall: slide or cling", "default": "off", "options": ["off", "slide", "cling"], "tab": "movement"},
+	{"key": "wall_jump", "label": "Wall jump", "default": false, "tab": "movement"},
+	{"key": "wall_refresh", "label": "Wall / ledge refreshes the dash", "default": false, "tab": "movement"},
+	{"key": "ledge_grab", "label": "Ledge grab + climb", "default": false, "tab": "movement"},
+	{"key": "pogo", "label": "Pogo clash (downslash onto your partner's upslash)", "default": true, "tab": "movement"},
+	{"key": "pogo_environment", "label": "Pogo off targets, spikes, lanterns (gyms)", "default": false, "tab": "movement"},
+	{"key": "pogo_refresh_air_jump", "label": "   that pogo refreshes the air jump", "default": false, "tab": "movement"},
+	{"key": "pogo_refresh_dash", "label": "   that pogo refreshes the dash", "default": false, "tab": "movement"},
+	{"key": "launch", "label": "Launch (dash-slash into an upslash)", "default": true, "tab": "movement"},
+	{"key": "momentum_relay", "label": "Momentum relay (dash-slash into a block)", "default": true, "tab": "movement"},
+	{"key": "relay_refresh_dash", "label": "   relay refreshes the dash", "default": false, "tab": "movement"},
+	{"key": "chimney_clash", "label": "Chimney clash (wall jumps meeting)", "default": false, "tab": "movement"},
+	{"key": "players_collide", "label": "Players collide (stand on, bump into each other)", "default": true, "tab": "movement"},
+	{"key": "boss_body", "label": "Boss body blocks players (Cubus, Bifrons)", "default": true, "tab": "bifrons"},
+	{"key": "parry_pass", "label": "Dash-parry: a parry landed mid-dash goes through the boss", "default": true, "tab": "movement"},
+	{"key": "bifrons_mode", "label": "Bifrons: set patterns, or reactive (hit him and he strikes back)", "default": "patterns", "options": ["patterns", "reactive"], "tab": "bifrons"},
+	{"key": "bifrons_window", "label": "Bifrons: partner hits on the beat, or after it", "default": "beat", "options": ["beat", "after"], "tab": "bifrons"},
+	{"key": "bifrons_guard_break", "label": "Bifrons: a parry breaks his other guard (off: the window stays, but only a hit he can't parry lands)", "default": true, "tab": "bifrons"},
+	{"key": "bifrons_stand_in", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, runner", "default": "off", "options": ["off", "left", "right"], "tab": "bifrons"},
+	{"key": "bifrons_face", "label": "Bifrons: players always face him (dash goes where you hold)", "default": true, "tab": "bifrons"},
+	{"key": "bifrons_rules", "label": "Bifrons: rules: sync is life + posture, no potions (sync), or health + old sync (hp); from R", "default": "sync", "options": ["sync", "hp"], "tab": "sync"},
+	{"key": "swings_hold_posture", "label": "Sync rules: your own swings hold your posture regen back too (his attacks never do)", "default": true, "tab": "sync"},
+	{"key": "sync_merge_view", "label": "Sync mode, mirrored screen: bound, the two halves become one (the shadow joins the light)", "default": false, "tab": "sync"},
+	{"key": "mirror_view", "label": "Bifrons: mirrored screen (P1 light above the floor, P2 its shadow below)", "default": false, "tab": "bifrons"},
+	{"key": "runner_patterns", "label": "Runner: Bifrons's patterns only, or mixed with shards and blocks", "default": "mixed", "options": ["mixed", "bifrons"], "tab": "runner"},
+	{"key": "runner_relay", "label": "Runner: a parried orb goes on to the partner as a shard to hit", "default": true, "tab": "runner"},
+	{"key": "runner_rally", "label": "Runner: ...and hitting that shard sends an orb back (a rally)", "default": false, "tab": "runner"},
+	{"key": "runner_blocks", "label": "Runner: now and then a block to jump", "default": true, "tab": "runner"},
+	{"key": "runner_speedup", "label": "Runner: the tempo rises as the run goes on", "default": false, "tab": "runner"},
+	{"key": "runner_metronome", "label": "Runner: a tick on every beat", "default": false, "tab": "runner"},
+	{"key": "runner_endless", "label": "Runner: endless (an empty meter doesn't end the run)", "default": false, "tab": "runner"},
+	{"key": "ring_relay", "label": "Ring: a parried yellow one sends a violet shard to the partner", "default": true, "tab": "ring"},
+	{"key": "ring_changes", "label": "Ring: his crossing (both to one side), sweep and leap (apart again)", "default": true, "tab": "ring"},
+	{"key": "ring_pairs", "label": "Ring: his strikes with both swords, as green pairs to parry together", "default": true, "tab": "ring"},
+	{"key": "ring_bars", "label": "Ring: now and then a bar from a side (low: jump, high: stay down)", "default": true, "tab": "ring"},
+	{"key": "ring_endless", "label": "Ring: endless (an empty meter doesn't end the run)", "default": false, "tab": "ring"},
+	{"key": "call", "label": "Call countdown (P1 Enter, P2 LB)", "default": true, "tab": "movement"},
+	{"key": "swap_controls", "label": "Swap P1 / P2 controls (P1 on the pad)", "default": false, "tab": "movement"},
 ]
 
 var panel_open = false
 
 var _values = {}
 var _selected = 0
+var _tab = 0  # the index of the tab shown (_tabs())
 var _was_paused = false
 var _layer: CanvasLayer
 var _text: Label
@@ -135,11 +138,16 @@ func _input(event):
 		return
 	if not panel_open:
 		return
+	var rows = _tab_entries().size() + 1
 	match event.physical_keycode:
+		KEY_Q, KEY_E, KEY_TAB:
+			var back = event.physical_keycode == KEY_Q or (event.physical_keycode == KEY_TAB and event.shift_pressed)
+			_tab = posmod(_tab + (-1 if back else 1), _tabs().size())
+			_selected = 0
 		KEY_UP, KEY_W:
-			_selected = posmod(_selected - 1, ENTRIES.size() + 1)
+			_selected = posmod(_selected - 1, rows)
 		KEY_DOWN, KEY_S:
-			_selected = posmod(_selected + 1, ENTRIES.size() + 1)
+			_selected = posmod(_selected + 1, rows)
 		KEY_LEFT, KEY_A:
 			_change(-1)
 		KEY_RIGHT, KEY_D, KEY_ENTER, KEY_SPACE:
@@ -164,12 +172,27 @@ func _set_panel(open: bool):
 		get_tree().paused = _was_paused
 
 
-# Flips the selected switch (or steps a multi-way one); the last row resets everything.
+func _tabs() -> Array:
+	var tabs = []
+	for e in ENTRIES:
+		if not e.tab in tabs:
+			tabs.append(e.tab)
+	return tabs
+
+
+func _tab_entries() -> Array:
+	var tab = _tabs()[_tab]
+	return ENTRIES.filter(func(e): return e.tab == tab)
+
+
+# Flips the selected switch (or steps a multi-way one); the last row resets the tab's.
 func _change(step: int):
-	if _selected == ENTRIES.size():
-		reset_defaults()
+	var entries = _tab_entries()
+	if _selected >= entries.size():
+		for e in entries:
+			set_value(e.key, e.default)
 		return
-	var e = ENTRIES[_selected]
+	var e = entries[_selected]
 	if e.has("options"):
 		var i = e.options.find(_values[e.key])
 		set_value(e.key, e.options[posmod(i + step, e.options.size())])
@@ -193,14 +216,16 @@ func _build_panel():
 
 
 func _refresh():
-	var lines = ["MOVEMENT SWITCHES   (↑/↓ pick · ←/→ or Enter change · F1 close)", ""]
-	for i in ENTRIES.size():
-		var e = ENTRIES[i]
+	var tabs = _tabs().map(func(t): return ("[%s]" if t == _tabs()[_tab] else "%s") % t.to_upper())
+	var lines = ["SWITCHES   %s   (Q/E: tab · ↑/↓ pick · ←/→ or Enter change · F1 close)" % "  ".join(tabs), ""]
+	var entries = _tab_entries()
+	for i in entries.size():
+		var e = entries[i]
 		var v = _values[e.key]
 		var shown = ("ON" if v else "off") if v is bool else str(v).to_upper()
 		lines.append("%s %-52s %s" % ["▶" if i == _selected else " ", e.label, shown])
 	lines.append("")
-	lines.append("%s %s" % ["▶" if _selected == ENTRIES.size() else " ", "Reset all to defaults"])
+	lines.append("%s %s" % ["▶" if _selected == entries.size() else " ", "Reset this tab to defaults"])
 	_text.text = "\n".join(lines)
 	var room = _layer.get_viewport().get_visible_rect().size.y - 2.0 * PANEL_MARGIN.y
 	var font_size = PANEL_FONT_SIZE

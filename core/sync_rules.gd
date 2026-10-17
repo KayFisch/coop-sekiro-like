@@ -6,7 +6,8 @@ extends Node
 ## that the players can win sync back and he can't, and that he has more of it.
 ##
 ## Attacks are normal or heavy. His heavy ones are those of both swords (green: a strike of both,
-## the leap); the players' attacks are normal, and heavy all through their sync mode.
+## the leap); the players' attacks are normal, and heavy only as the bound pair's strike let go
+## together in their sync mode (core/sync_bond.gd, `bond`).
 ##
 ## POSTURE comes in three sizes (each side's own: "posture_*" for the players, "boss_posture_*"
 ## for him, as there are two of them to attack him), lost by whoever...
@@ -33,8 +34,9 @@ extends Node
 ## ("posture_regen_least"). Broken: staggered, and all sync is gone. No sync is chaos: no blocking
 ## (for him: no guard), and the next hit that isn't parried kills. The players get out of it once
 ## their sync is back to "chaos_exit" (a revive); he can't, as he wins no sync back. Full sync is
-## the players' sync mode, their second phase: their attacks are heavy until their sync falls
-## below "sync_mode_exit".
+## the players' sync mode, their second phase, until their sync falls below "sync_mode_exit": they
+## can bind and strike together (core/sync_bond.gd), and he slows down ("sync_mode_tempo") and
+## strikes with both swords at once.
 ##
 ## Every number is in Tuning (F2).
 
@@ -59,11 +61,15 @@ var _posture = {}  # player or boss -> 0..posture_max()
 var _busy_at = {}  # player or boss -> when something last landed on them, or they last attacked
 var _swings = {}  # player -> their swing_serial when last seen: a new one is a new attack
 var _time = 0.0
+var bond  # SyncBond: the sync mode itself: the two bound, and their strike together
 
 
 func _ready():
 	team = team_max() * Tuning.value("team_sync_start") / 100.0
 	boss_sync = boss_max()
+	bond = preload("res://core/sync_bond.gd").new()
+	bond.rules = self
+	add_child(bond)
 
 
 func _process(delta):
@@ -170,7 +176,7 @@ func coop_parried():
 	_set_team(team + Tuning.value("coop_parry_gain"))
 
 
-# --- The players' hits landing on him (heavy in their sync mode) ---
+# --- The players' hits landing on him (heavy: the bound pair's strike together) ---
 
 func sync_hit(on_beat: bool):
 	_set_team(team + Tuning.value("sync_hit_gain" if on_beat else "sync_hit_late_gain"))
@@ -181,28 +187,44 @@ func missed_window():
 
 
 # Unblocked. Returns true if it kills: in chaos.
-func boss_struck() -> bool:
+func boss_struck(heavy = false) -> bool:
 	_busy_at[boss] = _time
 	if boss_chaos:
 		return true
-	_set_boss(boss_sync - _damage("their", sync_mode))
-	_lose_posture(boss, LARGE if sync_mode else MEDIUM, true)
+	_set_boss(boss_sync - _damage("their", heavy))
+	_lose_posture(boss, LARGE if heavy else MEDIUM, true)
 	return false
 
 
 # He blocks it: it costs him, not them.
-func boss_blocked():
+func boss_blocked(heavy = false):
 	_busy_at[boss] = _time
-	_lose_posture(boss, MEDIUM if sync_mode else SMALL, true)
+	_lose_posture(boss, MEDIUM if heavy else SMALL, true)
 
 
 # He parries it: it costs both alike, and can break their posture, not his.
-func boss_parried(p):
-	var size = MEDIUM if sync_mode else SMALL
+func boss_parried(p, heavy = false):
+	var size = MEDIUM if heavy else SMALL
 	_busy_at[boss] = _time
 	_lose_posture(boss, size, false)
 	if not p.invincible:
 		_lose_posture(p, size, true)
+
+
+# The bound pair's strike together, met by his guard: it goes through all the same, costing him a
+# normal hit's sync and a parried heavy one's posture. Returns true if it kills: in chaos.
+func pair_strike_parried() -> bool:
+	_busy_at[boss] = _time
+	if boss_chaos:
+		return true
+	_set_boss(boss_sync - _damage("their", false))
+	_lose_posture(boss, MEDIUM, true)
+	return false
+
+
+# The bound pair let go out of sync.
+func pair_missed():
+	_set_team(team - Tuning.value("pair_miss_loss"))
 
 
 # --- Inside ---

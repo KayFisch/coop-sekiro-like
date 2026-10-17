@@ -274,6 +274,16 @@ const SWORD_WIDTH = 8.0  # px thick (the scene's rect: 6)
 const SWORD_POINT = 7.0  # px at its end tapering to the point
 const CROSSGUARD_AT = 0.36  # where the crossguard sits, as a fraction of the sword's length
 const CROSSGUARD_SIZE = Vector2(4, 16)
+# THE PAIR'S STRIKE (sync mode, core/sync_bond.gd): while the two are bound (`bond` set), attack
+# is held to draw the sword back (fully in Tuning "sync_charge_time") and let go to strike; the
+# bond times the two strikes and deals the hit, the swing itself deals none. A block press lets
+# the drawn sword go, unstruck. Bound, the sword is a sabre: longer, curved, half light, half dark.
+const CHARGE_ANGLE = -2.5  # drawn back all the way: over the shoulder
+const SABRE_LENGTH = 1.3  # the sabre: this much longer than the sword...
+const SABRE_WIDTH = 11.0  # ...this broad at the hilt (px)...
+const SABRE_CURVE = 12.0  # ...its point curving back by this much (px)
+const SABRE_LIGHT = Color(0.95, 0.94, 0.9)
+const SABRE_DARK = Color(0.07, 0.07, 0.09)
 
 @export var player_id: int = 1  # set to 1 or 2 in the inspector
 @export var player_color = Color(0.25, 0.5, 1)  # body; P1 blue, P2 orange
@@ -357,6 +367,10 @@ var _cue_color = Color.WHITE
 var _hands: Array = []  # [ColorRect, ColorRect]
 var _sword_tip: Polygon2D  # the blade's point (see SWORD_POINT)
 var _crossguard: ColorRect
+var bond = null  # core/sync_bond.gd while the two are bound in sync mode (THE PAIR'S STRIKE)
+var _charging = false  # attack held, the sword drawing back
+var _charge_time = 0.0
+var _sabre: Node2D  # the sword's look while bound (set_sabre())
 var _was_on_floor = false
 var _air_time = 0.0  # seconds since leaving the ground
 var _fast_falling = false
@@ -824,7 +838,9 @@ func _process_actions():
 		parry_press_time = now if now - _last_block_press >= PARRY_SPAM_LOCK else -100.0
 		_last_block_press = now
 
-	if Input.is_action_just_pressed(_action("attack")):
+	if bond != null:
+		_process_charge()
+	elif Input.is_action_just_pressed(_action("attack")):
 		_press_attack()
 	elif _attack_buffer > 0.0 and _attack_cooldown <= 0.0:
 		_press_attack()  # pressed a moment too early: it comes now
@@ -1995,6 +2011,8 @@ func _setup_call_label():
 func _sword_angle() -> float:
 	if is_clashing or _hold_kind != Hold.NONE:
 		return 0.0  # held flat against the other blade
+	if _charging:
+		return lerpf(SWORD_REST_ANGLE, CHARGE_ANGLE, ease(charge_share(), 0.6))  # drawing back
 	if _dash_slash and _dash_timer > 0.0:
 		return 0.0  # thrust out level through the whole dash
 	if _windup_timer > 0.0:
@@ -2033,7 +2051,7 @@ func _sword_angle() -> float:
 # The blade when nothing above is going on: at rest, down in front while blocking, beaten up by
 # a perfect parry; eased from one to the other, so releasing block swings it back up.
 func _update_sword_idle(delta: float):
-	if _is_swinging() or is_clashing or _hold_kind != Hold.NONE:
+	if _is_swinging() or _charging or is_clashing or _hold_kind != Hold.NONE:
 		_sword_idle_angle = wrapf(_sword_angle(), -PI, PI)  # it carries on from wherever that leaves it
 		return
 	var target = SWORD_REST_ANGLE
@@ -2247,7 +2265,98 @@ func _setup_sword():
 # coordinates (the sync wave runs along it).
 func blade_point(along: float) -> Vector2:
 	var length = sword.size.x + SWORD_POINT
-	return sword_pivot.to_global(Vector2(sword.position.x + length * along, sword.position.y + sword.size.y / 2.0))
+	var middle = sword.position.y + sword.size.y / 2.0
+	if sabre_on():
+		return sword_pivot.to_global(Vector2(sword.position.x + length * SABRE_LENGTH * along, middle - SABRE_CURVE * along * along))
+	return sword_pivot.to_global(Vector2(sword.position.x + length * along, middle))
+
+
+# --- The pair's strike (see THE PAIR'S STRIKE) ---
+
+# Bound: attack held draws the sword back, let go it strikes and the bond hears of it. A block
+# press, a stagger or a tumble lets it go unstruck.
+func _process_charge():
+	if _charging:
+		if Input.is_action_just_pressed(_action("block")) or is_staggered() or is_tumbling():
+			_charging = false
+			return
+		if Input.is_action_pressed(_action("attack")):
+			_charge_time += get_physics_process_delta_time()
+			return
+		var drawn = _sword_angle()
+		var share = charge_share()
+		_charging = false
+		_start_swing(Swing.SLASH)
+		_swing_from_angle = drawn
+		_attack_landed = true  # the bond deals the pair's hit, not this swing
+		Sfx.play("slash", -2.0)
+		bond.released(self, share)
+	elif Input.is_action_just_pressed(_action("attack")) and not _is_swinging() and not is_staggered():
+		_charging = true
+		_charge_time = 0.0
+		parry_press_time = -100.0
+
+
+func is_charging() -> bool:
+	return _charging
+
+
+# How far the sword is drawn back: 0 to 1 (fully, after Tuning "sync_charge_time").
+func charge_share() -> float:
+	return clampf(_charge_time / Tuning.value("sync_charge_time"), 0.0, 1.0) if _charging else 0.0
+
+
+func cancel_charge():
+	_charging = false
+
+
+func sabre_on() -> bool:
+	return _sabre != null and _sabre.visible
+
+
+# Bound in sync mode the sword is a sabre (longer, curved, half light and half dark); unbound, the
+# sword again. The hitbox stays the same.
+func set_sabre(on: bool):
+	if on and _sabre == null:
+		_sabre = Node2D.new()
+		var hilt = sword.position.x
+		var middle = sword.position.y + sword.size.y / 2.0
+		var length = (sword.size.x + SWORD_POINT) * SABRE_LENGTH
+		var top = PackedVector2Array()
+		var bottom = PackedVector2Array()
+		var spine = PackedVector2Array()
+		var steps = 14
+		for i in steps + 1:
+			var t = float(i) / steps
+			var x = hilt + length * t
+			var y = middle - SABRE_CURVE * t * t
+			var half = SABRE_WIDTH / 2.0 * (1.0 - 0.3 * t) * (1.0 if t < 0.85 else (1.0 - t) / 0.15)
+			top.append(Vector2(x, y - half))
+			bottom.append(Vector2(x, y + half))
+			spine.append(Vector2(x, y))
+		var light = Polygon2D.new()
+		var points = top.duplicate()
+		var back = spine.duplicate()
+		back.reverse()
+		points.append_array(back)
+		light.polygon = points
+		light.color = SABRE_LIGHT
+		var dark = Polygon2D.new()
+		points = spine.duplicate()
+		back = bottom.duplicate()
+		back.reverse()
+		points.append_array(back)
+		dark.polygon = points
+		dark.color = SABRE_DARK
+		_sabre.add_child(light)
+		_sabre.add_child(dark)
+		sword_pivot.add_child(_sabre)
+	if _sabre != null:
+		_sabre.visible = on
+	sword.visible = not on
+	_sword_tip.visible = not on
+	if not on:
+		_charging = false
 
 
 func _setup_hands():

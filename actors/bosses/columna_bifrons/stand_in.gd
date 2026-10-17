@@ -6,6 +6,9 @@ extends Node
 ## meets each of his strikes with a parry, a block or nothing (by chance), strikes through his
 ## guard when its partner's parry opens it (a sync hit), and when its health is low it runs off
 ## to drink a potion. It doesn't attack otherwise.
+## In the players' sync mode (core/sync_bond.gd) it plays along perfectly: it goes to its partner
+## to bind, parries every strike, and bound it draws its sabre back when its partner does and
+## lets go right on the big cue (or when its partner lets go early).
 
 enum Plan { NOTHING, PARRY, BLOCK }
 
@@ -49,6 +52,7 @@ var _fleeing = false
 var _potion_wait = 0.0
 var _window = 0  # the open guard it has seen (ColumnaBifrons.window_for()), or 0
 var _strike_in = -1.0  # s until it presses attack, or < 0: no strike coming
+var _let_go = false  # bound: it has let go while its partner still draws back
 
 
 func _physics_process(delta):
@@ -88,7 +92,7 @@ func _played():
 func _defend(player):
 	var due = boss.time_to_strike(player)
 	if due != INF and (_last_due == INF or due > _last_due):
-		var roll = randf()
+		var roll = -1.0 if boss.in_sync_mode() else randf()  # in sync mode: always a parry
 		_plan = Plan.PARRY if roll < PARRY_CHANCE else (Plan.BLOCK if roll < PARRY_CHANCE + BLOCK_CHANCE else Plan.NOTHING)
 		_hold(player, "block", false)
 	_last_due = due
@@ -103,6 +107,9 @@ func _defend(player):
 # Its sword: a guard of his newly open for it gets a sync hit (by chance), after a reaction.
 # The press is let go the frame after, so the next one counts as a new press.
 func _strike(player, delta: float):
+	if boss.is_bound():
+		_strike_bound(player)
+		return
 	_hold(player, "attack", false)
 	var window = boss.window_for(player)
 	if window != 0 and window != _window and randf() < SYNC_HIT_CHANCE:
@@ -115,7 +122,25 @@ func _strike(player, delta: float):
 		_hold(player, "attack", true)
 
 
-# Its feet: to its distance from him, or away from him to drink.
+# Bound: attack held while its partner draws back, let go on the big cue (or when the partner lets
+# go first).
+func _strike_bound(player):
+	var bond = boss.rules.bond
+	var partner = boss.partner_of(player)
+	var drawing = partner != null and partner.is_charging()
+	if not drawing:
+		_let_go = false
+	var hold = drawing and not _let_go
+	if bond.cue_at >= 0.0 and bond.now() >= bond.cue_at:
+		hold = false
+	if _held.get(player._action("block"), false):
+		hold = false
+	if not hold and player.is_charging():
+		_let_go = drawing  # let go while the partner still draws: not again until they have too
+	_hold(player, "attack", hold)
+
+
+# Its feet: to its distance from him, or away from him to drink. In sync mode: to its partner.
 func _move(player, delta: float):
 	var away = signf(player.global_position.x - boss.global_position.x)
 	if away == 0.0:
@@ -139,6 +164,9 @@ func _move(player, delta: float):
 			if _potion_wait <= 0.0:
 				_potion_wait = POTION_RETRY
 				_hold(player, "potion", true)
+	elif boss.in_sync_mode() and boss.partner_of(player) != null:
+		var gap = boss.partner_of(player).global_position.x - player.global_position.x
+		_walk = signf(gap) if absf(gap) > Tuning.value("sync_connect_distance") * 0.5 else 0.0
 	else:
 		var want = DISTANCE
 		var partner = boss.partner_of(player)
