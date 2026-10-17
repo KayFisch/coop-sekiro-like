@@ -8,8 +8,9 @@ extends Attack
 ## A strike is aimed at the player its sword fights (ColumnaBifrons.ward_of()), and only they
 ## have to perfect parry it. The sword is drawn back, then comes in FALL_TIME: that's the cue,
 ## and both players read it. A parried strike breaks the guard of his *other* sword for a moment
-## (ColumnaBifrons.break_guard()), and the other player's sword hit is a sync hit. Both swords
-## at once come green, and parried by both players they stagger him.
+## (ColumnaBifrons.break_guard()), and the other player's sword hit is a sync hit (with Moves
+## "bifrons_guard_break" off it only opens the window: a hit in it that lands is a sync hit). Both
+## swords at once come green, and parried by both players they stagger him.
 ##
 ## How a sword strikes:
 ## - down from over his head, when it's on the flank its hand is on;

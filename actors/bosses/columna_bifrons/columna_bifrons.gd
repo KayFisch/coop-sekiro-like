@@ -686,13 +686,25 @@ func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0, heavy =
 
 # True while that sword is back at its flank, ready: it parries its player's sword hits.
 func is_guarding(blade: int) -> bool:
-	return hp > 0.0 and state != State.STAGGER and _at_guard[blade] and not is_open(blade) \
+	return hp > 0.0 and state != State.STAGGER and _at_guard[blade] and not is_broken(blade) \
 		and (rules == null or rules.boss_guards())  # no guard in chaos
 
 
-# True while that sword's guard is broken and open: the other player's hits are sync hits.
+# True while that sword's window is open (a parry of the other sword opened it): the other
+# player's hits are sync hits. Its guard is broken meanwhile, unless Moves "bifrons_guard_break"
+# is off: then the window only times the beat, and a hit in it lands (a sync hit) only if that
+# sword can't parry it just then.
 func is_open(blade: int) -> bool:
 	return anim_time >= _open_from[blade] and anim_time < _open_until[blade]
+
+
+# True while that sword's guard is down because the window is open (see is_open()).
+func is_broken(blade: int) -> bool:
+	return guard_breaks() and is_open(blade)
+
+
+func guard_breaks() -> bool:
+	return Moves.on("bifrons_guard_break")
 
 
 # The sword whose guard is open for `player`'s sync hit (another player's parry broke it), or 0.
@@ -705,7 +717,7 @@ func window_for(player) -> int:
 
 # True from the parry that breaks that sword's guard until it's back: open, or about to be.
 func is_breaking(blade: int) -> bool:
-	return anim_time < _open_until[blade]
+	return guard_breaks() and anim_time < _open_until[blade]
 
 
 # A strike of his other sword, parried by `by`: after `delay` this one's guard is gone for
@@ -723,8 +735,9 @@ func break_guard(blade: int, duration: float, delay = 0.0, by = null):
 
 func _show_open(blade: int):
 	_open_shown[blade] = true
-	Sfx.play("guard_break", -2.0)
-	spawn_sparks(_flank(blade_side(blade), global_position.y), 12, COLOR_PLATE)
+	if guard_breaks():
+		Sfx.play("guard_break", -2.0)
+		spawn_sparks(_flank(blade_side(blade), global_position.y), 12, COLOR_PLATE)
 	if rules != null:
 		# The beat for the partner's hit: their sword lights up while a hit is on it.
 		for p in get_players():
@@ -745,7 +758,9 @@ func _judge_windows():
 
 
 # source: the player whose sword hit landed. Through a guard their partner's parry broke it's a
-# sync hit; a sword that fights them parries it, if it's guarding; anything else is hit.
+# sync hit; a sword that fights them parries it, if it's guarding; anything else is hit. (With
+# Moves "bifrons_guard_break" off the guard comes first: in the window only a hit it can't parry
+# lands, as a sync hit.)
 func take_damage(amount: float, source = null):
 	if rules != null and source != null and hp > 0.0:
 		_struck_by_rules(amount, source)
@@ -756,7 +771,8 @@ func take_damage(amount: float, source = null):
 	_slowed_until = anim_time + SLOWED_TIME
 	var at = _flank(side_of(source), source.global_position.y)
 	var guards = BLADES.filter(func(blade): return ward_of(blade) == source and is_guarding(blade))
-	if BLADES.any(func(blade): return is_open(blade) and _opened_by[blade] != source):
+	var open = BLADES.any(func(blade): return is_open(blade) and _opened_by[blade] != source)
+	if open and (guards.is_empty() or guard_breaks()):
 		sync_event.emit("bifrons_sync_hit")
 		Sfx.play("sync_hit")
 		shake(6.0)
@@ -784,8 +800,17 @@ func _struck_by_rules(amount: float, source):
 	var guards = BLADES.filter(func(blade): return ward_of(blade) == source and is_guarding(blade))
 	var lethal = false
 	if not open.is_empty():
+		_open_used[open[0]] = true  # tried: whatever comes of it, the window wasn't left unused
+	if not guards.is_empty() and (open.is_empty() or not guard_breaks()):
+		if randf() < Tuning.value("boss_parry_chance"):
+			_parry(guards[0], source, at)
+			rules.boss_parried(source)
+		else:
+			_block(guards[0], source, at)
+			rules.boss_blocked()
+		return
+	if not open.is_empty():
 		var blade = open[0]
-		_open_used[blade] = true
 		var on_beat = anim_time - _open_from[blade] <= Tuning.value("sync_beat_time")
 		rules.sync_hit(on_beat)
 		Sfx.play("sync_hit")
@@ -795,14 +820,6 @@ func _struck_by_rules(amount: float, source):
 			Sfx.play("on_beat", -4.0)
 			spawn_sparks(at, 12, COLOR_SYNC_BEAT)
 		lethal = rules.boss_struck()
-	elif not guards.is_empty():
-		if randf() < Tuning.value("boss_parry_chance"):
-			_parry(guards[0], source, at)
-			rules.boss_parried(source)
-		else:
-			_block(guards[0], source, at)
-			rules.boss_blocked()
-		return
 	else:
 		Sfx.play("sync_hit", -6.0)
 		shake(3.0)
@@ -1218,7 +1235,8 @@ func _update_pose():
 		var across = reaches_across(blade)
 		var open = is_open(blade) and not down
 		if open and not _open_shown[blade]:
-			_show_open(blade)  # a guard broken with a delay opens only now
+			_show_open(blade)  # a window opened with a delay opens only now
+		var broken = open and guard_breaks()
 		if across and _front != blade:
 			_front = blade  # it reaches across in front of the other sword
 			move_child(_pivots[blade], -1)
@@ -1227,7 +1245,7 @@ func _update_pose():
 		var snap: bool = _snaps[blade]
 		var home: bool = _homes[blade]
 		# Guarding means back at its flank: an attack wants it there, and it has arrived.
-		var wants_guard = pose == POSE_GUARD and over == 1.0 and not home and not down and not open
+		var wants_guard = pose == POSE_GUARD and over == 1.0 and not home and not down and not broken
 		if not wants_guard:
 			_at_guard[blade] = false
 		elif not _at_guard[blade]:
@@ -1240,7 +1258,7 @@ func _update_pose():
 			over = limp[1]
 			home = false
 			snap = hp <= 0.0  # dead: this is the last frame he's posed
-		elif open and pose == POSE_GUARD:
+		elif broken and pose == POSE_GUARD:
 			pose = POSE_OPEN  # its guard is broken: knocked aside
 		elif anim_time < _flick_until[blade] and not snap:
 			pose = POSE_PARRY  # his parry shows even if the blade is already off to strike back

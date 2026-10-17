@@ -40,6 +40,7 @@ const ENTRIES = [
 	{"key": "parry_pass", "label": "Dash-parry: a parry landed mid-dash goes through the boss", "default": true},
 	{"key": "bifrons_mode", "label": "Bifrons: set patterns, or reactive (hit him and he strikes back)", "default": "patterns", "options": ["patterns", "reactive"]},
 	{"key": "bifrons_window", "label": "Bifrons: partner hits on the beat, or after it", "default": "beat", "options": ["beat", "after"]},
+	{"key": "bifrons_guard_break", "label": "Bifrons: a parry breaks his other guard (off: the window stays, but only a hit he can't parry lands)", "default": true},
 	{"key": "bifrons_stand_in", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, runner", "default": "off", "options": ["off", "left", "right"]},
 	{"key": "bifrons_face", "label": "Bifrons: players always face him (dash goes where you hold)", "default": true},
 	{"key": "bifrons_rules", "label": "Bifrons: rules: sync is life + posture, no potions (sync), or health + old sync (hp); from R", "default": "sync", "options": ["sync", "hp"]},

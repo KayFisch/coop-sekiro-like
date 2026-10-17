@@ -281,6 +281,13 @@ often. Measured with bots that mash attack and stop only to parry the strikes th
 somewhere between 2 and 5 sync hits in 10 strikes, in either window (it varies a lot from run to
 run). A timed press gets all of them. `TASKS.md` has the problem in detail.
 
+**Whether the guard breaks at all ("bifrons_guard_break", on by default).** Off (Nicho,
+2026-10-17), a parry no longer breaks his other sword's guard: the window stays, timed as above
+and cued on the partner's sword, but in it his guard still parries or blocks. A hit in the
+window is a sync hit only if it lands, so the partner has to find a moment that sword can't
+parry: drawn back for its next strike, coming, or thrown back. Trying in the window counts as
+using it (no sync lost for a missed window).
+
 ## The sweep (pep only)
 
 One blade, held out to its side and drawn back (yellow, 0.9 s), comes down level (red, 0.28 s)
@@ -377,7 +384,8 @@ Attacks are **normal or heavy**. His heavy ones are those of both swords (green:
 at one player or at two, and the leap); his single-sword strikes are normal, the sweep too. The
 players' attacks are normal, and heavy all through their sync mode.
 
-**Posture** comes in three sizes, the same for everyone:
+**Posture** comes in three sizes. As there are two players to attack him, his sizes are set
+apart from theirs on F2 (both 5, 15 and 30 by default):
 
 | | small (5) | medium (15) | large (30) |
 |---|---|---|---|
@@ -390,7 +398,8 @@ him, when their hits land, and when they hit his guard (he blocks or parries by 
 half; his parry costs them too). A parry never breaks the parrier's own posture; anything else
 can break it.
 
-**Sync** is lost only to a hit that lands: a heavy one costs 18, a normal one a third of that (6).
+**Sync** is lost only to a hit that lands: a heavy one costs 18, a normal one a third of that (6);
+his and theirs are set apart too.
 Blocked or parried, no sync. The players win sync back: a sync hit (through the guard their
 partner's parry broke) 4 on the beat and 2 after it, a coop parry (both his swords at once, each
 parried by its player) 6, and it staggers him for 1 s. A window nobody used, while someone other

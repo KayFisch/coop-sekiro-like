@@ -8,7 +8,8 @@ extends Node
 ## Attacks are normal or heavy. His heavy ones are those of both swords (green: a strike of both,
 ## the leap); the players' attacks are normal, and heavy all through their sync mode.
 ##
-## POSTURE comes in three sizes, lost by whoever...
+## POSTURE comes in three sizes (each side's own: "posture_*" for the players, "boss_posture_*"
+## for him, as there are two of them to attack him), lost by whoever...
 ##   - parries or blocks a normal attack, or has a normal attack of their own parried: small;
 ##   - is hit by a normal attack, parries or blocks a heavy one, or has a heavy one of their own
 ##     parried: medium;
@@ -16,7 +17,8 @@ extends Node
 ## So a parry costs both sides alike, and a block only the one who blocks: blocking does nothing
 ## to the attacker. A parry never breaks the parrier's own posture.
 ## SYNC: a hit that lands costs the one it lands on sync: a heavy one "his_heavy_damage" (on the
-## players) or "their_heavy_damage" (on him), a normal one "normal_share" of that (a third).
+## players) or "their_heavy_damage" (on him), a normal one a share of that ("his_normal_share",
+## "their_normal_share": a third).
 ## Blocked or parried, it costs no sync. The players win sync back: a sync hit (through the guard
 ## the partner's parry broke), more on the beat than off it, and a coop parry (both his swords at
 ## once, parried by both). A window the partner's parry opened that nobody used, while someone
@@ -34,7 +36,8 @@ extends Node
 ##
 ## Every number is in Tuning (F2).
 
-const POSTURE_SIZES = ["posture_small", "posture_medium", "posture_large"]
+const POSTURE_SIZES = ["posture_small", "posture_medium", "posture_large"]  # the players'
+const BOSS_POSTURE_SIZES = ["boss_posture_small", "boss_posture_medium", "boss_posture_large"]
 const SMALL = 0
 const MEDIUM = 1
 const LARGE = 2
@@ -139,7 +142,7 @@ func player_hit(p, _amount: float) -> bool:
 	_busy_at[p] = _time
 	if team_chaos:
 		return true
-	_set_team(team - _damage("his_heavy_damage", landing_heavy))
+	_set_team(team - _damage("his", landing_heavy))
 	_lose_posture(p, LARGE if landing_heavy else MEDIUM, true)
 	return false
 
@@ -180,7 +183,7 @@ func boss_struck() -> bool:
 	_busy_at[boss] = _time
 	if boss_chaos:
 		return true
-	_set_boss(boss_sync - _damage("their_heavy_damage", sync_mode))
+	_set_boss(boss_sync - _damage("their", sync_mode))
 	_lose_posture(boss, LARGE if sync_mode else MEDIUM, true)
 	return false
 
@@ -226,9 +229,10 @@ func _attacking(actor) -> bool:
 	return began
 
 
-# What a hit that lands costs in sync: the heavy amount, or the normal share of it.
-func _damage(key: String, heavy: bool) -> float:
-	return Tuning.value(key) * (1.0 if heavy else Tuning.value("normal_share"))
+# What a hit that lands costs in sync, by whose it is ("his" or "their"): the heavy amount, or
+# the normal share of it.
+func _damage(whose: String, heavy: bool) -> float:
+	return Tuning.value(whose + "_heavy_damage") * (1.0 if heavy else Tuning.value(whose + "_normal_share"))
 
 
 func _regen(actor, delta: float):
@@ -243,7 +247,8 @@ func _regen(actor, delta: float):
 func _lose_posture(actor, size: int, can_break: bool):
 	if not _posture.has(actor):
 		_meet(actor)
-	var left = minf(_posture[actor], posture_max(actor)) - Tuning.value(POSTURE_SIZES[size])
+	var sizes = BOSS_POSTURE_SIZES if actor == boss else POSTURE_SIZES
+	var left = minf(_posture[actor], posture_max(actor)) - Tuning.value(sizes[size])
 	if left <= 0.0 and can_break:
 		_break(actor)
 	else:
