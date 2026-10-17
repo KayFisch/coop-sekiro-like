@@ -44,6 +44,13 @@ const ENTRIES = [
 	{"key": "bifrons_face", "label": "Bifrons: players always face him (dash goes where you hold)", "default": true},
 	{"key": "bifrons_rules", "label": "Bifrons: rules: sync is life + posture, no potions (sync), or health + old sync (hp); from R", "default": "sync", "options": ["sync", "hp"]},
 	{"key": "mirror_view", "label": "Bifrons: mirrored screen (P1 light above the floor, P2 its shadow below)", "default": false},
+	{"key": "runner_patterns", "label": "Runner: Bifrons's patterns only, or mixed with shards and blocks", "default": "mixed", "options": ["mixed", "bifrons"]},
+	{"key": "runner_relay", "label": "Runner: a parried orb goes on to the partner as a shard to hit", "default": true},
+	{"key": "runner_rally", "label": "Runner: ...and hitting that shard sends an orb back (a rally)", "default": false},
+	{"key": "runner_blocks", "label": "Runner: now and then a block to jump", "default": true},
+	{"key": "runner_speedup", "label": "Runner: the tempo rises as the run goes on", "default": false},
+	{"key": "runner_metronome", "label": "Runner: a tick on every beat", "default": false},
+	{"key": "runner_endless", "label": "Runner: endless (an empty meter doesn't end the run)", "default": false},
 	{"key": "call", "label": "Call countdown (P1 Enter, P2 LB)", "default": true},
 	{"key": "swap_controls", "label": "Swap P1 / P2 controls (P1 on the pad)", "default": false},
 ]

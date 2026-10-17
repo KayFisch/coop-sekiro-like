@@ -68,13 +68,14 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 ```
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
 docs/                                design docs: concept.md, boss_*.md (one per boss), parkour_gyms.md,
-                                     art_brief.md (sizes, colors, poses: for generating sprites)
+                                     art_brief.md (sizes, colors, poses: for generating sprites),
+                                     beat_runner.md
 core/                                autoloads: GameManager, Sfx, Moves, Pads, Tuning;
                                      sync_rules.gd (sync as life, Bifrons)
 actors/player/                       player.gd (+ scene)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
-                                     gym/ (movement test rooms)
+                                     gym/ (movement test rooms), runner/ (between the bosses)
 ui/                                  boss select, HUD, the mirrored screen (mirror_view.gd)
 assets/                              empty for now: everything is procedural
 ```
@@ -151,7 +152,8 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   `Moves.on("pogo")`). The fight kit is on by default, the platforming kit is off. `Pads` gives
   each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device).
   `Tuning` (F2 panel of numbers to tune while playing, saved to `user://tuning.cfg`; code asks
-  `Tuning.value("hit_sync_loss")` each time it needs one).
+  `Tuning.value("hit_sync_loss")` each time it needs one; a page per level: the runner's in the
+  runner, the sync rules elsewhere).
 - `core/sync_rules.gd` (`SyncRules`): sync as life, for now only in Bifrons's fight (Moves
   "bifrons_rules"): no health, no potions, a shared sync for the players and one for the boss,
   a posture each, chaos at no sync, sync mode at full. The boss creates it and hands it to
@@ -183,6 +185,10 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   him (started from his own `_physics_process()`, outside BaseBoss's idle timer); and
   `stand_in.gd`, which plays one of the players for testing alone, by pressing that player's
   buttons.
+- `levels/runner/runner.gd` (`BeatRunner`, `docs/beat_runner.md`): a prototype for between the
+  bosses. The mirrored screen, players running on the spot (`Player.running_on`), and things
+  coming at them on a beat (orbs to parry, shards to hit, blocks to jump), planned from
+  `ColumnaBifrons.ATTACKS`; a parry relays a shard to the partner. Its own sync meter and UI.
 - `ui/mirror_view.gd` (`MirrorView`, in Bifrons's room, Moves "mirror_view"): an alternative
   picture of the fight, the screen split at the floor, P1 above, P2 in the reflection below.
   Two SubViewports on the level's World2D; what each half draws is chosen by visibility layers

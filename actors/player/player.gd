@@ -280,6 +280,9 @@ var is_clashing = false  # blades locked with the boss, held in place
 var invincible = false  # testing: hits still land (flash, knockback) but take no health
 var facing = 1.0
 var body_color: Color
+# The beat-runner (levels/runner/): the world goes by, the player runs on the spot. No walking
+# (the stick does nothing), and they face the way things come from.
+var running_on = false
 # The mirrored screen (ui/mirror_view.gd) shows each player in a half of their own: there the
 # partner is nobody to bump into.
 var own_half = false:
@@ -516,6 +519,8 @@ func _now() -> float:
 
 # Left/right input, -1..1, for attacks that let a held player steer (e.g. swinging on a hook).
 func move_axis() -> float:
+	if running_on:
+		return 0.0
 	return Input.get_axis(_action("left"), _action("right"))
 
 

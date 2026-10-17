@@ -55,6 +55,7 @@ void fragment() {
 """
 
 @export var scenery: NodePath  # the level's backdrop, left out of both halves
+@export var always_on = false  # whatever the switch says (the beat-runner is built for it)
 
 var _halves = []  # top, bottom: {"viewport": SubViewport, "picture": TextureRect, "ground": TextureRect}
 var _line: ColorRect
@@ -71,7 +72,7 @@ func _ready():
 
 
 func _refresh():
-	var on = Moves.on("mirror_view")
+	var on = always_on or Moves.on("mirror_view")
 	if on != _halves.is_empty():
 		return
 	if on:
