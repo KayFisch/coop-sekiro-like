@@ -134,7 +134,7 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Seit Runde 4 ist der Ring **Bifrons' Kampf ohne ihn**: seine Patterns, Gewichte und sein Tempo,
   standardmäßig diagonal (wie pep), sein Crossing bringt beide auf eine Seite, sein Sprung (als
   Sweep) wieder auseinander; der violette Splitter läuft am Kreis entlang und kommt so spät nach
-  dem Parry an wie der Sync-Hit im Bosskampf (`bifrons_window`).
+  dem Parry an wie der Sync-Hit im Bosskampf (F2, Tab „sync hit“).
 - [ ] **Bifrons' Patterns überarbeiten: Abstand schaffen, dann nachsetzen** (@Nicho). Siehe
   Scribble vom 2026-10-17.
 - [ ] **Spiegel-Bildschirm** (@Nicho), Branch `nicho/pep-test`, Schalter `mirror_view` (F1,
