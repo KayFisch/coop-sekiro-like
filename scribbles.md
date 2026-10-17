@@ -538,3 +538,22 @@ Erste Kandidaten zum Weiterdenken (Claude, ungeprüft gesammelt):
 - *Amphisbaena* (griechisch-römisch): Schlange mit einem Kopf an jedem Ende.
 - *Doppelköpfige Schlange* (aztekisch).
 - *Ettin* (englische Folklore): zweiköpfiger Riese.
+
+## 2026-10-17 (Nicho): Abstand schaffen, dann ein heftiger Schlag
+
+Am neuen Crossing gefällt mir sehr: Der Boss schafft Abstand zu einem Spieler (er stößt ihn weg)
+und setzt mit einem heftigen Schlag nach, sodass der andere Spieler hin-dashen muss. Das bringt
+Abwechslung: Vom Spieler wird mehr verlangt als nur stehen und Parry/Hit drücken. Der Kampf wird
+damit wesentlich dynamischer.
+
+→ Mit diesem Gedanken die Patterns noch einmal überarbeiten (Task in `TASKS.md`).
+
+Ideen dazu (Claude, zum Weiterdenken):
+- Ein Schlag, der einen Spieler wegschleudert, und gleich danach einer auf den Partner: Wer
+  weggeschleudert wurde, muss zurück, um im nächsten Fenster wieder dabei zu sein.
+- Ein Rückzug (Hüpfer zurück, Sprung zur Seite), auf den ein Schlag aus der Distanz folgt: Beide
+  müssen nachsetzen, statt zu warten.
+- Ein Stoß, der beide auf eine Seite treibt, und dann ein Hieb auf den hinteren: Der muss am
+  vorderen vorbei (Dash-Parry durch den Boss oder über den Partner).
+- Allgemein: Jedes Pattern, das Abstand schafft, sollte mit einem Schlag enden, der nur trifft
+  oder pariert wird, wenn man den Abstand wieder schließt.

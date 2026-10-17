@@ -104,6 +104,12 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Bossen?“, etwas zwischen Beat Saber und Geometry Dash (Auto-Runner, Dinge fliegen im Rhythmus
   auf die Spieler zu, parieren und schlagen; vielleicht zwei Lanes für pep/ppe). Siehe Scribble
   vom 2026-10-02 („Was ist der Rest des Spiels?“). Läuft parallel zu Kays Jump'n'Run.
+  Erster Prototyp ab 2026-10-17 auf Branch `nicho/beat-runner` (von `nicho/pep-test`
+  abgezweigt, braucht den Spiegel-Bildschirm): geteilter Bildschirm, die Spieler laufen von
+  selbst, Projektile zum Parieren und zum Zerschlagen, ein Parry schickt dem Partner ein
+  schnelles Projektil, selten Hindernisse zum Drüberspringen. Muster aus Bifrons' Tabelle.
+- [ ] **Bifrons' Patterns überarbeiten: Abstand schaffen, dann nachsetzen** (@Nicho). Siehe
+  Scribble vom 2026-10-17.
 - [ ] **Spiegel-Bildschirm** (@Nicho), Branch `nicho/pep-test`, Schalter `mirror_view` (F1,
   Standard aus). Nichos Idee aus dem Scribble vom 2026-10-14: Bildschirm an der Bodenlinie
   geteilt, oben P1 als Licht, unten die Spiegelung mit P2 als Schatten (nach Gris), der Boss
