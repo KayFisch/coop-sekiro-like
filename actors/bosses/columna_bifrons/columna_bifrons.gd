@@ -97,8 +97,8 @@ const TEST_ONLY_PATTERN = [] # "TRIPLE", "QUAD", "SINGLE", "LONG", "SWEEP"
 # afresh with every attack. Once that many are parried and he's free, he strikes back at the
 # player whose hit he parried last: with one of the same attacks, turned so its first strike is
 # theirs, and that strike comes quickly (ANSWER_WAIT). Then the series runs to its end, as ever.
-const REACTIVE_WAIT_MIN = 0.3
-const REACTIVE_WAIT_MAX = 0.7
+const REACTIVE_WAIT_MIN = 0.5
+const REACTIVE_WAIT_MAX = 1.7
 const PATIENCE = [1, 1, 2]
 const ANSWER_WAIT = 4  # StrikePattern.TIME_UNITs until an answer's first strike lands, at most
 
@@ -248,7 +248,7 @@ const COLOR_OPEN = Color(1.0, 0.95, 0.6)  # "hit here, now": a broken guard's fl
 const COLOR_PARRY = Color(1.0, 0.7, 0.3)  # sparks off his own parry
 const COLOR_PLAYER_PARRY = Color(1.0, 0.85, 0.4)  # sparks off a player's
 const COLOR_PROVOKED = Color(0.75, 0.33, 0.16)  # his body, the closer he is to striking back
-const COLOR_SYNC_BEAT = Color(0.7, 0.45, 1.0)  # sync as life: the partner's sword, on the beat to hit
+const COLOR_SYNC_BEAT = Color(0.7, 0.45, 1.0)  # the beat-ring's violet shard (the fight's cue is SyncWave's)
 const WARD_TINT = 0.85  # how far a sword's crossguard and edge take its player's color: whose it is
 const HAND_SIZE = 16.0
 const HAND_DARKEN = 0.25
@@ -721,7 +721,8 @@ func is_breaking(blade: int) -> bool:
 
 
 # A strike of his other sword, parried by `by`: after `delay` this one's guard is gone for
-# `duration`.
+# `duration`. The parry's energy runs over to the partner meanwhile (SyncWave), arriving as the
+# window opens.
 func break_guard(blade: int, duration: float, delay = 0.0, by = null):
 	_open_from[blade] = anim_time + delay
 	_open_until[blade] = _open_from[blade] + duration
@@ -729,6 +730,10 @@ func break_guard(blade: int, duration: float, delay = 0.0, by = null):
 	_opened_by[blade] = by
 	_open_used[blade] = false
 	_open_judged[blade] = false
+	if by != null:
+		for p in get_players():
+			if p != by:
+				SyncWave.send(by, p, delay, Tuning.value("sync_beat_time"), ARENA_FLOOR_Y, get_parent())
 	if delay <= 0.0:
 		_show_open(blade)
 
@@ -738,11 +743,11 @@ func _show_open(blade: int):
 	if guard_breaks():
 		Sfx.play("guard_break", -2.0)
 		spawn_sparks(_flank(blade_side(blade), global_position.y), 12, COLOR_PLATE)
-	if rules != null:
-		# The beat for the partner's hit: their sword lights up while a hit is on it.
-		for p in get_players():
-			if p != _opened_by[blade]:
-				p.cue_sync(Tuning.value("sync_beat_time"), COLOR_SYNC_BEAT)
+	# The beat for the partner's hit: their sword lights up while a hit is on it (as the parry's
+	# SyncWave arrives).
+	for p in get_players():
+		if p != _opened_by[blade]:
+			p.cue_sync(Tuning.value("sync_beat_time"), SyncWave.COLOR)
 
 
 # Sync as life: a window that closed with no sync hit through it, while someone other than the
@@ -776,7 +781,7 @@ func take_damage(amount: float, source = null):
 		sync_event.emit("bifrons_sync_hit")
 		Sfx.play("sync_hit")
 		shake(6.0)
-		spawn_sparks(at, 16, COLOR_OPEN)
+		spawn_sparks(at, 16, SyncWave.COLOR)  # the parry's energy, passed on into him
 		super(amount * SYNC_HIT_FACTOR, source)
 	elif not guards.is_empty():
 		_parry(guards[0], source, at)
@@ -815,10 +820,10 @@ func _struck_by_rules(amount: float, source):
 		rules.sync_hit(on_beat)
 		Sfx.play("sync_hit")
 		shake(6.0)
-		spawn_sparks(at, 16, COLOR_OPEN)
+		spawn_sparks(at, 16, SyncWave.COLOR)  # the parry's energy, passed on into him
 		if on_beat:
 			Sfx.play("on_beat", -4.0)
-			spawn_sparks(at, 12, COLOR_SYNC_BEAT)
+			spawn_sparks(at, 14, SyncWave.CORE)
 		lethal = rules.boss_struck()
 	else:
 		Sfx.play("sync_hit", -6.0)

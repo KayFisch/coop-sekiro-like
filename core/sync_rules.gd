@@ -24,8 +24,10 @@ extends Node
 ## once, parried by both). A window the partner's parry opened that nobody used, while someone
 ## other than the parrier could have, costs them sync.
 ##
-## Posture comes back only once nothing has landed on that one (hit, blocked or parried) and they
-## haven't attacked, for "posture_quiet_time"; a player holding block meanwhile gets it back
+## Posture comes back only once nothing has landed on that one (hit, blocked or parried) for
+## "posture_quiet_time", and, for a player (Moves "swings_hold_posture"), once they haven't swung
+## for as long; his own attacks never hold it back, as he attacks nearly all the time. A player
+## holding block meanwhile gets it back
 ## "block_regen_factor" times as fast. How fast follows sync, as in Sekiro: at full sync its full
 ## rate, at 75 % half of it, at "posture_regen_none_at" (50 %) and below hardly any
 ## ("posture_regen_least"). Broken: staggered, and all sync is gone. No sync is chaos: no blocking
@@ -114,8 +116,8 @@ func regen_share(actor) -> float:
 	return lerpf(Tuning.value("posture_regen_least"), 1.0, clampf((sync - none_at) / (1.0 - none_at), 0.0, 1.0))
 
 
-# True while that one's posture comes back: nothing has landed on them and they haven't attacked
-# for posture_quiet_time.
+# True while that one's posture comes back: nothing has landed on them (and a player hasn't
+# swung, see _attacking()) for posture_quiet_time.
 func regenerating(actor) -> bool:
 	return _time - _busy_at.get(actor, -100.0) >= Tuning.value("posture_quiet_time")
 
@@ -220,13 +222,14 @@ func _meet(actor):
 		_swings[actor] = actor.swing_serial
 
 
-# True while that one attacks: he's winding up or striking; a player has just begun a swing.
+# True when a player has just begun a swing that holds their posture back (Moves
+# "swings_hold_posture"). His own attacks never do: he attacks nearly all the time.
 func _attacking(actor) -> bool:
 	if actor == boss:
-		return boss.state == BaseBoss.State.TELEGRAPH or boss.state == BaseBoss.State.ATTACKING
+		return false
 	var began = actor.swing_serial != _swings.get(actor, actor.swing_serial)
 	_swings[actor] = actor.swing_serial
-	return began
+	return began and Moves.on("swings_hold_posture")
 
 
 # What a hit that lands costs in sync, by whose it is ("his" or "their"): the heavy amount, or

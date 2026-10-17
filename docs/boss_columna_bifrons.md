@@ -405,9 +405,10 @@ partner's parry broke) 4 on the beat and 2 after it, a coop parry (both his swor
 parried by its player) 6, and it staggers him for 1 s. A window nobody used, while someone other
 than the parrier was in reach, costs them 1. He wins none back.
 
-- **Posture comes back** only once nothing has landed on you (hit, blocked or parried) and you
-  haven't attacked, for 2 s; while it doesn't, its bar is dimmed. Holding block meanwhile doubles
-  it. How fast follows sync, as in Sekiro: at full sync the full rate (players 20 per second, him
+- **Posture comes back** only once nothing has landed on you (hit, blocked or parried) for 2 s,
+  and, for a player, once you haven't swung for as long (F1 "swings_hold_posture", on); his own
+  attacks never hold his back, as he attacks nearly all the time (Nicho, 2026-10-17). While it
+  doesn't come back, its bar is dimmed. Holding block meanwhile doubles it. How fast follows sync, as in Sekiro: at full sync the full rate (players 20 per second, him
   30), at 75 % half of it, at 50 % and below hardly any (5 %); "regen" next to the posture bars
   says how much just now.
 - **Broken:** staggered (players 0.8 s, him 2.5 s), all sync gone; posture comes back full.
@@ -418,8 +419,13 @@ than the parrier was in reach, costs them 1. He wins none back.
 - **Full sync is the sync mode**, the players' second phase: their attacks are heavy until their
   sync falls below 70 %. The meter turns gold. It's a stand-in: the sync mode itself (the two of
   you joined into one, see the scribble of 2026-10-02) is still to build.
-- **The beat:** when your partner's parry opens his guard on your side, your sword lights violet
-  for 0.12 s. A hit landing in that time is on the beat.
+- **The beat:** a parry's energy runs over to the partner (`actors/player/sync_wave.gd`): hot
+  pink, from the parrier's sword down through them into the floor, along it (on the mirrored
+  screen: along the line), and up the partner from their feet into their sword, arriving as the
+  window opens (0.18 s on "after"; at once on "beat"). Then the partner's blade blazes for the
+  beat (0.12 s) with a burst at its point: a hit landing in that time is on the beat. The sync
+  hit passes the energy on into him (pink sparks, white ones on the beat). (Until 2026-10-17 the
+  sword only turned violet, too easy to miss.)
 - **Every number is on the F2 panel** (saved to `user://tuning.cfg`, reset on its last row).
   The numbers above are the defaults.
 - Testing alone: the stand-in strikes through the guard your parries open for it, three times

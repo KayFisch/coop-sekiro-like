@@ -77,7 +77,7 @@ docs/                                design docs: concept.md, boss_*.md (one per
                                      beat_runner.md, beat_ring.md
 core/                                autoloads: GameManager, Sfx, Moves, Pads, Tuning;
                                      sync_rules.gd (sync as life, Bifrons)
-actors/player/                       player.gd (+ scene)
+actors/player/                       player.gd (+ scene), sync_wave.gd (the parry's energy to the partner)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
                                      gym/ (movement test rooms), runner/ and ring/ (between the

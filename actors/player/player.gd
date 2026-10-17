@@ -268,6 +268,12 @@ const BODY_SIZE = Vector2(20, 40)
 const HAND_SIZE_RATIO = 0.2
 const HAND_GRIPS = [0.075, 0.275]  # where each hand holds the sword, as a fraction of its length
 const HAND_DARKEN = 0.25
+# The sword's look, a little less of a needle than the scene's plain rect (its hitbox is the
+# scene's, unchanged): a broader blade, a crossguard just past the hands, and a point.
+const SWORD_WIDTH = 8.0  # px thick (the scene's rect: 6)
+const SWORD_POINT = 7.0  # px at its end tapering to the point
+const CROSSGUARD_AT = 0.36  # where the crossguard sits, as a fraction of the sword's length
+const CROSSGUARD_SIZE = Vector2(4, 16)
 
 @export var player_id: int = 1  # set to 1 or 2 in the inspector
 @export var player_color = Color(0.25, 0.5, 1)  # body; P1 blue, P2 orange
@@ -349,6 +355,8 @@ var _sword_color: Color
 var _cue_timer = 0.0  # cue_sync()
 var _cue_color = Color.WHITE
 var _hands: Array = []  # [ColorRect, ColorRect]
+var _sword_tip: Polygon2D  # the blade's point (see SWORD_POINT)
+var _crossguard: ColorRect
 var _was_on_floor = false
 var _air_time = 0.0  # seconds since leaving the ground
 var _fast_falling = false
@@ -423,6 +431,7 @@ func _ready():
 	body.pivot_offset = body.size / 2  # stretch around the center
 	_setup_gather_label()
 	_setup_drink_bar()
+	_setup_sword()
 	_setup_hands()
 	_relay_arrow = ColorRect.new()
 	_relay_arrow.size = Vector2(38, 5)
@@ -2084,6 +2093,7 @@ func _update_visuals():
 		sword.color = _sword_color.lerp(Color.WHITE, _windup_progress())  # heating up: the cue to parry
 	else:
 		sword.color = _sword_color
+	_sword_tip.color = sword.color
 	if dash_slashing:
 		_trail_timer -= get_physics_process_delta_time()
 		if _trail_timer <= 0.0:
@@ -2214,6 +2224,32 @@ func _setup_drink_bar():
 	add_child(_drink_orb)
 
 
+# The blade a little broader, with a point at its end and a crossguard just past the hands (see
+# SWORD_WIDTH). Both are the sword pivot's, so they swing and stretch with the blade.
+func _setup_sword():
+	var middle = sword.position.y + sword.size.y / 2.0
+	var length = sword.size.x
+	sword.size = Vector2(length - SWORD_POINT, SWORD_WIDTH)
+	sword.position.y = middle - SWORD_WIDTH / 2.0
+	var end = sword.position.x + sword.size.x
+	_sword_tip = Polygon2D.new()
+	_sword_tip.polygon = PackedVector2Array([Vector2(end, middle - SWORD_WIDTH / 2.0),
+		Vector2(end + SWORD_POINT, middle), Vector2(end, middle + SWORD_WIDTH / 2.0)])
+	sword_pivot.add_child(_sword_tip)
+	_crossguard = ColorRect.new()
+	_crossguard.size = CROSSGUARD_SIZE
+	_crossguard.position = Vector2(sword.position.x + length * CROSSGUARD_AT, middle) - CROSSGUARD_SIZE / 2.0
+	_crossguard.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sword_pivot.add_child(_crossguard)
+
+
+# A point on the blade, from where it starts at the hilt (0) to its point (1), in global
+# coordinates (the sync wave runs along it).
+func blade_point(along: float) -> Vector2:
+	var length = sword.size.x + SWORD_POINT
+	return sword_pivot.to_global(Vector2(sword.position.x + length * along, sword.position.y + sword.size.y / 2.0))
+
+
 func _setup_hands():
 	for i in 2:
 		var hand = ColorRect.new()
@@ -2237,6 +2273,7 @@ func _update_hands():
 		hand.global_position = grip - hand.size / 2
 		hand.rotation = sword_pivot.rotation
 		hand.color = body.color.darkened(HAND_DARKEN)
+	_crossguard.color = body.color.darkened(HAND_DARKEN)
 
 
 func _setup_gather_label():

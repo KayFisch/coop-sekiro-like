@@ -44,6 +44,7 @@ const ENTRIES = [
 	{"key": "bifrons_stand_in", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, runner", "default": "off", "options": ["off", "left", "right"]},
 	{"key": "bifrons_face", "label": "Bifrons: players always face him (dash goes where you hold)", "default": true},
 	{"key": "bifrons_rules", "label": "Bifrons: rules: sync is life + posture, no potions (sync), or health + old sync (hp); from R", "default": "sync", "options": ["sync", "hp"]},
+	{"key": "swings_hold_posture", "label": "Sync rules: your own swings hold your posture regen back too (his attacks never do)", "default": true},
 	{"key": "mirror_view", "label": "Bifrons: mirrored screen (P1 light above the floor, P2 its shadow below)", "default": false},
 	{"key": "runner_patterns", "label": "Runner: Bifrons's patterns only, or mixed with shards and blocks", "default": "mixed", "options": ["mixed", "bifrons"]},
 	{"key": "runner_relay", "label": "Runner: a parried orb goes on to the partner as a shard to hit", "default": true},

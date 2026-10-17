@@ -55,7 +55,10 @@ PLAYERS (two, identical shape, different color)
   square), two small square hands (8 px).
 - Today P1 blue #4080FF, sword #9ECCFF; P2 orange #FF8C26, sword #FFCC8C. As light and shadow:
   P1 white #EBE6D9, sword #B8B3A8; P2 black #121217, sword #4D4D57.
-- Sword: 76 px long, 6 px thick: almost twice the body height.
+- Sword: 76 px long, 8 px thick: almost twice the body height. A crossguard (4x16 px, the hands'
+  darker body color) just past the hands, a third of the way up; the last 7 px taper to a point.
+- The sync energy (a parry's, passed to the partner): hot pink #FF59CC with a white-hot core
+  and a dark rim, so it reads on the dark half and the pale one.
 - Sword poses (angle of the blade; 0 = level forward, negative = up):
   rest: diagonal up-forward (-40 deg)
   block: diagonal down in front of the chest (+32 deg)
