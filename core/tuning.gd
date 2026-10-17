@@ -5,7 +5,8 @@ extends Node
 ## Tuning.value("hit_sync_loss"), each time it needs the number, so a change counts at once.
 ##
 ## It holds the sync rules (core/sync_rules.gd, Bifrons with Moves "bifrons_rules" on "sync")
-## and the beat-runner's numbers (levels/runner/), each on a page of its own. Gains and losses are in points of a meter; how many points a meter holds is tunable
+## and the beat-runner's and the beat-ring's numbers (levels/runner/, levels/ring/), each on a
+## page of its own. Gains and losses are in points of a meter; how many points a meter holds is tunable
 ## too ("METERS"), and the thresholds of chaos and sync mode are shares of it.
 
 const SAVE_PATH = "user://tuning.cfg"
@@ -20,7 +21,8 @@ const LIST_TOP = 34.0  # below the title
 
 # Each number: key, what the panel calls it, default, step, and its range. A "header" row only
 # groups the ones below it; "column": 1 starts the panel's second column. "page": the panel
-# shows the numbers of the level it's opened in: "runner" in the beat-runner, else "sync".
+# shows the numbers of the level it's opened in: "runner" in the beat-runner, "ring" in the
+# beat-ring, else "sync".
 const ENTRIES = [
 	{"header": "PLAYERS, HIT BY HIM"},
 	{"key": "hit_sync_loss", "label": "hit, unblocked: sync lost (a heavy strike: twice)", "default": 6.0, "step": 1.0, "min": 0.0, "max": 1000.0},
@@ -83,6 +85,29 @@ const ENTRIES = [
 	{"header": "RUNNER: BETWEEN PATTERNS (MIXED)", "page": "runner", "column": 1},
 	{"key": "runner_extra_chance", "label": "chance of a shard or a block", "default": 0.4, "step": 0.05, "min": 0.0, "max": 1.0, "page": "runner"},
 	{"key": "runner_block_share", "label": "of those, a block", "default": 0.3, "step": 0.05, "min": 0.0, "max": 1.0, "page": "runner"},
+	{"header": "RING: TEMPO AND WHAT COMES", "page": "ring"},
+	{"key": "ring_beat", "label": "seconds per beat", "default": 0.6, "step": 0.05, "min": 0.2, "max": 2.0, "page": "ring"},
+	{"key": "ring_lane_gap", "label": "beats at least between two things for one player", "default": 2.0, "step": 1.0, "min": 1.0, "max": 8.0, "page": "ring"},
+	{"key": "ring_density", "label": "chance a thing comes for a free player on a beat", "default": 0.7, "step": 0.05, "min": 0.0, "max": 1.0, "page": "ring"},
+	{"key": "ring_shard_share", "label": "of those, a shard to hit (else an orb to parry)", "default": 0.4, "step": 0.05, "min": 0.0, "max": 1.0, "page": "ring"},
+	{"key": "ring_pair_chance", "label": "chance of a green pair instead, when both are free", "default": 0.1, "step": 0.05, "min": 0.0, "max": 1.0, "page": "ring"},
+	{"key": "ring_bar_chance", "label": "chance of a bar on a beat", "default": 0.08, "step": 0.02, "min": 0.0, "max": 1.0, "page": "ring"},
+	{"header": "RING: SIZES AND SPEEDS", "page": "ring"},
+	{"key": "ring_radius", "label": "the circle's radius (px)", "default": 140.0, "step": 10.0, "min": 40.0, "max": 400.0, "page": "ring"},
+	{"key": "ring_orb_speed", "label": "an orb or a shard (px/s)", "default": 380.0, "step": 20.0, "min": 100.0, "max": 2000.0, "page": "ring"},
+	{"key": "ring_bar_speed", "label": "a bar (px/s)", "default": 420.0, "step": 20.0, "min": 100.0, "max": 2000.0, "page": "ring"},
+	{"key": "ring_perfect", "label": "perfect: this close to its beat (s, either side)", "default": 0.07, "step": 0.01, "min": 0.01, "max": 0.5, "page": "ring"},
+	{"key": "ring_good", "label": "good: this close (s)", "default": 0.16, "step": 0.01, "min": 0.01, "max": 1.0, "page": "ring"},
+	{"header": "RING: THE METER (OF 100)", "page": "ring", "column": 1},
+	{"key": "ring_start", "label": "at the start", "default": 50.0, "step": 5.0, "min": 5.0, "max": 100.0, "page": "ring"},
+	{"key": "ring_perfect_gain", "label": "perfect: gained", "default": 4.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
+	{"key": "ring_good_gain", "label": "good: gained", "default": 2.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
+	{"key": "ring_ok_gain", "label": "taken anywhere else: gained", "default": 1.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
+	{"key": "ring_pass_gain", "label": "caught by the partner after it went through: gained", "default": 5.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
+	{"key": "ring_pair_gain", "label": "both of a pair parried: gained on top", "default": 6.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
+	{"key": "ring_hit_loss", "label": "hit by an orb, a shard or a bar: lost", "default": 10.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
+	{"key": "ring_block_loss", "label": "an orb blocked, not parried: lost", "default": 4.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
+	{"key": "ring_lost_loss", "label": "one nobody took: lost", "default": 3.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
 ]
 
 var panel_open = false
@@ -135,7 +160,11 @@ func _numbers() -> Array:
 # The page for the level the panel is opened in.
 func _page() -> String:
 	var scene = get_tree().current_scene
-	return "runner" if scene and scene.scene_file_path.contains("/runner/") else "sync"
+	var path = scene.scene_file_path if scene else ""
+	for page in ["runner", "ring"]:
+		if path.contains("/%s/" % page):
+			return page
+	return "sync"
 
 
 func _page_entries() -> Array:
@@ -237,7 +266,7 @@ func _panel_label(at: Vector2) -> Label:
 
 
 func _refresh():
-	_title.text = "TUNING: %s   (↑/↓ pick · ←/→ change, Shift: x10 · F2 close)   a changed number shows its default" 		% ("BEAT-RUNNER" if _page() == "runner" else "SYNC RULES")
+	_title.text = "TUNING: %s   (↑/↓ pick · ←/→ change, Shift: x10 · F2 close)   a changed number shows its default" 		% {"runner": "BEAT-RUNNER", "ring": "BEAT-RING"}.get(_page(), "SYNC RULES")
 	var lines = [[[], []], [[], []]]  # per column: names, values
 	var column = 0
 	var selected = _rows()[_selected]

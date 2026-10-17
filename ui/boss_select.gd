@@ -9,6 +9,7 @@ const FIGHTS = [
 	{"name": "Duo Gym", "arena": "2 players", "scene": "res://levels/gym/coop_gym.tscn"},
 	{"name": "Columna Bifrons", "arena": "The Threshold (test)", "scene": "res://levels/threshold/threshold.tscn"},
 	{"name": "Beat-Runner", "arena": "between the bosses (prototype)", "scene": "res://levels/runner/runner.tscn"},
+	{"name": "Beat-Ring", "arena": "between the bosses (prototype 2)", "scene": "res://levels/ring/ring.tscn"},
 ]
 
 var _buttons: Array = []

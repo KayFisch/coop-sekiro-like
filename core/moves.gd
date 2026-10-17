@@ -51,6 +51,10 @@ const ENTRIES = [
 	{"key": "runner_speedup", "label": "Runner: the tempo rises as the run goes on", "default": false},
 	{"key": "runner_metronome", "label": "Runner: a tick on every beat", "default": false},
 	{"key": "runner_endless", "label": "Runner: endless (an empty meter doesn't end the run)", "default": false},
+	{"key": "ring_pass_through", "label": "Ring: one nobody took goes through to the partner (perfect only)", "default": true},
+	{"key": "ring_pairs", "label": "Ring: green pairs, one each, to parry together", "default": true},
+	{"key": "ring_bars", "label": "Ring: now and then a bar from a side (low: jump, high: stay down)", "default": true},
+	{"key": "ring_endless", "label": "Ring: endless (an empty meter doesn't end the run)", "default": false},
 	{"key": "call", "label": "Call countdown (P1 Enter, P2 LB)", "default": true},
 	{"key": "swap_controls", "label": "Swap P1 / P2 controls (P1 on the pad)", "default": false},
 ]
