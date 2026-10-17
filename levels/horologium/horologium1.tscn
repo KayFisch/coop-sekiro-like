@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://typbylb7mqw"]
 
 [ext_resource type="Script" uid="uid://c7rop6fvluq2p" path="res://levels/kit/elevator.gd" id="5_iorjr"]
+[ext_resource type="Script" uid="uid://b0v0acmbw3tiw" path="res://levels/kit/shaft.gd" id="6_1ebrp"]
 [ext_resource type="Script" uid="uid://lgdr71jny4cx" path="res://levels/kit/block.gd" id="block"]
 [ext_resource type="Script" uid="uid://5k64k6iiptrm" path="res://levels/kit/goal.gd" id="goal"]
 [ext_resource type="Script" uid="uid://by6nijnhus1ns" path="res://levels/kit/room.gd" id="room"]
@@ -10,6 +11,8 @@
 script = ExtResource("room")
 title = "HOROLOGIUM 1"
 size = Vector2(1152, 3072)
+next_room = "uid://c4a6os4pm2b51"
+music = "arcade_psytrance"
 
 [node name="Floor" type="Node2D" parent="." unique_id=1205480639]
 position = Vector2(0, 3008)
@@ -25,34 +28,33 @@ size = Vector2(440, 64)
 position = Vector2(640, 2216)
 script = ExtResource("block")
 size = Vector2(488, 24)
-look = 2
 
 [node name="Floor4" type="Node2D" parent="." unique_id=812985551]
 position = Vector2(672, 2240)
 script = ExtResource("block")
 size = Vector2(416, 24)
-look = 2
+look = 1
 edges = 0
 
 [node name="Floor5" type="Node2D" parent="." unique_id=417650510]
 position = Vector2(752, 2264)
 script = ExtResource("block")
 size = Vector2(64, 16)
-look = 2
+look = 1
 edges = 0
 
 [node name="Floor7" type="Node2D" parent="." unique_id=1742699175]
 position = Vector2(776, 2280)
 script = ExtResource("block")
 size = Vector2(16, 632)
-look = 2
+look = 1
 edges = 0
 
 [node name="Floor8" type="Node2D" parent="." unique_id=373960207]
 position = Vector2(968, 2280)
 script = ExtResource("block")
 size = Vector2(16, 632)
-look = 2
+look = 1
 edges = 0
 
 [node name="Floor9" type="Node2D" parent="." unique_id=835903715]
@@ -65,21 +67,21 @@ edges = 0
 position = Vector2(752, 2880)
 script = ExtResource("block")
 size = Vector2(64, 16)
-look = 2
+look = 1
 edges = 0
 
 [node name="Floor11" type="Node2D" parent="." unique_id=8157809]
 position = Vector2(944, 2880)
 script = ExtResource("block")
 size = Vector2(64, 16)
-look = 2
+look = 1
 edges = 0
 
 [node name="Floor6" type="Node2D" parent="." unique_id=1510742218]
 position = Vector2(944, 2264)
 script = ExtResource("block")
 size = Vector2(64, 16)
-look = 2
+look = 1
 edges = 0
 
 [node name="WallLeft" type="Node2D" parent="." unique_id=709225148]
@@ -94,20 +96,26 @@ size = Vector2(32, 4000)
 [node name="Ceiling" type="Node2D" parent="." unique_id=1496543414]
 position = Vector2(32, 0)
 script = ExtResource("block")
-size = Vector2(1088, 32)
+size = Vector2(992, 64)
+
+[node name="Ceiling2" type="Node2D" parent="." unique_id=218812061]
+position = Vector2(992, -8)
+script = ExtResource("block")
+size = Vector2(160, 8)
 
 [node name="SpawnP1" type="Node2D" parent="." unique_id=1418149349]
-position = Vector2(16, 2992)
+position = Vector2(856, 984)
 script = ExtResource("spawn")
 
 [node name="SpawnP2" type="Node2D" parent="." unique_id=53802309]
-position = Vector2(16, 2928)
+position = Vector2(888, 984)
 script = ExtResource("spawn")
 player = 1
 
 [node name="Goal" type="Node2D" parent="." unique_id=1295620838]
-position = Vector2(1024, 32)
+position = Vector2(1024, 0)
 script = ExtResource("goal")
+size = Vector2(96, 56)
 
 [node name="KitBlock" type="Node2D" parent="." unique_id=229781723]
 position = Vector2(0, 2800)
@@ -145,15 +153,156 @@ edges = 0
 metadata/_custom_type_script = "uid://lgdr71jny4cx"
 
 [node name="KitBlock2" type="Node2D" parent="." unique_id=41764147]
-position = Vector2(-8, 2864)
+position = Vector2(-8, 2872)
 script = ExtResource("block")
-size = Vector2(8, 152)
+size = Vector2(8, 144)
 edges = 0
 metadata/_custom_type_script = "uid://lgdr71jny4cx"
 
 [node name="KitElevator" type="Node2D" parent="." unique_id=1237087984]
-position = Vector2(464, 3008)
+position = Vector2(456, 3008)
 script = ExtResource("5_iorjr")
-sequence = "1-2-1-1-2-2-1-2-3"
-stage_height = 88
+sequence = "t.1-t.2-t.1-t.2-t.3-t.1-t.2-t.3."
+width = 176.0
+stage_height = 80
 metadata/_custom_type_script = "uid://c7rop6fvluq2p"
+
+[node name="KitShaft" type="Node2D" parent="." unique_id=27822167]
+position = Vector2(776, 1024)
+script = ExtResource("6_1ebrp")
+kind = 2
+height = 1088
+wall_thickness = 16
+metadata/_custom_type_script = "uid://b0v0acmbw3tiw"
+
+[node name="KitBlock7" type="Node2D" parent="." unique_id=1742366868]
+position = Vector2(792, 1024)
+script = ExtResource("block")
+size = Vector2(344, 8)
+one_way = true
+look = 3
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock11" type="Node2D" parent="." unique_id=1822553469]
+position = Vector2(960, 128)
+script = ExtResource("block")
+size = Vector2(160, 8)
+one_way = true
+look = 3
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock12" type="Node2D" parent="." unique_id=1358193118]
+position = Vector2(704, 128)
+script = ExtResource("block")
+size = Vector2(248, 8)
+one_way = true
+look = 3
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock13" type="Node2D" parent="." unique_id=1172950823]
+position = Vector2(1024, 56)
+script = ExtResource("block")
+size = Vector2(96, 8)
+one_way = true
+look = 3
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock20" type="Node2D" parent="." unique_id=935581287]
+position = Vector2(1024, 0)
+script = ExtResource("block")
+size = Vector2(96, 8)
+one_way = true
+look = 3
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock8" type="Node2D" parent="." unique_id=1992366608]
+position = Vector2(640, 1024)
+script = ExtResource("block")
+size = Vector2(136, 8)
+one_way = true
+look = 3
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock9" type="Node2D" parent="." unique_id=364926780]
+position = Vector2(320, 2216)
+script = ExtResource("block")
+size = Vector2(128, 8)
+one_way = true
+look = 3
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock10" type="Node2D" parent="." unique_id=921408071]
+position = Vector2(464, 2216)
+script = ExtResource("block")
+size = Vector2(160, 8)
+one_way = true
+look = 3
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitShaft2" type="Node2D" parent="." unique_id=1157012179]
+position = Vector2(944, 128)
+script = ExtResource("6_1ebrp")
+height = 832
+wall_thickness = 16
+metadata/_custom_type_script = "uid://b0v0acmbw3tiw"
+
+[node name="KitShaft3" type="Node2D" parent="." unique_id=473617492]
+position = Vector2(760, 128)
+script = ExtResource("6_1ebrp")
+height = 832
+wall_thickness = 16
+metadata/_custom_type_script = "uid://b0v0acmbw3tiw"
+
+[node name="KitBlock14" type="Node2D" parent="." unique_id=803315270]
+z_index = -1
+position = Vector2(944, 960)
+script = ExtResource("block")
+size = Vector2(16, 64)
+look = 2
+background = true
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock17" type="Node2D" parent="." unique_id=1632984215]
+z_index = -1
+position = Vector2(776, 2112)
+script = ExtResource("block")
+size = Vector2(16, 104)
+look = 2
+background = true
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock19" type="Node2D" parent="." unique_id=1300458449]
+z_index = -1
+position = Vector2(624, 2912)
+script = ExtResource("block")
+size = Vector2(496, 96)
+look = 2
+background = true
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock18" type="Node2D" parent="." unique_id=1522488764]
+z_index = -1
+position = Vector2(464, 2232)
+script = ExtResource("block")
+size = Vector2(160, 776)
+look = 2
+background = true
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock16" type="Node2D" parent="." unique_id=1341433034]
+z_index = -1
+position = Vector2(792, 1032)
+script = ExtResource("block")
+size = Vector2(328, 1184)
+look = 2
+background = true
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock15" type="Node2D" parent="." unique_id=1248172476]
+z_index = -1
+position = Vector2(760, 136)
+script = ExtResource("block")
+size = Vector2(360, 888)
+look = 2
+background = true
+metadata/_custom_type_script = "uid://lgdr71jny4cx"

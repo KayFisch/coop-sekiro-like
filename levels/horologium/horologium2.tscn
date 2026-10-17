@@ -7,17 +7,28 @@
 [ext_resource type="Script" uid="uid://dvbwd8xl60vxo" path="res://levels/kit/spikes.gd" id="5_tic34"]
 [ext_resource type="Script" uid="uid://ckvdfhkffdnk" path="res://levels/kit/door.gd" id="6_yhj5c"]
 [ext_resource type="Script" uid="uid://wl8345mfe2ny" path="res://levels/kit/switch.gd" id="7_qwdt1"]
-[ext_resource type="Script" uid="uid://bxf8rg7fj0rdn" path="res://levels/kit/beat_step.gd" id="8_qwdt1"]
 
 [node name="Room" type="Node2D" unique_id=1579540189]
 script = ExtResource("1_xe7g6")
 title = "NEW ROOM"
 size = Vector2(544, 648)
+next_room = "res://levels/horologium/horologium3.tscn"
+music = "arcade_psytrance"
 
 [node name="Floor" type="Node2D" parent="." unique_id=1887441776]
+position = Vector2(128, 600)
+script = ExtResource("2_b4pyg")
+size = Vector2(416, 48)
+
+[node name="Floor2" type="Node2D" parent="." unique_id=929027358]
 position = Vector2(0, 600)
 script = ExtResource("2_b4pyg")
-size = Vector2(512, 48)
+size = Vector2(32, 48)
+
+[node name="Floor3" type="Node2D" parent="." unique_id=1795282297]
+position = Vector2(24, 648)
+script = ExtResource("2_b4pyg")
+size = Vector2(112, 8)
 
 [node name="WallLeft" type="Node2D" parent="." unique_id=342333394]
 script = ExtResource("2_b4pyg")
@@ -26,36 +37,38 @@ size = Vector2(32, 600)
 [node name="WallRight" type="Node2D" parent="." unique_id=1047487139]
 position = Vector2(512, 0)
 script = ExtResource("2_b4pyg")
-size = Vector2(32, 648)
+size = Vector2(32, 512)
 
 [node name="Ceiling" type="Node2D" parent="." unique_id=692135062]
 script = ExtResource("2_b4pyg")
 size = Vector2(512, 32)
 
 [node name="SpawnP1" type="Node2D" parent="." unique_id=1757394027]
-position = Vector2(96, 600)
+position = Vector2(56, 592)
 script = ExtResource("3_yhj5c")
 
 [node name="SpawnP2" type="Node2D" parent="." unique_id=1666884223]
-position = Vector2(160, 600)
+position = Vector2(96, 592)
 script = ExtResource("3_yhj5c")
 player = 1
 
 [node name="Goal" type="Node2D" parent="." unique_id=205975358]
-position = Vector2(448, 512)
+position = Vector2(512, 512)
 script = ExtResource("4_qwdt1")
-size = Vector2(64, 87)
+size = Vector2(32, 87)
 
 [node name="KitBlock" type="Node2D" parent="." unique_id=1245524043]
 position = Vector2(256, 32)
 script = ExtResource("2_b4pyg")
-size = Vector2(32, 482)
+size = Vector2(32, 480)
+edges = 0
 metadata/_custom_type_script = "uid://lgdr71jny4cx"
 
 [node name="KitBlock2" type="Node2D" parent="." unique_id=846619252]
 position = Vector2(416, 32)
 script = ExtResource("2_b4pyg")
-size = Vector2(104, 482)
+size = Vector2(104, 480)
+edges = 0
 metadata/_custom_type_script = "uid://lgdr71jny4cx"
 
 [node name="KitSpikes" type="Node2D" parent="." unique_id=1261332843]
@@ -75,15 +88,41 @@ metadata/_custom_type_script = "uid://dvbwd8xl60vxo"
 [node name="KitDoor" type="Node2D" parent="." unique_id=84695884]
 position = Vector2(416, 512)
 script = ExtResource("6_yhj5c")
-size = Vector2(32, 88)
+size = Vector2(16, 88)
+needs = 1
 metadata/_custom_type_script = "uid://ckvdfhkffdnk"
 
 [node name="KitSwitch" type="Node2D" parent="." unique_id=209634785]
-position = Vector2(352, 256)
+position = Vector2(160, 568)
 script = ExtResource("7_qwdt1")
+mode = 1
 metadata/_custom_type_script = "uid://wl8345mfe2ny"
 
-[node name="KitBeatStep" type="Node2D" parent="." unique_id=138119226]
-position = Vector2(312, 376)
-script = ExtResource("8_qwdt1")
-metadata/_custom_type_script = "uid://bxf8rg7fj0rdn"
+[node name="KitBlock3" type="Node2D" parent="." unique_id=194883745]
+position = Vector2(32, 640)
+script = ExtResource("2_b4pyg")
+size = Vector2(96, 8)
+look = 3
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock5" type="Node2D" parent="." unique_id=1595444024]
+position = Vector2(32, 600)
+script = ExtResource("2_b4pyg")
+size = Vector2(96, 8)
+one_way = true
+look = 3
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock4" type="Node2D" parent="." unique_id=1611157907]
+position = Vector2(544, 504)
+script = ExtResource("2_b4pyg")
+size = Vector2(8, 104)
+edges = 0
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
+
+[node name="KitBlock6" type="Node2D" parent="." unique_id=683802515]
+position = Vector2(320, 384)
+script = ExtResource("2_b4pyg")
+size = Vector2(64, 8)
+one_way = true
+metadata/_custom_type_script = "uid://lgdr71jny4cx"
