@@ -3,28 +3,30 @@ extends Node2D
 ## The beat-ring, a second prototype for between the bosses (docs/beat_ring.md). The players
 ## stand in a room like his, split as in the mirrored boss fight (P1 above, P2 in the reflection
 ## below), and move freely. Around the middle of the floor line lies a circle, only to look at:
-## where a thing meets it is where, and when, it's best answered (its beat). Things come from
-## anywhere above the floor at that middle, each for one player and seen only in their half:
-## - a yellow orb: parry it (it has to reach you); a violet shard: hit it with the sword;
-## - green orbs, one each at once: parry together.
-## Answered right on the circle (its beat) is "perfect", near it "good", anywhere else it still
-## counts a little. One nobody answers flies through the middle into the partner's half (Moves
-## "ring_pass_through") and meets the circle there once more, on its way out: the partner can
-## still take it, but only perfectly on that beat.
-## Now and then a bar slides in along the floor from a side: a low one to jump, a high one not
-## to jump into. A sync meter is the run's life. Every number is on F2 (the ring's page).
+## where a thing meets it is where, and when, it's best answered (its beat).
+## Things come level from the left and the right, at chest height, each for one player and seen
+## only in their half:
+## - a yellow arrowhead: parry it (when it's at your guard);
+## - a violet shard: hit it with the sword (along its cut);
+## - green arrowheads, one each at once: parry together.
+## Rarely, a green arrow comes slanting down at one of them and sweeps on through the middle into
+## the other's half, where it rises and meets the circle on its other side (as his sweep reaches
+## one player and then the other): each parries it as it reaches them.
+## Answered on the circle (its beat) is "perfect", near it "good", anywhere else it still counts a
+## little. Now and then a bar slides in along the floor from a side: a low one to jump, a high one
+## not to jump into. A sync meter is the run's life. Every number is on F2 (the ring's page).
 
-enum Kind { PARRY, SHARD, PAIR }
-enum Phase { IN, THROUGH }  # coming at the middle in its own half; gone through into the partner's
+enum Kind { PARRY, SHARD, PAIR, SWEEP }
 
 const CENTER = Vector2(576.0, 600.0)  # the middle of the floor line, the circle's center
 const FLOOR_Y = 600.0
-const RADIUS = 12.0  # an orb's
-const TOUCH = 16.0  # an orb this much past its radius from a player's center reaches them
-const PARRY_REACH = 46.0  # an orb this close to a player's center is at their guard: parryable
+const CHEST = 28.0  # above the floor: where things fly, at a standing player's chest
+const SIZE = 12.0  # a thing's
+const TOUCH = 16.0  # a thing this much past its size from a player's center reaches them
+const PARRY_REACH = 46.0  # a thing this close to a player's center is at their guard: parryable
 const SWORD_REACH = 36.0  # px from the middle of a swinging blade at which a shard is hit
-const SPAWN_DISTANCE = 780.0  # from the middle: things start out of sight
-const ANGLES = Vector2(14.0, 166.0)  # degrees above the floor things come from (0: from the right)
+const SPAWN_X = 760.0  # from the middle, out to the side: things start out of sight
+const SWEEP_LENGTH = 46.0  # the green arrow's
 const MARK_TIME = 1.0  # s before its beat a thing marks where it'll meet the circle
 const LEAD_IN = 2.0  # s before the first beat
 const LOOKAHEAD = 3.0  # s planned ahead
@@ -35,18 +37,19 @@ const METER_MAX = 100.0
 # The stand-in: answers this share of what comes at it (as BeatRunner's does).
 const STAND_IN_SKILL = 0.85
 const STAND_IN_PRESS = 0.07  # s before a beat it presses parry or attack
-const STAND_IN_RISE = {Kind.PARRY: 30.0, Kind.PAIR: 30.0, Kind.SHARD: 50.0}  # reach above its center
-const STAND_IN_SWORD = 52.0  # px it stands off a shard's meeting point, facing it
+const STAND_IN_SWORD = 52.0  # px it stands inside a shard's meeting point, facing out at it
+const STAND_IN_GUARD = 20.0  # ...and inside an arrowhead's
 
 const COLOR_PARRY = StrikePattern.COLOR
 const COLOR_SHARD = ColumnaBifrons.COLOR_SYNC_BEAT
-const COLOR_PAIR = StrikePattern.COLOR_TOGETHER
+const COLOR_TOGETHER = StrikePattern.COLOR_TOGETHER  # green: it takes both of you (pairs, sweeps)
 const COLOR_BAR = Color(0.55, 0.55, 0.62)
 const COLOR_CIRCLE = Color(1, 1, 1, 0.22)
 const COLOR_METER = Color(0.9, 0.88, 0.8)
 const COLOR_EMPTY = Color(1.0, 0.2, 0.25)
 const BAR_SIZE = Vector2(360.0, 16.0)
 
+var tally = {}  # what happened, by the text shown: counted for the end of a run
 var _players = []  # P1, P2: lane 0 and lane 1
 var _time = -LEAD_IN
 var _next_beat = 0  # the next beat to plan
@@ -54,13 +57,12 @@ var _lane_free = [0.0, 0.0]  # per lane: the first beat time it may get a thing 
 var _waiting = []  # planned things not out yet: [spawn time, node], sorted
 var _orbs = []
 var _bars = []
-var _pairs = {}  # pair id -> how many of its two orbs were parried
+var _pairs = {}  # pair id -> how many of its two were parried
 var _next_pair = 0
 var _meter = 50.0
 var _combo = 0
 var _best = 0
 var _over = false
-var tally = {}  # what happened, by the text shown: counted for the end of a run
 var _circle: Node2D
 var _bar: ColorRect
 var _combo_label: Label
@@ -106,10 +108,16 @@ func radius() -> float:
 	return Tuning.value("ring_radius")
 
 
+# How far from the middle, sideways, a level thing meets the circle (at chest height).
+func meet_x() -> float:
+	var r = radius()
+	return sqrt(maxf(r * r - CHEST * CHEST, 0.0))
+
+
 # --- What comes when ---
 
-# Every beat: maybe an orb or a shard for a player whose last one is far enough back, maybe a
-# green pair for both; and maybe a bar.
+# Every beat: maybe a sweep through both halves, a green pair, or a thing for each player whose
+# last one is far enough back; and maybe a bar.
 func _plan():
 	while _next_beat * beat_length() < _time + LOOKAHEAD:
 		var beat = _next_beat * beat_length()
@@ -118,17 +126,22 @@ func _plan():
 			continue
 		var gap = Tuning.value("ring_lane_gap") * beat_length()
 		var both_free = _lane_free[0] <= beat and _lane_free[1] <= beat
-		if Moves.on("ring_pairs") and both_free and randf() < Tuning.value("ring_pair_chance"):
-			var angle = randf_range(ANGLES.x, ANGLES.y)
+		var side = -1.0 if randf() < 0.5 else 1.0  # it comes from the left (-1) or the right
+		if Moves.on("ring_sweeps") and both_free and randf() < Tuning.value("ring_sweep_chance"):
+			var first = randi() % 2
+			var sweep = _plan_orb(Kind.SWEEP, first, beat, side)
+			_lane_free[first] = beat + gap
+			_lane_free[1 - first] = sweep.second_beat() + gap
+		elif Moves.on("ring_pairs") and both_free and randf() < Tuning.value("ring_pair_chance"):
 			for lane in 2:
-				_plan_orb(Kind.PAIR, lane, beat, angle, _next_pair)
+				_plan_orb(Kind.PAIR, lane, beat, side, _next_pair)
 				_lane_free[lane] = beat + gap
 			_next_pair += 1
 		else:
 			for lane in 2:
 				if _lane_free[lane] <= beat and randf() < Tuning.value("ring_density"):
 					var kind = Kind.SHARD if randf() < Tuning.value("ring_shard_share") else Kind.PARRY
-					_plan_orb(kind, lane, beat, randf_range(ANGLES.x, ANGLES.y))
+					_plan_orb(kind, lane, beat, -1.0 if randf() < 0.5 else 1.0)
 					_lane_free[lane] = beat + gap
 		if Moves.on("ring_bars") and randf() < Tuning.value("ring_bar_chance"):
 			var lanes = [0, 1] if randf() < 0.3 else [randi() % 2]
@@ -138,17 +151,21 @@ func _plan():
 				_plan_bar(lane, beat, high, from)
 
 
-func _plan_orb(kind: int, lane: int, beat: float, angle: float, pair = -1):
+func _plan_orb(kind: int, lane: int, beat: float, side: float, pair = -1):
 	var orb = Orb.new()
 	orb.ring = self
 	orb.kind = kind
 	orb.lane = lane
-	orb.home = lane
+	orb.first = lane
 	orb.beat = beat
+	orb.side = side
 	orb.pair = pair
-	orb.speed = Tuning.value("ring_orb_speed")
-	orb.dir = Vector2(cos(deg_to_rad(angle)), -sin(deg_to_rad(angle)))
-	_queue(beat - (SPAWN_DISTANCE - radius()) / orb.speed, orb)
+	orb.speed = Tuning.value("ring_sweep_speed" if kind == Kind.SWEEP else "ring_orb_speed")
+	var start = SPAWN_X - meet_x()
+	if kind == Kind.SWEEP:
+		start = SPAWN_X / cos(orb.slope()) - radius()
+	_queue(beat - start / orb.speed, orb)
+	return orb
 
 
 func _plan_bar(lane: int, beat: float, high: bool, from: float):
@@ -176,16 +193,20 @@ func _launch(node):
 		_bars.append(node)
 
 
-# --- Orbs ---
+# --- Things flying ---
 
-# Where it is: coming at the middle, and past it (through the line) going out again, mirrored.
+# Where it is. A level one: on its way across at chest height. The sweep: slanting down at the
+# middle, and past it (through the line, in the other's half) rising out again, mirrored.
 func _place(orb):
-	var to_circle = orb.beat - _time  # s until it meets the circle on its way in
-	var from_middle = radius() + orb.speed * to_circle  # px from the middle, < 0 once past it
-	if from_middle >= 0.0:
-		orb.position = CENTER + orb.dir * from_middle
+	if orb.kind == Kind.SWEEP:
+		var out = Vector2(orb.side * cos(orb.slope()), -sin(orb.slope()))  # from the middle to where it comes from
+		var from_middle = radius() + orb.speed * (orb.beat - _time)
+		if from_middle >= 0.0:
+			orb.position = CENTER + out * from_middle
+		else:
+			orb.position = CENTER + Vector2(-out.x, out.y) * -from_middle
 	else:
-		orb.position = CENTER + Vector2(-orb.dir.x, orb.dir.y) * -from_middle
+		orb.position = Vector2(CENTER.x + orb.side * (meet_x() + orb.speed * (orb.beat - _time)), FLOOR_Y - CHEST)
 	orb.queue_redraw()
 
 
@@ -198,75 +219,68 @@ func _fly(orb):
 			orb.queue_free()
 		return
 	_place(orb)
-	var past = orb.position.distance_to(CENTER) if orb.phase == Phase.THROUGH else -1.0
-	if orb.phase == Phase.IN and orb.beat - _time + radius() / orb.speed <= 0.0:
-		_through(orb)  # it reached the middle unanswered
+	if orb.kind == Kind.SWEEP:
+		_sweep(orb)
 		return
 	var p = _players[orb.lane]
-	if orb.phase == Phase.IN:
-		_meet_in(orb, p)
-	else:
-		_meet_through(orb, p, past)
-
-
-# On its way in: answered anywhere, best on the circle; a body it reaches unanswered is hit.
-func _meet_in(orb, p):
 	var off = absf(_time - orb.beat)
 	if orb.kind == Kind.SHARD:
 		if _struck(orb, p):
 			_answer(orb, off, "HIT")
+			_end(orb, Vector2.ZERO)
 		elif _touches(orb, p):
 			_taken(orb, p)
-		return
-	if _at_guard(orb, p) and p.is_perfect_parry():
+			_end(orb, Vector2.ZERO)
+	elif _at_guard(orb, p) and p.is_perfect_parry():
 		p.on_perfect_parry(orb.kind == Kind.PAIR)
 		_answer(orb, off, "PARRY")
+		_end(orb, Vector2(orb.side * 300.0, -80.0))  # knocked back the way it came
 		if orb.kind == Kind.PAIR:
 			_pairs[orb.pair] = _pairs.get(orb.pair, 0) + 1
 			if _pairs[orb.pair] == 2:
 				_gain("ring_pair_gain", orb, "TOGETHER")
 				Sfx.play("counter_hit", -8.0)
-		return
-	if not _touches(orb, p):
-		return
-	if p.is_blocking():
-		Sfx.play("chip")
-		_lose("ring_block_loss", orb, "BLOCKED")
-		_end(orb, Vector2(0.0, -60.0))
-	else:
-		_taken(orb, p)
-
-
-# Gone through into the partner's half: only a perfect answer on its beat there takes it; it
-# can't hurt anyone any more. Past the circle unanswered: lost.
-func _meet_through(orb, p, past: float):
-	var beat = orb.beat + 2.0 * radius() / orb.speed  # it meets the circle again, going out
-	var on_beat = absf(_time - beat) <= Tuning.value("ring_perfect")
-	if on_beat:
-		var taken = _struck(orb, p) if orb.kind == Kind.SHARD else (_at_guard(orb, p) and p.is_perfect_parry())
-		if taken:
-			if orb.kind != Kind.SHARD:
-				p.on_perfect_parry(false)
-			Sfx.play("on_beat", -4.0)
-			_sparks(orb, Color.WHITE, 16)
-			_gain("ring_pass_gain", orb, "CAUGHT!")
-			_end(orb, Vector2.ZERO)
-			return
-	if _time > beat + Tuning.value("ring_perfect") and past > radius():
-		_lose("ring_lost_loss", orb, "LOST")
-		_end(orb, Vector2(-orb.dir.x, orb.dir.y) * orb.speed)
-
-
-# It reached the middle: through into the partner's half (Moves "ring_pass_through"), or lost.
-func _through(orb):
-	if not Moves.on("ring_pass_through"):
-		_lose("ring_lost_loss", orb, "LOST")
+	elif _touches(orb, p):
+		if p.is_blocking():
+			Sfx.play("chip")
+			_lose("ring_block_loss", orb, "BLOCKED")
+		else:
+			_taken(orb, p)
 		_end(orb, Vector2.ZERO)
-		return
-	orb.phase = Phase.THROUGH
-	orb.lane = 1 - orb.lane
-	orb.visibility_layer = _players[orb.lane].visibility_layer
-	_sparks(orb, Color.WHITE, 6)
+	if not orb.done and (orb.position.x - CENTER.x) * orb.side < -meet_x():
+		_lose("ring_lost_loss", orb, "LOST")  # across the circle and out: nobody took it
+		_end(orb, Vector2(-orb.side * orb.speed, 0.0))
+
+
+# The sweep: it reaches the first player, goes through the middle into the other's half and
+# reaches them. Each parries it as it comes (it flies on either way); one it reaches unparried is
+# hit. Both parried: a bonus.
+func _sweep(orb):
+	var second = orb.beat - _time + radius() / orb.speed <= 0.0  # past the middle
+	if second and orb.lane == orb.first:
+		if not orb.answered.has(orb.first):
+			_lose("ring_lost_loss", orb, "MISSED")
+		orb.lane = 1 - orb.first
+		orb.visibility_layer = _players[orb.lane].visibility_layer
+		_sparks(orb, COLOR_TOGETHER, 6)
+	var p = _players[orb.lane]
+	if not orb.answered.has(orb.lane):
+		var beat = orb.second_beat() if second else orb.beat
+		if _at_guard(orb, p) and p.is_perfect_parry():
+			orb.answered[orb.lane] = true
+			p.on_perfect_parry(true)
+			_answer(orb, absf(_time - beat), "PARRY")
+			if orb.answered.size() == 2:
+				_gain("ring_sweep_gain", orb, "SWEPT TOGETHER")
+				Sfx.play("counter_hit", -8.0)
+		elif _touches(orb, p):
+			orb.answered[orb.lane] = false
+			_taken(orb, p)
+	var gone = second and orb.position.distance_to(CENTER) > radius() + 60.0
+	if gone:
+		if not orb.answered.has(orb.lane):
+			_lose("ring_lost_loss", orb, "MISSED")
+		_end(orb, Vector2(-orb.side * cos(orb.slope()), -sin(orb.slope())) * orb.speed)
 
 
 func _answer(orb, off: float, what: String):
@@ -283,13 +297,11 @@ func _answer(orb, off: float, what: String):
 	if orb.kind == Kind.SHARD:
 		Sfx.play("sync_hit", -4.0)
 		orb.split = true
-	_end(orb, Vector2.ZERO)
 
 
 func _taken(orb, p):
 	p.take_damage(0.0, (p.global_position - orb.position).normalized() * 220.0 + Vector2(0.0, -120.0))
 	_lose("ring_hit_loss", orb, "TAKEN")
-	_end(orb, Vector2.ZERO)
 
 
 func _end(orb, drift: Vector2):
@@ -299,7 +311,7 @@ func _end(orb, drift: Vector2):
 
 
 func _touches(orb, p) -> bool:
-	return orb.position.distance_to(p.global_position) <= RADIUS + TOUCH
+	return orb.position.distance_to(p.global_position) <= SIZE + TOUCH
 
 
 func _at_guard(orb, p) -> bool:
@@ -311,7 +323,7 @@ func _struck(orb, p) -> bool:
 	var point = p.active_sword_point()
 	if point == null or p.swing_serial == orb.serial:
 		return false
-	if point.distance_to(orb.position) > SWORD_REACH + RADIUS:
+	if point.distance_to(orb.position) > SWORD_REACH + SIZE:
 		return false
 	orb.serial = p.swing_serial
 	return true
@@ -341,6 +353,7 @@ func _slide(bar, delta: float):
 # --- The meter ---
 
 func _gain(key: String, orb, text: String):
+	orb.result = text
 	_combo += 1
 	_best = maxi(_best, _combo)
 	_meter = minf(_meter + Tuning.value(key), METER_MAX)
@@ -348,6 +361,7 @@ func _gain(key: String, orb, text: String):
 
 
 func _lose(key: String, orb, text: String):
+	orb.result = text
 	_combo = 0
 	_meter = maxf(_meter - Tuning.value(key), 0.0)
 	_popup(orb.position + Vector2(0.0, -30.0), orb.visibility_layer, text, COLOR_EMPTY)
@@ -359,8 +373,8 @@ func _check_over():
 		_over = true
 		Sfx.play("game_over")
 		var perfect = tally.get("PERFECT PARRY", 0) + tally.get("PERFECT HIT", 0)
-		_over_label.text = "RUN OVER after %.0f s, best combo %d, %d perfect, %d caught through the line\nR to run again · Esc menu" \
-			% [maxf(_time, 0.0), _best, perfect, tally.get("CAUGHT!", 0)]
+		_over_label.text = "RUN OVER after %.0f s, best combo %d, %d perfect, %d swept together\nR to run again · Esc menu" \
+			% [maxf(_time, 0.0), _best, perfect, tally.get("SWEPT TOGETHER", 0)]
 		_over_label.visible = true
 
 
@@ -450,8 +464,8 @@ func _build_ui():
 	hint.offset_top = -30.0
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.modulate = Color(1, 1, 1, 0.6)
-	hint.text = "Yellow: parry · violet: hit · green: parry together · best on the circle · low bar: jump · high bar: stay down" \
-		+ "      F1 · F2 · Esc"
+	hint.text = "Yellow: parry · violet: hit · green: both of you (a pair at once, an arrow one after the other)" \
+		+ " · best on the circle · bars: low jump, high stay down      F1 · F2 · Esc"
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(hint)
 	_over_label = Label.new()
@@ -485,49 +499,82 @@ class Circle extends Node2D:
 		draw_arc(BeatRing.CENTER, ring.radius(), PI, TAU, 64, color, 2.0 + 2.0 * light * light, true)
 
 
-# An orb, a shard or one of a green pair, coming at the middle. Placed by the ring each frame
-# (BeatRing._place()) as a function of the time. Before its beat it marks where it'll meet the
-# circle.
+# Something coming at a player: an arrowhead (parry), a shard (hit), one of a green pair, or the
+# green arrow that sweeps through both halves. Placed by the ring each frame (BeatRing._place())
+# as a function of the time. Before its beat it marks where it'll meet the circle.
 class Orb extends Node2D:
 	var ring
 	var kind = 0
-	var lane = 0  # whose it is now (it changes going through the line)
-	var home = 0  # whose it was first
-	var beat = 0.0  # when it meets the circle on its way in
+	var lane = 0  # whose it is now (the sweep's changes at the middle)
+	var first = 0  # whose it was first
+	var beat = 0.0  # when it meets the circle (the sweep: the first time)
+	var side = 1.0  # the side it comes from: -1 the left, 1 the right
 	var speed = 0.0
-	var dir = Vector2.UP  # from the middle out to where it comes from
 	var pair = -1
-	var phase = 0
+	var answered = {}  # the sweep: lane -> parried (true) or hit (false)
 	var serial = -1  # the swing that last tried it
 	var done = false
 	var split = false
 	var drift = Vector2.ZERO  # done: how it drifts off as it fades
+	var result = ""  # what became of it last (the text shown)
 
 	func color() -> Color:
 		match kind:
 			BeatRing.Kind.SHARD:
 				return BeatRing.COLOR_SHARD
-			BeatRing.Kind.PAIR:
-				return BeatRing.COLOR_PAIR
+			BeatRing.Kind.PAIR, BeatRing.Kind.SWEEP:
+				return BeatRing.COLOR_TOGETHER
 		return BeatRing.COLOR_PARRY
+
+	# The sweep's slant: steep enough to meet the circle at chest height on both sides.
+	func slope() -> float:
+		return asin(clampf(BeatRing.CHEST / ring.radius(), 0.0, 1.0))
+
+	# When the sweep meets the circle the second time, in the other's half.
+	func second_beat() -> float:
+		return beat + 2.0 * ring.radius() / speed
+
+	# The way it flies just now.
+	func heading() -> Vector2:
+		if kind != BeatRing.Kind.SWEEP:
+			return Vector2(-side, 0.0)
+		var down = Vector2(-side * cos(slope()), sin(slope()))
+		return down if lane == first else Vector2(down.x, -down.y)
 
 	func _draw():
 		var c = color()
-		if not done and phase == BeatRing.Phase.IN:
-			var to_go = beat - ring._time
-			if to_go > 0.0 and to_go < BeatRing.MARK_TIME:
-				var meet = BeatRing.CENTER + dir * ring.radius() - position
-				draw_arc(meet, BeatRing.RADIUS + 6.0 + 10.0 * to_go, 0.0, TAU, 24, Color(c, 0.7 * (1.0 - to_go)), 2.0, true)
-		if kind == BeatRing.Kind.SHARD:
-			var r = BeatRing.RADIUS * 1.2
-			if split:
-				draw_colored_polygon(PackedVector2Array([Vector2(-4, -r - 6), Vector2(-r - 4, -6), Vector2(-4, -6)]), c)
-				draw_colored_polygon(PackedVector2Array([Vector2(4, r + 6), Vector2(r + 4, 6), Vector2(4, 6)]), c)
-				return
-			draw_colored_polygon(PackedVector2Array([Vector2(0, -r), Vector2(r, 0), Vector2(0, r), Vector2(-r, 0)]), c)
-			return
-		draw_circle(Vector2.ZERO, BeatRing.RADIUS, c)
-		draw_circle(Vector2.ZERO, BeatRing.RADIUS * 0.45, Color.WHITE)
+		var to_go = (second_beat() if kind == BeatRing.Kind.SWEEP and lane != first else beat) - ring._time
+		if not done and to_go > 0.0 and to_go < BeatRing.MARK_TIME:
+			var meet: Vector2
+			if kind == BeatRing.Kind.SWEEP:
+				var x = BeatRing.CENTER.x + (side if lane == first else -side) * ring.meet_x()
+				meet = Vector2(x, BeatRing.FLOOR_Y - BeatRing.CHEST)
+			else:
+				meet = Vector2(BeatRing.CENTER.x + side * ring.meet_x(), BeatRing.FLOOR_Y - BeatRing.CHEST)
+			draw_arc(meet - position, BeatRing.SIZE + 6.0 + 10.0 * to_go, 0.0, TAU, 24, Color(c, 0.7 * (1.0 - to_go)), 2.0, true)
+		var ahead = heading()
+		var across = Vector2(-ahead.y, ahead.x)
+		var r = BeatRing.SIZE
+		match kind:
+			BeatRing.Kind.SHARD:
+				r *= 1.2
+				# A diamond with its cut across the middle; hit, it falls apart along it.
+				var gap = across * 6.0 if split else Vector2.ZERO
+				var half_a = PackedVector2Array([ahead * r + gap, across * r + gap, -ahead * r + gap])
+				var half_b = PackedVector2Array([ahead * r - gap, -across * r - gap, -ahead * r - gap])
+				draw_colored_polygon(half_a, c)
+				draw_colored_polygon(half_b, c)
+				if not split:
+					draw_line(-ahead * (r + 3.0), ahead * (r + 3.0), Color(1, 1, 1, 0.8), 2.0, true)
+			BeatRing.Kind.SWEEP:
+				var tail = -ahead * BeatRing.SWEEP_LENGTH
+				draw_line(tail, -ahead * r, c, 4.0, true)
+				draw_colored_polygon(PackedVector2Array([ahead * r, -ahead * r + across * r, -ahead * r * 0.5,
+					-ahead * r - across * r]), c)
+			_:
+				# An arrowhead, pointing the way it flies.
+				draw_colored_polygon(PackedVector2Array([ahead * r * 1.2, -ahead * r + across * r, -ahead * r * 0.3,
+					-ahead * r - across * r]), c)
 
 
 # A bar sliding along the floor from one side to the other: low (jump it) or high (stay down).
@@ -546,13 +593,13 @@ class Bar extends Node2D:
 
 
 # Testing alone: plays one of the two (Moves "bifrons_stand_in": "left" is P1, "right" P2) by
-# pressing that player's buttons. It walks to where its next thing meets the circle (beside it,
-# facing it, for a shard), jumps for one that meets it high up, presses parry or attack on the
-# beat, STAND_IN_SKILL of the time; and it jumps low bars and doesn't jump while a high one is
-# near. It runs before the players, so they see a press that same frame.
+# pressing that player's buttons. It walks to where its next thing meets the circle (just past
+# it, the way the thing flies: inside for one coming in, outside for the sweep going out),
+# presses parry or attack on the beat, STAND_IN_SKILL of the time; it jumps low bars and doesn't
+# jump while a high one is near. It runs before the players, so they see a press that same frame.
 class StandIn extends Node:
 	var ring
-	var _pressed = {}  # thing -> true once it has answered (or chosen not to)
+	var _pressed = {}  # [thing, lane] -> true once it has answered (or chosen not to)
 	var _jumped = {}
 	var _held = []
 	var _walking = ""  # the left or right action it holds down, if any
@@ -579,40 +626,39 @@ class StandIn extends Node:
 			if not bar.high and gap > 0.0 and gap < 75.0 and not _jumped.has(bar):
 				_jumped[bar] = true
 				_press(p, "jump")
+		# Its next meeting: [thing, beat, side of the circle, the thing going out from the middle].
 		var next = null
 		for orb in ring._orbs:
-			if orb.lane == lane and not orb.done and orb.phase == BeatRing.Phase.IN \
-					and orb.beat >= ring._time - 0.05 and (next == null or orb.beat < next.beat):
-				next = orb
+			if orb.done:
+				continue
+			var meetings = [[orb.first, orb.beat, orb.side, false]]
+			if orb.kind == BeatRing.Kind.SWEEP:
+				meetings.append([1 - orb.first, orb.second_beat(), -orb.side, true])
+			for m in meetings:
+				if m[0] == lane and m[1] >= ring._time - 0.05 and (next == null or m[1] < next[1]) \
+						and not _pressed.has([orb, lane]):
+					next = [orb, m[1], m[2], m[3]]
 		if next == null:
 			_hold_walk(p, 0.0)
 			return
-		var meet = BeatRing.CENTER + next.dir * ring.radius()
-		var goal = meet.x
-		if next.kind == BeatRing.Kind.SHARD:
-			goal -= signf(meet.x - p.global_position.x) * BeatRing.STAND_IN_SWORD
-		var dx = goal - p.global_position.x
-		var to_go = next.beat - ring._time
-		var toward = signf(meet.x - p.global_position.x)
-		if next.kind == BeatRing.Kind.SHARD and to_go < 0.25 and p.facing != toward and toward != 0.0:
-			_hold_walk(p, toward)  # a step toward it turns the player to face it
+		var orb = next[0]
+		var side = next[2]
+		var meet_x = BeatRing.CENTER.x + side * ring.meet_x()
+		var inside = BeatRing.STAND_IN_SWORD if orb.kind == BeatRing.Kind.SHARD else BeatRing.STAND_IN_GUARD
+		if next[3]:
+			inside = -inside  # it comes from the middle: stand outside, facing in
+		var dx = meet_x - side * inside - p.global_position.x
+		var to_go = next[1] - ring._time
+		if orb.kind == BeatRing.Kind.SHARD and to_go < 0.25 and p.facing != side:
+			_hold_walk(p, side)  # a step out toward it turns the player to face it
 		else:
 			_hold_walk(p, signf(dx) if absf(dx) > 8.0 else 0.0)
-		# High up: it jumps so as to be at that height on the beat.
-		var rise = p.global_position.y - meet.y - BeatRing.STAND_IN_RISE[next.kind]
-		if rise > 0.0 and not _jumped.has(next) and not high_bar_near:
-			var speed = sqrt(2.0 * p.GRAVITY * p.JUMP_HEIGHT)
-			var h = minf(rise, p.JUMP_HEIGHT)
-			var up = (speed - sqrt(maxf(speed * speed - 2.0 * p.GRAVITY * h, 0.0))) / p.GRAVITY
-			if to_go <= up + 0.02:
-				_jumped[next] = true
-				_press(p, "jump")
-		if to_go <= BeatRing.STAND_IN_PRESS and not _pressed.has(next):
-			_pressed[next] = true
+		if to_go <= BeatRing.STAND_IN_PRESS:
+			_pressed[[orb, lane]] = true
 			if randf() < BeatRing.STAND_IN_SKILL:
-				_press(p, "attack" if next.kind == BeatRing.Kind.SHARD else "block")
+				_press(p, "attack" if orb.kind == BeatRing.Kind.SHARD else "block")
 		for key in _pressed.keys():
-			if not is_instance_valid(key):
+			if not is_instance_valid(key[0]):
 				_pressed.erase(key)
 		for key in _jumped.keys():
 			if not is_instance_valid(key):

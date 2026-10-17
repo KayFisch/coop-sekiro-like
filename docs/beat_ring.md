@@ -12,31 +12,48 @@ of its own: `levels/ring/` (`ring.gd`, `ring.tscn`), entry 7 on the select scree
   jump, dash, as in a fight.
 - **A circle around the middle of the floor line**, only to look at (the floor halves it, the
   mirror makes it whole). It lights up on every beat (0.6 s). Where a thing meets it is where,
-  and when, it's best answered: its beat.
-- **Things come from anywhere above the floor at the middle**, each for one player and seen only
-  in their half; a second before its beat each marks where it'll meet the circle:
-  - **a yellow orb: parry it** when it's at your guard (within 46 px of you);
-  - **a violet shard: hit it** with the sword;
-  - **green orbs, one each at once: parry together.**
+  and when, it's best answered: its beat. A second before, each thing marks that spot.
+- **Things come level from the left and the right, at chest height**, each for one player and
+  seen only in their half:
+  - **a yellow arrowhead: parry it** when it's at your guard (within 46 px of you);
+  - **a violet shard: hit it** with the sword; the line across it is where it's cut;
+  - **green arrowheads, one each at once: parry together.**
+- **The sweep, rarely: a green arrow** comes slanting down at one player, goes on through the
+  middle into the other's half and rises to meet the circle on its other side, at chest height
+  again: it reaches one of you and then the other, as Bifrons's sweep does. Each parries it as it
+  reaches them (it flies on either way); both parried is a bonus. It's the only thing that goes
+  through the line; one that comes from the middle is met from outside the circle.
 - **On the circle (its beat, ±0.07 s) is "perfect", near it (±0.16 s) "good"**; taken anywhere
-  else it still counts a little. So the players run to where things will meet the circle, jump
-  for the ones that meet it high up, and can also go out and catch one early.
-- **Through the line** (switch, on): a thing nobody took flies through the middle into the
-  partner's half and meets the circle once more on its way out. The partner can still take it
-  there, but only perfectly on that beat ("CAUGHT!", worth the most). There it can't hurt anyone.
-- **Bars from the sides**, now and then, along the floor: a low one to jump, a high one (60 px up)
-  not to jump into.
+  else it still counts a little. A level thing nobody takes flies across the circle and out:
+  lost. One that reaches you unanswered hits you, wherever you stand on its way.
+- **Bars from the sides**, rarely (3 % a beat) and slowly (300 px/s), along the floor: a low one
+  to jump, a high one (60 px up) not to jump into.
 - **The sync meter is the run's life** (of 100, from 50). Empty: the run is over (R runs again);
-  the end shows the best combo, the perfect answers and the catches through the line.
+  the end shows the best combo, the perfect answers and the sweeps parried by both.
 - **Testing alone:** the stand-in switch (F1, as in the other levels: "left" plays P1, "right"
-  P2) walks to where its next thing meets the circle, jumps to be at that height on its beat,
-  parries or hits it, 85 % of the time; jumps low bars and stays down under high ones.
+  P2) walks to just past where its next thing meets the circle, the way the thing flies, and
+  parries or hits it on the beat, 85 % of the time; jumps low bars and stays down under high
+  ones.
 
-Switches (F1, "Ring: ..."): through the line, green pairs, bars, endless. Numbers (F2, the ring's
-page): the beat, how often things come and which, the circle's radius, speeds, the perfect and
-good windows, and the meter.
+Switches (F1, "Ring: ..."): sweeps, green pairs, bars, endless. Numbers (F2, the ring's page):
+the beat, how often things come and which, the circle's radius, speeds (arrowheads and shards
+380 px/s, the sweep 520, bars 300), the perfect and good windows, and the meter.
 
-## Assessment (Claude, 2026-10-17)
+## Colors
+
+Green is "it takes both of you": a pair at once, or the sweep one after the other (Bifrons's
+sweep itself had no color of its own: it came yellow, like any single strike). The shapes tell
+the two apart: arrowheads for the pair, a long arrow for the sweep.
+
+## Round 2 (Nicho, 2026-10-17, after trying round 1)
+
+Round 1 was "far too chaotic": things came from any angle, and any one nobody took went through
+the line to the partner, catchable only perfectly. Now: level from the sides by default; from
+another angle only as something special that needs more reaction (for now just the sweep); going
+through the line only for the sweep, with the normal windows; bars rarer and slower; parry orbs
+are arrowheads, shards show their cut.
+
+## Assessment (Claude, round 1)
 
 What speaks for it:
 - **Movement is back.** In the runner the players only pressed buttons on the spot; here they
@@ -44,17 +61,11 @@ What speaks for it:
   when, like Beat Saber.
 - **It's closer to the boss fight**: the same answers (parry, hit, parry together), the same
   moving body, and a reason to jump and to stay down.
-- **"Through the line" is real co-op**: your miss becomes your partner's harder chance. It can
-  be used on purpose ("leave it, I'll take it"), and it makes the mirror line mean something.
+- **The mirror line means something** when a thing goes through it (now the sweep).
 
 What to watch:
-- **Reading**: things from 180 degrees plus your own movement is a lot. The marks on the circle
-  help; if it's still too much, narrow the angles (`ANGLES`) or lower the density.
-- **High meeting points** need a jump timed to the beat: demanding. Shards can be hit with an
-  upslash from below; orbs need you up there.
-- **Camping**: the circle could make players stand at its foot and wait. Things from high up
-  and the bars work against that.
-- **"Perfect only" through the line** is strict (±0.07 s). That's the point, but tune it
-  (`ring_perfect`) if catches never happen.
+- **Reading**: still two directions and your own movement; the marks on the circle help.
+- **Camping**: with things only from the sides, players may stand at the circle's foot and wait.
+  The specials (the sweep, more to come) and the bars are what work against that.
 - **It may stand next to the boss fight rather than lead into it**: a rhythm arena of its own.
   Whether that's good is the question for the playtest.
