@@ -25,9 +25,10 @@ his tempo, his sides, his partner's hit.
   arrowhead, it comes up where your parry was and runs along the circle: over your half, through
   the line, and on along your partner's half, until it's hit or reaches the line again. It meets
   your partner's side of the circle **as long after your parry as a sync hit on the beat comes in
-  the boss fight**: with Bifrons on "after" (`bifrons_window`), 0.24 s (his guard opens 0.18 s
-  after the parry, and "on the beat" is the 0.12 s after that, `sync_beat_time`); it can be hit
-  until his guard would close again (0.48 s). On "beat" it's 0.06 s: you hit with the parry.
+  the boss fight** (F2 on Bifrons's page, tab "sync hit"): 0.24 s by default (his guard opens 0.18
+  s after the parry, `sync_window_delay`, and "on the beat" is the 0.12 s after that,
+  `sync_beat_time`): the middle of the beat; it can be hit until his guard would close again
+  (0.48 s, with `sync_window_late`). With a delay of 0 it's 0.06 s: you hit with the parry.
   **Its pace: very fast over your half, then slowing down smoothly from the line on**, to come
   slowly where your partner is to hit it (600 px/s). It slows down over at least the last 140 px
   before that spot. With the two on two sides that's half the circle: about 2160 px/s, slowing
@@ -64,8 +65,8 @@ leap), his both-sword strikes as green pairs, bars, endless. Numbers (F2, the ri
 tempo and the gap between patterns, how often a grey shard or a bar comes between them, the
 circle's radius, speeds (the violet shard's: where it's to be hit, and over how much of the
 circle at least it slows down to that), the perfect and good windows, the meter. The violet
-shard's timing comes from Bifrons's own switches and numbers (`bifrons_window`, F2
-`sync_beat_time`), so the two fights keep the same rhythm. Bifrons's weights decide how often the crossing and the leap come
+shard's timing comes from Bifrons's own numbers (F2 tab "sync hit": `sync_window_delay`,
+`sync_beat_time`, `sync_window_late`), so the two fights keep the same rhythm. Bifrons's weights decide how often the crossing and the leap come
 (as in his fight: a crossing in about one pattern of five).
 
 ## Colors

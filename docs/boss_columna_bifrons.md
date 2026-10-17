@@ -258,22 +258,27 @@ Green means "get off the floor" and purple "dash" with Cubus and Sphaera, and bl
 "parry together". Blue was too close to P1's color here; green is a stopgap, to be settled with
 the players' colors.
 
-## The partner's hit: on the beat, or after it ("bifrons_window")
+## The partner's hit: the window after a parry (F2, tab "sync hit")
 
-When the guard breaks (rule 5) is the open question, so it's a switch. A swing lands 0.08 s
-after its press from next to him (up to 0.17 s from the edge of its reach), so the press has to
-come that much before the window:
+When the guard breaks (rule 5) is the open question, so it's tunable (since 2026-10-17 on F2,
+tab "sync hit", in place of the switch "bifrons_window", which chose between the two below):
+the window **opens** "sync_window_delay" after the parry (0.18), is **on the beat** for its first
+"sync_beat_time" (0.12) and stays open **off the beat** "sync_window_late" longer (0.18); a hit on
+the beat wins 4 sync, one off it 2, a window left unused (the partner in reach) costs 1. The
+parry's energy (SyncWave) arrives as it opens, and the partner's blade blazes for the beat. A
+swing lands 0.08 s after its press from next to him (up to 0.17 s from the edge of its reach),
+so the press has to come that much before the window. The two settings the switch had:
 
-- **beat** (default): the guard breaks with the parry, for 0.25 s. The attack press has to come
+- **beat**: the guard breaks with the parry (delay 0), for 0.25 s. The attack press has to come
   between 0.08 s before the strike lands and 0.17 s after: with the partner's block press or
   just behind it ("clang, cut"). Nobody can know yet whether the parry will come, it's a bet on
   the partner; lost, the swing is parried and recoils.
-- **after**: the guard breaks 0.18 s after the parry, for 0.3 s: the hitter answers the parry
+- **after** (now the default): the guard breaks 0.18 s after the parry, for 0.3 s: the hitter answers the parry
   instead of betting on it. From next to him the press has to come 0.1 to 0.4 s after the
   strike landed. A swing started with the strike is parried, and its recoil outlasts the window.
-  The delay is as short as it can be: a swing lands 0.05 to 0.17 s after its press (sooner the
-  closer you stand), so with less than that a press right on the strike gets through from
-  further away, and it's "beat" again. (Measured with real presses exactly as the strike lands:
+  0.18 is as short as the delay can be for that: a swing lands 0.05 to 0.17 s after its press
+  (sooner the closer you stand), so with less a press right on the strike gets through from
+  further away, and it's partly a bet again. (Measured with real presses exactly as the strike lands:
   at 0.15 s 11 of 24 got through, at 0.18 s 3 of 17.)
 
 Mashing gets through by luck, since nothing forbids it, and with the quicker swing it does so
@@ -454,6 +459,9 @@ Nicho, 2026-10-17 (`core/sync_bond.gd`; numbers on F2, tab "sync mode"). With th
   them. Apart again (past 90 px), or out of the sync mode, they're unbound. How they move bound
   is still open: for now each moves as ever.
 - **Sabres:** bound, their swords become sabres: longer, curved, half light and half dark.
+- **Getting together:** in the sync mode a dash-slash goes through his body (F1
+  "dash_slash_pass": in the sync mode only, always, or never), as a dash-parry does, so the two
+  can always reach each other, whatever he's doing. The stand-in does it too.
 - **The pair's strike:** hold attack to draw the sabre back over the shoulder (0.45 s to full);
   fully drawn, a small cue (a pink ring at its point, a tick). Once both are, 0.15 s after the
   later one comes **the big cue** (bigger rings, a pink flash, the line along the floor lights

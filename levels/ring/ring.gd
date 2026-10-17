@@ -15,7 +15,7 @@ extends Node2D
 ## up where the parry was and runs along the circle, over the parrier's half, through the line
 ## and on along the partner's half, until it's hit (missed, it fades out on its way to the line).
 ## It meets the partner's side of the circle as long after the parry as the partner's hit comes
-## after a parry in the boss fight (Moves "bifrons_window", Tuning "sync_beat_time"). It's very
+## after a parry in the boss fight (Tuning "sync_window_delay", "sync_beat_time"). It's very
 ## fast over the parrier's half and slows down from the line on, to come slowly where it's to be
 ## hit (Tuning "ring_relay_slow"); the longer way when the two are on one side, so faster still.
 ## Sides: as with him, the two stand diagonally, one on each side of the circle. His crossing puts
@@ -388,17 +388,16 @@ func _fly(orb):
 
 # --- The violet shard: the partner's hit after a parry ---
 
-# From a parry to its shard's beat: the boss fight's, from the parry to a sync hit on the beat
-# (Moves "bifrons_window": his guard opens BREAK_DELAY after the parry; Tuning "sync_beat_time":
-# on the beat is that long after it opens). "after": 0.24 s.
+# From a parry to its shard's beat: the boss fight's, from the parry to the middle of the sync
+# hit's beat (StrikePattern.window_delay(): his guard opens; Tuning "sync_beat_time": the beat's
+# length). 0.18 and 0.12: 0.24 s.
 func relay_delay() -> float:
-	return StrikePattern.BREAK_DELAY[Moves.value("bifrons_window")] + Tuning.value("sync_beat_time") / 2.0
+	return StrikePattern.window_delay() + Tuning.value("sync_beat_time") / 2.0
 
 
 # ...and how long after its beat it can still be hit: as long as his guard would stay open.
 func relay_late() -> float:
-	var window = Moves.value("bifrons_window")
-	return StrikePattern.BREAK_DELAY[window] + StrikePattern.BREAK_TIME[window] - relay_delay()
+	return StrikePattern.window_delay() + StrikePattern.window_time() - relay_delay()
 
 
 # A yellow arrowhead parried: a violet shard for the partner, born where the parry was (on that

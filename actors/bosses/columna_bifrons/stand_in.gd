@@ -7,7 +7,7 @@ extends Node
 ## guard when its partner's parry opens it (a sync hit), and when its health is low it runs off
 ## to drink a potion. It doesn't attack otherwise.
 ## In the players' sync mode (core/sync_bond.gd) it plays along perfectly: it goes to its partner
-## to bind, parries every strike, and bound it draws its sabre back when its partner does and
+## to bind (with him between them, by a dash-slash through him), parries every strike, and bound it draws its sabre back when its partner does and
 ## lets go right on the big cue (or when its partner lets go early).
 
 enum Plan { NOTHING, PARRY, BLOCK }
@@ -33,6 +33,7 @@ const DISTANCE = 95.0
 const DISTANCE_IN_FRONT = 74.0
 const DISTANCE_BEHIND = 22.0  # from its partner: right behind them (a player is 20 wide)
 const SLACK = 12.0
+const DASH_THROUGH_FROM = 70.0  # sync mode, him between it and its partner: it dash-slashes through from this close
 # Below FLEE_HP, with a potion left, it runs away from him, FLEE_DISTANCE or to the wall, and
 # drinks. Then it comes back.
 const FLEE_HP = 20.0
@@ -53,6 +54,7 @@ var _potion_wait = 0.0
 var _window = 0  # the open guard it has seen (ColumnaBifrons.window_for()), or 0
 var _strike_in = -1.0  # s until it presses attack, or < 0: no strike coming
 var _let_go = false  # bound: it has let go while its partner still draws back
+var _dash_wait = 0.0  # s until it may dash-slash through him again
 
 
 func _physics_process(delta):
@@ -167,6 +169,15 @@ func _move(player, delta: float):
 	elif boss.in_sync_mode() and boss.partner_of(player) != null:
 		var gap = boss.partner_of(player).global_position.x - player.global_position.x
 		_walk = signf(gap) if absf(gap) > Tuning.value("sync_connect_distance") * 0.5 else 0.0
+		# He's between them: up to him, then a dash-slash through him.
+		_dash_wait = maxf(_dash_wait - delta, 0.0)
+		var between = signf(boss.global_position.x - player.global_position.x) == signf(gap) 			and absf(gap) > distance
+		var dash = between and distance < DASH_THROUGH_FROM and _dash_wait <= 0.0 and not boss.is_bound()
+		if dash:
+			_dash_wait = 0.6
+		_hold(player, "dash", dash)
+		if dash:
+			_hold(player, "attack", true)
 	else:
 		var want = DISTANCE
 		var partner = boss.partner_of(player)

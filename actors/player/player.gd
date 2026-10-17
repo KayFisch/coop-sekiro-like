@@ -253,6 +253,9 @@ const BOSS_SLIDE_SPEED = 900.0  # px/s: landing on top, you slide off the side y
 # it's done. A dash started up to PASS_WINDOW after the parry goes through him too. Out the far
 # side, you've changed sides; a dash too short for that is pushed back out the nearer side.
 const PASS_WINDOW = 0.2
+# DASH-SLASH THROUGH (Moves "dash_slash_pass"): a dash-slash at the boss goes through him the same
+# way: in the players' sync mode only (so the two can always get together to bind), always, or
+# never. A dash-slash too short to get past him is pushed back out the nearer side.
 # CALL (Moves "call"): a 3, 2, 1, GO countdown over the caller's head, one beat per CALL_BEAT, so
 # GO lands CALL_COUNT beats after the press. Both players pulse on every beat. Informational only.
 const CALL_BEAT = 0.4
@@ -1017,6 +1020,8 @@ func _process_windup(delta):
 	_windup_timer = 0.0
 	_dash_timer = DASH_TIME
 	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
+	if _dash_slash_passes() and _boss_ahead():
+		_passing = true  # through him (DASH-SLASH THROUGH)
 	swing_serial += 1
 	_trail_timer = 0.0
 	if _stretch_tween:
@@ -1854,6 +1859,16 @@ func _keep_out_of_boss(delta):
 		move_and_collide(hit.get_remainder())
 	if velocity.x * _block_side < 0.0:
 		velocity.x = 0.0  # stopped at his side, like at a wall
+
+
+# DASH-SLASH THROUGH: whether a dash-slash goes through the boss just now.
+func _dash_slash_passes() -> bool:
+	match Moves.value("dash_slash_pass"):
+		"always":
+			return true
+		"sync":
+			return GameManager.rules != null and GameManager.rules.sync_mode
+	return false
 
 
 # The boss's block is in this dash's way.

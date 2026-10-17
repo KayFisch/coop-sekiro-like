@@ -56,18 +56,16 @@ const FALL_POWER = 1.7  # the drop starts slow and lands fast (1 = constant spee
 # again): lying on the floor, or thrown back by a parry, which takes it longer to get over.
 const STICK_TIME = 0.12
 const RECOIL_TIME = 0.35
-# THE PARTNER'S HIT. A parried strike breaks the other sword's guard BREAK_DELAY after the
-# parry, for BREAK_TIME; by Moves "bifrons_window". A player's swing lands 0.05 to 0.17 s after
-# its press, sooner the closer they stand (see ATTACK_WINDUP_TIME and ATTACK_ACTIVE_TIME in
-# player.gd): 0.08 s from next to him.
-# "beat": at once. Parry and hit are pressed together, the hitter betting on the parry: the
-#   attack press has to come between 0.08 s before the strike lands and 0.17 s after.
-# "after": a moment later, so the hitter answers the parry instead of betting on it. The delay
-#   is just longer than a swing can take to land: no swing begun before or on the parry gets
-#   through, however far away the hitter stands; shorter, and it would be "beat" for them.
-#   From next to him the press has to come 0.1 to 0.4 s after the strike landed.
-const BREAK_DELAY = {"beat": 0.0, "after": 0.18}
-const BREAK_TIME = {"beat": 0.25, "after": 0.3}
+# THE PARTNER'S HIT (Tuning, F2 tab "sync hit"): a parried strike breaks the other sword's guard
+# "sync_window_delay" after the parry (window_delay()); its first "sync_beat_time" is on the beat,
+# and it stays open "sync_window_late" longer, off the beat (window_time(): all of it). A
+# player's swing lands 0.05 to 0.17 s after its press, sooner the closer they stand (see
+# ATTACK_WINDUP_TIME and ATTACK_ACTIVE_TIME in player.gd): 0.08 s from next to him.
+# - A delay of 0 (once Moves "bifrons_window" on "beat"): parry and hit are pressed together, the
+#   hitter betting on the parry.
+# - 0.18 (once "after"): the hitter answers the parry instead of betting on it. That's just longer
+#   than a swing can take to land: no swing begun before or on the parry gets through, however
+#   far away the hitter stands; shorter, and it's partly a bet again for those further away.
 const BOTH_STAGGER_TIME = 2.2  # both swords parried at once, by both players
 # BOTH SWORDS ON ONE PLAYER (the other one is away): one heavy strike. One parry meets it, and
 # doesn't stagger him.
@@ -106,6 +104,16 @@ var _charge_sword = LEFT
 var _room_at = -1.0  # when he makes room after a strike of both swords (-1: not due)
 var _advance = Advance.NONE  # how he gets through the next strike's windup
 var _lunge = null  # {from, to}: the next strike's lunge, once it's under way
+
+
+# THE PARTNER'S HIT: from the parry until the window opens...
+static func window_delay() -> float:
+	return Tuning.value("sync_window_delay")
+
+
+# ...and how long it stays open: on the beat, then off it.
+static func window_time() -> float:
+	return Tuning.value("sync_beat_time") + Tuning.value("sync_window_late")
 
 
 func _init(pattern_name: String, strikes: Array):
@@ -291,8 +299,7 @@ func _land(index: int):
 		if not both:
 			_room_at = _contacts[index] + boss.BACK_OFF_DELAY  # if the players are on one side
 	elif _parried[sword]:
-		var window = Moves.value("bifrons_window")
-		boss.break_guard(-sword, BREAK_TIME[window], BREAK_DELAY[window], judged[sword].parriers[0])
+		boss.break_guard(-sword, window_time(), window_delay(), judged[sword].parriers[0])
 	if _kinds[index] == CHARGE and sword != BOTH:
 		_charge_at = _contacts[index] + boss.CHARGE_DELAY
 		_charge_sword = sword
