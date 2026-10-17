@@ -191,9 +191,11 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   coming at them on a beat (orbs to parry, shards to hit, blocks to jump), planned from
   `ColumnaBifrons.ATTACKS`; a parry relays a shard to the partner. Its own sync meter and UI.
 - `levels/ring/ring.gd` (`BeatRing`, `docs/beat_ring.md`): the second prototype for between
-  the bosses. The mirrored screen in Bifrons's room, players moving freely, a circle around the
-  middle marking each thing's beat; things come level from the sides, and now and then a sweep
-  slants through the middle from one player's half into the other's. Bars from the sides.
+  the bosses: Bifrons's fight without him. The mirrored screen in his room, players moving
+  freely, a circle around the middle marking each thing's beat; his patterns (his table, weights
+  and tempo) come level at the players from their sides, diagonally, until his crossing puts both
+  on one side and his leap (a sweep) parts them again; a parry sends the partner a violet shard
+  along the circle, timed like the boss fight's partner hit.
 - `ui/mirror_view.gd` (`MirrorView`, in Bifrons's room, Moves "mirror_view"): an alternative
   picture of the fight, the screen split at the floor, P1 above, P2 in the reflection below.
   Two SubViewports on the level's World2D; what each half draws is chosen by visibility layers
