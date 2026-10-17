@@ -22,8 +22,9 @@ Code: `levels/runner/` (`runner.gd`, `runner.tscn`). Select screen: entry 6. Bra
   - **a grey block on the floor**, now and then: jump it.
 - **The relay** (switch, on): a parried orb goes on to the partner. It arcs out of your half and
   comes down at them as a violet shard, 2 units (0.4 s) later: the boss fight's "your parry,
-  their hit" as something you can see travel. It's only sent when the partner has room to hit
-  it (nothing of theirs to parry or jump right after), and missing it only costs a little.
+  their hit" as something you can see travel. Every parry sends one; whether the partner hits
+  it is up to them (hitting it can cost them the parry of their own next orb), and missing it
+  only costs a little.
 - **What comes when:** Columna Bifrons's own patterns (`ColumnaBifrons.ATTACKS`, by their
   weight in pep): each strike an orb for that sword's player, at his tempo (a unit is 0.2 s);
   both swords at once are a green pair; the crossing's push is a block. Mirrored at random.
@@ -58,9 +59,9 @@ costs), and how often something comes between two patterns. F2 in this level sho
 - Does it feel like the boss fight (same rhythm, same answers), or like a different game?
 - Is the relay readable: does the partner see their shard coming from your parry?
 - Split screen: can each of you read your own half fast enough, and do you still play together?
-- Bifrons's patterns are dense: in quick alternation (3 units) the partner has no room for a
-  relayed shard, so relays come mostly at a pattern's end. Patterns written for the runner
-  would place them on purpose.
+- Bifrons's patterns are dense: in quick alternation (3 units) hitting a relayed shard leaves
+  no time to parry your own next orb (the blade isn't back yet). Choosing is part of it; patterns
+  written for the runner could give relays room on purpose.
 - What else fits (ideas, not built): switching halves (from the beat-dash scribble), both on one
   half for a stretch (ppe), a heavy thing that needs both, the meter carried into the boss fight
   (capped), Kay's rhythmic obstacles (`scribbles.md`, 2026-10-15).

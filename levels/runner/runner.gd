@@ -37,9 +37,10 @@ const STAND_IN_LEAD = {Kind.PARRY: 0.07, Kind.COOP: 0.07, Kind.SHARD: 0.07, Kind
 const STAND_IN_BUTTON = {Kind.PARRY: "block", Kind.COOP: "block", Kind.SHARD: "attack", Kind.BLOCK: "jump"}
 const BLOCK_SIZE = Vector2(30.0, 36.0)
 const MAX_RALLY = 4  # Moves "runner_rally": shard and orb back and forth at most this often
-# A parry sends its orb on only if the partner has room to hit it: nothing of theirs to parry or
-# jump for this long after the shard is due (a blade is back at rest 0.33 s after its hit lands,
-# and the parry press comes a moment before the orb).
+# Moves "runner_rally": a hit sends an orb back only if the parrier has room to parry it: nothing
+# of theirs to parry or jump for this long after it's due (a blade is back at rest 0.33 s after
+# its hit lands, and the parry press comes a moment before the orb). The relay doesn't ask: every
+# parry sends its shard, and whether the partner hits it is up to them.
 const RELAY_ROOM = 0.4
 const LOOKAHEAD = 4.0  # s of the run planned ahead
 const LEAD_IN = 2.0  # s before the first thing lands
@@ -263,7 +264,7 @@ func _meet_orb(thing, p):
 			if _pairs[thing.pair] == 2:
 				_gain("runner_coop_gain", thing, "TOGETHER")
 				Sfx.play("counter_hit", -8.0)
-		elif Moves.on("runner_relay") and _has_room(1 - thing.lane, _relay_due()):
+		elif Moves.on("runner_relay"):
 			_send_shard(1 - thing.lane, thing.rally)
 	elif p.is_blocking():
 		Sfx.play("chip")
@@ -285,7 +286,8 @@ func _has_room(lane: int, due: float) -> bool:
 	for planned in _waiting:
 		coming.append(planned[1])
 	for thing in coming:
-		if thing.lane == lane and not thing.done and thing.kind != Kind.SHARD 				and thing.beat > _time and thing.beat <= due + RELAY_ROOM:
+		if thing.lane == lane and not thing.done and thing.kind != Kind.SHARD \
+				and thing.beat > _time and thing.beat <= due + RELAY_ROOM:
 			return false
 	return true
 
@@ -326,7 +328,8 @@ func _split(thing, _p):
 	var cam = get_viewport().get_camera_2d()
 	if cam and cam.has_method("shake"):
 		cam.shake(3.0)
-	if thing.sent and Moves.on("runner_rally") and thing.rally < MAX_RALLY 			and _has_room(1 - thing.lane, _relay_due()):
+	if thing.sent and Moves.on("runner_rally") and thing.rally < MAX_RALLY \
+			and _has_room(1 - thing.lane, _relay_due()):
 		_return_orb(1 - thing.lane, thing.rally)
 
 
