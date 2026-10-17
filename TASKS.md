@@ -109,6 +109,12 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Scribble vom 2026-10-17. **Offen:** Bifrons' Verhalten und Patterns dafür anpassen: Er steht
   kaum je 2 s still, seine Haltung kommt fast nie zurück, und der Kampf entscheidet sich über
   seine Haltung (mit zwei Stand-ins nach 19 bis 40 s).
+  **Erster Sync-Modus** (2026-10-17, gleicher Branch, `core/sync_bond.gd`): Zeichen an den
+  Füßen, zusammenstehen verbindet (Farben fließen ineinander, Säbel), Angriff halten zum
+  Ausholen, auf das große Signal gemeinsam loslassen = heftiger Schlag, der durch seine Deckung
+  geht; außer Sync = schwacher Schlag und Sync-Verlust. Er schlägt dann nur noch mit beiden
+  Schwertern und langsamer. Ideen: Scribble vom 2026-10-17 („Sync-Modus“). **Offen:** Bewegung
+  im verbundenen Zustand; ob die Spiegelhälften verschmelzen (Schalter `sync_merge_view`).
 - [ ] **Prototyp Beat-Runner** (@Nicho): die andere Antwort auf „Was ist zwischen den
   Bossen?“, etwas zwischen Beat Saber und Geometry Dash (Auto-Runner, Dinge fliegen im Rhythmus
   auf die Spieler zu, parieren und schlagen; vielleicht zwei Lanes für pep/ppe). Siehe Scribble
