@@ -89,9 +89,10 @@ const ENTRIES = [
 	{"key": "ring_beat", "label": "seconds per beat", "default": 0.6, "step": 0.05, "min": 0.2, "max": 2.0, "page": "ring"},
 	{"key": "ring_lane_gap", "label": "beats at least between two things for one player", "default": 2.0, "step": 1.0, "min": 1.0, "max": 8.0, "page": "ring"},
 	{"key": "ring_density", "label": "chance a thing comes for a free player on a beat", "default": 0.7, "step": 0.05, "min": 0.0, "max": 1.0, "page": "ring"},
-	{"key": "ring_shard_share", "label": "of those, a shard to hit (else an orb to parry)", "default": 0.4, "step": 0.05, "min": 0.0, "max": 1.0, "page": "ring"},
+	{"key": "ring_shard_share", "label": "of those, a grey shard to hit (else an arrowhead)", "default": 0.4, "step": 0.05, "min": 0.0, "max": 1.0, "page": "ring"},
 	{"key": "ring_pair_chance", "label": "chance of a green pair, when both are free", "default": 0.1, "step": 0.05, "min": 0.0, "max": 1.0, "page": "ring"},
 	{"key": "ring_sweep_chance", "label": "chance of a sweep (green arrow), when both are free", "default": 0.06, "step": 0.02, "min": 0.0, "max": 1.0, "page": "ring"},
+	{"key": "ring_relay_beats", "label": "a parry until its violet shard meets the circle (beats)", "default": 1.0, "step": 0.5, "min": 0.5, "max": 4.0, "page": "ring"},
 	{"key": "ring_bar_chance", "label": "chance of a bar on a beat", "default": 0.03, "step": 0.01, "min": 0.0, "max": 1.0, "page": "ring"},
 	{"header": "RING: SIZES AND SPEEDS", "page": "ring"},
 	{"key": "ring_radius", "label": "the circle's radius (px)", "default": 140.0, "step": 10.0, "min": 40.0, "max": 400.0, "page": "ring"},
@@ -109,6 +110,8 @@ const ENTRIES = [
 	{"key": "ring_pair_gain", "label": "both of a pair parried: gained on top", "default": 6.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
 	{"key": "ring_hit_loss", "label": "hit by an orb, a shard or a bar: lost", "default": 10.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
 	{"key": "ring_block_loss", "label": "an orb blocked, not parried: lost", "default": 4.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
+	{"key": "ring_relay_gain", "label": "a violet shard hit (sync hit): gained on top", "default": 3.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
+	{"key": "ring_miss_loss", "label": "a violet shard not hit: lost", "default": 2.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
 	{"key": "ring_lost_loss", "label": "one nobody took: lost", "default": 3.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
 ]
 

@@ -15,17 +15,27 @@ of its own: `levels/ring/` (`ring.gd`, `ring.tscn`), entry 7 on the select scree
   and when, it's best answered: its beat. A second before, each thing marks that spot.
 - **Things come level from the left and the right, at chest height**, each for one player and
   seen only in their half:
-  - **a yellow arrowhead: parry it** when it's at your guard (within 46 px of you);
-  - **a violet shard: hit it** with the sword; the line across it is where it's cut;
+  - **a yellow arrowhead: parry it** when it's at your guard (within 46 px of you), or it hits
+    you;
+  - **a grey shard: hit it** with the sword, on your own; the line across it is where it's cut;
   - **green arrowheads, one each at once: parry together.**
+- **A violet shard is the partner's hit after your parry** (switch, on): when you parry a yellow
+  arrowhead, a violet shard comes up in your partner's half, where your parry was, and arcs over
+  to the side of the circle they're on, meeting it there one beat later: they hit it ("SYNC
+  HIT", worth a bonus). It's tied to your parry: nothing else makes one.
+- **Shards never hit anyone**: they're targets, not attacks. One nobody hits is lost (a violet
+  one costs less).
 - **The sweep, rarely: a green arrow** comes slanting down at one player, goes on through the
   middle into the other's half and rises to meet the circle on its other side, at chest height
   again: it reaches one of you and then the other, as Bifrons's sweep does. Each parries it as it
   reaches them (it flies on either way); both parried is a bonus. It's the only thing that goes
-  through the line; one that comes from the middle is met from outside the circle.
+  through the line; one that comes from the middle is met from outside the circle. Only on its
+  way down at the first player can it hit; through the line it can't (it would come from
+  behind).
 - **On the circle (its beat, ±0.07 s) is "perfect", near it (±0.16 s) "good"**; taken anywhere
   else it still counts a little. A level thing nobody takes flies across the circle and out:
-  lost. One that reaches you unanswered hits you, wherever you stand on its way.
+  lost. A yellow or green one that reaches you unanswered hits you, wherever you stand on its
+  way.
 - **Bars from the sides**, rarely (3 % a beat) and slowly (300 px/s), along the floor: a low one
   to jump, a high one (60 px up) not to jump into.
 - **The sync meter is the run's life** (of 100, from 50). Empty: the run is over (R runs again);
@@ -35,7 +45,7 @@ of its own: `levels/ring/` (`ring.gd`, `ring.tscn`), entry 7 on the select scree
   parries or hits it on the beat, 85 % of the time; jumps low bars and stays down under high
   ones.
 
-Switches (F1, "Ring: ..."): sweeps, green pairs, bars, endless. Numbers (F2, the ring's page):
+Switches (F1, "Ring: ..."): violet shards from parries, sweeps, green pairs, bars, endless. Numbers (F2, the ring's page):
 the beat, how often things come and which, the circle's radius, speeds (arrowheads and shards
 380 px/s, the sweep 520, bars 300), the perfect and good windows, and the meter.
 
@@ -44,6 +54,14 @@ the beat, how often things come and which, the circle's radius, speeds (arrowhea
 Green is "it takes both of you": a pair at once, or the sweep one after the other (Bifrons's
 sweep itself had no color of its own: it came yellow, like any single strike). The shapes tell
 the two apart: arrowheads for the pair, a long arrow for the sweep.
+
+## Round 3 (Nicho, 2026-10-17)
+
+"Feels much better." Things that should be hit (shards) don't hit the player, and the sweep
+can't once it's through the line. Shards are grey when they just come (to hit on your own), and
+violet only when a partner's parry sends one, so the two are tied together as in the boss fight.
+The violet one goes to the side of the circle the partner is on (Claude: first it always crossed
+to the far side, and two stand-ins missed 16 of 22; now 4 of 22).
 
 ## Round 2 (Nicho, 2026-10-17, after trying round 1)
 
