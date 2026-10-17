@@ -48,6 +48,11 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   of yours too.
 - `player.gd` on the branch got small hooks for it (`take_damage()`, `is_blocking()`,
   `on_perfect_parry()`, a sword cue): they do nothing unless a fight sets `GameManager.rules`.
+- 2026-10-17, on `nicho/posture-rules` (it holds `nicho/pep-test` and `nicho/beat-runner`):
+  the rules got simpler. Attacks are normal or heavy (his heavy ones: both swords; yours: in
+  sync mode); posture is lost in three sizes, by parrying (both sides alike), blocking (only
+  the one who blocks) or being hit; sync only by a hit; posture comes back 2 s after the last
+  attack. Nicho's scribble of 2026-10-17 has it all.
 
 ## The project
 

@@ -557,3 +557,45 @@ Ideen dazu (Claude, zum Weiterdenken):
   vorderen vorbei (Dash-Parry durch den Boss oder über den Partner).
 - Allgemein: Jedes Pattern, das Abstand schafft, sollte mit einem Schlag enden, der nur trifft
   oder pariert wird, wenn man den Abstand wieder schließt.
+
+## 2026-10-17 (Nicho): Haltung und Schaden, einfacher (Sync als Leben)
+
+Systemänderung, damit das Kampfsystem verständlicher wird:
+- Haltungsschaden gibt es auch beim Parieren: Der Boss greift an, ein Spieler pariert, und der
+  Boss erleidet Haltungsschaden.
+- Nur kleiner, mittlerer und großer Haltungsschaden, und normale und heftige Angriffe:
+  - klein: ein eigener normaler Angriff wird pariert; man pariert einen normalen Angriff; man
+    blockt einen normalen Angriff;
+  - mittel: man wird normal getroffen (kein Block/Parry); man blockt oder pariert einen heftigen
+    Angriff; ein eigener heftiger Angriff wird pariert;
+  - groß: man wird von einem heftigen Angriff getroffen (kein Block/Parry).
+  - Entscheidend: Blocken verursacht keinen Haltungsschaden beim Gegner.
+- Sync-Schaden ist simpler: viel durch einen heftigen Angriff, ein Drittel bei normalen.
+- Spieler machen normale Angriffe, nur im Sync-Modus immer heftigen Schaden. Boss und Spieler
+  machen erstmal gleich viel Schaden (zwei Variablen, um es anzupassen); entscheidend ist, dass
+  die Spieler weniger Leben (Sync-Max) haben als der Boss.
+- Haltung regeneriert erst wieder 2 s, nachdem kein Angriff mehr landet (egal ob pariert,
+  geblockt oder nichts gemacht) und kein eigener Angriff ausgeführt wird.
+- Block halten, ohne angegriffen zu werden, verdoppelt die eigene Haltungsregeneration (macht
+  eigentlich nur der Spieler).
+- Haltungsregeneration ist bei 50 % Leben (Sync) kaum noch vorhanden, bei 75 % schon auf die
+  Hälfte reduziert.
+- Es ist im Grunde ein fairer Abtausch. Entscheidend ist, dass die Spieler sich heilen können
+  (Sync aufbauen) und der Boss nicht: Irgendwann sorgt jeder Schlagabtausch dafür, dass der
+  Boss mehr ansammelt als die Spieler. Aber der Boss hat eben mehr.
+- Noch zu schauen: wie die Patterns und das Verhalten des Bosses angepasst werden müssen.
+
+Umgesetzt auf `nicho/posture-rules` (Regeln: `docs/boss_columna_bifrons.md` → „Sync as life“).
+Claude dazu:
+- Seine heftigen Angriffe sind die mit beiden Schwertern (grün: beide Schwerter, der Sprung); der
+  Sweep (ein Schwert) zählt als normal. Ein Sync-Hit macht so viel wie jeder normale Treffer und
+  bringt euch Sync; der Sync-Modus macht eure Angriffe heftig (statt dreifach).
+- Der Boss holt keinen Sync mehr zurück (die zwei Ausnahmen vom 2026-10-16 sind raus). Folge:
+  Ist seine Haltung einmal gebrochen, bleibt er im Chaos, und der nächste Treffer tötet ihn: der
+  Todesstoß aus Sekiro.
+- Zwei Stand-ins gegen ihn: Seine Haltung bricht nach 19 bis 40 s, sein Sync steht dann noch bei
+  170 bis 190 von 200. Seine Haltung kommt nur 4 bis 10 % der Zeit zurück, weil er fast immer
+  angreift und seine Pausen kürzer als 2 s sind; wie viel Sync er hat, spielt dafür kaum eine
+  Rolle. Hebel: Pausen in seinen Patterns, die Haltungsgrößen, seine Haltung (200).
+- Ihr startet bei 50 % Sync, also mit kaum Haltungsregeneration (5 %), bis ihr Sync aufbaut.
+  Gewollt? Sonst: Start-Sync höher oder die 50 %-Grenze tiefer (beides in F2).

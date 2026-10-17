@@ -100,6 +100,15 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Entscheidungen: Scribble vom 2026-10-16; Regeln: `docs/boss_columna_bifrons.md` → „Sync as
   life“. Das alte System (HP + alter Sync) bleibt auf „hp“ und wird später mit den Erkenntnissen
   angepasst.
+  **Seit 2026-10-17 einfacher** (Branch `nicho/posture-rules`, enthält `nicho/pep-test` und
+  `nicho/beat-runner`): normale und heftige Angriffe (seine heftigen: beide Schwerter; eure: im
+  Sync-Modus), Haltung in drei Größen (klein, mittel, groß), Parieren kostet beide Seiten,
+  Blocken nur den Blocker, Sync kostet nur ein Treffer (heftig 18, normal ein Drittel), Haltung
+  kommt erst 2 s nach dem letzten Angriff (rein oder raus) zurück, Block halten verdoppelt das,
+  bei 75 % Sync halb so schnell, ab 50 % kaum; er holt keinen Sync mehr zurück. Entscheidungen:
+  Scribble vom 2026-10-17. **Offen:** Bifrons' Verhalten und Patterns dafür anpassen: Er steht
+  kaum je 2 s still, seine Haltung kommt fast nie zurück, und der Kampf entscheidet sich über
+  seine Haltung (mit zwei Stand-ins nach 19 bis 40 s).
 - [ ] **Prototyp Beat-Runner** (@Nicho): die andere Antwort auf „Was ist zwischen den
   Bossen?“, etwas zwischen Beat Saber und Geometry Dash (Auto-Runner, Dinge fliegen im Rhythmus
   auf die Spieler zu, parieren und schlagen; vielleicht zwei Lanes für pep/ppe). Siehe Scribble
