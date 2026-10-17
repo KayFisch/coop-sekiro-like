@@ -115,6 +115,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   kommen normal waagerecht von links und rechts; aus anderen Winkeln nur Spezialangriffe, vorerst
   einer: der grüne Sweep-Pfeil, der erst einen Spieler erreicht, durch die Linie fliegt und dann
   den anderen (wie Bifrons' Sweep). Balken seltener und langsamer.
+  Runde 3/4: Splitter treffen nie; grau = Solo-Treffer, violett nur aus dem Parry des Partners.
+  Seit Runde 4 ist der Ring **Bifrons' Kampf ohne ihn**: seine Patterns, Gewichte und sein Tempo,
+  standardmäßig diagonal (wie pep), sein Crossing bringt beide auf eine Seite, sein Sprung (als
+  Sweep) wieder auseinander; der violette Splitter läuft am Kreis entlang und kommt so spät nach
+  dem Parry an wie der Sync-Hit im Bosskampf (`bifrons_window`).
 - [ ] **Bifrons' Patterns überarbeiten: Abstand schaffen, dann nachsetzen** (@Nicho). Siehe
   Scribble vom 2026-10-17.
 - [ ] **Spiegel-Bildschirm** (@Nicho), Branch `nicho/pep-test`, Schalter `mirror_view` (F1,
