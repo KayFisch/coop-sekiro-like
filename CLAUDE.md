@@ -81,8 +81,9 @@ actors/bosses/                       base_boss.gd, base_attack.gd, one folder pe
 levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
                                      gym/ (movement test rooms), kit/ (level kit: rooms built in
                                      the editor), horologium/ (coop platformer level, kit rooms)
-ui/                                  boss select, HUD, beat display
-assets/                              empty for now: everything is procedural
+ui/                                  boss select, HUD, beat display, audio calibration (F1 → Sound)
+addons/kit_handles/                  editor plugin: drag handles to resize kit pieces
+assets/                              music/: the songs (Beat.TRACKS); everything else is procedural
 ```
 
 Keep every `.gd.uid` next to its `.gd` and move them together (Godot references scripts by uid).
@@ -164,7 +165,9 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `Moves.on("pogo")`). The fight kit is on by default, the platforming kit is off. `Pads` gives
   each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device).
   `Beat` is the one clock for everything in time (150 BPM; a level starts it, it's never reset
-  inside one; signals `beat` / `bar`, `offset_to_downbeat()` etc.; click on M).
+  inside one; signals `beat` / `bar`, `offset_to_downbeat()` etc.; click on M, off at start;
+  plays a level's music looped in time with it, `TRACKS`; F1 → Sound: volume, and how far
+  ahead the audio plays, for a late headset: music and click go early, the clock stays).
 - `actors/player/player.gd`: one large script (~2000 lines) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
   potions, defensive queries the boss uses (`is_perfect_parry()` etc.), and some boss-specific
@@ -203,7 +206,9 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
 
 ## Conventions
 
-- Everything is procedural: shapes drawn in code, sound synthesized. No external assets yet.
+- Everything is procedural: shapes drawn in code, sound synthesized. The one exception is music
+  (`assets/music/`): a song goes into `Beat.TRACKS` as a WAV of whole bars that loops by itself,
+  cut from a stretch whose beats sit on the tempo (measure it: songs drift between sections).
 - Tuning values are named `const`s with a comment saying what they mean in feel terms
   ("0 -> SPEED in ~0.06 s"), grouped under `# --- Feature ---` headers.
 - New movement abilities get a `Moves` switch so they can be A/B tested.
