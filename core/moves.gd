@@ -16,12 +16,15 @@ const PANEL_MARGIN = Vector2(80, 16)
 const PANEL_FONT_SIZE = 17
 const PANEL_MIN_FONT_SIZE = 10
 const LABEL_WIDTH = 50  # characters: the values line up after this
+const SLIDER_CELLS = 15  # characters a slider's bar takes at most
 
 # The panel's tabs, in order. Every entry names one.
-const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Controls"]
+const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Controls", "Sound"]
 
 # Each switch: key, its tab, what the panel calls it, and its default (a bool, or one of
-# `options`). Labels starting with "  " belong to the switch above them.
+# `options`). Labels starting with "  " belong to the switch above them. A `slider` one stops at
+# its ends (no wrapping round) and shows as a bar. An `action` row holds no value: Enter (or
+# right) calls that method of this panel.
 # The fight kit is on by default; the platforming kit is off, for the gyms (see docs/concept.md).
 const ENTRIES = [
 	# Basics: on your own feet
@@ -62,6 +65,10 @@ const ENTRIES = [
 	# Controls
 	{"key": "swap_controls", "tab": "Controls", "label": "Swap P1 / P2 controls (P1 on the pad; pad Back)", "default": false},
 	{"key": "camera_p1", "tab": "Controls", "label": "Gym camera follows only P1 (testing with a bot)", "default": false},
+	# Sound
+	{"key": "music_volume", "tab": "Sound", "label": "Music volume", "default": "5%", "slider": true, "options": ["0%", "5%", "10%", "15%", "20%", "25%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%"]},
+	{"key": "audio_offset", "tab": "Sound", "label": "Audio ahead (a late headset: Bluetooth ~150-250)", "default": "0 ms", "slider": true, "options": ["-200 ms", "-190 ms", "-180 ms", "-170 ms", "-160 ms", "-150 ms", "-140 ms", "-130 ms", "-120 ms", "-110 ms", "-100 ms", "-90 ms", "-80 ms", "-70 ms", "-60 ms", "-50 ms", "-40 ms", "-30 ms", "-20 ms", "-10 ms", "0 ms", "10 ms", "20 ms", "30 ms", "40 ms", "50 ms", "60 ms", "70 ms", "80 ms", "90 ms", "100 ms", "110 ms", "120 ms", "130 ms", "140 ms", "150 ms", "160 ms", "170 ms", "180 ms", "190 ms", "200 ms", "210 ms", "220 ms", "230 ms", "240 ms", "250 ms", "260 ms", "270 ms", "280 ms", "290 ms", "300 ms"]},
+	{"key": "audio_calibration", "tab": "Sound", "label": "Audio calibration: measure it", "action": "_open_calibration"},
 ]
 
 var panel_open = false
@@ -77,7 +84,7 @@ var _text: Label
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	for e in ENTRIES:
+	for e in _settings():
 		_values[e.key] = e.default
 	var cfg = ConfigFile.new()
 	if cfg.load(SAVE_PATH) != OK:
@@ -85,7 +92,7 @@ func _ready():
 	if cfg.get_value("meta", "version", 1) != VERSION:
 		_save()  # an older save: back to the new defaults, once
 		return
-	for e in ENTRIES:
+	for e in _settings():
 		var saved = cfg.get_value("moves", e.key, e.default)
 		if typeof(saved) == typeof(e.default) and (not e.has("options") or saved in e.options):
 			_values[e.key] = saved
@@ -111,7 +118,7 @@ func set_value(key: String, v):
 func _save():
 	var cfg = ConfigFile.new()
 	cfg.set_value("meta", "version", VERSION)
-	for e in ENTRIES:
+	for e in _settings():
 		cfg.set_value("moves", e.key, _overridden.get(e.key, _values[e.key]))
 	cfg.save(SAVE_PATH)
 
@@ -132,8 +139,13 @@ func clear_overrides():
 	changed.emit()
 
 
+# The entries that hold a value (not the `action` rows).
+func _settings() -> Array:
+	return ENTRIES.filter(func(e): return not e.has("action"))
+
+
 func reset_defaults():
-	for e in ENTRIES:
+	for e in _settings():
 		set_value(e.key, e.default)
 
 
@@ -191,6 +203,13 @@ func _set_panel(open: bool):
 		get_tree().paused = _was_paused
 
 
+# Sound → Audio calibration: opens over the panel (and whatever runs under it); Esc closes it.
+func _open_calibration():
+	var calibration = load("res://ui/audio_calibration.gd").new()
+	calibration.closed.connect(_refresh)
+	add_child(calibration)
+
+
 # The entries on the open tab, in order.
 func _tab_entries() -> Array:
 	return ENTRIES.filter(func(e): return e.tab == TABS[_tab])
@@ -208,9 +227,13 @@ func _change(step: int):
 		reset_defaults()
 		return
 	var e = entries[_selected]
-	if e.has("options"):
+	if e.has("action"):
+		if step > 0:
+			call(e.action)
+	elif e.has("options"):
 		var i = e.options.find(_values[e.key])
-		set_value(e.key, e.options[posmod(i + step, e.options.size())])
+		var to = clampi(i + step, 0, e.options.size() - 1) if e.get("slider", false) else posmod(i + step, e.options.size())
+		set_value(e.key, e.options[to])
 	else:
 		set_value(e.key, not _values[e.key])
 
@@ -244,8 +267,15 @@ func _refresh():
 	var entries = _tab_entries()
 	for i in entries.size():
 		var e = entries[i]
-		var v = _values[e.key]
+		var v = _values.get(e.key)
 		var shown = ("ON" if v else "off") if v is bool else str(v).to_upper()
+		if e.has("action"):
+			shown = "[Enter]"
+		elif e.get("slider", false):  # a bar, filled up to the value
+			var n = e.options.find(v)
+			var cells = mini(e.options.size() - 1, SLIDER_CELLS)
+			var lit = roundi(n * cells / float(e.options.size() - 1))
+			shown = "%s %s" % ["█".repeat(lit) + "░".repeat(cells - lit), shown]
 		lines.append("%s %s %s" % ["▶" if i == _selected else " ", e.label.rpad(LABEL_WIDTH, " "), shown])
 	lines.append("")
 	lines.append("%s %s" % ["▶" if _selected == entries.size() else " ", "Reset all to defaults"])
