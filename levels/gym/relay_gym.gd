@@ -1,5 +1,6 @@
 extends GymLevel
-## The relay gym: trying the rhythm relay (Moves "relay_rhythm") alone. Player 2 is a bot
+## The relay gym: trying the rhythm relay (Moves "relay_rhythm") alone, on the clock (Beat, M
+## for the click). Player 2 is a bot
 ## (RelayBot) that parries every dash-slash at it right as the blades meet and throws the dasher
 ## up exactly on beat 3. The readout up top says how far apart the beats really came, and how far
 ## off beat 4 your own move was. Strike a lever ("bot here") to call the bot to that station.
@@ -15,7 +16,7 @@ const POGO_X = 1800.0
 const LEDGE_X = 2800.0
 const LEVER_LEAD = 330.0  # a station's lever and checkpoint stand this far left of the bot
 # The top of an upward throw: the dasher's feet this high above the ground, on beat 4.
-const TOP = Player.RELAY_SPEED * Player.RHYTHM_THROW_TIME  # reached a little before beat 4, then the hang
+const TOP = Player.RHYTHM_THROW_HEIGHT  # reached a little before beat 4, then the hang
 const DASHER_OFFSET = 55.0  # the dasher's center, left of the bot's, when the blades meet (40-70)
 # 2 POGO: the lantern's top is this far under the feet at the top; the ledge is this far under
 # where a pogo from the very top takes you, so the pogo has to come within ~POGO_SLACK px of it.
@@ -55,8 +56,8 @@ func _build():
 	ground(0, bounds.end.x)
 	var top_y = GROUND_Y - TOP  # the dasher's feet at the top
 	respawn_point = Vector2(BELLS_X - LEVER_LEAD + 60.0, GROUND_Y - PLAYER_HALF)
-	station(60, "RHYTHM RELAY", "Dash-slash into P2 (dash + attack).\n" \
-		+ "1 windup  ·  2 parry  ·  3 strike  ·  4 top\nOne beat = %d ms.\n" % roundi(Player.RHYTHM_BEAT * 1000.0) \
+	station(60, "RHYTHM RELAY", "Dash-slash into P2 (dash + attack), attack held:\nlet go on a beat (M: click).\n" \
+		+ "1 let go  ·  2 parry  ·  3 strike  ·  4 top\n%d BPM.\n" % roundi(Beat.DEFAULT_BPM) \
 		+ "Strike a lever to call the bot to that station.\nR: back to the checkpoint.", GROUND_Y - 360)
 	_readout = screen_label()
 
@@ -104,6 +105,7 @@ func _call_bot(x: float):
 
 func _ready():
 	super()
+	Beat.start(Beat.DEFAULT_BPM, self)
 	_bot.dasher = players[0]
 	_bot.anchor = players[1]
 	_call_bot(BELLS_X)

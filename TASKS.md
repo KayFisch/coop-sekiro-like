@@ -166,7 +166,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   `nicho/pep-test` schon reingemergt (neuer Schwung usw.), kann also erst mit oder nach ihm
   nach `main`.
   Erstes Element: **Rhythmus-Relay** (Schalter `relay_rhythm`, Abschnitt „RHYTHM RELAY“ in
-  `player.gd`): ein Takt aus vier Schlägen, 1 Ausholen (Dasher), 2 Parry (Anker), 3 Schlag des
+  `player.gd`): ein Takt auf der Uhr (`Beat`, seit 2026-10-17; vorher eigener 250-ms-Schlag),
+  1 der Dasher lässt den aufgeladenen Dash-Slash (Angriff halten) auf einem beliebigen Schlag
+  los, im Parry-Fenster, sonst Fehlschlag, 2 Parry (Anker), 3 Schlag des
   Ankers, dessen Stick die Richtung gibt (4 Wege), 4 Scheitelpunkt, wo das Level eine Aktion
   verlangt. Testraum mit Bot als P2: „Relay Gym“ (Glocken, Pogo auf 4, Dash auf 4; Hebel
   holen den Bot). Zweites Element: **Wall-Rhythmus** (Schalter `wall_rhythm`, nur Sound):

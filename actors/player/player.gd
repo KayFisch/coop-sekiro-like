@@ -246,26 +246,32 @@ const RELAY_EXIT_FRACTION = 0.45  # of the boost's speed kept once it ends
 const RELAY_RECOIL = 220.0
 const RELAY_PARRY_TOLERANCE = 0.2
 const RELAY_FAIL_BOUNCE = Vector2(260.0, -220.0)  # the dasher, off a block that wasn't a parry
-# RHYTHM RELAY (Moves "relay_rhythm"): the relay as a bar of four even beats, the partners taking
-# turns: 1 the dasher's windup, 2 the anchor's parry (the blades lock), 3 the anchor's strike,
-# which throws the dasher the way the anchor's stick points (4 ways: up, down, left, right; none:
-# straight on; the arrow on the dasher shows it), 4 the top of the throw, where the level asks the
-# dasher for something (a dash, a pogo point). The dasher doesn't aim. The dash-slash's windup
-# takes beat 1, and its run hardly any time, so the blades meet on beat 2 wherever the partner
-# stands within reach; the parry press has to be close to it too. A strike off beat 3, or none,
-# drops the dasher. Every beat sounds: 1 a tick, 2 the parry, 3 the strike, 4 a high tick.
-# The throw stops a little before beat 4 and the dasher hangs still around it (gravity off),
-# so a move on 4 has as much room early as late; any move ends the hang.
-# (While the switch is on, every dash-slash is this fast one, at a boss too.)
-const RHYTHM_BEAT = 0.25  # one beat
+# RHYTHM RELAY (Moves "relay_rhythm"): the relay as a bar of the clock (Beat), the partners
+# taking turns: 1 the dasher lets go, 2 the anchor's parry (the blades lock), 3 the anchor's
+# strike, which throws the dasher the way the anchor's stick points (4 ways: up, down, left,
+# right; none: straight on; the arrow on the dasher shows it), 4 the top of the throw, where the
+# level asks the dasher for something (a dash, a pogo point). The dasher doesn't aim.
+# The dash-slash charges as long as attack is held (blade drawn back, flaring on every beat), and
+# its release has to land on a beat, within a parry's window (RHYTHM_RELEASE_TOLERANCE): that beat
+# is 1, whichever of the bar it is. Off the beat the blade fumbles and the dash is spent. After
+# the release the blade heats up through the beat, and the run takes hardly any time, so the
+# blades meet on beat 2 wherever the partner stands within reach; the parry press has to be close
+# to it too. A strike off beat 3, or none, drops the dasher. Every beat sounds: 1 a tick, 2 the
+# parry, 3 the strike, 4 a high tick. The throw stops a little before beat 4 and the dasher hangs
+# still around it (gravity off), so a move on 4 has as much room early as late; any move ends
+# the hang. Charging in the air hangs you still, as the windup does.
+# (While the switch is on, every dash-slash is this one, at a boss too; it starts the clock where
+# no level has.)
 const RHYTHM_TOLERANCE = 0.08  # the strike counts this far off beat 3, early or late
+const RHYTHM_RELEASE_TOLERANCE = PARRY_TOLERANCE  # the release counts this far off a beat, early or late
 # The hang at the top: from this long before beat 4 to this long after it. Longer before than
 # after, as falling the first few px after it barely counts as missing the top.
 const RHYTHM_HANG_BEFORE = 0.06
 const RHYTHM_HANG_AFTER = 0.02
-const RHYTHM_THROW_TIME = RHYTHM_BEAT - RHYTHM_HANG_BEFORE  # the throw's flight, RELAY_SPEED for this long
+const RHYTHM_THROW_HEIGHT = 190.0  # px the throw covers, reached RHYTHM_HANG_BEFORE before beat 4
 const RHYTHM_DASH_TIME = 0.04  # the dash-slash's run, DASH_DISTANCE in this long (a plain dash: DASH_TIME)
 const RHYTHM_PARRY_TOLERANCE = 0.1  # the block press at most this long before the blades meet
+const RHYTHM_CHARGE_FLARE = 0.15  # s: charging, the blade flares white on every beat and fades over this
 const GUARD_ANGLE = 0.55  # blocking: the sword held diagonally down...
 const GUARD_OFFSET = Vector2(6, -12)  # ...in front, from the chest (x mirrors with facing)
 const PARRY_FLICK_ANGLE = -1.3  # a perfect parry beats the blade up, to past its rest
@@ -444,8 +450,10 @@ var _hold_release = Vector2.ZERO
 var _hold_partner = null
 var _relay_dir = Vector2.RIGHT
 var _relay_rhythm = false  # this relay is a rhythm relay (Moves "relay_rhythm" when it began)
-var _relay_parry_time = -100.0  # beat 2 of a rhythm relay
-var _rhythm_dash = false  # this dash-slash is a rhythm relay's: a beat's windup, then a quick run
+var _rhythm_dash = false  # this dash-slash is a rhythm relay's: charged, released on a beat, then a quick run
+var _charging = false  # a rhythm dash-slash held, not released yet (while _windup_timer > 0)
+var _windup_length = DASH_SLASH_WINDUP  # s this windup lasts (a rhythm one: from the release to the run)
+var relay_beat = -1  # the Beat count of beat 1 of the current rhythm relay (its release)
 var _relay_arrow: ColorRect
 var _boost_timer = 0.0  # a rhythm relay's includes the hang at the top
 var _boost_velocity = Vector2.ZERO
@@ -636,7 +644,7 @@ func _process_movement(delta):
 		velocity = _boost_velocity  # a relay boost: straight, gravity off
 		if _relay_rhythm:
 			# The throw covers exactly its distance, however the frames fall; then it hangs.
-			var step = minf(RELAY_SPEED, _throw_left / delta)
+			var step = minf(_boost_velocity.length(), _throw_left / delta)
 			velocity = _boost_velocity.normalized() * step
 			_throw_left -= step * delta
 		return
@@ -1311,10 +1319,11 @@ func _start_swing(kind: Swing):
 func _begin_dash_slash():
 	_dash_slash = true
 	_rhythm_dash = Moves.on("momentum_relay") and Moves.on("relay_rhythm")
-	# A rhythm windup ends half a run early, so the blades meet on beat 2 on average.
-	_windup_timer = RHYTHM_BEAT - RHYTHM_DASH_TIME / 2.0 if _rhythm_dash else DASH_SLASH_WINDUP
-	if _rhythm_dash:
-		Sfx.play("relay_beat")  # beat 1
+	_windup_length = DASH_SLASH_WINDUP
+	_windup_timer = DASH_SLASH_WINDUP  # a rhythm one: held at this until the release
+	_charging = _rhythm_dash
+	if _rhythm_dash and not Beat.running:
+		Beat.start(Beat.DEFAULT_BPM, get_tree().current_scene)  # a bar needs a clock
 	_dash_timer = 0.0
 	_attack_timer = 0.0
 	_attack_landed = false
@@ -1329,6 +1338,10 @@ func _begin_dash_slash():
 func _process_windup(delta):
 	velocity = Vector2.ZERO  # hanging still, even in the air
 	facing = _dash_dir
+	if _charging:
+		if not Input.is_action_pressed(_action("attack")):
+			_release_charge()
+		return
 	_windup_timer -= delta
 	if _windup_timer > 0.0:
 		return
@@ -1348,6 +1361,25 @@ func _process_windup(delta):
 	else:
 		Sfx.play("stab", 1.0)
 		Sfx.play("slash", -2.0)
+
+
+# A rhythm dash-slash let go: on a beat, that beat is 1, and the run starts half a run before
+# the next, so the blades meet on beat 2. Off the beat, the blade fumbles and the dash is spent.
+func _release_charge():
+	_charging = false
+	var t = Beat.time()
+	if absf(Beat.offset_to_beat(t)) > RHYTHM_RELEASE_TOLERANCE:
+		_windup_timer = 0.0
+		_dash_slash = false
+		_swing_from_angle = _sword_angle()
+		_recoil_timer = PARRIED_RECOIL
+		_spawn_sparks(sword_pivot.global_position, 5, Color(0.6, 0.6, 0.6))
+		Sfx.play("chip")
+		return
+	relay_beat = roundi(Beat.beats_at(t))
+	_windup_length = Beat.beat_time(relay_beat + 1) - RHYTHM_DASH_TIME / 2.0 - t
+	_windup_timer = _windup_length
+	Sfx.play("relay_beat")  # beat 1
 
 
 func is_winding_up() -> bool:
@@ -1641,9 +1673,10 @@ func _chimney_clash(other):
 func _start_relay(anchor):
 	_relay_dir = Vector2(_dash_dir, 0.0)
 	_relay_rhythm = _rhythm_dash
-	_relay_parry_time = _now()
 	# A rhythm relay waits for the anchor's strike, up to the late end of beat 3.
-	var clash_time = RHYTHM_BEAT + RHYTHM_TOLERANCE if _relay_rhythm else RELAY_CLASH_TIME
+	var clash_time = RELAY_CLASH_TIME
+	if _relay_rhythm:
+		clash_time = Beat.beat_time(relay_beat + 2) + RHYTHM_TOLERANCE - Beat.time()
 	_begin_hold(Hold.RELAY_DASHER, clash_time, Vector2.ZERO, anchor)
 	# The anchor's hold outlasts the dasher's, so the dasher's release is what frees them.
 	anchor._begin_hold(Hold.RELAY_ANCHOR, clash_time + 0.1, Vector2.ZERO, self)
@@ -1684,6 +1717,7 @@ func _begin_hold(kind: Hold, time: float, release = Vector2.ZERO, partner = null
 	_dash_timer = 0.0
 	_dash_slash = false
 	_windup_timer = 0.0
+	_charging = false
 	_attack_timer = 0.0
 	_launch_timer = 0.0
 	_boost_timer = 0.0
@@ -1715,7 +1749,7 @@ func _process_rhythm_strike() -> bool:
 	dasher._relay_dir = _aim_4(Vector2(dasher._dash_dir, 0.0))
 	if not Input.is_action_just_pressed(_action("attack")):
 		return false
-	if absf(_now() - dasher._relay_parry_time - RHYTHM_BEAT) <= RHYTHM_TOLERANCE:
+	if absf(Beat.time() - Beat.beat_time(dasher.relay_beat + 2)) <= RHYTHM_TOLERANCE:
 		dasher._release_hold()  # the throw; it frees this hold too, and pushes this player back
 		_start_swing(Swing.SLASH)
 		Sfx.play("relay_strike")  # beat 3
@@ -1744,9 +1778,12 @@ func _release_hold():
 			_boost_velocity = _relay_dir * RELAY_SPEED
 			_boost_timer = RELAY_BOOST_TIME
 			if _relay_rhythm:
-				_boost_timer = RHYTHM_BEAT + RHYTHM_HANG_AFTER  # the throw, then the hang
-				_throw_left = RELAY_SPEED * RHYTHM_THROW_TIME
-				rhythm_top_time = _now() + RHYTHM_BEAT
+				# The throw, reaching the top RHYTHM_HANG_BEFORE before beat 4, then the hang.
+				var to_top = Beat.beat_time(relay_beat + 3) - Beat.time()
+				_boost_timer = to_top + RHYTHM_HANG_AFTER
+				_throw_left = RHYTHM_THROW_HEIGHT
+				_boost_velocity = _relay_dir * RHYTHM_THROW_HEIGHT / maxf(to_top - RHYTHM_HANG_BEFORE, 0.05)
+				rhythm_top_time = _now() + to_top
 			velocity = _boost_velocity
 			if _relay_dir.x != 0.0:
 				facing = signf(_relay_dir.x)
@@ -1788,6 +1825,7 @@ func interrupt_movement():
 	if _windup_timer > 0.0:
 		_windup_timer = 0.0
 		_dash_slash = false
+	_charging = false
 	_wall_side = 0.0
 	_wall_flight = 0.0
 	_pogo_rise = 0.0
@@ -1811,7 +1849,7 @@ func movement_state() -> String:
 	if _wall_side != 0.0:
 		return "wall cling" if velocity.y == 0.0 else "wall slide"
 	if _windup_timer > 0.0:
-		return "dash-slash windup"
+		return "dash-slash charge" if _charging else "dash-slash windup"
 	if _dash_timer > 0.0:
 		return "dash-slash" if _dash_slash else "dash"
 	if is_on_floor():
@@ -2282,8 +2320,8 @@ func _boss_in_the_way(x: float) -> bool:
 # boss in the way.
 func _predict_contact(other) -> float:
 	var dashing = _dash_slash and _dash_timer > 0.0
-	if _windup_timer <= 0.0 and not dashing:
-		return -1.0
+	if (_windup_timer <= 0.0 or _charging) and not dashing:
+		return -1.0  # a charge has no time to meet yet
 	var gap = other.global_position - global_position
 	if signf(gap.x) != _dash_dir or absf(gap.y) > LAUNCH_REACH.y:
 		return -1.0
@@ -2560,9 +2598,11 @@ func _update_visuals():
 			_gather_label.modulate = body_color.lerp(Color.WHITE, 0.5)
 
 
-# 0 -> 1 through a dash-slash's windup.
+# 0 -> 1 through a dash-slash's windup; charging, a flare on every beat of the clock.
 func _windup_progress() -> float:
-	return 1.0 - _windup_timer / DASH_SLASH_WINDUP
+	if _charging:
+		return maxf(0.0, 1.0 - Beat.phase() * Beat.beat_length() / RHYTHM_CHARGE_FLARE)
+	return 1.0 - _windup_timer / _windup_length
 
 
 # A fading copy of the body and the long blade, left behind along a dash-slash.

@@ -31,8 +31,8 @@ func _physics_process(delta):
 	var walk = 0.0
 	if anchor._hold_kind == Player.Hold.RELAY_ANCHOR:
 		_hold(AIM, true)
-		var beat_3 = dasher._relay_parry_time + Player.RHYTHM_BEAT
-		if dasher._relay_rhythm and not _struck and Time.get_ticks_msec() / 1000.0 >= beat_3 - delta / 2.0:
+		var beat_3 = Beat.beat_time(dasher.relay_beat + 2)
+		if dasher._relay_rhythm and not _struck and Beat.time() >= beat_3 - delta / 2.0:
 			_hold("attack", true)
 			_struck = true
 	else:
