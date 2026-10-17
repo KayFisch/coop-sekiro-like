@@ -60,6 +60,10 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   attack is held to draw back and let go to strike (`_process_charge()`), and the sword becomes a
   sabre (`set_sabre()`); nothing changes while it's null. F1 and F2 now show one tab at a time
   (Q / E): new switches and numbers need a "tab".
+- Also there: the F1 switch "bifrons_window" is gone; when the partner's window opens, how long
+  it's on the beat and how long off it are F2 numbers now (tab "sync hit"; 0.18 s is the old
+  "after", 0 the old "beat"). In the sync mode a dash-slash goes through the boss (F1
+  "dash_slash_pass").
 
 ## The project
 
