@@ -12,7 +12,8 @@ extends Node2D
 ## What comes when: Columna Bifrons's own patterns (ColumnaBifrons.ATTACKS), his strikes turned
 ## into orbs at his tempo, and between them (Moves "runner_patterns" on "mixed") shards and
 ## blocks. A sync meter is the run's life: what gets through empties it, parries and hits fill
-## it. Every number is on F2 (in this level its page is the runner's).
+## it. Every number is on F2 (in this level its page is the runner's). For testing alone a
+## stand-in plays one of the two (Moves "bifrons_stand_in": "left" is P1, "right" P2; StandIn).
 
 enum Kind { PARRY, SHARD, COOP, BLOCK }
 
@@ -29,6 +30,11 @@ const SPAWN_X = 1230.0  # off the right edge
 const LOB_HEIGHT = 150.0  # a shard sent on by a parry arcs this high...
 const LOB_REACH = 140.0  # ...and this far out, before it comes down at the partner
 const RADIUS = 12.0
+# The stand-in: answers this share of what comes at it, pressing parry, attack or jump this long
+# before the thing's beat (a swing lands 0.08 s after its press).
+const STAND_IN_SKILL = 0.85
+const STAND_IN_LEAD = {Kind.PARRY: 0.07, Kind.COOP: 0.07, Kind.SHARD: 0.07, Kind.BLOCK: 0.2}
+const STAND_IN_BUTTON = {Kind.PARRY: "block", Kind.COOP: "block", Kind.SHARD: "attack", Kind.BLOCK: "jump"}
 const BLOCK_SIZE = Vector2(30.0, 36.0)
 const MAX_RALLY = 4  # Moves "runner_rally": shard and orb back and forth at most this often
 # A parry sends its orb on only if the partner has room to hit it: nothing of theirs to parry or
@@ -80,6 +86,9 @@ func _ready():
 	_meter = Tuning.value("runner_start")
 	_build_scenery()
 	_build_ui()
+	var stand_in = StandIn.new()
+	stand_in.runner = self
+	add_child(stand_in)
 
 
 func _physics_process(delta):
@@ -178,7 +187,7 @@ func _plan_thing(kind: int, lane: int, beat: float, pair = -1):
 	thing.lane = lane
 	thing.beat = beat
 	thing.pair = pair
-	thing.speed = Tuning.value("runner_scroll_speed") if kind == Kind.BLOCK else \
+	thing.speed = Tuning.value("runner_block_speed") if kind == Kind.BLOCK else \
 		Tuning.value("runner_shard_speed" if kind == Kind.SHARD else "runner_orb_speed")
 	var meets = SHARD_SPOT if kind == Kind.SHARD else CONTACT_X
 	var spawn = beat - (SPAWN_X - ANCHOR_X - meets) / thing.speed
@@ -220,7 +229,8 @@ func _place(thing):
 
 func _fly(thing):
 	if thing.done:
-		thing.position.x -= Tuning.value("runner_scroll_speed") * get_physics_process_delta_time()
+		var on = thing.speed if thing.kind == Kind.BLOCK else Tuning.value("runner_scroll_speed")
+		thing.position.x -= on * get_physics_process_delta_time()
 		if thing.position.x < -60.0 or _time > thing.done_at + 1.0:
 			_things.erase(thing)
 			thing.queue_free()
@@ -510,6 +520,46 @@ func _update_ui():
 	_bar.size.x = BAR_SIZE.x * _meter / METER_MAX
 	_bar.color = COLOR_EMPTY if _meter < 20.0 and fmod(_time, 0.3) < 0.15 else COLOR_METER
 	_combo_label.text = "x%d   (best %d)" % [_combo, _best] if _combo > 0 else "best %d" % _best
+
+
+# Testing alone: plays one of the two (Moves "bifrons_stand_in": "left" is P1, "right" P2) by
+# pressing that player's buttons, as BifronsStandIn does in Bifrons's fight: parry for orbs,
+# attack for shards, jump for blocks, STAND_IN_LEAD before each one's beat, STAND_IN_SKILL of
+# the time (the rest it lets through). It runs before the players, so they see a press that
+# same frame; a press is let go the frame after.
+class StandIn extends Node:
+	var runner
+	var _answered = {}  # thing -> true once it has pressed (or chosen not to) for it
+	var _held = []
+
+	func _ready():
+		process_physics_priority = -10
+
+	func _physics_process(_delta):
+		for action in _held:
+			Input.action_release(action)
+		_held.clear()
+		var lane = ["off", "left", "right"].find(Moves.value("bifrons_stand_in")) - 1
+		if lane < 0 or runner._over or lane >= runner._players.size():
+			return
+		var p = runner._players[lane]
+		for thing in runner._things:
+			if thing.lane != lane or thing.done or _answered.has(thing):
+				continue
+			if thing.beat - runner._time > BeatRunner.STAND_IN_LEAD[thing.kind]:
+				continue
+			_answered[thing] = true
+			if randf() < BeatRunner.STAND_IN_SKILL:
+				var action = p._action(BeatRunner.STAND_IN_BUTTON[thing.kind])
+				Input.action_press(action)
+				_held.append(action)
+		for thing in _answered.keys():
+			if not is_instance_valid(thing) or thing.done:
+				_answered.erase(thing)
+
+	func _exit_tree():
+		for action in _held:
+			Input.action_release(action)
 
 
 # One thing coming at a player: an orb, a shard or a block, drawn in its kind's color. Placed by

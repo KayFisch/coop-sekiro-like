@@ -31,6 +31,9 @@ Code: `levels/runner/` (`runner.gd`, `runner.tscn`). Select screen: entry 6. Bra
 - **The sync meter is the run's life** (of 100, starting at 50): parries and hits fill it,
   what gets through empties it. Empty: the run is over (R runs again). A combo counts the
   answers in a row.
+- **Testing alone:** the stand-in switch (F1, the same as in Bifrons's fight: "left" plays P1,
+  "right" P2) presses that player's buttons: parry for orbs, attack for shards, jump for blocks,
+  just before each one's beat, 85 % of the time (`STAND_IN_SKILL`).
 
 ## Switches (F1, "Runner: ...")
 
@@ -47,7 +50,7 @@ Code: `levels/runner/` (`runner.gd`, `runner.tscn`). Select screen: entry 6. Bra
 ## Numbers (F2, the runner's page)
 
 Tempo (seconds per unit, units between patterns, the relay's delay, the speed-up), speeds
-(orbs 420 px/s, shards 650, the world 300), the meter (what each answer gains or costs), and how
+(orbs 420 px/s, shards 650, blocks 560, the world 300), the meter (what each answer gains or costs), and how
 often something comes between two patterns. F2 in this level shows only these.
 
 ## To find out together
