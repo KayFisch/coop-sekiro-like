@@ -2,31 +2,42 @@ class_name SyncRules
 extends Node
 ## Sync is life (Moves "bifrons_rules" on "sync"; for now only in Bifrons's fight). Nobody has
 ## health and there are no potions: the two players share one sync, he has his own, and each of
-## the three has a posture. The same rules hold on both sides.
+## the three has a posture. The same rules hold on both sides: a fair exchange. What tips it is
+## that the players can win sync back and he can't, and that he has more of it.
 ##
-## A hit coming in: unblocked, it costs sync, and some posture; blocked, posture; parried, a
-## little posture (a parry never breaks it). A coop parry (both his swords at once, parried by both players) wins sync.
-## A hit going out: in sync (through the guard the partner's parry broke) it wins sync, more on
-## the beat than off it; out of sync it only costs the one it lands on. A window the partner's
-## parry opened that nobody used, while someone could have, costs sync.
+## Attacks are normal or heavy. His heavy ones are those of both swords (green: a strike of both,
+## the leap); the players' attacks are normal, and heavy all through their sync mode.
 ##
-## Posture comes back with time, the faster the more sync: at full sync at its full rate, and
-## slower as sync goes, steeply ("posture_regen_curve"), as in Sekiro, where a boss low on
-## vitality hardly recovers posture. Broken (by a hit or a block, never a parry): staggered, and
-## all sync is gone. No sync is chaos: no blocking, and the next hit that isn't parried kills. It's
-## over once sync is back to "chaos_exit" (a revive). Full sync is the sync mode, the players'
-## second phase: their hits do "sync_mode_power" times as much until their sync falls below
-## "sync_mode_exit". The meters' sizes are tunable too; the thresholds are shares of them. He starts with full sync and wins any back only the way the players do: a
-## coop parry of his own (both their hits parried at once) or one strike hitting them both.
+## POSTURE comes in three sizes, lost by whoever...
+##   - parries or blocks a normal attack, or has a normal attack of their own parried: small;
+##   - is hit by a normal attack, parries or blocks a heavy one, or has a heavy one of their own
+##     parried: medium;
+##   - is hit by a heavy attack: large.
+## So a parry costs both sides alike, and a block only the one who blocks: blocking does nothing
+## to the attacker. A parry never breaks the parrier's own posture.
+## SYNC: a hit that lands costs the one it lands on sync: a heavy one "his_heavy_damage" (on the
+## players) or "their_heavy_damage" (on him), a normal one "normal_share" of that (a third).
+## Blocked or parried, it costs no sync. The players win sync back: a sync hit (through the guard
+## the partner's parry broke), more on the beat than off it, and a coop parry (both his swords at
+## once, parried by both). A window the partner's parry opened that nobody used, while someone
+## other than the parrier could have, costs them sync.
+##
+## Posture comes back only once nothing has landed on that one (hit, blocked or parried) and they
+## haven't attacked, for "posture_quiet_time"; a player holding block meanwhile gets it back
+## "block_regen_factor" times as fast. How fast follows sync, as in Sekiro: at full sync its full
+## rate, at 75 % half of it, at "posture_regen_none_at" (50 %) and below hardly any
+## ("posture_regen_least"). Broken: staggered, and all sync is gone. No sync is chaos: no blocking
+## (for him: no guard), and the next hit that isn't parried kills. The players get out of it once
+## their sync is back to "chaos_exit" (a revive); he can't, as he wins no sync back. Full sync is
+## the players' sync mode, their second phase: their attacks are heavy until their sync falls
+## below "sync_mode_exit".
 ##
 ## Every number is in Tuning (F2).
 
-# What a hit's amount is measured against: Bifrons's strike and its chip behind a block, and a
-# player's slash. A heavy strike (twice the damage) costs twice as much.
-const STRIKE_DAMAGE = 12.0
-const CHIP_DAMAGE = 4.0
-const SLASH_DAMAGE = 10.0
-const TOGETHER_TIME = 0.15  # two hits (or parries) this close are one beat, on both players
+const POSTURE_SIZES = ["posture_small", "posture_medium", "posture_large"]
+const SMALL = 0
+const MEDIUM = 1
+const LARGE = 2
 
 var team = 0.0  # the players' sync, 0..team_max()
 var boss_sync = 0.0  # his, 0..boss_max()
@@ -34,11 +45,14 @@ var team_chaos = false
 var boss_chaos = false
 var sync_mode = false
 var boss  # the boss whose fight this is
+# Whether the strike of his landing just now is a heavy one: he sets it while it lands
+# (ColumnaBifrons.land()), and the players' hooks (Player.take_damage(), on_perfect_parry()) lead
+# here meanwhile.
+var landing_heavy = false
 
 var _posture = {}  # player or boss -> 0..posture_max()
-var _posture_lost_at = {}
-var _hit_at = {}  # player -> when one of his blades last hit them unblocked
-var _parried_at = {}  # player -> when he last parried their hit
+var _busy_at = {}  # player or boss -> when something last landed on them, or they last attacked
+var _swings = {}  # player -> their swing_serial when last seen: a new one is a new attack
 var _time = 0.0
 
 
@@ -54,6 +68,8 @@ func _process(delta):
 	for actor in _actors():
 		if not _posture.has(actor):
 			_meet(actor)
+		if _attacking(actor):
+			_busy_at[actor] = _time
 		_regen(actor, delta)
 
 
@@ -87,10 +103,18 @@ func posture_share(actor) -> float:
 	return posture_of(actor) / posture_max(actor)
 
 
-# How fast that side's posture comes back just now, as a share of its full rate.
+# How fast that side's posture comes back, once it does, as a share of its full rate: all of it at
+# full sync, falling in a straight line to the floor at posture_regen_none_at.
 func regen_share(actor) -> float:
 	var sync = boss_share() if actor == boss else team_share()
-	return lerpf(Tuning.value("posture_regen_floor"), 1.0, pow(sync, Tuning.value("posture_regen_curve")))
+	var none_at = Tuning.value("posture_regen_none_at") / 100.0
+	return lerpf(Tuning.value("posture_regen_least"), 1.0, clampf((sync - none_at) / (1.0 - none_at), 0.0, 1.0))
+
+
+# True while that one's posture comes back: nothing has landed on them and they haven't attacked
+# for posture_quiet_time.
+func regenerating(actor) -> bool:
+	return _time - _busy_at.get(actor, -100.0) >= Tuning.value("posture_quiet_time")
 
 
 func can_block() -> bool:
@@ -105,38 +129,43 @@ func coop_stagger() -> float:
 	return Tuning.value("coop_parry_stagger")
 
 
-# --- The players, hit by him ---
+# --- His strikes landing on the players (landing_heavy: which kind) ---
 
-# Unblocked. Returns true if it kills: in chaos.
-func player_hit(p, amount: float) -> bool:
+# Unblocked. (amount: the old rules' number; what counts here is landing_heavy.) Returns true if
+# it kills: in chaos.
+func player_hit(p, _amount: float) -> bool:
 	if p.invincible:
 		return false
-	_hit_at[p] = _time
-	if _together(_hit_at):
-		_set_boss(boss_sync + Tuning.value("boss_sync_hit_gain"))
+	_busy_at[p] = _time
 	if team_chaos:
 		return true
-	_set_team(team - Tuning.value("hit_sync_loss") * amount / STRIKE_DAMAGE)
-	_lose_posture(p, Tuning.value("hit_posture_loss") * amount / STRIKE_DAMAGE, true)
+	_set_team(team - _damage("his_heavy_damage", landing_heavy))
+	_lose_posture(p, LARGE if landing_heavy else MEDIUM, true)
 	return false
 
 
-func player_blocked(p, amount: float) -> bool:
+# Blocked: it costs the one who blocks, not him.
+func player_blocked(p, _amount: float) -> bool:
 	if not p.invincible:
-		_lose_posture(p, Tuning.value("block_posture_loss") * amount / CHIP_DAMAGE, true)
+		_busy_at[p] = _time
+		_lose_posture(p, MEDIUM if landing_heavy else SMALL, true)
 	return false
 
 
+# Parried: it costs both alike, and can break his posture, not theirs.
 func player_parried(p):
+	var size = MEDIUM if landing_heavy else SMALL
 	if not p.invincible:
-		_lose_posture(p, Tuning.value("parry_posture_loss"), false)
+		_busy_at[p] = _time
+		_lose_posture(p, size, false)
+	_lose_posture(boss, size, true)
 
 
 func coop_parried():
 	_set_team(team + Tuning.value("coop_parry_gain"))
 
 
-# --- The players, hitting him ---
+# --- The players' hits landing on him (heavy in their sync mode) ---
 
 func sync_hit(on_beat: bool):
 	_set_team(team + Tuning.value("sync_hit_gain" if on_beat else "sync_hit_late_gain"))
@@ -146,25 +175,29 @@ func missed_window():
 	_set_team(team - Tuning.value("missed_window_loss"))
 
 
-# A hit lands on him, unblocked: in sync (a sync hit) or not. Returns true if it kills: in chaos.
-func boss_struck(amount: float, in_sync: bool) -> bool:
+# Unblocked. Returns true if it kills: in chaos.
+func boss_struck() -> bool:
+	_busy_at[boss] = _time
 	if boss_chaos:
 		return true
-	var slashes = amount / SLASH_DAMAGE * _power()
-	_set_boss(boss_sync - Tuning.value("boss_sync_hit_loss" if in_sync else "boss_hit_loss") * slashes)
-	_lose_posture(boss, Tuning.value("boss_hit_posture_loss") * slashes, true)
+	_set_boss(boss_sync - _damage("their_heavy_damage", sync_mode))
+	_lose_posture(boss, LARGE if sync_mode else MEDIUM, true)
 	return false
 
 
-func boss_blocked(amount: float):
-	_lose_posture(boss, Tuning.value("boss_block_posture_loss") * amount / SLASH_DAMAGE * _power(), true)
+# He blocks it: it costs him, not them.
+func boss_blocked():
+	_busy_at[boss] = _time
+	_lose_posture(boss, MEDIUM if sync_mode else SMALL, true)
 
 
+# He parries it: it costs both alike, and can break their posture, not his.
 func boss_parried(p):
-	_lose_posture(boss, Tuning.value("boss_parry_posture_loss") * _power(), false)
-	_parried_at[p] = _time
-	if _together(_parried_at):
-		_set_boss(boss_sync + Tuning.value("boss_coop_parry_gain"))
+	var size = MEDIUM if sync_mode else SMALL
+	_busy_at[boss] = _time
+	_lose_posture(boss, size, false)
+	if not p.invincible:
+		_lose_posture(p, size, true)
 
 
 # --- Inside ---
@@ -181,36 +214,36 @@ func _meet(actor):
 	_posture[actor] = posture_max(actor)
 	if actor != boss:
 		actor.potions = 0
+		_swings[actor] = actor.swing_serial
 
 
-func _power() -> float:
-	return Tuning.value("sync_mode_power") if sync_mode else 1.0
+# True while that one attacks: he's winding up or striking; a player has just begun a swing.
+func _attacking(actor) -> bool:
+	if actor == boss:
+		return boss.state == BaseBoss.State.TELEGRAPH or boss.state == BaseBoss.State.ATTACKING
+	var began = actor.swing_serial != _swings.get(actor, actor.swing_serial)
+	_swings[actor] = actor.swing_serial
+	return began
 
 
-# True once every player has an entry within TOGETHER_TIME of now; the entries are used up.
-func _together(times: Dictionary) -> bool:
-	var players = GameManager.players
-	if players.size() < 2:
-		return false
-	for p in players:
-		if _time - times.get(p, -100.0) > TOGETHER_TIME:
-			return false
-	times.clear()
-	return true
+# What a hit that lands costs in sync: the heavy amount, or the normal share of it.
+func _damage(key: String, heavy: bool) -> float:
+	return Tuning.value(key) * (1.0 if heavy else Tuning.value("normal_share"))
 
 
 func _regen(actor, delta: float):
-	if _time - _posture_lost_at.get(actor, -100.0) < Tuning.value("posture_regen_delay"):
+	if not regenerating(actor):
 		return
-	var full = Tuning.value("boss_posture_regen" if actor == boss else "player_posture_regen")
-	_posture[actor] = minf(_posture[actor] + full * regen_share(actor) * delta, posture_max(actor))
+	var rate = Tuning.value("boss_posture_regen" if actor == boss else "player_posture_regen") * regen_share(actor)
+	if actor != boss and actor.is_blocking():
+		rate *= Tuning.value("block_regen_factor")
+	_posture[actor] = minf(_posture[actor] + rate * delta, posture_max(actor))
 
 
-func _lose_posture(actor, amount: float, can_break: bool):
+func _lose_posture(actor, size: int, can_break: bool):
 	if not _posture.has(actor):
 		_meet(actor)
-	_posture_lost_at[actor] = _time
-	var left = minf(_posture[actor], posture_max(actor)) - amount
+	var left = minf(_posture[actor], posture_max(actor)) - Tuning.value(POSTURE_SIZES[size])
 	if left <= 0.0 and can_break:
 		_break(actor)
 	else:
@@ -245,11 +278,9 @@ func _set_team(v: float):
 		sync_mode = false
 
 
+# He only ever loses sync: once it's gone, his chaos lasts.
 func _set_boss(v: float):
 	boss_sync = clampf(v, 0.0, boss_max())
 	if boss_sync <= 0.0 and not boss_chaos:
 		boss_chaos = true
 		Sfx.play("chaos")
-	elif boss_chaos and boss_share() * 100.0 >= Tuning.value("chaos_exit"):
-		boss_chaos = false
-

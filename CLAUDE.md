@@ -153,13 +153,16 @@ Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`).
   `Moves.on("pogo")`). The fight kit is on by default, the platforming kit is off. `Pads` gives
   each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device).
   `Tuning` (F2 panel of numbers to tune while playing, saved to `user://tuning.cfg`; code asks
-  `Tuning.value("hit_sync_loss")` each time it needs one; a page per level: the runner's and the
+  `Tuning.value("his_heavy_damage")` each time it needs one; a page per level: the runner's and the
   ring's in theirs, the sync rules elsewhere).
 - `core/sync_rules.gd` (`SyncRules`): sync as life, for now only in Bifrons's fight (Moves
   "bifrons_rules"): no health, no potions, a shared sync for the players and one for the boss,
-  a posture each, chaos at no sync, sync mode at full. The boss creates it and hands it to
-  `GameManager.rules`; while that's set, `Player.take_damage()` and the boss's hits go through it,
-  and the HUD shows the two meters instead of health.
+  a posture each, chaos at no sync, sync mode at full. Attacks are normal or heavy (his: both
+  swords; theirs: in sync mode); posture is lost in three sizes, by parrying (both sides),
+  blocking (the blocker only) or being hit, and comes back 2 s after the last attack in or out.
+  The boss creates it and hands it to `GameManager.rules`; while that's set,
+  `Player.take_damage()` and the boss's hits go through it (`ColumnaBifrons.land()` says whether
+  a strike is heavy: `landing_heavy`), and the HUD shows the two meters instead of health.
 - `actors/player/player.gd`: one large script (~2000 lines) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
   potions, defensive queries the boss uses (`is_perfect_parry()` etc.), and some boss-specific

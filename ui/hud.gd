@@ -214,6 +214,8 @@ func _update_sync_duel(rules):
 		fill.size.x = w * share
 		fill.position.x = w - fill.size.x if entry[2] else w
 		fill.color = POSTURE_COLOR if share > 0.25 else POSTURE_LOW_COLOR
+		if share < 1.0 and not rules.regenerating(actor):
+			fill.color = fill.color.darkened(0.45)  # not coming back yet: an attack, in or out, too recent
 	var flicker = fmod(Time.get_ticks_msec() / 1000.0, 0.3) < 0.15
 	if rules.team_chaos:
 		_duel.team_fill.color = CHAOS_COLOR if flicker else CHAOS_COLOR.darkened(0.5)
@@ -221,7 +223,7 @@ func _update_sync_duel(rules):
 		_duel.team_state.modulate = CHAOS_COLOR
 	elif rules.sync_mode:
 		_duel.team_fill.color = TEAM_SYNC_MODE_COLOR
-		_duel.team_state.text = "SYNC MODE"
+		_duel.team_state.text = "SYNC MODE: your hits are heavy"
 		_duel.team_state.modulate = TEAM_SYNC_MODE_COLOR
 	else:
 		_duel.team_fill.color = TEAM_COLOR

@@ -366,50 +366,67 @@ filling out to the left; his on the right, in a dimmer shade of the same, full a
 and emptying toward the middle. The players start halfway. Each of the three has a posture, a
 thin bar under the sync meters, full out to the end like them: P1's and P2's under the players'
 meter, his under his (orange with a quarter left). Next to the posture bars, "regen" says how
-fast posture comes back just now. How many points each meter holds is set on F2 (100 each);
-the thresholds below are shares of it. How posture should look in the end is for later.
+fast posture comes back just now (dimmed while it doesn't). How many points each meter holds
+is set on F2 (the players' sync 100, his 200; posture 100, his 200); the thresholds below are
+shares of it. How posture should look in the end is for later.
 
-**One set of rules for both sides:**
+**One set of rules for both sides** (Nicho, 2026-10-17: a fair exchange; what tips it is that
+the players can win sync back and he can't, and that he has more of it: 200 to their 100).
 
-| What happens | to the side it happens to |
-|---|---|
-| a hit lands, unblocked | loses sync (a heavy strike twice as much), and some posture |
-| blocked | loses posture |
-| parried | loses a little posture; a parry never breaks it |
-| a coop parry (two blades at once, each parried by its player) | the parriers win sync |
-| a sync hit (through the guard the partner's parry broke) | the hitters win sync: more on the beat, less after |
-| a hit out of sync | wins nothing (it only costs the one it lands on) |
-| a window nobody used, while someone other than the parrier was in reach | the players lose sync |
+Attacks are **normal or heavy**. His heavy ones are those of both swords (green: a strike of both,
+at one player or at two, and the leap); his single-sword strikes are normal, the sweep too. The
+players' attacks are normal, and heavy all through their sync mode.
 
-- **His guard** blocks or parries by chance (half and half). A block doesn't knock your blade
-  back but costs him more posture; a parry knocks it back and costs him little.
-- **He wins sync** only the way the players do: parrying both your hits at once, or one strike
-  of his hitting you both. Neither happens often.
-- **A coop parry** of his strike staggers him for 1 s, not 2.2: it's no posture break.
-- **His sync** costs a sync hit 2 per slash and any other hit that lands 0.8; every hit that
-  lands also costs posture (him 4, a player 10), so hitting him holds his posture back too.
-- **Posture** comes back from 1 s after the last loss (Nicho has 0.5 s), the faster the more
-  sync, and steeply so: at full sync at its full rate (players 20 per second, him 30; Nicho has
-  15 and 15), at half sync a quarter of that, at none a tenth (`posture_regen_curve`, 2). As in
-  Sekiro: while he's whole his posture comes back too fast to break; the more sync he has lost,
-  the more the pressure on his guard counts. **Broken** by a hit or a block (never a parry):
-  staggered (players 0.8 s, him 2.5 s), all sync gone; posture comes back full. That's the
-  deathblow of Sekiro: on him it opens chaos, and the next hit kills.
-- **No sync is chaos.** The players can't block (parries still work), and the next hit that isn't
-  parried ends the fight. It's over, like a revive, once their sync is back to a quarter, which
-  only coop parries and sync hits bring. For him: split, no guard, the next hit that lands kills him.
-- **Full sync is the sync mode**, the players' second phase: their hits cost him three times as
-  much sync and posture, until their sync falls below 70 %. The meter turns gold. It's a
-  stand-in: the sync mode itself (the two of you joined into one, see the scribble of
-  2026-10-02) is still to build.
+**Posture** comes in three sizes, the same for everyone:
+
+| | small (5) | medium (15) | large (30) |
+|---|---|---|---|
+| a normal attack | you parry it or block it; yours is parried | it hits you | |
+| a heavy attack | | you parry it or block it; yours is parried | it hits you |
+
+So a parry costs both sides alike (the parrier and the one parried), and **a block only the one
+who blocks: blocking does nothing to the attacker**. His posture goes when the players parry
+him, when their hits land, and when they hit his guard (he blocks or parries by chance, half and
+half; his parry costs them too). A parry never breaks the parrier's own posture; anything else
+can break it.
+
+**Sync** is lost only to a hit that lands: a heavy one costs 18, a normal one a third of that (6).
+Blocked or parried, no sync. The players win sync back: a sync hit (through the guard their
+partner's parry broke) 4 on the beat and 2 after it, a coop parry (both his swords at once, each
+parried by its player) 6, and it staggers him for 1 s. A window nobody used, while someone other
+than the parrier was in reach, costs them 1. He wins none back.
+
+- **Posture comes back** only once nothing has landed on you (hit, blocked or parried) and you
+  haven't attacked, for 2 s; while it doesn't, its bar is dimmed. Holding block meanwhile doubles
+  it. How fast follows sync, as in Sekiro: at full sync the full rate (players 20 per second, him
+  30), at 75 % half of it, at 50 % and below hardly any (5 %); "regen" next to the posture bars
+  says how much just now.
+- **Broken:** staggered (players 0.8 s, him 2.5 s), all sync gone; posture comes back full.
+- **No sync is chaos.** The players can't block (parries still work), and the next hit that
+  isn't parried ends the fight. It's over, like a revive, once their sync is back to a quarter.
+  He, split, has no guard, and the next hit that lands kills him; as he wins no sync back, it
+  lasts: breaking his posture is the deathblow of Sekiro.
+- **Full sync is the sync mode**, the players' second phase: their attacks are heavy until their
+  sync falls below 70 %. The meter turns gold. It's a stand-in: the sync mode itself (the two of
+  you joined into one, see the scribble of 2026-10-02) is still to build.
 - **The beat:** when your partner's parry opens his guard on your side, your sword lights violet
   for 0.12 s. A hit landing in that time is on the beat.
 - **Every number is on the F2 panel** (saved to `user://tuning.cfg`, reset on its last row).
+  The numbers above are the defaults.
 - Testing alone: the stand-in strikes through the guard your parries open for it, three times
   in four; the windows it leaves unused cost sync.
-- The players' sync moves in steps of a few points: a hit costs 6, a sync hit wins 4 on the beat
-  and 2 after it, a coop parry 6, a missed window costs 1 (halved after the first test, where it
-  moved too fast).
+
+**What two stand-ins showed** (2026-10-17, his posture at 200): the fight is decided by his
+posture. It broke after 19 to 40 s; by then his sync was still at 170 to 190 of 200. His posture
+came back only 4 to 10 % of the time, as he attacks most of the time and his pauses are shorter
+than 2 s; so how much sync he has hardly matters to it. The players' came back about half the
+time. That's where his patterns and behavior have to change (pauses, or what counts as his
+attacking), and the sizes and meters be tuned.
+
+Before 2026-10-17 the rules were otherwise: posture lost only by the one hit, blocked or parried,
+in amounts per action; a sync hit cost him more than another hit; the sync mode tripled the
+players' hits; he won sync back from a coop parry of his own or one strike hitting both players;
+posture came back 1 s after the last loss, its rate following sync to the power 2.
 
 ## Testing alone ("bifrons_stand_in")
 

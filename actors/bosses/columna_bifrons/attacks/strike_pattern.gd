@@ -249,24 +249,25 @@ func _land(index: int):
 		_push(sword)
 		return
 	var striking = [LEFT, RIGHT] if sword == BOTH else [sword]
-	var heavy = sword == BOTH and boss.ward_of(LEFT) == boss.ward_of(RIGHT)  # both on one player
+	var on_one = sword == BOTH and boss.ward_of(LEFT) == boss.ward_of(RIGHT)  # both on one player
 	# Who parried, before anything lands: a parry of both blades is the strong kind.
 	var judged = {}
 	for blade in striking:
-		judged[blade] = judged[LEFT] if heavy and blade == RIGHT else boss.judge(blade)
+		judged[blade] = judged[LEFT] if on_one and blade == RIGHT else boss.judge(blade)
 		_parried[blade] = judged[blade].parried
 		_thrust[blade] = _kinds[index] == CHARGE
 	var both = sword == BOTH and _parried[LEFT] and _parried[RIGHT]
-	for blade in ([LEFT] if heavy else striking):
-		if heavy:
-			boss.land(judged[blade], true, HEAVY_DAMAGE, HEAVY_KNOCKBACK)
+	# A strike of both swords is a heavy attack for the sync rules, on one player or on two.
+	for blade in ([LEFT] if on_one else striking):
+		if on_one:
+			boss.land(judged[blade], true, HEAVY_DAMAGE, HEAVY_KNOCKBACK, true)
 		else:
-			boss.land(judged[blade], both)
+			boss.land(judged[blade], both, 1.0, 1.0, sword == BOTH)
 		for p in judged[blade].parriers:
 			parry_success.emit(p, "bifrons_strike")
 			strike_parried.emit(p)
 
-	if both and not heavy:
+	if both and not on_one:
 		both_parried.emit()
 		Sfx.play("counter_hit", -2.0)
 		boss.shake(12.0)

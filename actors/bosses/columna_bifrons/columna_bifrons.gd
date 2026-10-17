@@ -63,9 +63,9 @@ const LEAP = preload("attacks/leap.gd")
 const SHOVE = preload("attacks/shove.gd")
 const ATTACKS = {
 	"SINGLE": {"weight": 0.0, "repeats": true, "strikes": [[3, LEFT]]},
-	"DOUBLE": {"weight": 0.5, "strikes": [[3, LEFT], [3, RIGHT]]},
+	"DOUBLE": {"weight": 0.0, "strikes": [[3, LEFT], [3, RIGHT]]},
 	"TRIPLE": {"weight": 2.0, "repeats": true, "strikes": [[4, RIGHT], [4, RIGHT], [2, LEFT]]},
-	"QUAD": {"weight": 1.5, "strikes": [[4, LEFT], [2, LEFT], [2, RIGHT], [3, BOTH]]},
+	"QUAD": {"weight": 0.0, "strikes": [[4, LEFT], [2, LEFT], [2, RIGHT], [3, BOTH]]},
 	"LONG": {"weight": 1.0, "strikes": [
 		[5, RIGHT], [3, RIGHT], [3, LEFT], [4, RIGHT], [3, RIGHT], [3, LEFT], [4, BOTH]]},
 	"BOTH": {"weight": 0.5, "strikes": [[4, BOTH]]},
@@ -663,8 +663,10 @@ func judge(blade: int, reach = BLADE_REACH) -> Dictionary:
 
 # The judged strike lands: a parrier parries it (`strong`: the heavier kind of parry), anyone
 # else under it is hit, or chipped behind a block. `damage` and `knock` scale what a hit does
-# (a heavy strike, the leap).
-func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0):
+# (a heavy strike, the leap). `heavy`: a heavy attack for the sync rules (one of both swords).
+func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0, heavy = false):
+	if rules != null:
+		rules.landing_heavy = heavy  # the players' hooks lead to the rules while it lands
 	for p in judged.under:
 		if p in judged.parriers:
 			p.on_perfect_parry(strong)
@@ -674,6 +676,8 @@ func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0):
 		else:
 			p.take_damage(BLADE_DAMAGE * damage, knockback_for(p, BLADE_KNOCKBACK * knock))
 			shake(5.0)
+	if rules != null:
+		rules.landing_heavy = false
 	if not judged.parried:
 		Sfx.play("thunk", -6.0)  # the blade hitting the floor
 
@@ -768,9 +772,11 @@ func take_damage(amount: float, source = null):
 		super(amount, source)
 
 
-# Sync as life (core/sync_rules.gd): the same three cases, but they cost his sync and posture (a
-# sync hit its own amount, not SYNC_HIT_FACTOR), and a guard that's up parries the hit by chance,
-# or else blocks it. Staggered or in chaos he has no guard; a hit that lands in chaos kills him.
+# Sync as life (core/sync_rules.gd): the same three cases, but they cost his sync and posture
+# (whatever the swing's amount: a player's attack is normal, heavy in their sync mode; a sync hit
+# costs him what any hit does, and wins the players sync), and a guard that's up parries the hit
+# by chance, or else blocks it. Staggered or in chaos he has no guard; a hit that lands in chaos
+# kills him.
 func _struck_by_rules(amount: float, source):
 	_slowed_until = anim_time + SLOWED_TIME
 	var at = _flank(side_of(source), source.global_position.y)
@@ -788,26 +794,26 @@ func _struck_by_rules(amount: float, source):
 		if on_beat:
 			Sfx.play("on_beat", -4.0)
 			spawn_sparks(at, 12, COLOR_SYNC_BEAT)
-		lethal = rules.boss_struck(amount, true)
+		lethal = rules.boss_struck()
 	elif not guards.is_empty():
 		if randf() < Tuning.value("boss_parry_chance"):
 			_parry(guards[0], source, at)
 			rules.boss_parried(source)
 		else:
 			_block(guards[0], source, at)
-			rules.boss_blocked(amount)
+			rules.boss_blocked()
 		return
 	else:
 		Sfx.play("sync_hit", -6.0)
 		shake(3.0)
 		spawn_sparks(at, 8, COLOR_EXECUTE)
-		lethal = rules.boss_struck(amount, false)
+		lethal = rules.boss_struck()
 	super.take_damage(hp if lethal else 0.0, source)
 
 
 # Sync as life: he takes a player's sword hit on a sword that fights them, without parrying it.
-# Their blade isn't knocked back, and it costs him posture. In the reactive mode it wears on his
-# patience like a parry.
+# Their blade isn't knocked back, and it costs him posture, them nothing. In the reactive mode it
+# wears on his patience like a parry.
 func _block(blade: int, _player, at: Vector2):
 	Sfx.play("chip", -4.0)
 	shake(2.0)
