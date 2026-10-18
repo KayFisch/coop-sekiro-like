@@ -2812,10 +2812,6 @@ func draw_share() -> float:
 	return clampf(_draw_time / Tuning.value("sync_charge_time"), 0.0, 1.0) if _drawing else 0.0
 
 
-func cancel_draw():
-	_drawing = false
-
-
 func sabre_on() -> bool:
 	return _sabre != null and _sabre.visible
 
