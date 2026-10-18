@@ -486,9 +486,7 @@ func knockback_for(player, strength: float) -> Vector2:
 
 
 func shake(strength: float):
-	var cam = get_viewport().get_camera_2d()
-	if cam and cam.has_method("shake"):
-		cam.shake(strength)
+	Fx.shake(self, strength)
 
 
 func _update_marker():

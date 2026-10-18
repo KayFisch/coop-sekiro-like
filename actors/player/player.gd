@@ -141,6 +141,7 @@ const LAUNCH_REACH = Vector2(70.0, 50.0)  # center-to-center distance at which t
 const LAUNCH_HEIGHT = 340.0  # 2.5x a jump
 const LAUNCH_CARRY = 0.15  # fraction of the dash's sideways speed kept (~150 px/s)
 const LAUNCH_STRETCH = Vector2(0.7, 1.4)
+const LAUNCH_STRETCH_TIME = 0.3
 # FAST FALL: holding down in the air, once falling, pulls you down harder and faster.
 const FAST_FALL_GRAVITY = 2.2  # times the usual falling gravity
 const FAST_FALL_MAX_SPEED = 1900.0
@@ -1113,13 +1114,7 @@ func _start_dash(direction: float):
 	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
 	_passing = _pass_timer > 0.0 and _boss_ahead()  # right after a parry: through him
 	_pass_timer = 0.0
-	# Squash-and-stretch: snap wide and short, then spring back.
-	if _stretch_tween:
-		_stretch_tween.kill()
-	body.scale = DASH_STRETCH
-	_stretch_tween = create_tween()
-	_stretch_tween.tween_property(body, "scale", Vector2.ONE, DASH_STRETCH_TIME) \
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_squash(DASH_STRETCH, DASH_STRETCH_TIME)  # snap wide and short, then spring back
 	if slash_lead:
 		var already_hit = _attack_landed
 		_attack_timer = 0.0
@@ -1213,12 +1208,7 @@ func _process_windup(delta):
 		_passing = true  # through him (DASH-SLASH THROUGH)
 	swing_serial += 1
 	_trail_timer = 0.0
-	if _stretch_tween:
-		_stretch_tween.kill()
-	body.scale = DASH_STRETCH
-	_stretch_tween = create_tween()
-	_stretch_tween.tween_property(body, "scale", Vector2.ONE, DASH_STRETCH_TIME) \
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_squash(DASH_STRETCH, DASH_STRETCH_TIME)
 	if _rhythm_dash:
 		Sfx.play("slash", -10.0)  # quiet: beat 2 is the parry's
 	else:
@@ -1236,7 +1226,7 @@ func _release_charge():
 		_dash_slash = false
 		_swing_from_angle = _sword_angle()
 		_recoil_timer = PARRIED_RECOIL
-		_spawn_sparks(sword_pivot.global_position, 5, Color(0.6, 0.6, 0.6))
+		Fx.sparks(self, sword_pivot.global_position, 5, Color(0.6, 0.6, 0.6))
 		Sfx.play("chip")
 		return
 	relay_beat = roundi(Beat.beats_at(t))
@@ -1402,7 +1392,7 @@ func _pogo():
 	if Moves.on("pogo_refresh_dash"):
 		_dash_ready = true
 		_dash_cooldown = 0.0
-	_spawn_sparks(global_position + Vector2(0.0, body.size.y / 2.0 + 6.0), 6, _sword_color.lightened(0.5))
+	Fx.sparks(self, global_position + Vector2(0.0, body.size.y / 2.0 + 6.0), 6, _sword_color.lightened(0.5))
 	Sfx.play("parry", -8.0)
 
 
@@ -1412,11 +1402,9 @@ func _pogo_clash(partner):
 	_bounce()
 	partner.on_launch_clash()
 	var point = (global_position + partner.global_position) / 2.0
-	_spawn_sparks(point, 14, body_color.lerp(partner.body_color, 0.5).lightened(0.5))
+	Fx.sparks(self, point, 14, body_color.lerp(partner.body_color, 0.5).lightened(0.5))
 	Sfx.play("parry_strong")
-	var cam = get_viewport().get_camera_2d()
-	if cam and cam.has_method("shake"):
-		cam.shake(4.0)
+	Fx.shake(self, 4.0)
 	pogo_clashed.emit(self)
 
 
@@ -1517,11 +1505,9 @@ func _chimney_clash(other):
 		p._sword_flash = SWORD_FLASH_TIME
 		if Moves.on("wall_rhythm") and p.wall_jump_strong:
 			p._resync()
-	_spawn_sparks(point, 14, body_color.lerp(other.body_color, 0.5).lightened(0.5))
+	Fx.sparks(self, point, 14, body_color.lerp(other.body_color, 0.5).lightened(0.5))
 	Sfx.play("parry_strong")
-	var cam = get_viewport().get_camera_2d()
-	if cam and cam.has_method("shake"):
-		cam.shake(4.0)
+	Fx.shake(self, 4.0)
 
 
 # The blades locked on 2: both held until the anchor's strike on 3 throws the dasher (see
@@ -1535,11 +1521,9 @@ func _start_relay(anchor):
 	anchor.parry_press_time = -100.0  # one press parries one dash-slash
 	_sword_flash = SWORD_FLASH_TIME
 	anchor._sword_flash = SWORD_FLASH_TIME
-	_spawn_sparks((global_position + anchor.global_position) / 2.0, 12, Color(1.0, 0.85, 0.4))
+	Fx.sparks(self, (global_position + anchor.global_position) / 2.0, 12, Color(1.0, 0.85, 0.4))
 	Sfx.play("parry_strong")
-	var cam = get_viewport().get_camera_2d()
-	if cam and cam.has_method("shake"):
-		cam.shake(4.0)
+	Fx.shake(self, 4.0)
 	relayed.emit(self)
 
 
@@ -1556,7 +1540,7 @@ func _relay_blocked(anchor):
 	if back == 0.0:
 		back = -_dash_dir
 	apply_knockback(Vector2(back * RELAY_FAIL_BOUNCE.x, RELAY_FAIL_BOUNCE.y))
-	_spawn_sparks((global_position + anchor.global_position) / 2.0, 5, Color(0.6, 0.6, 0.6))
+	Fx.sparks(self, (global_position + anchor.global_position) / 2.0, 5, Color(0.6, 0.6, 0.6))
 	Sfx.play("chip")
 
 
@@ -1614,7 +1598,7 @@ func _relay_dropped():
 	if anchor and is_instance_valid(anchor) and anchor._hold_kind == Hold.RELAY_ANCHOR:
 		anchor._hold_kind = Hold.NONE
 		anchor._hold_partner = null
-	_spawn_sparks(global_position, 5, Color(0.6, 0.6, 0.6))
+	Fx.sparks(self, global_position, 5, Color(0.6, 0.6, 0.6))
 	Sfx.play("chip")
 
 
@@ -1702,20 +1686,13 @@ func _launch(partner):
 	_jump_buffer = 0.0
 	refresh_air_moves()
 	_sword_flash = SWORD_FLASH_TIME
-	if _stretch_tween:
-		_stretch_tween.kill()
-	body.scale = LAUNCH_STRETCH
-	_stretch_tween = create_tween()
-	_stretch_tween.tween_property(body, "scale", Vector2.ONE, 0.3) \
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_squash(LAUNCH_STRETCH, LAUNCH_STRETCH_TIME)
 	partner.on_launch_clash()
 	var point = (global_position + partner.global_position) / 2.0
-	_spawn_sparks(point, 16, body_color.lerp(partner.body_color, 0.5).lightened(0.5))
+	Fx.sparks(self, point, 16, body_color.lerp(partner.body_color, 0.5).lightened(0.5))
 	Sfx.play("parry_strong")
 	Sfx.play("launch", -3.0)
-	var cam = get_viewport().get_camera_2d()
-	if cam and cam.has_method("shake"):
-		cam.shake(6.0)
+	Fx.shake(self, 6.0)
 	launched.emit(self)
 
 
@@ -1846,9 +1823,7 @@ func on_perfect_parry(strong: bool):
 	_sword_flash = SWORD_FLASH_TIME
 	_parry_flick = PARRY_FLICK_TIME
 	Sfx.play("parry_strong" if strong else "parry")
-	var cam = get_viewport().get_camera_2d()
-	if cam and cam.has_method("shake"):
-		cam.shake(7.0 if strong else 4.0)
+	Fx.shake(self, 7.0 if strong else 4.0)
 	if Moves.on("parry_pass"):
 		_pass_timer = PASS_WINDOW
 		if _dash_timer > 0.0 and not _dash_slash and _boss_ahead():
@@ -2227,20 +2202,11 @@ func _spawn_afterimage():
 		tween.tween_callback(node.queue_free)
 
 
-func _spawn_sparks(point: Vector2, count: int, color: Color):
-	for i in count:
-		var spark = ColorRect.new()
-		spark.top_level = true
-		spark.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		spark.size = Vector2(4, 4)
-		spark.color = color.lerp(Color.WHITE, randf() * 0.6)
-		add_child(spark)
-		spark.global_position = point
-		var fly = Vector2.from_angle(randf() * TAU) * randf_range(30.0, 110.0)
-		var tween = spark.create_tween().set_parallel()
-		tween.tween_property(spark, "global_position", point + fly, 0.3).set_ease(Tween.EASE_OUT)
-		tween.tween_property(spark, "modulate:a", 0.0, 0.3)
-		tween.chain().tween_callback(spark.queue_free)
+# The body squashed or stretched to `shape`, springing back over `time` (a dash, a launch).
+func _squash(shape: Vector2, time: float):
+	if _stretch_tween:
+		_stretch_tween.kill()
+	_stretch_tween = Fx.squash(body, shape, time)
 
 
 # The blade a little broader, with a point at its end and a crossguard just past the hands (see

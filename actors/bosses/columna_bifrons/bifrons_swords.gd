@@ -425,13 +425,4 @@ func _update_pose():
 
 
 func spawn_sparks(point: Vector2, count: int, color: Color):
-	for i in count:
-		var spark = _rect(Vector2(4, 4), color.lerp(Color.WHITE, randf() * 0.6))
-		spark.top_level = true
-		add_child(spark)
-		spark.global_position = point
-		var fly = Vector2.from_angle(randf() * TAU) * randf_range(30.0, 110.0)
-		var tween = spark.create_tween().set_parallel()
-		tween.tween_property(spark, "global_position", point + fly, 0.3).set_ease(Tween.EASE_OUT)
-		tween.tween_property(spark, "modulate:a", 0.0, 0.3)
-		tween.chain().tween_callback(spark.queue_free)
+	Fx.sparks(self, point, count, color)
