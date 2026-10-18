@@ -15,7 +15,8 @@ They come out of `scribbles.md` (2026-09-30 to 2026-10-02). The name is a workin
 
 Code: `actors/bosses/columna_bifrons/` (boss, `stand_in.gd`, `attacks/strike_pattern.gd`,
 `attacks/sweep.gd`, `attacks/leap.gd`, `attacks/shove.gd`), `levels/threshold/`; the players'
-half of the rules is in `actors/player/player.gd` ("THE SWORD", "DASH-PARRY"). Select screen:
+half of the rules is in `actors/player/` ("THE SWORD" in `player_sword.gd`, "DASH-PARRY" in
+`player_body.gd`). Select screen:
 entry 1. Everything below that can be switched is on the F1 panel.
 
 ---
@@ -121,7 +122,7 @@ when he's **cornered**: see "How he moves".
 starts over from there, and his body is no obstacle until it's done. A dash started up to 0.2 s
 after the parry goes through him too. A dash that ends inside him puts you out on the side you
 got closer to. It works at any of his strikes, in pep or ppe. (Moves "parry_pass"; it's a
-player rule in `player.gd`, so it holds for any boss with a body.)
+player rule in `player_body.gd`, so it holds for any boss with a body.)
 
 ## How he moves
 
@@ -179,7 +180,7 @@ players (both in the 122 px between him and a wall): he backs away instead, abov
 
 **Players always face him** (Moves "bifrons_face"), whichever way they walk, so nobody has their
 back to him after he's passed them; the dash goes the way the stick is held. That's in
-`player.gd`, for any boss that asks for it (`BaseBoss.holds_facing()`).
+`player_body.gd` (`_face()`), for any boss that asks for it (`BaseBoss.holds_facing()`).
 
 ## Left alone
 
@@ -207,7 +208,7 @@ What he does when one player walks off (to drink, say):
 
 ## The players' sword
 
-Changed for this boss, in `player.gd`, so it holds in every fight (and needs Kay's yes):
+Changed for this boss, in `player_sword.gd`, so it holds in every fight (and needs Kay's yes):
 
 - **Rest:** held diagonally, up and forward. **Block:** diagonally down in front. Letting go
   swings it back up; a perfect parry beats it up past its rest. That upswing *is* the parry.
@@ -561,10 +562,10 @@ same distances.
 | Reactive: his answer's first strike lands within | `ANSWER_WAIT` | 4 (0.8 s) |
 | Stand-in: parried / blocked (the rest hits) | `BifronsStandIn.PARRY_CHANCE`, `BLOCK_CHANCE` | 0.75 / 0.15 |
 | Stand-in: where it stands | `DISTANCE` | 95 px |
-| Player: slash windup / cut / return | `ATTACK_WINDUP_TIME`, `_ACTIVE_`, `_RETURN_` (player.gd) | 0.05 / 0.12 / 0.24 s |
-| Player: recoil after being parried | `PARRIED_RECOIL` (player.gd) | 0.45 s |
-| Player: an early attack press still counts | `ATTACK_BUFFER_TIME` (player.gd) | 0.15 s |
-| Player: a dash this soon after a parry goes through him | `PASS_WINDOW` (player.gd) | 0.2 s |
+| Player: slash windup / cut / return | `ATTACK_WINDUP_TIME`, `_ACTIVE_`, `_RETURN_` (player_sword.gd) | 0.05 / 0.12 / 0.24 s |
+| Player: recoil after being parried | `PARRIED_RECOIL` (player_sword.gd) | 0.45 s |
+| Player: an early attack press still counts | `ATTACK_BUFFER_TIME` (player_sword.gd) | 0.15 s |
+| Player: a dash this soon after a parry goes through him | `PASS_WINDOW` (player_body.gd) | 0.2 s |
 
 For testing: `TEST_ONLY_PATTERN`, a list of attack names (e.g. `["CROSSING", "LEAP"]`): he
 uses only those, each where it would come anyway; if none of them comes in the situation he's

@@ -4,7 +4,7 @@ What an image model (or a person) needs to know to draw for this game: what the 
 how big, which colors, which poses. Paste the block below into the prompt and fill in `<STYLE>`.
 
 Nothing here is decided art direction. Today everything is rectangles drawn in code; the sizes,
-colors and poses below are read from that code (`actors/player/player.gd`,
+colors and poses below are read from that code (`actors/player/`,
 `actors/bosses/columna_bifrons/columna_bifrons.gd`, `levels/threshold/threshold.tscn`,
 `ui/mirror_view.gd`). When those change, change them here too.
 

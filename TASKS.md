@@ -386,10 +386,6 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [ ] **`.gd` aufräumen, Teil 1** (klein, kann jederzeit):
   - Sync-Werte (`SYNC_GAINS`) aus `GameManager` in die jeweiligen Bosse verschieben
   - Arena-Grenzen aus `base_boss.gd` ins Level holen
-  - boss-spezifische Hooks (gather, tether, grab) aus `player.gd` rauslösen
-- [ ] **`.gd` aufräumen, Teil 2:** `player.gd` (~2000 Zeilen) in Komponenten aufteilen
-  (Bewegung, Schwert, Partner-Moves, Zustand/Health). Side-Scroller steht, also möglich;
-  sinnvoll, sobald klar ist, welche Moves bleiben. Eigener Branch, `player.gd` vorher claimen.
 
 ## Erledigt
 
@@ -400,3 +396,6 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [x] Side-Scroller vs. Top-Down entschieden
 - [x] Zwei Controller: ein Pad pro Spieler (`core/pads.gd`, Branch `nicho/pep-test`), mit zwei
   Pads getestet (2026-10-14)
+- [x] **`.gd` aufräumen, Teil 2:** `player.gd` in Schichten aufgeteilt wie Bifrons: Körper,
+  Schwert, Wände, Partner, der Spieler selbst (`actors/player/player_*.gd`, `player.gd`); die
+  boss-spezifischen Hooks sind mit Cubus und Sphaera raus (2026-10-18, `kay/player-kit`)

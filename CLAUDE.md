@@ -59,7 +59,8 @@ docs/                                design docs: concept.md, boss_*.md (one per
                                      dev_tools.md (F3-F5, tests, F2 numbers, measuring, a new boss)
 core/                                autoloads: GameManager, Sfx, Moves, Pads, Beat, Tuning, Dev;
                                      sync_rules.gd (sync as life, Bifrons), sync_bond.gd (sync mode)
-actors/player/                       player.gd (+ scene), sync_wave.gd (the parry's energy to the partner)
+actors/player/                       player.gd (+ scene) and the four parts it extends (player_*.gd),
+                                     sync_wave.gd (the parry's energy to the partner)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              threshold/ (Bifrons's room), gym/ (movement test rooms), kit/ (level kit: rooms built in
                                      the editor), horologium/ (coop platformer level, kit rooms),
@@ -92,9 +93,10 @@ Move files with `git mv`, or in the Godot editor, never one without the other.
 - **Anything bigger or experimental** (new boss, a rework, a refactor touching many files):
   a branch `<name>/<topic>` (e.g. `kay/top-down-test`, `nicho/player-split`), merged into `main`
   once it runs. Delete it after merging.
-- Don't have both people touching `player.gd` or the same `.tscn` at the same time (claim it in
-  `TASKS.md`). Scene files merge badly; prefer building nodes in code, as the existing scripts do.
-  Rooms built with the level kit are the exception: scenes by design, one person per room.
+- Don't have both people touching the player (`actors/player/`) or the same `.tscn` at the same
+  time (claim it in `TASKS.md`). Scene files merge badly; prefer building nodes in code, as the
+  existing scripts do. Rooms built with the level kit are the exception: scenes by design, one
+  person per room.
 - Claude commits or pushes only when asked.
 
 ### Commit messages
@@ -180,11 +182,18 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   (`Player._process_draw()`), let go together on the big cue for a heavy strike
   (`ColumnaBifrons.take_pair_strike()`); he slows down and strikes with both swords
   (`in_sync_mode()`, `time_unit()`).
-- `actors/player/player.gd`: one large script (~2700 lines, a contents list at its top) with all player logic: movement,
-  walls/ledges, sword swings, partner clashes (launch, relay, pogo clash, chimney clash),
-  and the defensive queries the boss uses (`is_perfect_parry()` etc.). Tuning
-  constants at the top, grouped by feature. The sword's
-  rules are under "THE SWORD" there: a swing commits (windup, cut, return; no block or parry
+- `actors/player/`: the player in five parts, each extending the one before (as Bifrons's):
+  `player_body.gd` (`PlayerBody`: each player's buttons, `action()`, running, jumping, the dash,
+  falling, knockback, being carried or bounced, `bounce()`, the boss's block, `partner()`),
+  `player_sword.gd` (THE SWORD: the swings from one table, `SWINGS`; the dash-slash, block and
+  parry, the pogo), `player_walls.gd` (walls, the wall rhythm on `Beat`, ledges, the chimney
+  clash), `player_partner.gd` (launch, pogo clash, the relay, the tell) and `player.gd` (what a
+  boss does to a player, the pair's strike, the look, the frame; the script everyone else uses).
+  The body calls hooks the parts above override (`_face()`, `_cling()`, `_speed_scale()`...),
+  and each part adds its share to `_ready()`, `_tick_timers()`, `interrupt_movement()` and
+  `movement_state()` through super. Tuning constants sit with their feature at the top of its
+  part. The defensive queries the boss uses (`is_perfect_parry()` etc.) are the sword's. Its
+  rules are under "THE SWORD": a swing commits (windup, cut, return; no block or parry
   until the blade is back at rest), and a swing an enemy blade parries recoils
   (`on_swing_parried()`, called by the boss). A boss that changes sides can hold the players'
   facing (`BaseBoss.holds_facing()`); the dash then goes the way the stick is held. A perfect

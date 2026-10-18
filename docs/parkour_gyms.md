@@ -11,7 +11,7 @@ and **R** does the same on demand.
 
 Every surface sits on a **32 px grid** (with a brighter line every 160 px, counted up from the
 floor). Distances are drawn as blue dimension lines, and the key heights (jump, double jump,
-launch) as dashed lines. The numbers are read from `player.gd`'s tuning constants, so they stay
+launch) as dashed lines. The numbers are read from the player's tuning constants, so they stay
 right when you retune.
 
 **The readout** (Tab toggles it) shows, per player: what they're doing (ground, air, wall slide,
@@ -34,7 +34,7 @@ autoload); code asks `Moves.on("pogo")`.
 | Pogo · pogo refreshes the air jump · pogo refreshes the dash · pogo off your partner | on |
 | Launch · relay · chimney clash · players collide | on |
 
-## The new moves (`player.gd`, each with its tuning block)
+## The new moves (`actors/player/`, each with its tuning block)
 
 - **Fast fall:** hold down in the air while falling. You fall with 2.2× the gravity, up to
   1900 px/s instead of 1300.
