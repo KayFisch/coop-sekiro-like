@@ -1,7 +1,7 @@
 class_name PlayerSword
 extends PlayerBody
 ## A player, part 2 of 5: the sword. THE SWORD's rules (below): the slash, the upslash, the
-## dash-slash (charged and let go on a beat for the relay), block and the parry window, the pogo;
+## dash-slash (charged, let go on a beat), block and the parry window, the pogo;
 ## the blade's angle every frame, and the sparks of blades meeting.
 ## Part 1, the body: player_body.gd. Part 3, walls and ledges: player_walls.gd.
 
@@ -44,11 +44,16 @@ const PARRIED_RECOIL = 0.45
 const RECOIL_ANGLE = -2.4  # thrown back over the shoulder
 const RECOIL_KNOCK_TIME = 0.06  # how fast it's thrown there
 # Dash-slash: dash and attack together (or attack a moment before the dash) to dash with the
-# sword thrust out level in front, hitting all the way through the dash. It starts with a short
-# windup, held in place with the blade drawn back and brightening, so a partner can see it
-# coming and time a launch (see player_partner.gd).
-const DASH_SLASH_WINDUP = 0.2
-const DASH_SLASH_COOLDOWN = 0.5  # from the windup's start until the next attack
+# sword thrust out level in front, hitting all the way through the dash. It charges first, held
+# in place with the blade drawn back, for as long as attack is held; the blade flares on every
+# beat of the clock (Beat; a dash-slash starts it where no level has). Let go on a beat, it runs
+# half a run before the next one, quickly, so the blades meet on that beat wherever a partner
+# stands in reach: the moment for their launch or relay (see player_partner.gd). Let go off the
+# beat, the blade fumbles and the dash is spent.
+const DASH_SLASH_RELEASE_TOLERANCE = PARRY_TOLERANCE  # the release counts this far off a beat, early or late
+const DASH_SLASH_RUN_TIME = 0.04  # the run, DASH_DISTANCE in this long (a plain dash: DASH_TIME)
+const DASH_SLASH_FLARE = 0.15  # s: charging, the blade flares white on every beat and fades over this
+const DASH_SLASH_COOLDOWN = 0.5  # from the charge's start until the next attack
 const DASH_SLASH_WINDUP_DRAW = 14.0  # the blade drawn back this far behind the usual grip
 const DASH_SLASH_LEAD = 0.1  # an attack pressed at most this long before a dash turns into one...
 const DASH_SLASH_LATE = 0.06  # ...and so does one pressed at most this long after the dash starts
@@ -58,11 +63,6 @@ const DASH_SLASH_REACH = 1.5  # ...and drawn out to this times its length (the h
 const DASH_SLASH_GLOW = 0.6  # the blade this far toward white-hot
 const DASH_SLASH_TRAIL_INTERVAL = 0.02  # an afterimage of the body this often through the dash
 const DASH_SLASH_TRAIL_FADE = 0.18
-# For the relay (Moves "relay", see RELAY in player_partner.gd) the dash-slash is charged instead:
-# held as long as attack is, and let go on a beat; then a quick run.
-const RHYTHM_RELEASE_TOLERANCE = PARRY_TOLERANCE  # the release counts this far off a beat, early or late
-const RHYTHM_DASH_TIME = 0.04  # the dash-slash's run, DASH_DISTANCE in this long (a plain dash: DASH_TIME)
-const RHYTHM_CHARGE_FLARE = 0.15  # s: charging, the blade flares white on every beat and fades over this
 # Upslash: attack while holding up, a rising cut. Up pressed at most UPSLASH_LATE after the
 # attack still counts, as for the dash-slash.
 const UPSLASH_LATE = 0.06
@@ -132,12 +132,11 @@ var _swing_from_angle = SWORD_REST_ANGLE  # where the blade was when the swing (
 var _parry_flick = 0.0  # > 0 while a perfect parry beats the blade up
 var _slash_press_time = -100.0
 var _upslash_press_time = -100.0
-var _dash_slash = false  # this dash is a dash-slash (also true through its windup)
-var _windup_timer = 0.0  # > 0 while winding up a dash-slash
-var _windup_length = DASH_SLASH_WINDUP  # s this windup lasts (a rhythm one: from the release to the run)
-var _rhythm_dash = false  # this dash-slash is a rhythm relay's: charged, released on a beat, then a quick run
-var _charging = false  # a rhythm dash-slash held, not released yet (while _windup_timer > 0)
-var relay_beat = -1  # the Beat count of beat 1 of the current rhythm relay (its release)
+var _dash_slash = false  # this dash is a dash-slash (also true through its charge and windup)
+var _windup_timer = 0.0  # > 0 while a dash-slash charges and winds up, until its run
+var _windup_length = 1.0  # s from the charge's release to the run (_release_charge())
+var _charging = false  # a dash-slash's charge held, not let go yet (_windup_timer > 0 meanwhile)
+var relay_beat = -1  # the Beat count of the beat the last dash-slash was let go on (a relay's 1)
 var _trail_timer = 0.0  # the dash-slash's afterimages (see the look in player.gd)
 var _pogoed = false  # this downslash already bounced
 var pogo_time = -100.0
@@ -233,7 +232,7 @@ func _swing_elapsed() -> float:
 
 
 # True from the attack press until the blade is back at rest: a swing from its windup to the end
-# of its return (or of its recoil, if it was parried), or a dash-slash from its windup to the end
+# of its return (or of its recoil, if it was parried), or a dash-slash from its charge to the end
 # of the dash. No blocking or parrying meanwhile.
 func is_swinging() -> bool:
 	return _attack_timer > 0.0 or _recoil_timer > 0.0 or _windup_timer > 0.0 \
@@ -308,7 +307,6 @@ func _start_dash(direction: float) -> bool:
 	if not super(direction):
 		return false
 	_dash_slash = false
-	_rhythm_dash = false
 	if slash_lead:
 		var already_hit = _attack_landed
 		_attack_timer = 0.0
@@ -317,15 +315,14 @@ func _start_dash(direction: float) -> bool:
 	return true
 
 
-# The dash-slash's windup: held in place, blade drawn back, then the dash (_process_windup()).
+# The dash-slash's charge: held in place, blade drawn back, until attack is let go
+# (_release_charge()), then the windup to the run (_process_windup()).
 func _begin_dash_slash():
 	_dash_slash = true
-	_rhythm_dash = Moves.on("relay")
-	_windup_length = DASH_SLASH_WINDUP
-	_windup_timer = DASH_SLASH_WINDUP  # a rhythm one: held at this until the release
-	_charging = _rhythm_dash
-	if _rhythm_dash and not Beat.running:
-		Beat.start(Beat.DEFAULT_BPM, get_tree().current_scene)  # a bar needs a clock
+	_charging = true
+	_windup_timer = INF  # held while charging: the release sets the real windup
+	if not Beat.running:
+		Beat.start(Beat.DEFAULT_BPM, get_tree().current_scene)  # its release needs a clock
 	_dash_timer = 0.0
 	_attack_timer = 0.0
 	_attack_landed = false
@@ -347,26 +344,22 @@ func _process_windup(delta):
 	if _windup_timer > 0.0:
 		return
 	_windup_timer = 0.0
-	_dash_timer = RHYTHM_DASH_TIME if _rhythm_dash else DASH_TIME
+	_dash_timer = DASH_SLASH_RUN_TIME
 	velocity = Vector2(_dash_dir * _dash_speed(), 0.0)
 	if _dash_slash_passes() and _boss_ahead():
 		_passing = true  # through him (DASH-SLASH THROUGH)
 	swing_serial += 1
 	_trail_timer = 0.0
 	_squash(DASH_STRETCH, DASH_STRETCH_TIME)
-	if _rhythm_dash:
-		Sfx.play("slash", -10.0)  # quiet: beat 2 is the parry's
-	else:
-		Sfx.play("stab", 1.0)
-		Sfx.play("slash", -2.0)
+	Sfx.play("slash", -10.0)  # quiet: the beat it meets on is a partner's (a relay's parry on 2)
 
 
-# A rhythm dash-slash let go: on a beat, that beat is 1, and the run starts half a run before
-# the next, so the blades meet on beat 2. Off the beat, the blade fumbles and the dash is spent.
+# The dash-slash let go: on a beat (a relay's 1), the run starts half a run before the next, so
+# the blades meet on that one (a relay's 2). Off the beat, the blade fumbles and the dash is spent.
 func _release_charge():
 	_charging = false
 	var t = Beat.time()
-	if absf(Beat.offset_to_beat(t)) > RHYTHM_RELEASE_TOLERANCE:
+	if absf(Beat.offset_to_beat(t)) > DASH_SLASH_RELEASE_TOLERANCE:
 		_windup_timer = 0.0
 		_dash_slash = false
 		_swing_from_angle = _sword_angle()
@@ -374,14 +367,19 @@ func _release_charge():
 		_fumble_fx(sword_pivot.global_position)
 		return
 	relay_beat = roundi(Beat.beats_at(t))
-	_windup_length = Beat.beat_time(relay_beat + 1) - RHYTHM_DASH_TIME / 2.0 - t
+	_windup_length = Beat.beat_time(relay_beat + 1) - DASH_SLASH_RUN_TIME / 2.0 - t
 	_windup_timer = _windup_length
-	Sfx.play("relay_beat")  # beat 1
+	Sfx.play("relay_beat")  # the beat it was let go on
 
 
-# A rhythm relay's dash-slash covers the dash's ground faster.
+# Holding a dash-slash's charge, not let go yet.
+func is_charging() -> bool:
+	return _charging
+
+
+# A dash-slash covers the dash's ground faster (DASH_SLASH_RUN_TIME).
 func _dash_speed() -> float:
-	return DASH_DISTANCE / RHYTHM_DASH_TIME if _rhythm_dash else super()
+	return DASH_DISTANCE / DASH_SLASH_RUN_TIME if _dash_slash else super()
 
 
 func _end_dash():

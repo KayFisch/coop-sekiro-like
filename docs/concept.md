@@ -28,20 +28,20 @@ Nobody has health. The two players share one **sync**, the boss has his own, and
 
 ## Moveset
 
-The fight kit is built for the parry duet: each player's freedom is small, and the big moves take both of you. The platforming kit (walls, ledges, the relay, the chimney clash) is parked behind switches that are off by default; a kit room switches on what it needs. F1 in game shows every switch.
+The fight kit is built for the parry duet: each player's freedom is small, and the big moves take both of you. The platforming kit (walls, ledges, the relay, the chimney clash) is on everywhere too, with no room switching anything: every move is always there. F1 in game shows every switch, to switch one off and compare.
 
 **Alone**
 - **Run, jump** (136 px), drop through one-way platforms (down).
 - **Dash**: the way you face (hold a direction and press dash on the same frame to dash that way). 140 px, no invulnerability, 0.6 s cooldown, one per trip into the air. Only landing or a Launch gives it back.
 - **Slash, upslash** (up + attack), **downslash** (down + attack in the air). A downslash never hurts the boss or bounces off him.
 - **Block / perfect parry**: press block at most 0.133 s before contact.
-- **Dash-slash** (dash + attack): a 0.2 s windup with the blade heating to white, then a long thrust through the whole dash. It stops at his body, but the blade still lands.
+- **Dash-slash** (dash + attack): held to charge (the blade flares on every beat of the clock), let go on a beat: a quick thrust through the dash that meets the next beat. Let go off the beat, the blade fumbles. It stops at his body, but the blade still lands.
 
 **Together**
 - **Launch**: a dash-slash into the partner's upslash throws the dasher 340 px up.
-- **Relay** (off by default): a bar of the clock. The dash-slash is charged and let go on a beat (1), the partner parries it on the next (2), then strikes on 3 and throws the dasher the way they aim (4 ways), who hangs at the top on 4.
+- **Relay**: what the partner can make of a dash-slash, as a bar of the clock: let go on 1, the partner parries it as it meets them on 2, then strikes on 3 and throws the dasher the way they aim (4 ways), who hangs at the top on 4.
 - **Pogo clash**: a downslash onto the partner's upslash bounces the falling player 110 px. Nothing else bounces a downslash in a fight; outside them, pogo points do (a gym's lanterns).
-- **The tell**: a dash-slash headed at the partner puts a ring in the dasher's color around them. It closes 0.08 s before the blades meet, which is the moment to press (block for a relay, upslash for a launch). A short sound ends on the close.
+- **The tell**: a dash-slash headed at the partner puts a ring in the dasher's color around them. It closes 0.08 s before the blades meet, which is the moment to press (block for a relay, upslash for a launch).
 - **Standing on each other**: players collide.
 
 **A boss's body**: nobody walks, dashes or jumps through it, and nobody stands on it: landing on top slides you off the side you came from. A perfect parry landed mid-dash carries you through it (the dash-parry).
@@ -51,10 +51,10 @@ The fight kit is built for the parry duet: each player's freedom is small, and t
 | dash, dash_slash, launch, players_collide | on |
 | pogo (the pogo clash, and pogo points) | on |
 | boss_body, parry_pass (the dash-parry) | on |
-| relay | off |
-| wall_jump, ledge_grab, chimney_clash | off |
-| wall | off (slide) |
-| wall_rhythm | off |
+| relay | on |
+| wall_jump, ledge_grab, chimney_clash | on |
+| wall | slide (off / slide) |
+| wall_rhythm | on |
 | pogo_refresh_dash (a pogo point gives the dash back) | off |
 | swap_controls | off |
 
@@ -64,7 +64,7 @@ Settings are saved in `user://moves.cfg` with a version. When the defaults chang
 
 ## Beyond the boss fight — platforming levels
 
-*Parked for now: the fight comes first. The gyms and the platforming switches above remain for experimenting.*
+*Parked for now: the fight comes first. Its moves are in the moveset everywhere (see above); the gyms and the kit rooms try them out.*
 
 The second pillar of the game is cooperative platforming. Like the combat, the platforming is built around timing interactions *between* players rather than just having two people traverse the same level. Planned mechanics include:
 

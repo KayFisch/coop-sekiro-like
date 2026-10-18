@@ -43,7 +43,7 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   the walls part.
 - Out, as we agreed: Cubus, Sphaera and their player hooks, HP and potions (also Bifrons's "hp"
   mode and the old sync meter), the wall experiments, the old aiming relay and the call. The
-  relay is one switch, "relay" (off). The wall rhythm runs on `Beat`, no metronome of its own.
+  wall rhythm runs on `Beat`, no metronome of its own.
 - New for everyone: `core/fx.gd` (`Fx.sparks()`, `shake()`, `squash()`; `BaseBoss` and Bifrons
   use it). On the player: `partner()` (`BaseBoss.partner_of()` is gone), `action()` (was
   `_action()`), `bounce()`, `rise_speed()`, `now()` and readout queries (`is_dashing()`,
@@ -55,6 +55,14 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   wall refresh. A downslash bounces only off pogo points now (the group "pogo": the gyms'
   lanterns) and the partner's upslash, no longer off spikes, targets or switches. The relay
   and ledge grab stay. Dead code went too (the boss tumble and knock, unused signals).
+- **The dash-slash changed, in your fight too** (Kay's call): it's the relay's one now,
+  everywhere. Hold attack and dash: it charges (the blade flares on every beat); let go on a
+  beat and it runs to meet the next one; let go off the beat and it fumbles. The relay is what
+  the partner makes of it (a parry as it meets them, a throw on 3). A fight with no clock gets
+  one at 150 BPM from the first dash-slash. The launch and the dash-slash through him work as
+  before, on the beat now; the stand-in lets go on the beat. Walls, wall jumps, wall rhythm,
+  ledge grab, chimney clash and the relay are on by default now (rooms no longer switch moves
+  on); F1's version went up, so saved F1 settings reset once.
 
 ## The project
 
@@ -175,7 +183,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `rules`), `Sfx` (all sound synthesized at startup,
   `Sfx.play("name")`), `Moves` (F1 panel toggling movement abilities, in tabs by theme, saved to
   `user://moves.cfg` with a `VERSION`: bump it when defaults change; code asks
-  `Moves.on("pogo")`). The fight kit is on by default, the platforming kit is off. `Pads` gives
+  `Moves.on("pogo")`). Every move is on by default, everywhere (no level switches any on); the
+  switches are for comparing. `Pads` gives
   each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device).
   `Beat` is the one clock for everything in time (150 BPM; a level starts it, it's never reset
   inside one; signals `beat` / `bar`, `offset_to_downbeat()` etc.; click on M, off at start;

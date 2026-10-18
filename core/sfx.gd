@@ -79,7 +79,6 @@ func _build_sounds():
 	_sounds["launch"] = _rise(0.25)
 	_sounds["swing"] = _whoosh(0.35)  # a heavy swing (Bifrons's sweep, his leap)
 	_sounds["thunk"] = _thud(90.0, 38.0, 0.35, 8.0, 0.6)  # something heavy landing
-	_sounds["tell"] = _zip(0.12)  # ends on the tell ring's close (TELL_SOUND_TIME in player_partner.gd)
 	_sounds["call_tick"] = _blip(1100.0, 0.06)
 	# The rhythm relay's beats (see RELAY in player_partner.gd); beat 2 is "parry_strong".
 	_sounds["relay_beat"] = _blip(660.0, 0.06)  # 1: the dash-slash winds up
@@ -192,19 +191,6 @@ func _rise(duration: float) -> PackedVector2Array:
 		var s = sin(phase) + sin(phase * 2.0) * 0.4 + sin(phase * 3.0) * 0.2
 		s *= minf(t / 0.02, 1.0) * minf((duration - t) / 0.08, 1.0)
 		out[i] = Vector2.ONE * s * 0.3
-	return out
-
-
-# A quick rising zip that swells and stops dead: the end is the cue.
-func _zip(duration: float) -> PackedVector2Array:
-	var out = _buffer(duration)
-	var phase = 0.0
-	for i in out.size():
-		var k = i / float(out.size())
-		phase += TAU * lerpf(500.0, 1700.0, k * k) / MIX_RATE
-		var s = sin(phase) + sin(phase * 2.0) * 0.25
-		s *= k * k  # swelling into the cut-off
-		out[i] = Vector2.ONE * s * 0.4
 	return out
 
 

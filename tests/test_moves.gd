@@ -65,6 +65,14 @@ func _wall(x: float, height: float, w = 40.0):
 	level.solid(x, level.GROUND_Y - height, w, height)
 
 
+# A dash-slash's charge held until a beat comes, let go on it; returns once the player has seen
+# the release (relay_beat is set by then).
+func _let_go_on_beat(p):
+	check(await _until(func(): return absf(Beat.offset_to_beat()) <= step / 2.0, 2.0), "a beat comes")
+	hold(p, "attack", false)
+	check(await _until(func(): return not p.is_charging(), 0.1), "let go")
+
+
 func test_dash_slash():
 	await _room()
 	_place(p1, 400.0)
@@ -74,22 +82,28 @@ func test_dash_slash():
 	hold(p1, "attack")
 	await frames(2)
 	hold(p1, "dash", false)
+	check(p1.movement_state() == "dash-slash charge", "dash + attack: the dash-slash charges while attack is held (%s)" % p1.movement_state())
+	await wait(Beat.beat_length())  # the charge started the clock
+	check(absf(p1.global_position.x - start) < 1.0, "held in place while it charges")
+	await _let_go_on_beat(p1)
+	var beat = p1.relay_beat
+	check(await _until(func(): return p1.movement_state() == "dash-slash", 1.0), "let go on a beat, it runs...")
+	near(Beat.time(), Beat.beat_time(beat + 1), 2.0 * step, "...meeting the next beat (s)")
+	await _until(func(): return p1.movement_state() != "dash-slash", 0.5)
+	var went = p1.global_position.x - start
+	var frame = p1.DASH_DISTANCE / p1.DASH_SLASH_RUN_TIME * step  # the run's px in a frame
+	check(went >= p1.DASH_DISTANCE and went <= p1.DASH_DISTANCE + frame + 10.0,
+		"the run covers DASH_DISTANCE, give or take a frame (%.0f px)" % went)
+	# Let go off the beat, it fumbles: no run.
+	await wait(p1.DASH_COOLDOWN)
+	hold(p1, "dash")
+	hold(p1, "attack")
+	await frames(2)
+	hold(p1, "dash", false)
+	check(await _until(func(): return absf(Beat.phase() - 0.5) <= step / Beat.beat_length(), 2.0), "between two beats")
 	hold(p1, "attack", false)
-	check(p1.movement_state() == "dash-slash windup", "dash + attack: the dash-slash winds up (%s)" % p1.movement_state())
-	var windup = step  # its first frame, the one the press was seen on
-	var still = true
-	while p1.movement_state() == "dash-slash windup" and windup < 1.0:
-		windup += step
-		still = still and absf(p1.global_position.x - start) < 1.0
-		await get_tree().physics_frame
-	check(still, "held in place through the windup")
-	near(windup, p1.DASH_SLASH_WINDUP, 2.5 * step, "the windup lasts DASH_SLASH_WINDUP (s)")
-	var from = p1.global_position.x
-	var went = 0.0
-	while p1.movement_state() == "dash-slash":
-		went = p1.global_position.x - from
-		await get_tree().physics_frame
-	near(went, p1.DASH_DISTANCE, p1.DASH_DISTANCE / 7.0, "then the dash covers DASH_DISTANCE (px; a frame's worth either way)")
+	await frames(2)
+	check(p1.movement_state() == "ground", "let go between beats, the blade fumbles (%s)" % p1.movement_state())
 
 
 func test_hit_knockback():
@@ -126,9 +140,11 @@ func test_launch():
 	hold(p1, "attack")
 	await frames(2)
 	hold(p1, "dash", false)
-	hold(p1, "attack", false)
-	# The partner upslashes as it comes: near the windup's end, just before the blades meet.
-	await wait(p1.DASH_SLASH_WINDUP - 0.1)
+	await wait(Beat.beat_length())  # the charge started the clock
+	await _let_go_on_beat(p1)
+	# The blades meet on the next beat: the partner upslashes just before it.
+	var beat = p1.relay_beat
+	check(await _until(func(): return Beat.time() >= Beat.beat_time(beat + 1) - 0.1, 1.0), "the next beat comes")
 	hold(p2, "up")
 	await tap(p2, "attack")
 	var top = await _top_over(p1, 1.0)
@@ -189,6 +205,7 @@ func test_wall_jump():
 	await _room()
 	set_move("wall", "slide")
 	set_move("wall_jump", true)
+	set_move("wall_rhythm", false)  # the rhythm has tests of its own
 	_wall(700.0, 760.0)
 	_place(p1, 660.0, level.GROUND_Y - 500.0)  # in the air, left of the wall
 	hold(p1, "right")
@@ -278,6 +295,7 @@ func test_chimney_clash():
 	await _room()
 	set_move("wall", "slide")
 	set_move("wall_jump", true)
+	set_move("wall_rhythm", false)  # the rhythm has tests of its own
 	set_move("chimney_clash", true)
 	# Two walls, each player's wall jump flying half the way: they meet in the middle.
 	var left_face = 640.0
@@ -329,7 +347,6 @@ func test_ledge_grab():
 func test_rhythm_relay():
 	await _room()
 	set_move("players_collide", false)
-	set_move("relay", true)
 	_place(p1, 400.0)
 	_place(p2, 520.0)
 	p1.facing = 1.0
@@ -342,7 +359,7 @@ func test_rhythm_relay():
 	hold(p1, "attack")
 	await frames(2)
 	hold(p1, "dash", false)
-	check(p1.movement_state() == "dash-slash charge", "a rhythm dash-slash charges while attack is held (%s)" % p1.movement_state())
+	check(p1.movement_state() == "dash-slash charge", "the dash-slash charges while attack is held (%s)" % p1.movement_state())
 	await wait(Beat.beat_length())  # the charge started the clock
 	check(await _until(func(): return absf(Beat.offset_to_beat()) <= step / 2.0, 2.0), "a beat comes")
 	hold(p1, "attack", false)  # (letting go is seen this same frame: a frame past the beat)

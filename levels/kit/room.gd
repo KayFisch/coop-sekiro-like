@@ -46,9 +46,6 @@ const COLOR_DONE = Color(0.4, 1.0, 0.6)
 			_backdrop.queue_redraw()
 ## Loaded once both players reach the goal (unless the goal has a `next_room` of its own).
 @export_file("*.tscn") var next_room = ""
-## F1 switches this room needs on (e.g. "ledge_grab", "relay"), on while it runs and back
-## as they were after. Shafts add the wall-jump ones themselves.
-@export var moves_on: Array[String] = []
 ## The music (Beat.TRACKS), in time with the clock; it plays on into a next room with the same.
 @export_enum("none", "arcade_psytrance") var music: String = "none"
 
@@ -77,7 +74,6 @@ func _ready():
 		return
 	Beat.start(bpm, self, "" if music == "none" else music)
 	var pieces = _descendants(self)
-	_switch_on_moves(pieces)
 	for n in pieces:
 		if n.has_signal("hit"):
 			n.hit.connect(kill)
@@ -99,19 +95,6 @@ func _descendants(node: Node) -> Array:
 		found.append(c)
 		found.append_array(_descendants(c))
 	return found
-
-
-func _switch_on_moves(pieces: Array):
-	var needed = {}
-	for key in moves_on:
-		needed[key] = true
-	for n in pieces:
-		if n.has_method("needed_moves"):  # a KitShaft
-			needed.merge(n.needed_moves(), true)
-	for key in needed:
-		if not Moves.on(key):
-			Moves.override(key, needed[key])
-	tree_exiting.connect(Moves.clear_overrides)
 
 
 func _spawn_players(pieces: Array):

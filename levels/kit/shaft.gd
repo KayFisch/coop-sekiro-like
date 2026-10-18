@@ -9,8 +9,7 @@ extends Node2D
 ##          and press jump (a chimney clash): each is the other's far wall.
 ## The gap is a player's body (Player.BODY_SIZE.x) plus the ground a wall jump flies
 ## (WALL_JUMP_PUSH) in that many beats at the room's BPM: change the BPM and every shaft follows.
-## A room with a shaft switches on what wall jumps need (F1: wall, wall jump, chimney clash for
-## COOP, wall rhythm if `rhythm`) while it runs; the wall rhythm then flies on the room's clock.
+## The wall rhythm flies on the room's clock.
 ## Its position is the left wall's top-left corner (where it would be with `left_drop` 0); the
 ## walls stand `height` tall, on a floor there (put a KitBlock under it). Either wall can start
 ## lower (`left_drop`, `right_drop`), have a way in under it (`entrance`) and a ledge on top
@@ -75,8 +74,6 @@ const Player = preload("res://actors/player/player.gd")
 	set(v):
 		top_edges = v
 		queue_redraw()
-## Wall jumps judged against hitting the wall (F1 "wall rhythm").
-@export var rhythm = true
 # Wall to wall, inside, for a kind at a tempo.
 static func gap(of_kind: Kind, bpm: float) -> float:
 	var beats = NARROW_BEATS if of_kind == Kind.NARROW else WIDE_BEATS
@@ -86,16 +83,6 @@ static func gap(of_kind: Kind, bpm: float) -> float:
 
 func width() -> float:
 	return gap(kind, _bpm())
-
-
-# The F1 switches it needs: key -> value.
-func needed_moves() -> Dictionary:
-	var needed = {"wall": "slide", "wall_jump": true}
-	if kind == Kind.COOP:
-		needed["chimney_clash"] = true
-	if rhythm:
-		needed["wall_rhythm"] = true
-	return needed
 
 
 func _bpm() -> float:

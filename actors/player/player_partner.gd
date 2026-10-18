@@ -14,13 +14,12 @@ enum Hold { NONE, RELAY_DASHER, RELAY_ANCHOR }
 # THE TELL: a dash-slash headed at the partner puts a ring in the dasher's color around them,
 # shrinking at a steady rate and closing TELL_LEAD before the blades meet: the moment to press
 # (block for a relay, upslash for a launch; inside both windows). The contact is predicted every
-# frame (see predict_contact()). A short sound ends on the close.
+# frame (see predict_contact()); the beat it falls on is heard.
 const TELL_LEAD = 0.08
 const TELL_CLOSED_RADIUS = 30.0  # just around the partner's body
 const TELL_SHRINK_SPEED = 380.0  # px/s
 const TELL_WIDTH = 3.0
 const TELL_FADE = 0.15  # fading out once the dash-slash is over
-const TELL_SOUND_TIME = 0.12  # the sound's length (see "tell" in sfx.gd): started this long before the close
 # LAUNCH: a dash-slash that runs into the partner's upslash clashes the two blades, and the
 # dash's momentum is turned upward: the dashing player shoots up, keeping only a sliver of
 # their sideways speed. The upslash must come at most LAUNCH_TOLERANCE before the blades meet
@@ -31,24 +30,18 @@ const LAUNCH_HEIGHT = 340.0  # 2.5x a jump
 const LAUNCH_CARRY = 0.15  # fraction of the dash's sideways speed kept (~150 px/s)
 const LAUNCH_STRETCH = Vector2(0.7, 1.4)
 const LAUNCH_STRETCH_TIME = 0.3
-# RELAY (Moves "relay"): a dash-slash into a partner who parries it, as a bar of the clock (Beat),
-# the partners taking turns: 1 the dasher lets go, 2 the anchor's parry (the blades lock), 3 the
-# anchor's strike, which throws the dasher the way the anchor's stick points (4 ways: up, down,
-# left, right; none: straight on; the arrow on the dasher shows it), 4 the top of the throw, where
-# the level asks the dasher for something (a dash, a pogo point). The dasher doesn't aim.
-# The dash-slash charges as long as attack is held (blade drawn back, flaring on every beat), and
-# its release has to land on a beat, within a parry's window (RHYTHM_RELEASE_TOLERANCE): that beat
-# is 1, whichever of the bar it is. Off the beat the blade fumbles and the dash is spent. After
-# the release the blade heats up through the beat, and the run takes hardly any time, so the
-# blades meet on beat 2 wherever the partner stands within reach; the parry press has to be close
-# to it too (RHYTHM_PARRY_TOLERANCE). Only holding block, or pressing too early, stops the dash
-# with a dull clang and bounces the dasher off (RELAY_FAIL_BOUNCE). A strike off beat 3, or none,
-# drops the dasher. Every beat sounds: 1 a tick, 2 the parry, 3 the strike, 4 a high tick. The
-# throw stops a little before beat 4 and the dasher hangs still around it (gravity off), so a move
-# on 4 has as much room early as late; any move ends the hang. The throw gives the dash back (beat
-# 4 may ask for one). Charging in the air hangs you still, as the windup does.
-# (While the switch is on, every dash-slash is this one, at a boss too; it starts the clock where
-# no level has.)
+# RELAY (Moves "relay"): what a partner can make of a dash-slash, as a bar of the clock (Beat),
+# the partners taking turns: 1 the dasher lets the dash-slash go (see player_sword.gd), 2 the
+# blades meet and the anchor parries them (they lock), 3 the anchor's strike, which throws the
+# dasher the way the anchor's stick points (4 ways: up, down, left, right; none: straight on;
+# the arrow on the dasher shows it), 4 the top of the throw, where the level may have something
+# for the dasher (a gap to dash, a pogo point). The dasher doesn't aim.
+# The parry press has to be close to the 2 (RHYTHM_PARRY_TOLERANCE). Only holding block, or
+# pressing too early, stops the dash with a dull clang and bounces the dasher off
+# (RELAY_FAIL_BOUNCE). A strike off beat 3, or none, drops the dasher. Every beat sounds: 1 a
+# tick, 2 the parry, 3 the strike, 4 a high tick. The throw stops a little before beat 4 and the
+# dasher hangs still around it (gravity off), so a move on 4 has as much room early as late; any
+# move ends the hang. The throw gives the dash back.
 const RELAY_RECOIL = 220.0  # px/s the anchor is pushed back, the other way, as it throws
 const RELAY_FAIL_BOUNCE = Vector2(260.0, -220.0)  # the dasher, off a block that wasn't a parry
 const RHYTHM_TOLERANCE = 0.08  # the strike counts this far off beat 3, early or late
@@ -67,7 +60,6 @@ var rhythm_top_time = -100.0  # beat 4 of the last rhythm relay thrown (when it 
 var _tell_ring: Node2D  # drawn around the partner (see _update_tell())
 var _tell_left = 0.0  # seconds to the ring's close
 var _tell_alpha = 0.0
-var _tell_sounded = false
 
 
 func _ready():
@@ -101,10 +93,10 @@ func _check_clashes() -> bool:
 		if Moves.on("launch") and other.is_launch_ready():
 			_launch(other)
 			return true
-		if _rhythm_dash and other.is_relay_parry():
+		if Moves.on("relay") and other.is_relay_parry():
 			_start_relay(other)
 			return true
-		if _rhythm_dash and other.is_blocking():
+		if Moves.on("relay") and other.is_blocking():
 			_relay_blocked(other)
 			return true
 	return false
@@ -306,9 +298,6 @@ func _update_tell(delta):
 	if contact >= 0.0:
 		_tell_left = contact - TELL_LEAD
 		_tell_alpha = 1.0
-		if not _tell_sounded and _tell_left <= TELL_SOUND_TIME and not _rhythm_dash:  # that has its beats
-			_tell_sounded = true
-			Sfx.play("tell", -3.0)
 	else:
 		_tell_alpha = move_toward(_tell_alpha, 0.0, delta / TELL_FADE)
 	_tell_ring.visible = _tell_alpha > 0.0 and other != null
@@ -332,11 +321,6 @@ func _draw_tell():
 
 func is_held() -> bool:
 	return _hold_kind != Hold.NONE
-
-
-func _begin_dash_slash():
-	super()
-	_tell_sounded = false  # a new dash-slash: its tell may sound again
 
 
 func _tick_timers(delta):

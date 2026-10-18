@@ -29,16 +29,14 @@ autoload); code asks `Moves.on("pogo")`.
 | Switch | Default |
 |---|---|
 | Dash, dash-slash | on |
-| **Wall:** off / slide | off |
-| Wall jump · wall rhythm · ledge grab | off |
+| **Wall:** off / slide | slide |
+| Wall jump · wall rhythm · ledge grab | on |
 | Pogo (off your partner's upslash, or a pogo point) | on |
 | A pogo point gives the dash back | off |
-| Launch · players collide | on |
-| Relay · chimney clash | off |
+| Launch · relay · chimney clash · players collide | on |
 
-The platforming switches are off by default (the fight comes first): turn on what a gym's
-station needs. The wall and relay gyms say which ones they're missing; a kit room switches on
-what its pieces need by itself (a shaft: walls and wall jumps).
+Every move is on everywhere; nothing is switched on for one room. The switches are for trying
+the game without one (the wall and relay gyms say when one they need is off).
 
 ## The new moves (`actors/player/`, each with its tuning block)
 
@@ -72,15 +70,15 @@ what its pieces need by itself (a shaft: walls and wall jumps).
   walls). Meeting isn't enough: **both press jump** as you meet (within 0.08 s, early or
   late), or you fly on and fall. With wall rhythm on, each press is judged against the
   meeting like a wall jump against hitting the wall (full or weak).
-- **Dash-slash windup:** a dash-slash first holds still for 0.2 s with the blade drawn back
-  and heating to white, then dashes. That's the partner's cue to parry.
-- **Relay:** a bar of the clock. Hold attack and dash: the dash-slash charges; let go on a
-  beat (1). It runs into your partner on the next beat, and they **parry** it (2: the press at
-  most 0.1 s before the blades meet; just holding block only stops the dash with a dull clang
-  and bounces the dasher off). On 3 they strike, aiming with the stick (4 ways): the dasher is
-  thrown 190 px that way and hangs at the top on 4, with the dash back.
-  Off the beat anywhere, it fails. (Until 2026-10-18 there was also a relay without the clock,
-  where the dasher aimed during the lock.)
+- **Dash-slash:** hold attack and dash, and the dash-slash charges, held in place with the
+  blade drawn back, flaring on every beat. Let go on a beat: a quick run that meets the next
+  beat. Let go off the beat, the blade fumbles and the dash is spent. (Until 2026-10-18 a
+  plain dash-slash with a 0.2 s windup was the default, and this one only came with the relay.)
+- **Relay:** what your partner can make of the dash-slash, a bar of the clock. You let go on
+  a beat (1); it runs into your partner on the next beat, and they **parry** it (2: the press
+  at most 0.1 s before the blades meet; just holding block only stops the dash with a dull
+  clang and bounces the dasher off). On 3 they strike, aiming with the stick (4 ways): the
+  dasher is thrown 190 px that way and hangs at the top on 4, with the dash back.
 
 ## Movement Gym (1 player): `levels/gym/movement_gym.gd`
 

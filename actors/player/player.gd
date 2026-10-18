@@ -283,7 +283,7 @@ func _update_visuals():
 # 0 -> 1 through a dash-slash's windup; charging, a flare on every beat of the clock.
 func _windup_progress() -> float:
 	if _charging:
-		return maxf(0.0, 1.0 - Beat.phase() * Beat.beat_length() / RHYTHM_CHARGE_FLARE)
+		return maxf(0.0, 1.0 - Beat.phase() * Beat.beat_length() / DASH_SLASH_FLARE)
 	return 1.0 - _windup_timer / _windup_length
 
 

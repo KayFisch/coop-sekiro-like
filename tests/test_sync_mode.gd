@@ -112,8 +112,13 @@ func test_dash_slash_through_him():
 		hold(p1, "attack")
 		await wait(0.05)
 		hold(p1, "dash", false)
-		hold(p1, "attack", false)
 		hold(p1, "right", false)
+		# The charge: let go on a beat (the first charge starts the clock).
+		var waited = 0.0
+		while absf(Beat.offset_to_beat()) > 0.5 / Engine.physics_ticks_per_second and waited < 2.0:
+			await get_tree().physics_frame
+			waited += 1.0 / Engine.physics_ticks_per_second
+		hold(p1, "attack", false)
 		await wait(0.6)
 		var through = p1.global_position.x > boss.global_position.x
 		check(through == sync, "dash-slash at him, sync mode %s: %s" % [sync, "through" if sync else "stopped"])

@@ -33,6 +33,7 @@ const DISTANCE_IN_FRONT = 74.0
 const DISTANCE_BEHIND = 22.0  # from its partner: right behind them (a player is 20 wide)
 const SLACK = 12.0
 const DASH_THROUGH_FROM = 70.0  # sync mode, him between it and its partner: it dash-slashes through from this close
+const LET_GO_WITHIN = 0.02  # s from a beat that it lets its dash-slash's charge go (Player._release_charge())
 
 var boss  # the ColumnaBifrons it belongs to
 
@@ -101,6 +102,9 @@ func _defend(player):
 func _strike(player, delta: float):
 	if boss.is_bound():
 		_strike_bound(player)
+		return
+	if player.is_charging():
+		_hold(player, "attack", absf(Beat.offset_to_beat()) > LET_GO_WITHIN)  # a dash-slash: let go on a beat
 		return
 	_hold(player, "attack", false)
 	var window = boss.window_for(player)

@@ -10,7 +10,7 @@ signal changed
 const SAVE_PATH = "user://moves.cfg"
 # Bumped whenever the defaults change: a save from an older version is dropped once, so the new
 # defaults reach it (see _ready()).
-const VERSION = 2
+const VERSION = 3
 # The panel's text: shrunk as far as it takes for the whole tab to fit on screen.
 const PANEL_MARGIN = Vector2(80, 16)
 const PANEL_FONT_SIZE = 17
@@ -25,23 +25,23 @@ const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Sync", "Runner", 
 # `options`). Labels starting with "  " belong to the switch above them. A `slider` one stops at
 # its ends (no wrapping round) and shows as a bar. An `action` row holds no value: Enter (or
 # right) calls that method of this panel.
-# The fight kit is on by default; the platforming kit is off, for the gyms (see docs/concept.md).
+# Every move is on by default, everywhere: the switches are for comparing (see docs/concept.md).
 const ENTRIES = [
 	# Basics: on your own feet
 	{"key": "dash", "tab": "Basics", "label": "Dash (the way you face)", "default": true},
 	{"key": "dash_slash", "tab": "Basics", "label": "Dash-slash (dash + attack)", "default": true},
 	# Walls and ledges
-	{"key": "wall", "tab": "Walls", "label": "Walls: stick and slide down", "default": "off", "options": ["off", "slide"]},
-	{"key": "wall_jump", "tab": "Walls", "label": "Wall jump", "default": false},
-	{"key": "wall_rhythm", "tab": "Walls", "label": "  wall rhythm: jump as you hit the wall, else weak", "default": false},
-	{"key": "ledge_grab", "tab": "Walls", "label": "Ledge grab + climb", "default": false},
+	{"key": "wall", "tab": "Walls", "label": "Walls: stick and slide down", "default": "slide", "options": ["off", "slide"]},
+	{"key": "wall_jump", "tab": "Walls", "label": "Wall jump", "default": true},
+	{"key": "wall_rhythm", "tab": "Walls", "label": "  wall rhythm: jump as you hit the wall, else weak", "default": true},
+	{"key": "ledge_grab", "tab": "Walls", "label": "Ledge grab + climb", "default": true},
 	# Pogo
 	{"key": "pogo", "tab": "Pogo", "label": "Pogo (downslash: off your partner's upslash, or a pogo point)", "default": true},
 	{"key": "pogo_refresh_dash", "tab": "Pogo", "label": "  a pogo point gives the dash back", "default": false},
 	# Partner: moves made of both players
 	{"key": "launch", "tab": "Partner", "label": "Launch (dash-slash into an upslash)", "default": true},
-	{"key": "relay", "tab": "Partner", "label": "Relay (dash-slash let go on a beat, into a parry; the partner throws it on 3)", "default": false},
-	{"key": "chimney_clash", "tab": "Partner", "label": "Chimney clash (wall jumps meeting)", "default": false},
+	{"key": "relay", "tab": "Partner", "label": "Relay (parry a dash-slash as it meets you, then throw it on the next beat)", "default": true},
+	{"key": "chimney_clash", "tab": "Partner", "label": "Chimney clash (wall jumps meeting)", "default": true},
 	{"key": "players_collide", "tab": "Partner", "label": "Players collide (stand on, bump into each other)", "default": true},
 	# Fights: rules that only matter against a boss
 	{"key": "boss_body", "tab": "Fights", "label": "Boss body blocks players", "default": true},
@@ -83,7 +83,6 @@ const ENTRIES = [
 var panel_open = false
 
 var _values = {}
-var _overridden = {}  # key -> its own value, while a level overrides it (override())
 var _tab = 0  # index into TABS
 var _selected = 0  # row on the open tab
 var _was_paused = false
@@ -119,7 +118,6 @@ func value(key: String):
 
 func set_value(key: String, v):
 	_values[key] = v
-	_overridden.erase(key)  # set by hand: it's the player's own value now
 	_save()
 	changed.emit()
 
@@ -128,24 +126,8 @@ func _save():
 	var cfg = ConfigFile.new()
 	cfg.set_value("meta", "version", VERSION)
 	for e in _settings():
-		cfg.set_value("moves", e.key, _overridden.get(e.key, _values[e.key]))
+		cfg.set_value("moves", e.key, _values[e.key])
 	cfg.save(SAVE_PATH)
-
-
-# A level switches something on for as long as it runs (e.g. wall jumps in a room with a
-# shaft), without saving it: clear_overrides() puts back the player's own values.
-func override(key: String, v):
-	if not _overridden.has(key):
-		_overridden[key] = _values.get(key)
-	_values[key] = v
-	changed.emit()
-
-
-func clear_overrides():
-	for key in _overridden:
-		_values[key] = _overridden[key]
-	_overridden.clear()
-	changed.emit()
 
 
 # The entries that hold a value (not the `action` rows).
