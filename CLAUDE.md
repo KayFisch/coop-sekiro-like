@@ -35,6 +35,23 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
+### For Nicho, from Kay (2026-10-18)
+
+- `kay/player-kit` (on your `nicho/code-overhaul` at d0f2319): the player is cleaned up and in
+  five parts like Bifrons, `player_body.gd` → `_sword` → `_walls` → `_partner` → `player.gd`
+  (still the one everyone preloads). The code map above has the how; the chimney clash sits in
+  the walls part.
+- Out, as we agreed: Cubus, Sphaera and their player hooks, HP and potions (also Bifrons's "hp"
+  mode and the old sync meter), the wall experiments, the old aiming relay and the call. The
+  relay is one switch, "relay" (off). The wall rhythm runs on `Beat`, no metronome of its own.
+- New for everyone: `core/fx.gd` (`Fx.sparks()`, `shake()`, `squash()`; `BaseBoss` and Bifrons
+  use it). On the player: `partner()` (`BaseBoss.partner_of()` is gone), `action()` (was
+  `_action()`), `bounce()`, `rise_speed()`, `now()` and readout queries (`is_dashing()`,
+  `can_dash()`, `swing_name()`...). `take_damage(knockback, chip)` has no amount. Your
+  `core/dev.gd` reads `p.now()`, `p.last_block_press` and `p.is_swinging()` now.
+- Your two newest overhaul commits (F2 like F1) aren't merged in yet; a dry run says only one
+  sentence here conflicts.
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
