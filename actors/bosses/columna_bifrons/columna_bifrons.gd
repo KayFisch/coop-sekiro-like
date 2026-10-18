@@ -123,23 +123,23 @@ var _answering = false  # starting his answer (see orient() and first_wait())
 # weights' defaults are ATTACKS' own.
 static func tuning_entries() -> Array:
 	var entries = [
-		{"page": "bifrons", "title": "COLUMNA BIFRONS", "scenes": ["levels/threshold/"], "header": "TEMPO", "tab": "tempo"},
-		{"key": "bifrons_time_unit", "label": "a unit of his waits (s): a strike's wait is 2-6 of them", "default": 0.2, "step": 0.01, "min": 0.05, "max": 1.0},
-		{"key": "bifrons_fall_time", "label": "a strike's drop: the cue to parry (s)", "default": 0.28, "step": 0.01, "min": 0.05, "max": 1.0},
-		{"key": "bifrons_recover_time", "label": "after a series of strikes, recovering (s)", "default": 0.6, "step": 0.05, "min": 0.0, "max": 5.0},
-		{"key": "bifrons_pause_min", "label": "then a pause before his next attack, from (s)", "default": 0.25, "step": 0.05, "min": 0.0, "max": 5.0},
-		{"key": "bifrons_pause_max", "label": "...to (s)", "default": 0.5, "step": 0.05, "min": 0.0, "max": 5.0},
+		{"page": "bifrons", "title": "Columna Bifrons", "scenes": ["levels/threshold/"], "header": "TEMPO", "tab": "tempo"},
+		{"key": "bifrons_time_unit", "label": "a unit of his waits (s): a strike's wait is 2-6 of them", "default": 0.2, "step": 0.01},
+		{"key": "bifrons_fall_time", "label": "a strike's drop: the cue to parry (s)", "default": 0.28, "step": 0.01},
+		{"key": "bifrons_recover_time", "label": "after a series of strikes, recovering (s)", "default": 0.6, "step": 0.05},
+		{"key": "bifrons_pause_min", "label": "then a pause before his next attack, from (s)", "default": 0.25, "step": 0.05},
+		{"key": "bifrons_pause_max", "label": "...to (s)", "default": 0.5, "step": 0.05},
 		{"header": "THE REACTIVE MODE (F1: bifrons_mode)", "column": 1},
-		{"key": "bifrons_reactive_min", "label": "his pause between attacks, from (s)", "default": 0.7, "step": 0.05, "min": 0.0, "max": 5.0},
-		{"key": "bifrons_reactive_max", "label": "...to (s)", "default": 1.7, "step": 0.05, "min": 0.0, "max": 5.0},
+		{"key": "bifrons_reactive_min", "label": "his pause between attacks, from (s)", "default": 0.7, "step": 0.05},
+		{"key": "bifrons_reactive_max", "label": "...to (s)", "default": 1.7, "step": 0.05},
 		{"header": "MOVING BETWEEN STRIKES", "tab": "moving"},
-		{"key": "bifrons_drift_near", "label": "drifting: as near to the nearer player as (px)", "default": 80.0, "step": 5.0, "min": 20.0, "max": 400.0},
-		{"key": "bifrons_drift_far", "label": "...as far as (px)", "default": 170.0, "step": 5.0, "min": 20.0, "max": 400.0},
-		{"key": "bifrons_drift_speed", "label": "...gliding this share of that span a second", "default": 0.6, "step": 0.05, "min": 0.0, "max": 5.0},
-		{"key": "bifrons_drift_pause", "label": "...and pausing up to (s)", "default": 0.5, "step": 0.05, "min": 0.0, "max": 5.0},
-		{"key": "bifrons_pep_drift", "label": "between two players: off the middle by up to (px)", "default": 60.0, "step": 5.0, "min": 0.0, "max": 300.0},
-		{"key": "bifrons_push_patience", "label": "pushing a player along: shoves them after (s)", "default": 2.0, "step": 0.1, "min": 0.0, "max": 10.0},
-		{"key": "bifrons_crowd_patience", "label": "crowded: makes room after (s)", "default": 0.7, "step": 0.1, "min": 0.0, "max": 10.0},
+		{"key": "bifrons_drift_near", "label": "drifting: as near to the nearer player as (px)", "default": 80.0, "step": 5.0},
+		{"key": "bifrons_drift_far", "label": "...as far as (px)", "default": 170.0, "step": 5.0},
+		{"key": "bifrons_drift_speed", "label": "...gliding this share of that span a second", "default": 0.6, "step": 0.05},
+		{"key": "bifrons_drift_pause", "label": "...and pausing up to (s)", "default": 0.5, "step": 0.05},
+		{"key": "bifrons_pep_drift", "label": "between two players: off the middle by up to (px)", "default": 60.0, "step": 5.0},
+		{"key": "bifrons_push_patience", "label": "pushing a player along: shoves them after (s)", "default": 2.0, "step": 0.1},
+		{"key": "bifrons_crowd_patience", "label": "crowded: makes room after (s)", "default": 0.7, "step": 0.1},
 		{"header": "HOW OFTEN EACH OF HIS ATTACKS COMES", "tab": "patterns"},
 	]
 	for attack_name in ATTACKS:
@@ -147,7 +147,7 @@ static func tuning_entries() -> Array:
 		var per_situation = weight is Dictionary
 		entries.append({"key": "bifrons_weight_" + attack_name.to_lower(),
 			"label": attack_name + (": its weights by situation, times" if per_situation else ": weight"),
-			"default": 1.0 if per_situation else float(weight), "step": 0.25, "min": 0.0, "max": 10.0})
+			"default": 1.0 if per_situation else float(weight), "step": 0.25})
 	return entries
 
 
@@ -291,8 +291,9 @@ func _physics_process(delta):
 	_assign_wards()
 	if hp > 0.0:
 		_update_turns(delta)
-	# Nobody in his range: no attack (he walks up to them instead, see walk()).
-	if state == State.IDLE and timer <= delta and not _fought().any(in_range):
+	# Nobody in his range: no attack (he walks up to them instead, see walk()), but the one the
+	# dev tools ask for.
+	if state == State.IDLE and timer <= delta and dev_next == "" and not _fought().any(in_range):
 		timer = RANGE_RECHECK
 	# The players' sync mode: he's on the defensive. While one of them draws back, he holds off his
 	# next attack, on guard (up to "sync_hold_off" in a row).

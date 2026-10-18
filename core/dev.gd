@@ -3,9 +3,10 @@ extends Node
 ##   F3  overlay: frame time, the boss's state and attack, each player's state, and this fight's
 ##       log in numbers: parries, blocks, hits, how early or late the presses came, sync hits.
 ##   F4  hitboxes: every collision shape, and the boss's body block.
-##   F5  boss lab: run one of his attacks, loop it, hold him off, slow the game, fill or empty the
-##       meters, make the players invincible, put them on his sides. Its keys work while it's open
-##       and are none of the players' (see LAB_KEYS).
+##   F5  boss lab: run one of his attacks, loop it, stop his own attacks or his moving, slow the
+##       game, fill or empty the meters, make the players invincible, put them on his sides. Its
+##       keys work while it's open and are none of the players' (see LAB_KEYS); while F1 or F2 is
+##       open, theirs come first.
 ## The log: each fight's events, counted for the overlay and, with F1 → Dev "fight_log", written
 ## to user://fight_log.jsonl (one JSON line per event; the file starts over with each fight).
 ## Code tells it what happened: defended() from the player, note() and the others below from a
@@ -22,8 +23,9 @@ const COLOR_BLOCK = Color(1.0, 0.3, 0.3, 0.8)
 const COLOR_BACK = Color(0.0, 0.0, 0.0, 0.62)
 const PANEL_TOP = 104.0  # under the HUD's meters
 const PANEL_MARGIN = 12.0
-# The lab's keys: none of them is a player's (P1: A D W S Space Shift F Enter Up Down, R, Esc, M).
-const LAB_KEYS = """PgUp/PgDn pick · Home run it · End loop it · H hold him · T speed
+# The lab's keys: none of them is a player's (P1: A D W S Space Shift F Enter Up Down, R, Esc).
+# Q / E pick, as they pick the tab on F1 and F2. M is the click's (core/beat.gd) while the lab is shut.
+const LAB_KEYS = """Q/E pick · Z run · X loop · H his attacks · M his moving · T speed
 I invincible · K/J/N your sync full/half/none · B his sync full · P posture full
 ←/→ both on his left/right · G one on each side"""
 
@@ -120,7 +122,7 @@ func _input(event):
 		KEY_F5:
 			lab_on = not lab_on
 		_:
-			if not lab_on or not _lab_key(event.physical_keycode):
+			if not lab_on or not _lab_key(Tuning.key_of(event)):
 				return
 	_refresh_visibility()
 	get_viewport().set_input_as_handled()
@@ -131,17 +133,20 @@ func _lab_key(key: int) -> bool:
 	var boss = _boss()
 	var names = _attack_names()
 	match key:
-		KEY_PAGEUP, KEY_PAGEDOWN:
+		KEY_Q, KEY_E:
 			if not names.is_empty():
-				_pick = posmod(_pick + (-1 if key == KEY_PAGEUP else 1), names.size())
-		KEY_HOME:
+				_pick = posmod(_pick + (-1 if key == KEY_Q else 1), names.size())
+		KEY_Z:
 			if boss and not names.is_empty():
 				run_attack(names[_pick])
-		KEY_END:
+		KEY_X:
 			_loop = "" if _loop != "" or names.is_empty() else names[_pick]
 		KEY_H:
 			if boss:
 				boss.dev_hold = not boss.dev_hold
+		KEY_M:
+			if boss:
+				boss.dev_still = not boss.dev_still
 		KEY_T:
 			set_speed(SPEEDS[(SPEEDS.find(speed) + 1) % SPEEDS.size()])
 		KEY_I:
@@ -364,8 +369,9 @@ func _overlay_text() -> String:
 		var doing = ""
 		if attack:
 			doing = "  %s (phase %d, %.2f s)" % [attack.get_attack_name(), attack.phase, attack.timer]
-		lines.append("%s: %s%s · timer %.2f%s%s" % [boss.get_display_name(), BaseBoss.State.keys()[boss.state], doing,
-			boss.timer, " · HELD" if boss.dev_hold else "", " · loop " + _loop if _loop != "" else ""])
+		lines.append("%s: %s%s · timer %.2f%s%s%s" % [boss.get_display_name(), BaseBoss.State.keys()[boss.state], doing,
+			boss.timer, " · NO ATTACKS" if boss.dev_hold else "", " · STILL" if boss.dev_still else "",
+			" · loop " + _loop if _loop != "" else ""])
 		if rules != null:
 			lines.append("  his sync %.1f/%.0f%s · posture %.1f/%.0f (%s) · yours %.1f/%.0f%s" % [
 				rules.boss_sync, rules.boss_max(), " SPLIT" if rules.boss_chaos else "",
@@ -424,7 +430,8 @@ func _lab_text() -> String:
 			tags.append("now")
 		lines.append("%s %s %s" % ["▶" if i == _pick else " ", names[i], "(" + ", ".join(tags) + ")" if tags else ""])
 	lines.append("")
-	lines.append("him held: %s · speed x%.2f · invincible: %s" % ["ON" if boss.dev_hold else "off", speed, "ON" if invincible else "off"])
+	lines.append("his attacks: %s · his moving: %s · speed x%.2f · invincible: %s" % [
+		"off" if boss.dev_hold else "ON", "off" if boss.dev_still else "ON", speed, "ON" if invincible else "off"])
 	return "\n".join(lines)
 
 

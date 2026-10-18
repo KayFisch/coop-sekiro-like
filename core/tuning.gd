@@ -1,8 +1,9 @@
 extends Node
-## Autoload: numbers to tune while playing. F2 opens a panel anywhere (the game pauses): Q / E (or
-## Tab) for the tab, Page Up / Down for the page, up/down to pick, left/right to change by a step
-## (Shift: ten steps), F2 again to close. Values are saved to user://tuning.cfg and survive
-## restarts; a tab's last row resets it. Code asks Tuning.value("his_heavy_damage") each time it
+## Autoload: numbers to tune while playing. F2 opens a panel anywhere (the game pauses): Z / C for
+## the page, Q / E (or Tab) for the tab, up/down to pick, left/right to change by a step (Shift:
+## ten steps, Ctrl: a tenth of one), F2 again to close. Laid out as the F1 panel: page, keys,
+## tabs, then the numbers. No number has a limit but 0. Values are saved to user://tuning.cfg and
+## survive restarts; a tab's last row resets it. Code asks Tuning.value("his_heavy_damage") each time it
 ## needs the number, so a change counts at once.
 ##
 ## The numbers belong to the systems that use them: each of SOURCES has a static
@@ -21,19 +22,21 @@ const SOURCES = [
 	"res://levels/ring/ring.gd",  # page "ring"
 ]
 const PANEL_MARGIN = Vector2(48, 16)
-const PANEL_FONT_SIZE = 15
+const PANEL_FONT_SIZE = 16
 const PANEL_MIN_FONT_SIZE = 10
-const COLUMN_WIDTH = 540.0
-const VALUE_X = 400.0  # where a column's numbers stand, right-aligned
-const VALUE_WIDTH = 110.0
-const LIST_TOP = 52.0  # below the title's two lines
+const LINE_SPACING = 5  # px between two rows
+const COLUMN_WIDTH = 560.0
+const VALUE_X = 410.0  # where a column's numbers stand, right-aligned
+const VALUE_WIDTH = 120.0
+const KEYS = "Z / C: page   Q / E: tab   ↑/↓: pick   ←/→: change (Shift: x10, Ctrl: x0.1)   F2: close"
 
-# An entry (from a tuning_entries()) is a number: key, what the panel calls it, default, step,
-# and its range. Or a "header" row, grouping the ones below it: "column": 1 starts the panel's
+# An entry (from a tuning_entries()) is a number: key, what the panel calls it, default and step
+# (none goes below 0, none has a top). Or a "header" row, grouping the ones below it: "column": 1 starts the panel's
 # second column; "page" (with its "title" and the "scenes" it opens in, path parts) and "tab"
 # hold for the entries after it until a header names others.
 
 var panel_open = false
+var saving = true  # tests turn it off, to leave the saved numbers alone
 
 var _entries = []  # every entry, each with its page and tab: {entry, page, tab, title}
 var _scenes = {}  # page -> the scene paths it opens in
@@ -79,7 +82,7 @@ func _load():
 	for e in _numbers():
 		var saved = cfg.get_value("tuning", e.key, e.default)
 		if saved is float or saved is int:
-			_values[e.key] = clampf(saved, e.min, e.max)
+			_values[e.key] = maxf(saved, 0.0)
 
 
 func value(key: String) -> float:
@@ -105,11 +108,12 @@ func _numbers() -> Array:
 	return _entries.map(func(x): return x.entry).filter(func(e): return e.has("key"))
 
 
-# Every tab of every page, in order: [page, tab, title].
+# Every tab of every page, in the order they first come: [page, tab, title]. A tab may be
+# declared in more than one source (the sync rules' "sync mode", with core/sync_bond.gd's).
 func _tabs() -> Array:
 	var tabs = []
 	for x in _entries:
-		if tabs.is_empty() or tabs.back()[0] != x.page or tabs.back()[1] != x.tab:
+		if not tabs.any(func(t): return t[0] == x.page and t[1] == x.tab):
 			tabs.append([x.page, x.tab, x.title])
 	return tabs
 
@@ -137,6 +141,8 @@ func _scene_tab() -> int:
 
 
 func _save():
+	if not saving:
+		return
 	var cfg = ConfigFile.new()
 	cfg.set_value("meta", "version", VERSION)
 	for e in _numbers():
@@ -158,22 +164,22 @@ func _input(event):
 		return
 	var tabs = _tabs()
 	var rows = _rows()
-	match event.physical_keycode:
+	var key = key_of(event)
+	match key:
 		KEY_Q, KEY_E, KEY_TAB:
-			var back = event.physical_keycode == KEY_Q or (event.physical_keycode == KEY_TAB and event.shift_pressed)
+			var back = key == KEY_Q or (key == KEY_TAB and event.shift_pressed)
 			_tab = posmod(_tab + (-1 if back else 1), tabs.size())
 			_selected = 0
-		KEY_PAGEUP, KEY_PAGEDOWN:
-			_tab = _next_page(1 if event.physical_keycode == KEY_PAGEDOWN else -1)
+		KEY_Z, KEY_C:
+			_tab = _next_page(1 if key == KEY_C else -1)
 			_selected = 0
 		KEY_UP, KEY_W:
 			_selected = posmod(_selected - 1, rows.size())
 		KEY_DOWN, KEY_S:
 			_selected = posmod(_selected + 1, rows.size())
-		KEY_LEFT, KEY_A:
-			_change(-10 if event.shift_pressed else -1)
-		KEY_RIGHT, KEY_D:
-			_change(10 if event.shift_pressed else 1)
+		KEY_LEFT, KEY_A, KEY_RIGHT, KEY_D:
+			var steps = 10.0 if event.shift_pressed else (0.1 if event.ctrl_pressed else 1.0)
+			_change(steps * (-1.0 if key in [KEY_LEFT, KEY_A] else 1.0))
 		KEY_ENTER, KEY_SPACE:
 			if rows[_selected] == null:
 				reset_defaults()
@@ -195,12 +201,19 @@ func _next_page(step: int) -> int:
 	return 0
 
 
-func _change(steps: int):
+# The panels' key: by its letter on this keyboard (Z is where Y is on a German one), not by
+# where it sits (as the players' keys go).
+static func key_of(event: InputEventKey) -> int:
+	return event.keycode if event.keycode != KEY_NONE else event.physical_keycode
+
+
+# Changes the selected number by that many steps (a tenth of one with Ctrl), never below 0.
+func _change(steps: float):
 	var e = _rows()[_selected]
 	if e == null:
 		return
-	var v = clampf(_values[e.key] + steps * e.step, e.min, e.max)
-	set_value(e.key, snappedf(v, e.step))
+	var v = maxf(_values[e.key] + steps * e.step, 0.0)
+	set_value(e.key, snappedf(v, e.step / 10.0))  # a value in Ctrl's finer steps keeps them
 
 
 func _set_panel(open: bool):
@@ -237,8 +250,8 @@ func _build_panel():
 	_layer.add_child(shade)
 	_title = _panel_label(PANEL_MARGIN)
 	for i in 2:
-		var names = _panel_label(PANEL_MARGIN + Vector2(i * COLUMN_WIDTH, LIST_TOP))
-		var values = _panel_label(names.position + Vector2(VALUE_X, 0.0))
+		var names = _panel_label(PANEL_MARGIN)
+		var values = _panel_label(PANEL_MARGIN)
 		values.size.x = VALUE_WIDTH
 		values.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		_columns.append([names, values])
@@ -248,22 +261,23 @@ func _panel_label(at: Vector2) -> Label:
 	var label = Label.new()
 	label.position = at
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_constant_override("line_spacing", LINE_SPACING)
 	_layer.add_child(label)
 	return label
 
 
+# As the F1 panel: the page (Z / C), the keys, the page's tabs (Q / E) with the one shown in
+# brackets, then its numbers in two columns.
 func _refresh():
 	var tabs = _tabs()
 	var shown = tabs[_tab]
 	var page_tabs = []
-	var other_pages = []
 	for t in tabs:
 		if t[0] == shown[0]:
-			page_tabs.append(("[%s]" if t == shown else "%s") % t[1].to_upper())
-		elif not t[2] in other_pages:
-			other_pages.append(t[2])
-	_title.text = "TUNING: %s   %s\n(Q/E tab · PgUp/PgDn page: %s · ↑/↓ pick · ←/→ change, Shift x10 · F2 close · (n): default)" \
-		% [shown[2], "  ".join(page_tabs) if page_tabs.size() > 1 else "", ", ".join(other_pages)]
+			var tab_name = t[1].capitalize()
+			page_tabs.append("[ %s ]" % tab_name.to_upper() if t == shown else "  %s  " % tab_name)
+	_title.text = "
+".join(["TUNING:   <  %s  >" % shown[2], KEYS, "", " ".join(page_tabs), ""])
 	var lines = [[[], []], [[], []]]  # per column: names, values
 	var column = 0
 	var selected = _rows()[_selected]
@@ -283,19 +297,29 @@ func _refresh():
 	lines[1][0].append_array(["", ("▶  " if selected == null else "    ") + "Reset this tab to defaults (Enter)"])
 	lines[1][1].append_array(["", ""])
 	for i in 2:
-		_columns[i][0].text = "\n".join(lines[i][0])
-		_columns[i][1].text = "\n".join(lines[i][1])
-	var room = _layer.get_viewport().get_visible_rect().size.y - 2.0 * PANEL_MARGIN.y - LIST_TOP
+		_columns[i][0].text = "
+".join(lines[i][0])
+		_columns[i][1].text = "
+".join(lines[i][1])
+	var room = _layer.get_viewport().get_visible_rect().size.y - 2.0 * PANEL_MARGIN.y
 	var font_size = PANEL_FONT_SIZE
 	while true:
 		for label in [_title] + _columns[0] + _columns[1]:
 			label.add_theme_font_size_override("font_size", font_size)
+		var title = _title.get_minimum_size().y
 		var tallest = maxf(_columns[0][0].get_minimum_size().y, _columns[1][0].get_minimum_size().y)
-		if font_size <= PANEL_MIN_FONT_SIZE or tallest <= room:
+		if font_size <= PANEL_MIN_FONT_SIZE or title + tallest <= room:
 			break
 		font_size -= 1
+	var top = _title.get_minimum_size().y
+	var scale = font_size / float(PANEL_FONT_SIZE)  # the columns narrow with the font
+	for i in 2:
+		_columns[i][0].position = PANEL_MARGIN + Vector2(i * COLUMN_WIDTH * scale, top)
+		_columns[i][1].position = _columns[i][0].position + Vector2(VALUE_X * scale, 0.0)
 
 
 func _shown(e: Dictionary, v: float) -> String:
 	var decimals = 0 if e.step >= 1.0 else (1 if e.step >= 0.1 else 2)
+	if not is_equal_approx(snappedf(v, e.step), v):  # in Ctrl's finer steps
+		decimals += 1
 	return ("%." + str(decimals) + "f") % v

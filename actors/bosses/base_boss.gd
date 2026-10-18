@@ -51,9 +51,11 @@ var anim_time = 0.0
 var body_rest = Vector2.ZERO
 
 # Developer tools (core/dev.gd, tests/): while dev_hold is set he starts no attack of his own;
-# dev_next names the attack he starts next, whatever his weights say.
+# dev_next names the attack he starts next, whatever his weights say; while dev_still is set he
+# doesn't move between attacks (his attacks still move him).
 var dev_hold = false
 var dev_next = ""
+var dev_still = false
 
 var _last_attack: Attack = null
 var _tumbling = false
@@ -234,7 +236,8 @@ func _physics_process(delta):
 
 	match state:
 		State.IDLE:
-			_idle_motion(delta)
+			if not dev_still:
+				_idle_motion(delta)
 			if timer <= 0.0 and (not dev_hold or dev_next != ""):
 				_choose_target()
 				if target_player == null:
@@ -254,7 +257,8 @@ func _physics_process(delta):
 				_finish_attack()
 
 		State.RECOVER:
-			_recover_motion(delta)
+			if not dev_still:
+				_recover_motion(delta)
 			if timer <= 0.0:
 				state = State.IDLE
 				timer = get_idle_pause()

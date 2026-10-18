@@ -49,22 +49,22 @@ var _flash_left = 0.0
 # Its numbers on F2 (core/tuning.gd collects them): the sync rules' page, tab "sync mode".
 static func tuning_entries() -> Array:
 	return [
-		{"page": "sync", "title": "SYNC RULES", "scenes": ["levels/threshold/"], "header": "SYNC MODE: BINDING", "tab": "sync mode"},
-		{"key": "sync_connect_distance", "label": "bound once you stand this close (px apart)", "default": 30.0, "step": 2.0, "min": 4.0, "max": 200.0},
-		{"key": "sync_break_distance", "label": "...and apart again past this (px)", "default": 90.0, "step": 5.0, "min": 10.0, "max": 400.0},
+		{"page": "sync", "title": "Sync Rules", "scenes": ["levels/threshold/"], "header": "SYNC MODE: BINDING", "tab": "sync mode"},
+		{"key": "sync_connect_distance", "label": "bound once you stand this close (px apart)", "default": 30.0, "step": 2.0},
+		{"key": "sync_break_distance", "label": "...and apart again past this (px)", "default": 90.0, "step": 5.0},
 		{"header": "THE PAIR'S STRIKE"},
-		{"key": "sync_charge_time", "label": "attack held: sabre fully drawn back after (s)", "default": 0.45, "step": 0.05, "min": 0.05, "max": 2.0},
-		{"key": "sync_cue_delay", "label": "both drawn: the big cue this long after the later (s)", "default": 0.15, "step": 0.01, "min": 0.0, "max": 1.0},
-		{"key": "sync_release_window", "label": "let go on the cue: this close to it, either side (s)", "default": 0.1, "step": 0.01, "min": 0.01, "max": 0.5},
-		{"key": "sync_strike_reach", "label": "it reaches him from this far (px from his middle; his drift: up to 170)", "default": 200.0, "step": 10.0, "min": 40.0, "max": 400.0},
-		{"key": "pair_miss_loss", "label": "let go out of sync: your sync lost", "default": 5.0, "step": 1.0, "min": 0.0, "max": 100.0},
+		{"key": "sync_charge_time", "label": "attack held: sabre fully drawn back after (s)", "default": 0.45, "step": 0.05},
+		{"key": "sync_cue_delay", "label": "both drawn: the big cue this long after the later (s)", "default": 0.15, "step": 0.01},
+		{"key": "sync_release_window", "label": "let go on the cue: this close to it, either side (s)", "default": 0.1, "step": 0.01},
+		{"key": "sync_strike_reach", "label": "it reaches him from this far (px from his middle; his drift: up to 170)", "default": 200.0, "step": 10.0},
+		{"key": "pair_miss_loss", "label": "let go out of sync: your sync lost", "default": 5.0, "step": 1.0},
 		{"header": "HIM, IN YOUR SYNC MODE", "column": 1},
-		{"key": "sync_mode_tempo", "label": "his waits and pauses, times (slower)", "default": 1.4, "step": 0.1, "min": 0.5, "max": 4.0},
-		{"key": "sync_strike_reel", "label": "your strike together through his guard: he reels (s)", "default": 0.8, "step": 0.1, "min": 0.0, "max": 3.0},
-		{"key": "sync_guard_pause", "label": "on guard between his attacks, longer by (s)", "default": 2.0, "step": 0.1, "min": 0.0, "max": 10.0},
-		{"key": "sync_hold_off", "label": "while you draw back he holds off, at most (s)", "default": 1.5, "step": 0.1, "min": 0.0, "max": 10.0},
+		{"key": "sync_mode_tempo", "label": "his waits and pauses, times (slower)", "default": 1.4, "step": 0.1},
+		{"key": "sync_strike_reel", "label": "your strike together through his guard: he reels (s)", "default": 0.8, "step": 0.1},
+		{"key": "sync_guard_pause", "label": "on guard between his attacks, longer by (s)", "default": 2.0, "step": 0.1},
+		{"key": "sync_hold_off", "label": "while you draw back he holds off, at most (s)", "default": 1.5, "step": 0.1},
 		{"header": "TIME"},
-		{"key": "sync_slow_speed", "label": "while one of you draws back: time's speed (1: as ever)", "default": 1.0, "step": 0.05, "min": 0.1, "max": 1.0},
+		{"key": "sync_slow_speed", "label": "while one of you draws back: time's speed (1: as ever)", "default": 1.0, "step": 0.05},
 	]
 
 
