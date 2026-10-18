@@ -61,6 +61,25 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   (tab "sync hit"). Nicho's Claude will rework the whole code next, on a branch of its own: until
   that's merged, please keep changes to shared files (`player.gd`, `core/`) small.
 
+### For Kay, from Nicho (2026-10-18): the code overhaul (`nicho/code-overhaul`)
+
+Built on `nicho/kay-to-main`, so it holds your branch too. Proposals, for both of you to look at
+before it goes to `main`:
+- **Tests in the repo** (`tests/`, `godot --headless --script res://tests/run.gd`): the sync
+  rules, the sync mode, the player's feel (speed, jump, dash, parry window, swing), and that every
+  scene runs. Please run them before merging; your gyms and kit could get some too.
+- **Dev tools** (`core/dev.gd`, autoload `Dev`; `docs/dev_tools.md`): F3 overlay (frame time and
+  more), F4 hitboxes, F5 boss lab, a fight log. `player.gd` reports each parry, block and hit to
+  it (two lines).
+- **Performance**: the project renders with **Compatibility** (OpenGL) now, not Forward+
+  (Direct3D 12): much lighter for a 2D game. And your clockwork pieces redraw 12 times a second
+  in the editor instead of every frame (`Clockwork.EDITOR_FPS`), the switches only when changed:
+  the editor's 2D view never rested while a room was open. To see what your machine does:
+  `godot --disable-vsync --script res://tools/perf_probe.gd` (every level's frame time).
+- **F2 numbers** live next to their code now (`tuning_entries()`, `Tuning.SOURCES`); yours could
+  join (a page per level or piece).
+- `player.gd` got a contents list at its top and headers for its sections (comments only).
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
@@ -81,8 +100,9 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
 docs/                                design docs: concept.md, boss_*.md (one per boss), level_*.md (one
                                      per level), parkour_gyms.md, art_brief.md (sizes, colors,
-                                     poses: for generating sprites), beat_runner.md, beat_ring.md
-core/                                autoloads: GameManager, Sfx, Moves, Pads, Beat, Tuning;
+                                     poses: for generating sprites), beat_runner.md, beat_ring.md,
+                                     dev_tools.md (F3-F5, tests, F2 numbers, measuring, a new boss)
+core/                                autoloads: GameManager, Sfx, Moves, Pads, Beat, Tuning, Dev;
                                      sync_rules.gd (sync as life, Bifrons), sync_bond.gd (sync mode)
 actors/player/                       player.gd (+ scene), sync_wave.gd (the parry's energy to the partner)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
@@ -94,6 +114,8 @@ ui/                                  boss select, HUD, beat display, audio calib
                                      the mirrored screen (mirror_view.gd)
 addons/kit_handles/                  editor plugin: drag handles to resize kit pieces
 assets/                              music/: the songs (Beat.TRACKS); everything else is procedural
+tests/                               the tests (run.gd runs them; test_case.gd is their base)
+tools/                               perf_probe.gd: how heavy each level is on this machine
 ```
 
 Keep every `.gd.uid` next to its `.gd` and move them together (Godot references scripts by uid).
@@ -145,13 +167,16 @@ differ). From the repo root:
 
 ```bash
 godot --headless --import     # reimport: shows parse errors, registers new class_names and .uid files
+godot --headless --script res://tests/run.gd     # the tests (about a minute); -- name ... for some
 godot --headless --fixed-fps 60 --quit-after 600 res://levels/arena/arena.tscn   # 10 s of game time, at once
 ```
 
-Any `SCRIPT ERROR` / `Parse Error` in the output means it's broken. A clean run only means it
-loads; the feel still needs a human test.
+Any `SCRIPT ERROR` / `Parse Error` in the output means it's broken. The tests end with "N passed,
+M failed"; run them all before a commit that changes rules or mechanics, and add one with every
+rule you'd hate to break (`docs/dev_tools.md` → Tests: how). A clean run only means it works as
+the tests say; the feel still needs a human test.
 
-To test behavior, drive a scene from a throwaway script outside the repo:
+For a check that has no place among the tests, drive a scene from a throwaway script outside the repo:
 `godot --headless --script <file.gd>` with a script that `extends SceneTree`. From
 `_initialize()` on the autoloads exist (reach them with `root.get_node("GameManager")`; their
 names don't compile in such a script); `change_scene_to_file()` loads a level, and the
@@ -179,9 +204,13 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   plays a level's music looped in time with it, `TRACKS`; F1 → Sound: volume, and how far
   ahead the audio plays, for a late headset: music and click go early, the clock stays).
   `Tuning` (F2 panel of numbers to tune while playing, saved to `user://tuning.cfg`; code asks
-  `Tuning.value("his_heavy_damage")` each time it needs one; a page per level: the runner's and the
-  ring's in theirs, the sync rules elsewhere). Both panels show one tab at a time (Q / E): an
-  entry's "tab" (F1), a header's "tab" (F2).
+  `Tuning.value("his_heavy_damage")` each time it needs one). The numbers belong to the systems
+  that use them: each script in `Tuning.SOURCES` has a static `tuning_entries()` next to its code
+  (a page per system, tabs within it). Both panels show one tab at a time (Q / E): an entry's
+  "tab" (F1), a header's "tab" (F2). `Dev` (`core/dev.gd`, `docs/dev_tools.md`): F3 overlay
+  (frame time, the boss's state and attack, the players', this fight in numbers), F4 hitboxes,
+  F5 boss lab (run or loop one attack, hold him, slow the game, set meters and positions), and
+  the fight log (`Dev.defended()`, `Dev.note()`; with F1 → Dev "fight_log" to a file).
 - `core/sync_rules.gd` (`SyncRules`): sync as life, for now only in Bifrons's fight (Moves
   "bifrons_rules"): no health, no potions, a shared sync for the players and one for the boss,
   a posture each, chaos at no sync, sync mode at full. Attacks are normal or heavy (his: both
@@ -195,7 +224,7 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   (`Player._process_draw()`), let go together on the big cue for a heavy strike
   (`ColumnaBifrons.take_pair_strike()`); he slows down and strikes with both swords
   (`in_sync_mode()`, `time_unit()`).
-- `actors/player/player.gd`: one large script (~2000 lines) with all player logic: movement,
+- `actors/player/player.gd`: one large script (~2900 lines, a contents list at its top) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
   potions, defensive queries the boss uses (`is_perfect_parry()` etc.), and some boss-specific
   hooks (gather, tether, grab). Tuning constants at the top, grouped by feature. The sword's
@@ -208,9 +237,14 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `IDLE → TELEGRAPH → ATTACKING → RECOVER/STAGGER`; each attack is an `Attack` (`RefCounted`,
   `base_attack.gd`) with hooks `start / update_telegraph / execute / update / on_struck /
   cleanup` and `finish()` / `finish_with_stagger()`. A boss subclass supplies its attack pool,
-  weights, pose and HP. Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs the Scales level),
-  and `columna_bifrons/`, a test boss for fighting from both sides, and with both players on
-  one (`docs/boss_columna_bifrons.md`): each of his two swords fights one player wherever they
+  weights, pose and HP. For tools and tests a boss can be held off (`dev_hold`: no attack of his
+  own) and told his next attack (`dev_next`). Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs
+  the Scales level), and `columna_bifrons/`, a test boss for fighting from both sides, and with
+  both players on one (`docs/boss_columna_bifrons.md`), built in three parts, each extending the
+  one before: `bifrons_swords.gd` (his swords and their wards, posing, his guard and the
+  windows), `bifrons_moves.gd` (where he stands, drift, pushing, lunges, the charge, dashes) and
+  `columna_bifrons.gd` (the boss: attacks, weights, the sync rules' hooks, the reactive mode;
+  his tempo, moving and pattern weights are on F2). Each of his two swords fights one player wherever they
   are (`ward_of()`), and turns on the other one while its own is away (`_update_turns()`); all
   his attacks in one table (`ATTACKS`: a weight per situation, and either a list of strikes,
   run by `StrikePattern`, or a script of its own: `Sweep`, `Leap`, `Shove`); a guard that
@@ -239,7 +273,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   freely, a circle around the middle marking each thing's beat; his patterns (his table, weights
   and tempo) come level at the players from their sides, diagonally, until his crossing puts both
   on one side and his leap (a sweep) parts them again; a parry sends the partner a violet shard
-  along the circle, timed like the boss fight's partner hit.
+  along the circle, timed like the boss fight's partner hit. The things flying are
+  `ring_orb.gd`, its stand-in `ring_stand_in.gd`.
 - `ui/mirror_view.gd` (`MirrorView`, in Bifrons's room, Moves "mirror_view"): an alternative
   picture of the fight, the screen split at the floor, P1 above, P2 in the reflection below.
   Two SubViewports on the level's World2D; what each half draws is chosen by visibility layers
@@ -251,7 +286,9 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   (`assets/music/`): a song goes into `Beat.TRACKS` as a WAV of whole bars that loops by itself,
   cut from a stretch whose beats sit on the tempo (measure it: songs drift between sections).
 - Tuning values are named `const`s with a comment saying what they mean in feel terms
-  ("0 -> SPEED in ~0.06 s"), grouped under `# --- Feature ---` headers.
+  ("0 -> SPEED in ~0.06 s"), grouped under `# --- Feature ---` headers. A number someone may
+  want to tune while playing goes on F2 instead: in its system's `tuning_entries()`, read with
+  `Tuning.value()` (`docs/dev_tools.md`). A new boss: the checklist in `docs/dev_tools.md`.
 - New movement abilities get a `Moves` switch so they can be A/B tested.
 - Attacks telegraph by color; each color means one player response (see the boss 2 doc).
 - Input: two sets of actions, `p1_*` (keyboard) and `p2_*` (gamepad); the player reads
