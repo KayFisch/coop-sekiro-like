@@ -49,8 +49,8 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   `_action()`), `bounce()`, `rise_speed()`, `now()` and readout queries (`is_dashing()`,
   `can_dash()`, `swing_name()`...). `take_damage(knockback, chip)` has no amount. Your
   `core/dev.gd` reads `p.now()`, `p.last_block_press` and `p.is_swinging()` now.
-- Your two newest overhaul commits (F2 like F1) aren't merged in yet; a dry run says only one
-  sentence here conflicts.
+- Your two newest overhaul commits (F2 like F1) are merged in; the one conflict, a sentence in
+  the code map here, keeps both.
 
 ## The project
 
