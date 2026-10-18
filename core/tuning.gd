@@ -1,145 +1,46 @@
 extends Node
-## Autoload: numbers to tune while playing. F2 opens a panel anywhere (the game pauses): up/down
-## to pick, left/right to change by a step (Shift: ten steps), F2 again to close. Values are
-## saved to user://tuning.cfg and survive restarts; the last row resets them. Code asks
-## Tuning.value("his_heavy_damage"), each time it needs the number, so a change counts at once.
+## Autoload: numbers to tune while playing. F2 opens a panel anywhere (the game pauses): Q / E (or
+## Tab) for the tab, Page Up / Down for the page, up/down to pick, left/right to change by a step
+## (Shift: ten steps), F2 again to close. Values are saved to user://tuning.cfg and survive
+## restarts; a tab's last row resets it. Code asks Tuning.value("his_heavy_damage") each time it
+## needs the number, so a change counts at once.
 ##
-## It holds the sync rules (core/sync_rules.gd, Bifrons with Moves "bifrons_rules" on "sync")
-## and the beat-runner's and the beat-ring's numbers (levels/runner/, levels/ring/), each on a
-## page of its own. Gains and losses are in points of a meter; how many points a meter holds is tunable
-## too ("METERS"), and the thresholds of chaos and sync mode are shares of it.
+## The numbers belong to the systems that use them: each of SOURCES has a static
+## tuning_entries() next to its code, read the first time a number is asked for. A page is one
+## system (the sync rules, a boss, a level); the panel opens on the page of the level it's in.
+## To give a new boss or level its numbers: write its tuning_entries() and add it to SOURCES.
 
 const SAVE_PATH = "user://tuning.cfg"
 const VERSION = 2  # bumped when a default changes: an older save is dropped once
+# Whose numbers there are, in the panel's order.
+const SOURCES = [
+	"res://core/sync_rules.gd",  # page "sync": sync as life (tabs damage, sync and posture, sync hit)
+	"res://core/sync_bond.gd",  # page "sync", tab "sync mode"
+	"res://actors/bosses/columna_bifrons/columna_bifrons.gd",  # page "bifrons"
+	"res://levels/runner/runner.gd",  # page "runner"
+	"res://levels/ring/ring.gd",  # page "ring"
+]
 const PANEL_MARGIN = Vector2(48, 16)
 const PANEL_FONT_SIZE = 15
 const PANEL_MIN_FONT_SIZE = 10
 const COLUMN_WIDTH = 540.0
 const VALUE_X = 400.0  # where a column's numbers stand, right-aligned
 const VALUE_WIDTH = 110.0
-const LIST_TOP = 34.0  # below the title
+const LIST_TOP = 52.0  # below the title's two lines
 
-# Each number: key, what the panel calls it, default, step, and its range. A "header" row only
-# groups the ones below it; "column": 1 starts the panel's second column. "page": the panel
-# shows the numbers of the level it's opened in: "runner" in the beat-runner, "ring" in the
-# beat-ring, else "sync". "tab": a page's numbers come in tabs (Q / E or Tab switch), one shown
-# at a time; a header's tab holds for the ones after it, until the next header that names one.
-const ENTRIES = [
-	{"header": "SYNC LOST: HEAVY (HIS: BOTH SWORDS; YOURS: TOGETHER)", "tab": "damage"},
-	{"key": "his_heavy_damage", "label": "his heavy attack lands: your sync lost", "default": 18.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"key": "his_normal_share", "label": "...his normal one: this share of that", "default": 0.33, "step": 0.01, "min": 0.0, "max": 1.0},
-	{"key": "their_heavy_damage", "label": "your heavy attack lands: his sync lost", "default": 18.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"key": "their_normal_share", "label": "...your normal one: this share of that", "default": 0.33, "step": 0.01, "min": 0.0, "max": 1.0},
-	{"header": "POSTURE YOU LOSE"},
-	{"key": "posture_small", "label": "small: a normal attack parried (both) or blocked", "default": 5.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"key": "posture_medium", "label": "medium: hit by a normal one; a heavy one parried/blocked", "default": 15.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"key": "posture_large", "label": "large: hit by a heavy attack", "default": 30.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"header": "POSTURE HE LOSES (THERE ARE TWO OF YOU)", "column": 1},
-	{"key": "boss_posture_small", "label": "small: a normal attack parried (both) or blocked", "default": 5.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"key": "boss_posture_medium", "label": "medium: hit by a normal one; a heavy one parried/blocked", "default": 15.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"key": "boss_posture_large", "label": "large: hit by a heavy attack", "default": 30.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"header": "HIS GUARD"},
-	{"key": "boss_parry_chance", "label": "a hit at his guard: chance he parries, not blocks", "default": 0.5, "step": 0.05, "min": 0.0, "max": 1.0},
-	{"header": "PLAYERS WIN SYNC BACK (HE DOESN'T)", "tab": "sync and posture"},
-	{"key": "coop_parry_gain", "label": "coop parry (both swords, both of you): sync gained", "default": 6.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"key": "coop_parry_stagger", "label": "coop parry: his stagger (s)", "default": 1.0, "step": 0.1, "min": 0.0, "max": 5.0},
-	{"header": "CHAOS AND SYNC MODE"},
-	{"key": "team_sync_start", "label": "players' sync at the start (% of their meter)", "default": 50.0, "step": 5.0, "min": 1.0, "max": 99.0},
-	{"key": "chaos_exit", "label": "chaos over once sync is back to (% of the meter)", "default": 25.0, "step": 1.0, "min": 1.0, "max": 99.0},
-	{"key": "sync_mode_exit", "label": "sync mode over when sync falls below (% of the meter)", "default": 70.0, "step": 1.0, "min": 1.0, "max": 99.0},
-	{"header": "METERS: HOW MANY POINTS EACH HOLDS", "column": 1},
-	{"key": "team_sync_max", "label": "players' sync", "default": 100.0, "step": 10.0, "min": 20.0, "max": 1000.0},
-	{"key": "boss_sync_max", "label": "his sync", "default": 200.0, "step": 10.0, "min": 20.0, "max": 1000.0},
-	{"key": "player_posture_max", "label": "a player's posture", "default": 100.0, "step": 10.0, "min": 20.0, "max": 1000.0},
-	{"key": "boss_posture_max", "label": "his posture", "default": 200.0, "step": 10.0, "min": 20.0, "max": 1000.0},
-	{"header": "POSTURE BACK"},
-	{"key": "posture_quiet_time", "label": "only after this long with no attack, in or out (s)", "default": 2.0, "step": 0.1, "min": 0.0, "max": 10.0},
-	{"key": "player_posture_regen", "label": "players: posture back per second, at full sync", "default": 20.0, "step": 1.0, "min": 0.0, "max": 200.0},
-	{"key": "boss_posture_regen", "label": "him: posture back per second, at full sync", "default": 30.0, "step": 1.0, "min": 0.0, "max": 200.0},
-	{"key": "block_regen_factor", "label": "a player holding block: regen times", "default": 2.0, "step": 0.5, "min": 1.0, "max": 10.0},
-	{"key": "posture_regen_none_at", "label": "regen falls in a line to the floor at sync (%)", "default": 50.0, "step": 5.0, "min": 0.0, "max": 95.0},
-	{"key": "posture_regen_least", "label": "...the floor: this share of the full rate", "default": 0.05, "step": 0.05, "min": 0.0, "max": 1.0},
-	{"key": "player_break_stagger", "label": "player's posture broken: their stagger (s)", "default": 0.8, "step": 0.1, "min": 0.0, "max": 5.0},
-	{"key": "boss_break_stagger", "label": "his posture broken: his stagger (s)", "default": 2.5, "step": 0.1, "min": 0.0, "max": 6.0},
-	{"header": "THE WINDOW AFTER YOUR PARTNER'S PARRY", "tab": "sync hit"},
-	{"key": "sync_window_delay", "label": "it opens this long after the parry (s; 0: with it)", "default": 0.18, "step": 0.01, "min": 0.0, "max": 1.0},
-	{"key": "sync_beat_time", "label": "...first on the beat, for this long (s)", "default": 0.12, "step": 0.01, "min": 0.0, "max": 0.5},
-	{"key": "sync_window_late", "label": "...then still open off the beat, this long (s)", "default": 0.18, "step": 0.01, "min": 0.0, "max": 1.0},
-	{"header": "WHAT IT BRINGS"},
-	{"key": "sync_hit_gain", "label": "your hit lands on the beat: sync won", "default": 4.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"key": "sync_hit_late_gain", "label": "your hit lands off the beat: sync won", "default": 2.0, "step": 1.0, "min": 0.0, "max": 1000.0},
-	{"key": "missed_window_loss", "label": "no hit while it was open (you in reach): sync lost", "default": 1.0, "step": 0.5, "min": 0.0, "max": 100.0},
-	{"header": "SYNC MODE: BINDING", "tab": "sync mode"},
-	{"key": "sync_connect_distance", "label": "bound once you stand this close (px apart)", "default": 30.0, "step": 2.0, "min": 4.0, "max": 200.0},
-	{"key": "sync_break_distance", "label": "...and apart again past this (px)", "default": 90.0, "step": 5.0, "min": 10.0, "max": 400.0},
-	{"header": "THE PAIR'S STRIKE"},
-	{"key": "sync_charge_time", "label": "attack held: sabre fully drawn back after (s)", "default": 0.45, "step": 0.05, "min": 0.05, "max": 2.0},
-	{"key": "sync_cue_delay", "label": "both drawn: the big cue this long after the later (s)", "default": 0.15, "step": 0.01, "min": 0.0, "max": 1.0},
-	{"key": "sync_release_window", "label": "let go on the cue: this close to it, either side (s)", "default": 0.1, "step": 0.01, "min": 0.01, "max": 0.5},
-	{"key": "sync_strike_reach", "label": "it reaches him from this far (px from his middle)", "default": 150.0, "step": 10.0, "min": 40.0, "max": 400.0},
-	{"key": "pair_miss_loss", "label": "let go out of sync: your sync lost", "default": 5.0, "step": 1.0, "min": 0.0, "max": 100.0},
-	{"header": "HIM, IN YOUR SYNC MODE", "column": 1},
-	{"key": "sync_mode_tempo", "label": "his waits and pauses, times (slower)", "default": 1.4, "step": 0.1, "min": 0.5, "max": 4.0},
-	{"key": "sync_strike_reel", "label": "your strike together through his guard: he reels (s)", "default": 0.8, "step": 0.1, "min": 0.0, "max": 3.0},
-	{"key": "sync_guard_pause", "label": "on guard between his attacks, longer by (s)", "default": 2.0, "step": 0.1, "min": 0.0, "max": 10.0},
-	{"key": "sync_hold_off", "label": "while you draw back he holds off, at most (s)", "default": 1.5, "step": 0.1, "min": 0.0, "max": 10.0},
-	{"header": "TIME"},
-	{"key": "sync_slow_speed", "label": "while one of you draws back: time's speed (1: as ever)", "default": 1.0, "step": 0.05, "min": 0.1, "max": 1.0},
-	{"header": "RUNNER: TEMPO", "page": "runner", "tab": "runner"},
-	{"key": "runner_unit", "label": "seconds per unit of a pattern's waits (Bifrons: 0.2)", "default": 0.2, "step": 0.01, "min": 0.08, "max": 0.5, "page": "runner"},
-	{"key": "runner_gap", "label": "units between two patterns", "default": 5.0, "step": 1.0, "min": 1.0, "max": 20.0, "page": "runner"},
-	{"key": "runner_relay_units", "label": "a parry until the partner's shard is due (units)", "default": 2.0, "step": 1.0, "min": 1.0, "max": 6.0, "page": "runner"},
-	{"key": "runner_speedup", "label": "speed-up: this many % quicker every 20 s", "default": 5.0, "step": 1.0, "min": 0.0, "max": 30.0, "page": "runner"},
-	{"header": "RUNNER: SPEEDS (PX/S)", "page": "runner"},
-	{"key": "runner_orb_speed", "label": "an orb (parry it)", "default": 420.0, "step": 20.0, "min": 100.0, "max": 2000.0, "page": "runner"},
-	{"key": "runner_shard_speed", "label": "a shard (hit it)", "default": 650.0, "step": 20.0, "min": 100.0, "max": 2000.0, "page": "runner"},
-	{"key": "runner_scroll_speed", "label": "the world going by", "default": 300.0, "step": 20.0, "min": 50.0, "max": 1500.0, "page": "runner"},
-	{"key": "runner_block_speed", "label": "a block (jump it)", "default": 560.0, "step": 20.0, "min": 50.0, "max": 2000.0, "page": "runner"},
-	{"header": "RUNNER: THE METER (OF 100)", "page": "runner", "column": 1},
-	{"key": "runner_start", "label": "at the start", "default": 50.0, "step": 5.0, "min": 5.0, "max": 100.0, "page": "runner"},
-	{"key": "runner_parry_gain", "label": "a parry: gained", "default": 2.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "runner"},
-	{"key": "runner_hit_gain", "label": "a shard hit: gained", "default": 3.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "runner"},
-	{"key": "runner_beat_gain", "label": "a shard hit on the beat: gained", "default": 5.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "runner"},
-	{"key": "runner_coop_gain", "label": "both orbs of a pair parried: gained on top", "default": 6.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "runner"},
-	{"key": "runner_hit_loss", "label": "something got through: lost", "default": 10.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "runner"},
-	{"key": "runner_block_loss", "label": "an orb blocked, not parried: lost", "default": 4.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "runner"},
-	{"key": "runner_miss_loss", "label": "a shard from the partner not hit: lost", "default": 2.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "runner"},
-	{"header": "RUNNER: BETWEEN PATTERNS (MIXED)", "page": "runner", "column": 1},
-	{"key": "runner_extra_chance", "label": "chance of a shard or a block", "default": 0.4, "step": 0.05, "min": 0.0, "max": 1.0, "page": "runner"},
-	{"key": "runner_block_share", "label": "of those, a block", "default": 0.3, "step": 0.05, "min": 0.0, "max": 1.0, "page": "runner"},
-	{"header": "RING: HIS PATTERNS", "page": "ring", "tab": "ring"},
-	{"key": "ring_unit", "label": "seconds per unit of his waits (his own: 0.2)", "default": 0.2, "step": 0.01, "min": 0.08, "max": 0.6, "page": "ring"},
-	{"key": "ring_gap", "label": "units between two of his patterns", "default": 5.0, "step": 1.0, "min": 1.0, "max": 20.0, "page": "ring"},
-	{"key": "ring_extra_chance", "label": "between two: chance of a grey shard or a bar", "default": 0.4, "step": 0.05, "min": 0.0, "max": 1.0, "page": "ring"},
-	{"key": "ring_bar_share", "label": "of those, a bar", "default": 0.15, "step": 0.05, "min": 0.0, "max": 1.0, "page": "ring"},
-	{"header": "RING: SIZES AND SPEEDS", "page": "ring"},
-	{"key": "ring_radius", "label": "the circle's radius (px)", "default": 140.0, "step": 10.0, "min": 40.0, "max": 400.0, "page": "ring"},
-	{"key": "ring_orb_speed", "label": "an arrowhead, a shard or a green arrow (px/s)", "default": 380.0, "step": 20.0, "min": 100.0, "max": 2000.0, "page": "ring"},
-	{"key": "ring_sweep_speed", "label": "a sweep (px/s)", "default": 520.0, "step": 20.0, "min": 100.0, "max": 2000.0, "page": "ring"},
-	{"key": "ring_bar_speed", "label": "a bar (px/s)", "default": 300.0, "step": 20.0, "min": 50.0, "max": 2000.0, "page": "ring"},
-	{"key": "ring_relay_slow", "label": "a violet shard where it's to be hit (px/s)", "default": 600.0, "step": 50.0, "min": 100.0, "max": 3000.0, "page": "ring"},
-	{"key": "ring_relay_brake", "label": "...slowing to that from the line on, over at least (px)", "default": 140.0, "step": 10.0, "min": 0.0, "max": 600.0, "page": "ring"},
-	{"key": "ring_perfect", "label": "perfect: this close to its beat (s, either side)", "default": 0.07, "step": 0.01, "min": 0.01, "max": 0.5, "page": "ring"},
-	{"key": "ring_good", "label": "good: this close (s)", "default": 0.16, "step": 0.01, "min": 0.01, "max": 1.0, "page": "ring"},
-	{"header": "RING: THE METER (OF 100)", "page": "ring", "column": 1},
-	{"key": "ring_start", "label": "at the start", "default": 50.0, "step": 5.0, "min": 5.0, "max": 100.0, "page": "ring"},
-	{"key": "ring_perfect_gain", "label": "perfect: gained", "default": 4.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
-	{"key": "ring_good_gain", "label": "good: gained", "default": 2.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
-	{"key": "ring_ok_gain", "label": "taken anywhere else: gained", "default": 1.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
-	{"key": "ring_sweep_gain", "label": "a sweep parried by both: gained on top", "default": 6.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
-	{"key": "ring_pair_gain", "label": "both of a pair parried: gained on top", "default": 6.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
-	{"key": "ring_hit_loss", "label": "hit by an arrowhead, the sweep or a bar: lost (heavy pair: x2)", "default": 10.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
-	{"key": "ring_block_loss", "label": "an orb blocked, not parried: lost", "default": 4.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
-	{"key": "ring_relay_gain", "label": "a violet shard hit (a sync hit): gained on top", "default": 3.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
-	{"key": "ring_miss_loss", "label": "a violet shard not hit: lost", "default": 2.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
-	{"key": "ring_lost_loss", "label": "one nobody took: lost", "default": 3.0, "step": 1.0, "min": 0.0, "max": 100.0, "page": "ring"},
-]
+# An entry (from a tuning_entries()) is a number: key, what the panel calls it, default, step,
+# and its range. Or a "header" row, grouping the ones below it: "column": 1 starts the panel's
+# second column; "page" (with its "title" and the "scenes" it opens in, path parts) and "tab"
+# hold for the entries after it until a header names others.
 
 var panel_open = false
 
+var _entries = []  # every entry, each with its page and tab: {entry, page, tab, title}
+var _scenes = {}  # page -> the scene paths it opens in
+var _loaded = false
 var _values = {}
 var _selected = 0
-var _tab_of = {}  # page -> the index of the tab shown
+var _tab = 0  # the index of the tab shown, among all pages' (_tabs())
 var _was_paused = false
 var _layer: CanvasLayer
 var _title: Label
@@ -148,8 +49,27 @@ var _columns = []  # per column: [names, values], two Labels side by side
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	for e in _numbers():
-		_values[e.key] = e.default
+
+
+# Reads every source's entries and the saved values, once. Not in _ready(): the sources name
+# other autoloads, which may not be there yet then.
+func _load():
+	if _loaded:
+		return
+	_loaded = true
+	var page = ""
+	var tab = ""
+	var title = ""
+	for path in SOURCES:
+		for e in load(path).tuning_entries():
+			if e.has("page"):
+				page = e.page
+				title = e.get("title", page.to_upper())
+				_scenes[page] = e.get("scenes", [])
+			tab = e.get("tab", tab)
+			_entries.append({"entry": e, "page": page, "tab": tab, "title": title})
+			if e.has("key"):
+				_values[e.key] = e.default
 	var cfg = ConfigFile.new()
 	if cfg.load(SAVE_PATH) != OK:
 		return
@@ -163,6 +83,8 @@ func _ready():
 
 
 func value(key: String) -> float:
+	if not _loaded:
+		_load()
 	return _values[key]
 
 
@@ -180,55 +102,38 @@ func reset_defaults():
 
 
 func _numbers() -> Array:
-	return ENTRIES.filter(func(e): return e.has("key"))
+	return _entries.map(func(x): return x.entry).filter(func(e): return e.has("key"))
 
 
-# The page for the level the panel is opened in.
-func _page() -> String:
-	var scene = get_tree().current_scene
-	var path = scene.scene_file_path if scene else ""
-	for page in ["runner", "ring"]:
-		if path.contains("/%s/" % page):
-			return page
-	return "sync"
-
-
-func _page_entries() -> Array:
-	var page = _page()
-	return ENTRIES.filter(func(e): return e.get("page", "sync") == page)
-
-
-# The page's entries, each with the tab it's on: [entry, tab].
-func _tabbed() -> Array:
-	var out = []
-	var tab = ""
-	for e in _page_entries():
-		tab = e.get("tab", tab)
-		out.append([e, tab])
-	return out
-
-
+# Every tab of every page, in order: [page, tab, title].
 func _tabs() -> Array:
 	var tabs = []
-	for pair in _tabbed():
-		if not pair[1] in tabs:
-			tabs.append(pair[1])
+	for x in _entries:
+		if tabs.is_empty() or tabs.back()[0] != x.page or tabs.back()[1] != x.tab:
+			tabs.append([x.page, x.tab, x.title])
 	return tabs
 
 
-func _tab_index() -> int:
-	return clampi(_tab_of.get(_page(), 0), 0, _tabs().size() - 1)
-
-
-# The entries on the tab shown.
 func _tab_entries() -> Array:
-	var tab = _tabs()[_tab_index()]
-	return _tabbed().filter(func(pair): return pair[1] == tab).map(func(pair): return pair[0])
+	var shown = _tabs()[_tab]
+	return _entries.filter(func(x): return x.page == shown[0] and x.tab == shown[1]).map(func(x): return x.entry)
 
 
 # The panel's selectable rows: every number on the tab, then "reset".
 func _rows() -> Array:
 	return _tab_entries().filter(func(e): return e.has("key")) + [null]
+
+
+# The first tab of the page the current level belongs to, or -1.
+func _scene_tab() -> int:
+	var scene = get_tree().current_scene
+	var path = scene.scene_file_path if scene else ""
+	var tabs = _tabs()
+	for i in tabs.size():
+		for part in _scenes.get(tabs[i][0], []):
+			if path.contains(part):
+				return i
+	return -1
 
 
 func _save():
@@ -251,15 +156,16 @@ func _input(event):
 		return
 	if not panel_open:
 		return
-	if event.physical_keycode in [KEY_Q, KEY_E, KEY_TAB]:
-		var step = -1 if event.physical_keycode == KEY_Q or (event.physical_keycode == KEY_TAB and event.shift_pressed) else 1
-		_tab_of[_page()] = posmod(_tab_index() + step, _tabs().size())
-		_selected = 0
-		get_viewport().set_input_as_handled()
-		_refresh()
-		return
+	var tabs = _tabs()
 	var rows = _rows()
 	match event.physical_keycode:
+		KEY_Q, KEY_E, KEY_TAB:
+			var back = event.physical_keycode == KEY_Q or (event.physical_keycode == KEY_TAB and event.shift_pressed)
+			_tab = posmod(_tab + (-1 if back else 1), tabs.size())
+			_selected = 0
+		KEY_PAGEUP, KEY_PAGEDOWN:
+			_tab = _next_page(1 if event.physical_keycode == KEY_PAGEDOWN else -1)
+			_selected = 0
 		KEY_UP, KEY_W:
 			_selected = posmod(_selected - 1, rows.size())
 		KEY_DOWN, KEY_S:
@@ -275,6 +181,20 @@ func _input(event):
 	_refresh()
 
 
+# The first tab of the next page (step 1) or the previous one (-1).
+func _next_page(step: int) -> int:
+	var tabs = _tabs()
+	var pages = []
+	for t in tabs:
+		if not t[0] in pages:
+			pages.append(t[0])
+	var page = pages[posmod(pages.find(tabs[_tab][0]) + step, pages.size())]
+	for i in tabs.size():
+		if tabs[i][0] == page:
+			return i
+	return 0
+
+
 func _change(steps: int):
 	var e = _rows()[_selected]
 	if e == null:
@@ -288,8 +208,14 @@ func _set_panel(open: bool):
 		return
 	panel_open = open
 	if open:
+		_load()
 		_was_paused = get_tree().paused
 		get_tree().paused = true
+		# Opened in a level with a page of its own: on that page, unless already on it.
+		var at_scene = _scene_tab()
+		if at_scene >= 0 and _tabs()[_tab][0] != _tabs()[at_scene][0]:
+			_tab = at_scene
+			_selected = 0
 		_selected = mini(_selected, _rows().size() - 1)
 		if _layer == null:
 			_build_panel()
@@ -328,11 +254,16 @@ func _panel_label(at: Vector2) -> Label:
 
 func _refresh():
 	var tabs = _tabs()
-	var shown = []
-	for i in tabs.size():
-		shown.append(("[%s]" if i == _tab_index() else "%s") % tabs[i].to_upper())
-	_title.text = "TUNING: %s   %s   (Q/E tab · ↑/↓ pick · ←/→ change, Shift x10 · F2 close · (n): default)" \
-		% [{"runner": "BEAT-RUNNER", "ring": "BEAT-RING"}.get(_page(), "SYNC RULES"), "  ".join(shown) if tabs.size() > 1 else ""]
+	var shown = tabs[_tab]
+	var page_tabs = []
+	var other_pages = []
+	for t in tabs:
+		if t[0] == shown[0]:
+			page_tabs.append(("[%s]" if t == shown else "%s") % t[1].to_upper())
+		elif not t[2] in other_pages:
+			other_pages.append(t[2])
+	_title.text = "TUNING: %s   %s\n(Q/E tab · PgUp/PgDn page: %s · ↑/↓ pick · ←/→ change, Shift x10 · F2 close · (n): default)" \
+		% [shown[2], "  ".join(page_tabs) if page_tabs.size() > 1 else "", ", ".join(other_pages)]
 	var lines = [[[], []], [[], []]]  # per column: names, values
 	var column = 0
 	var selected = _rows()[_selected]

@@ -17,9 +17,9 @@ const LEFT = StrikePattern.LEFT
 const RIGHT = StrikePattern.RIGHT
 
 # --- Tuning ---
-const WINDUP_UNITS = 6  # StrikePattern.TIME_UNITs until he lands
+const WINDUP_UNITS = 6  # boss.time_unit()s until he lands
 const RISE_TIME = 0.22  # from the floor up to HEIGHT, and over to where he'll come down
-const HANG_TIME = 0.2  # up there, before he drops (in StrikePattern.FALL_TIME)
+const HANG_TIME = 0.2  # up there, before he drops (in StrikePattern.fall_time())
 const HEIGHT = 200.0  # how high he gets: his feet clear the players' heads
 const AHEAD = 50.0  # both players on one side: he lands at most this far past the nearer one
 const REACH = 80.0  # a player this close to where he lands is under the swords
@@ -59,8 +59,8 @@ func start(boss_node, player_nodes: Array):
 	super(boss_node, player_nodes)
 	boss.orient([[WINDUP_UNITS, StrikePattern.BOTH]])
 	_time = 0.0
-	_land_at = WINDUP_UNITS * StrikePattern.TIME_UNIT
-	_fall_at = _land_at - StrikePattern.FALL_TIME
+	_land_at = WINDUP_UNITS * boss.time_unit()
+	_fall_at = _land_at - StrikePattern.fall_time()
 	_jump_at = _fall_at - HANG_TIME - RISE_TIME
 	_from_x = boss.global_position.x
 	_to_x = _from_x
@@ -176,7 +176,7 @@ func _animate():
 			_dropping = true
 			boss.ghost(_land_at - _time + 0.05)
 			Sfx.play("swing", -3.0)
-		var drop = pow(clampf((_time - _fall_at) / StrikePattern.FALL_TIME, 0.0, 1.0), StrikePattern.FALL_POWER)
+		var drop = pow(clampf((_time - _fall_at) / StrikePattern.fall_time(), 0.0, 1.0), StrikePattern.FALL_POWER)
 		boss.global_position.y = floor_y - HEIGHT * (1.0 - drop)
 		boss.global_position.x = _to_x
 	for blade in [LEFT, RIGHT]:

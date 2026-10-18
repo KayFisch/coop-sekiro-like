@@ -6,7 +6,7 @@ extends Attack
 ## each run goes (ColumnaBifrons.orient()) and how soon its first strike comes (first_wait()).
 ##
 ## A strike is aimed at the player its sword fights (ColumnaBifrons.ward_of()), and only they
-## have to perfect parry it. The sword is drawn back, then comes in FALL_TIME: that's the cue,
+## have to perfect parry it. The sword is drawn back, then comes in fall_time(): that's the cue,
 ## and both players read it. A parried strike breaks the guard of his *other* sword for a moment
 ## (ColumnaBifrons.break_guard()), and the other player's sword hit is a sync hit (with Moves
 ## "bifrons_guard_break" off it only opens the window: a hit in it that lands is a sync hit). Both
@@ -45,12 +45,10 @@ const RUSH = 2  # ...or a cut he dashes across the room with (see "LEFT ALONE" t
 const PUSH = 3  # ...or a shove, no strike at all (see "THE CHARGE" there: the crossing)
 
 # --- Tuning ---
-# One unit of a strike's `wait` (see ColumnaBifrons.ATTACKS), in seconds: the tempo of every
-# pattern at once. 4 units between strikes is 0.8 s.
-const TIME_UNIT = 0.2
-# The blade's drop, from drawn back to landing: the cue to press. A strike that follows the one
-# before too closely for this (a wait under 3) drops faster, and gets hard to read.
-const FALL_TIME = 0.28
+# A unit of a strike's `wait` (see ColumnaBifrons.ATTACKS) is ColumnaBifrons.time_unit() (F2
+# "bifrons_time_unit"): the tempo of every pattern at once. The blade's drop, from drawn back to
+# landing, is fall_time() (F2 "bifrons_fall_time"): the cue to press. A strike that follows the
+# one before too closely for it (a wait under 3) drops faster, and gets hard to read.
 const FALL_POWER = 1.7  # the drop starts slow and lands fast (1 = constant speed); his lunge too
 # After landing, the blade stays where it is this long before it goes back to its flank (or up
 # again): lying on the floor, or thrown back by a parry, which takes it longer to get over.
@@ -71,7 +69,7 @@ const BOTH_STAGGER_TIME = 2.2  # both swords parried at once, by both players
 # doesn't stagger him.
 const HEAVY_DAMAGE = 2.0  # times a strike's damage...
 const HEAVY_KNOCKBACK = 1.5  # ...and its knockback
-const RECOVER_TIME = 0.6
+# Recovering after a series: F2 "bifrons_recover_time".
 const TREMBLE = 0.05  # radians the drawn-back blade shakes by, just before the drop
 # A blade is drawn back for its strike at least this long before its drop, whatever it was doing
 # (thrown back, or waiting out a broken guard): it has to be there when the drop starts.
@@ -104,6 +102,11 @@ var _charge_sword = LEFT
 var _room_at = -1.0  # when he makes room after a strike of both swords (-1: not due)
 var _advance = Advance.NONE  # how he gets through the next strike's windup
 var _lunge = null  # {from, to}: the next strike's lunge, once it's under way
+
+
+# A strike's drop, from drawn back to landing: the cue to parry (F2 "bifrons_fall_time").
+static func fall_time() -> float:
+	return Tuning.value("bifrons_fall_time")
 
 
 # THE PARTNER'S HIT: from the parry until the window opens...
@@ -200,7 +203,7 @@ func update(delta: float):
 		_room_at = -1.0
 		boss.make_room()
 	if over:
-		finish(RECOVER_TIME)
+		finish(Tuning.value("bifrons_recover_time"))
 		return
 	_animate()
 
@@ -323,10 +326,10 @@ func _push(sword: int):
 		boss.shake(6.0)
 
 
-# How long strike `index`'s drop takes: FALL_TIME, less if the strike before leaves no room.
+# How long strike `index`'s drop takes: fall_time(), less if the strike before leaves no room.
 func _fall_time(index: int) -> float:
 	var gap = _contacts[index] - (_contacts[index - 1] if index > 0 else 0.0)
-	return minf(FALL_TIME, gap * 0.6)
+	return minf(fall_time(), gap * 0.6)
 
 
 # How long a blade stays where its last strike left it: STICK_TIME, RECOIL_TIME if it was

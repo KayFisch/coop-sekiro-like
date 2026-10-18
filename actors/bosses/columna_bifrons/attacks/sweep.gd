@@ -24,7 +24,7 @@ const LEFT = StrikePattern.LEFT
 const RIGHT = StrikePattern.RIGHT
 
 # --- Tuning ---
-const WINDUP_UNITS = 5  # StrikePattern.TIME_UNITs until the blade reaches the first player
+const WINDUP_UNITS = 5  # boss.time_unit()s until the blade reaches the first player
 const TRAVEL_TIME = 0.26  # from the first player through to the second
 const AWAY_TIME = 1.4  # parried by the first only: how long the blade stays away from its side
 const PROP_TIME = 1.4  # parried by the second only: how long he leans on his other sword
@@ -62,9 +62,9 @@ func fits(_boss_node) -> bool:
 func start(boss_node, player_nodes: Array):
 	super(boss_node, player_nodes)
 	# As written it goes from left to right; the boss says which way round this run goes.
-	_first = LEFT * boss.orient([[WINDUP_UNITS, LEFT], [TRAVEL_TIME / StrikePattern.TIME_UNIT, RIGHT]])
+	_first = LEFT * boss.orient([[WINDUP_UNITS, LEFT], [TRAVEL_TIME / boss.time_unit(), RIGHT]])
 	_time = 0.0
-	_first_at = WINDUP_UNITS * StrikePattern.TIME_UNIT
+	_first_at = WINDUP_UNITS * boss.time_unit()
 	_second_at = _first_at + TRAVEL_TIME
 	_landed = 0
 	_first_parried = false
@@ -78,7 +78,7 @@ func get_telegraph_color() -> Color:
 
 # The telegraph is the windup, up to the blade coming down level.
 func get_telegraph_duration() -> float:
-	return _first_at - StrikePattern.FALL_TIME
+	return _first_at - StrikePattern.fall_time()
 
 
 func update_telegraph(progress: float):
@@ -183,7 +183,7 @@ func _animate():
 
 	boss.pose_sword(other, boss.POSE_GUARD)
 	boss.tint_sword(other, boss.COLOR_SWORD)
-	var down_from = _first_at - StrikePattern.FALL_TIME
+	var down_from = _first_at - StrikePattern.fall_time()
 	if _time >= _first_at:
 		# Through, flat, from its own player's side to the other.
 		var across = clampf((_time - _first_at) / TRAVEL_TIME, 0.0, 1.0)
@@ -196,7 +196,7 @@ func _animate():
 		if not _sounded:
 			_sounded = true
 			Sfx.play("swing", -3.0)
-		var drop = pow(clampf((_time - down_from) / StrikePattern.FALL_TIME, 0.0, 1.0), StrikePattern.FALL_POWER)
+		var drop = pow(clampf((_time - down_from) / StrikePattern.fall_time(), 0.0, 1.0), StrikePattern.FALL_POWER)
 		boss.pose_sword(swept, boss.POSE_SWEEP_BACK.lerp(boss.POSE_SWEEP, drop), true)
 		boss.tint_sword(swept, boss.COLOR_EXECUTE)
 		boss.tint_side(swept, boss.COLOR_EXECUTE, 0.45)

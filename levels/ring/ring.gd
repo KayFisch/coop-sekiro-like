@@ -86,6 +86,38 @@ var _combo_label: Label
 var _over_label: Label
 
 
+# Its numbers on F2 (core/tuning.gd collects them): a page of its own, in the ring.
+static func tuning_entries() -> Array:
+	return [
+		{"page": "ring", "title": "BEAT-RING", "scenes": ["levels/ring/"], "header": "HIS PATTERNS", "tab": "ring"},
+		{"key": "ring_unit", "label": "seconds per unit of his waits (his own: 0.2)", "default": 0.2, "step": 0.01, "min": 0.08, "max": 0.6},
+		{"key": "ring_gap", "label": "units between two of his patterns", "default": 5.0, "step": 1.0, "min": 1.0, "max": 20.0},
+		{"key": "ring_extra_chance", "label": "between two: chance of a grey shard or a bar", "default": 0.4, "step": 0.05, "min": 0.0, "max": 1.0},
+		{"key": "ring_bar_share", "label": "of those, a bar", "default": 0.15, "step": 0.05, "min": 0.0, "max": 1.0},
+		{"header": "SIZES AND SPEEDS"},
+		{"key": "ring_radius", "label": "the circle's radius (px)", "default": 140.0, "step": 10.0, "min": 40.0, "max": 400.0},
+		{"key": "ring_orb_speed", "label": "an arrowhead, a shard or a green arrow (px/s)", "default": 380.0, "step": 20.0, "min": 100.0, "max": 2000.0},
+		{"key": "ring_sweep_speed", "label": "a sweep (px/s)", "default": 520.0, "step": 20.0, "min": 100.0, "max": 2000.0},
+		{"key": "ring_bar_speed", "label": "a bar (px/s)", "default": 300.0, "step": 20.0, "min": 50.0, "max": 2000.0},
+		{"key": "ring_relay_slow", "label": "a violet shard where it's to be hit (px/s)", "default": 600.0, "step": 50.0, "min": 100.0, "max": 3000.0},
+		{"key": "ring_relay_brake", "label": "...slowing to that from the line on, over at least (px)", "default": 140.0, "step": 10.0, "min": 0.0, "max": 600.0},
+		{"key": "ring_perfect", "label": "perfect: this close to its beat (s, either side)", "default": 0.07, "step": 0.01, "min": 0.01, "max": 0.5},
+		{"key": "ring_good", "label": "good: this close (s)", "default": 0.16, "step": 0.01, "min": 0.01, "max": 1.0},
+		{"header": "THE METER (OF 100)", "column": 1},
+		{"key": "ring_start", "label": "at the start", "default": 50.0, "step": 5.0, "min": 5.0, "max": 100.0},
+		{"key": "ring_perfect_gain", "label": "perfect: gained", "default": 4.0, "step": 1.0, "min": 0.0, "max": 100.0},
+		{"key": "ring_good_gain", "label": "good: gained", "default": 2.0, "step": 1.0, "min": 0.0, "max": 100.0},
+		{"key": "ring_ok_gain", "label": "taken anywhere else: gained", "default": 1.0, "step": 1.0, "min": 0.0, "max": 100.0},
+		{"key": "ring_sweep_gain", "label": "a sweep parried by both: gained on top", "default": 6.0, "step": 1.0, "min": 0.0, "max": 100.0},
+		{"key": "ring_pair_gain", "label": "both of a pair parried: gained on top", "default": 6.0, "step": 1.0, "min": 0.0, "max": 100.0},
+		{"key": "ring_hit_loss", "label": "hit by an arrowhead, the sweep or a bar: lost (heavy pair: x2)", "default": 10.0, "step": 1.0, "min": 0.0, "max": 100.0},
+		{"key": "ring_block_loss", "label": "an orb blocked, not parried: lost", "default": 4.0, "step": 1.0, "min": 0.0, "max": 100.0},
+		{"key": "ring_relay_gain", "label": "a violet shard hit (a sync hit): gained on top", "default": 3.0, "step": 1.0, "min": 0.0, "max": 100.0},
+		{"key": "ring_miss_loss", "label": "a violet shard not hit: lost", "default": 2.0, "step": 1.0, "min": 0.0, "max": 100.0},
+		{"key": "ring_lost_loss", "label": "one nobody took: lost", "default": 3.0, "step": 1.0, "min": 0.0, "max": 100.0},
+	]
+
+
 func _ready():
 	for p in GameManager.players:
 		_players.append(p)
@@ -181,9 +213,7 @@ func _pick(situation: String) -> String:
 			continue
 		if special and not Moves.on("ring_changes"):
 			continue
-		var weight = entry.weight
-		if weight is Dictionary:
-			weight = weight.get(situation, 0.0)
+		var weight = ColumnaBifrons.weight_in(attack_name, situation)
 		if weight > 0.0:
 			names.append(attack_name)
 			weights.append(weight)

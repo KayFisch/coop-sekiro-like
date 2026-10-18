@@ -58,6 +58,7 @@ func test_strike_together_and_out_of_sync():
 	await _setup()
 	p1.global_position.x = boss.global_position.x - 100.0
 	p2.global_position.x = boss.global_position.x - 80.0
+	boss.set_physics_process(false)  # held where he is: no drifting out of reach
 	await wait(0.4)
 	check(bond.bound, "bound")
 	var his = rules.boss_sync

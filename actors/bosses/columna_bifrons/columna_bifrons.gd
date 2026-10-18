@@ -52,7 +52,7 @@ const MAX_HP = 1600.0
 # What it is, one of:
 # "strikes": a series of sword strikes (attacks/strike_pattern.gd), each [wait, sword] or
 #   [wait, sword, kind]. `wait` is the time until the strike lands, counted from the series'
-#   start or from the strike before, in StrikePattern.TIME_UNITs: a rough 1-10 scale, where 4 is
+#   start or from the strike before, in units of time_unit(): a rough 1-10 scale, where 4 is
 #   a quick follow-up and 9 a long windup (under 3 is too quick to read). `sword` is LEFT, RIGHT
 #   or BOTH: which of his swords strikes, at its own player. `kind` is CUT (the default),
 #   CHARGE (see "THE CHARGE" below) or RUSH ("LEFT ALONE"). Each series is written once and
@@ -98,10 +98,9 @@ const TEST_ONLY_PATTERN = [] # "TRIPLE", "QUAD", "SINGLE", "LONG", "SWEEP"
 # afresh with every attack. Once that many are parried and he's free, he strikes back at the
 # player whose hit he parried last: with one of the same attacks, turned so its first strike is
 # theirs, and that strike comes quickly (ANSWER_WAIT). Then the series runs to its end, as ever.
-const REACTIVE_WAIT_MIN = 0.7
-const REACTIVE_WAIT_MAX = 1.7
+# (REACTIVE_WAIT: F2 "bifrons_reactive_min" / "_max".)
 const PATIENCE = [1, 1, 2]
-const ANSWER_WAIT = 4  # StrikePattern.TIME_UNITs until an answer's first strike lands, at most
+const ANSWER_WAIT = 4  # units (time_unit()) until an answer's first strike lands, at most
 
 # A blade landing on a player (any of his attacks).
 const BLADE_REACH = 215.0  # from his center: a player this close is in his blades' reach
@@ -143,14 +142,10 @@ const ATTACK_PACE = 0.5  # of his walking speed, while he's in an attack
 const SLOWED_FACTOR = 0.3  # of his walking speed, for SLOWED_TIME after a sword hit
 const SLOWED_TIME = 0.6
 const RANGE_RECHECK = 0.2  # nobody in range when an attack is due: he looks again this much later
-const DRIFT_SPEED = 0.6
-const DRIFT_PAUSE = 0.5  # s
-const DRIFT_NEAR = 80.0
-const DRIFT_FAR = 170.0
-const PEP_DRIFT = 60.0
+# DRIFT_NEAR, DRIFT_FAR, DRIFT_SPEED, DRIFT_PAUSE, PEP_DRIFT: on F2 ("bifrons_drift_near" etc.).
 const TOUCH_DISTANCE = 50.0  # touching is 42: his half-width and a player's
 const PUSH_PACE = 0.5  # of his speed, pushing a player along
-const PUSH_PATIENCE = 2.0  # s
+# PUSH_PATIENCE: F2 "bifrons_push_patience".
 const WALL_ROOM = 90.0  # his flanks stay this far from the walls: room for both players behind him
 # WITH A STRIKE HE LUNGES at the player it's for, while the blade comes: a short step, or as far
 # as it takes to have the players on that side STRIKE_DISTANCE away as it lands, LUNGE_LONG at
@@ -176,7 +171,7 @@ const ADVANCE_SPEED = 70.0
 # him; or the players on one side and the wall behind him (he's in the room's outer fifth).
 # That's a situation of its own in ATTACKS: he gets out over them with the leap, or past one
 # with the crossing.
-const CROWD_PATIENCE = 0.7
+# CROWD_PATIENCE: F2 "bifrons_crowd_patience".
 const ROOM_COOLDOWN = 4.0
 const BACK_OFF_DISTANCE = 110.0
 const BACK_OFF_DELAY = 0.1
@@ -318,6 +313,38 @@ var _provoker = RIGHT  # the sword that parried the last one: its player is who 
 var _answering = false  # starting his answer (see orient() and first_wait())
 
 
+# His numbers on F2 (core/tuning.gd collects them): a page of his own, in his room. The pattern
+# weights' defaults are ATTACKS' own.
+static func tuning_entries() -> Array:
+	var entries = [
+		{"page": "bifrons", "title": "COLUMNA BIFRONS", "scenes": ["levels/threshold/"], "header": "TEMPO", "tab": "tempo"},
+		{"key": "bifrons_time_unit", "label": "a unit of his waits (s): a strike's wait is 2-6 of them", "default": 0.2, "step": 0.01, "min": 0.05, "max": 1.0},
+		{"key": "bifrons_fall_time", "label": "a strike's drop: the cue to parry (s)", "default": 0.28, "step": 0.01, "min": 0.05, "max": 1.0},
+		{"key": "bifrons_recover_time", "label": "after a series of strikes, recovering (s)", "default": 0.6, "step": 0.05, "min": 0.0, "max": 5.0},
+		{"key": "bifrons_pause_min", "label": "then a pause before his next attack, from (s)", "default": 0.25, "step": 0.05, "min": 0.0, "max": 5.0},
+		{"key": "bifrons_pause_max", "label": "...to (s)", "default": 0.5, "step": 0.05, "min": 0.0, "max": 5.0},
+		{"header": "THE REACTIVE MODE (F1: bifrons_mode)", "column": 1},
+		{"key": "bifrons_reactive_min", "label": "his pause between attacks, from (s)", "default": 0.7, "step": 0.05, "min": 0.0, "max": 5.0},
+		{"key": "bifrons_reactive_max", "label": "...to (s)", "default": 1.7, "step": 0.05, "min": 0.0, "max": 5.0},
+		{"header": "MOVING BETWEEN STRIKES", "tab": "moving"},
+		{"key": "bifrons_drift_near", "label": "drifting: as near to the nearer player as (px)", "default": 80.0, "step": 5.0, "min": 20.0, "max": 400.0},
+		{"key": "bifrons_drift_far", "label": "...as far as (px)", "default": 170.0, "step": 5.0, "min": 20.0, "max": 400.0},
+		{"key": "bifrons_drift_speed", "label": "...gliding this share of that span a second", "default": 0.6, "step": 0.05, "min": 0.0, "max": 5.0},
+		{"key": "bifrons_drift_pause", "label": "...and pausing up to (s)", "default": 0.5, "step": 0.05, "min": 0.0, "max": 5.0},
+		{"key": "bifrons_pep_drift", "label": "between two players: off the middle by up to (px)", "default": 60.0, "step": 5.0, "min": 0.0, "max": 300.0},
+		{"key": "bifrons_push_patience", "label": "pushing a player along: shoves them after (s)", "default": 2.0, "step": 0.1, "min": 0.0, "max": 10.0},
+		{"key": "bifrons_crowd_patience", "label": "crowded: makes room after (s)", "default": 0.7, "step": 0.1, "min": 0.0, "max": 10.0},
+		{"header": "HOW OFTEN EACH OF HIS ATTACKS COMES", "tab": "patterns"},
+	]
+	for attack_name in ATTACKS:
+		var weight = ATTACKS[attack_name].weight
+		var per_situation = weight is Dictionary
+		entries.append({"key": "bifrons_weight_" + attack_name.to_lower(),
+			"label": attack_name + (": its weights by situation, times" if per_situation else ": weight"),
+			"default": 1.0 if per_situation else float(weight), "step": 0.25, "min": 0.0, "max": 10.0})
+	return entries
+
+
 func _ready():
 	super()
 	# Testing alone: the stand-in (it does nothing while Moves "bifrons_stand_in" is off). As his
@@ -381,7 +408,7 @@ func get_attack_weights() -> Dictionary:
 	for attack_name in ATTACKS:
 		var attack = find_attack(attack_name)
 		var fits = attack == null or attack.fits(self)
-		weights[attack_name] = _weight_in(attack_name, situation) if fits else 0.0
+		weights[attack_name] = weight_in(attack_name, situation) if fits else 0.0
 	if in_sync_mode():
 		# The players' sync mode: only his series of plain cuts (StrikePattern makes them strikes of
 		# both swords), nothing that throws the two apart.
@@ -400,12 +427,15 @@ func get_attack_weights() -> Dictionary:
 	return weights
 
 
-# An attack's weight in a situation (see ATTACKS).
-func _weight_in(attack_name: String, situation: String) -> float:
+# An attack's weight in a situation: its F2 weight (tab "patterns"; ATTACKS' number by default), or
+# for one with a weight per situation, ATTACKS' weight there times its F2 number. The beat-runner
+# and the beat-ring pick his patterns by it too.
+static func weight_in(attack_name: String, situation: String) -> float:
 	var weight = ATTACKS[attack_name].weight
+	var tuned = Tuning.value("bifrons_weight_" + attack_name.to_lower())
 	if weight is Dictionary:
-		return weight.get(situation, weight.get(situation.trim_suffix("_cornered"), 0.0))
-	return weight
+		return tuned * weight.get(situation, weight.get(situation.trim_suffix("_cornered"), 0.0))
+	return tuned
 
 
 func get_repeatable_attacks() -> Array:
@@ -413,7 +443,9 @@ func get_repeatable_attacks() -> Array:
 
 
 func get_idle_pause() -> float:
-	var pause = randf_range(REACTIVE_WAIT_MIN, REACTIVE_WAIT_MAX) if _is_reactive() else super()
+	var pause = randf_range(Tuning.value("bifrons_pause_min"), Tuning.value("bifrons_pause_max"))
+	if _is_reactive():
+		pause = randf_range(Tuning.value("bifrons_reactive_min"), Tuning.value("bifrons_reactive_max"))
 	if in_sync_mode():
 		# On the defensive: slower, and a longer pause on guard between his attacks.
 		return pause * Tuning.value("sync_mode_tempo") + Tuning.value("sync_guard_pause")
@@ -430,9 +462,10 @@ func is_bound() -> bool:
 	return rules != null and rules.bond != null and rules.bond.bound
 
 
-# One StrikePattern.TIME_UNIT in seconds just now: longer in the players' sync mode.
+# One unit of his waits in seconds just now (F2 "bifrons_time_unit"): his tempo, every pattern at
+# once; longer in the players' sync mode.
 func time_unit() -> float:
-	return StrikePattern.TIME_UNIT * (Tuning.value("sync_mode_tempo") if in_sync_mode() else 1.0)
+	return Tuning.value("bifrons_time_unit") * (Tuning.value("sync_mode_tempo") if in_sync_mode() else 1.0)
 
 
 # Players keep their eyes on him (see _process_movement() in player.gd): he passes them, and
@@ -1001,7 +1034,7 @@ func _place() -> float:
 		# Off the middle by his drift, toward one of them (into them, if they don't give way: he
 		# pushes them, see "PUSHING THROUGH"), as long as the other stays well in reach.
 		var half = absf(fought[1].global_position.x - near.global_position.x) / 2.0
-		var most = clampf(BLADE_REACH - REACH_MARGIN - half, 0.0, PEP_DRIFT)
+		var most = clampf(BLADE_REACH - REACH_MARGIN - half, 0.0, Tuning.value("bifrons_pep_drift"))
 		return middle + (2.0 * _drift - 1.0) * most
 	# By the nearer one: back from them until they're at his distance, or up to them until they're
 	# well in reach.
@@ -1029,7 +1062,7 @@ func _place() -> float:
 		if (goal - x) * side < 0.0:
 			return goal
 	# Else his drift: the distance to keep from the nearer one just now.
-	return near.global_position.x - side * lerpf(DRIFT_NEAR, DRIFT_FAR, _drift)
+	return near.global_position.x - side * lerpf(Tuning.value("bifrons_drift_near"), Tuning.value("bifrons_drift_far"), _drift)
 
 
 # One frame of his drift: gliding to where it's headed, or waiting there for the next.
@@ -1038,9 +1071,9 @@ func _drift_on(delta: float):
 		_drift_wait -= delta
 		if _drift_wait <= 0.0:
 			_drift_to = randf()
-			_drift_wait = randf_range(0.0, DRIFT_PAUSE)
+			_drift_wait = randf_range(0.0, Tuning.value("bifrons_drift_pause"))
 	else:
-		_drift = move_toward(_drift, _drift_to, DRIFT_SPEED * delta)
+		_drift = move_toward(_drift, _drift_to, Tuning.value("bifrons_drift_speed") * delta)
 
 
 # One frame of walking to his place, at `pace` times his speed.
@@ -1062,7 +1095,7 @@ func _pushing(way: float, delta: float) -> float:
 		_pushing_for = 0.0
 		return 1.0
 	_pushing_for += delta
-	if _pushing_for >= PUSH_PATIENCE and not _shove_due:
+	if _pushing_for >= Tuning.value("bifrons_push_patience") and not _shove_due:
 		_pushing_for = 0.0
 		_shove_due = true
 		_shove_side = int(way)
@@ -1086,7 +1119,7 @@ func is_cornered() -> bool:
 func _mind_the_crowd(delta: float):
 	var crowding = _fought().any(func(p): return distance_to(p) < CROWD_DISTANCE)
 	_crowded_for = _crowded_for + delta if crowding else 0.0
-	if _crowded_for >= CROWD_PATIENCE and anim_time >= _room_ready and _dash == null:
+	if _crowded_for >= Tuning.value("bifrons_crowd_patience") and anim_time >= _room_ready and _dash == null:
 		_crowded_for = 0.0
 		if make_room():
 			_room_ready = anim_time + ROOM_COOLDOWN
