@@ -1144,7 +1144,7 @@ func _find_ledge(side: float) -> Dictionary:
 	var down = _ray(space, Vector2(inside, at.y - LEDGE_REACH_UP), Vector2(inside, at.y + LEDGE_REACH_DOWN + 1.0))
 	if down.is_empty():
 		return {}
-	var stand = Vector2(face_x + side * (half + 4.0), down.position.y - half - 1.0)
+	var stand = Vector2(face_x + side * (half + 4.0), down.position.y - body.size.y / 2.0 - 1.0)
 	if not _room_for_body(space, stand):
 		return {}
 	return {"face_x": face_x, "top": down.position.y, "stand": stand}
