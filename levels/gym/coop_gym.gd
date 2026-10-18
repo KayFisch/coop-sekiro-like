@@ -109,8 +109,8 @@ func _build():
 	target(Vector2(6230, GROUND_Y - 240), GymTarget.Mode.BELL, "up and across")
 	measure(Vector2(RELAY_PIT.x, GROUND_Y - 24), Vector2(RELAY_PIT.y, GROUND_Y - 24),
 		"%d · past a solo jump: relay over" % (RELAY_PIT.y - RELAY_PIT.x))
-	station(5800, "6 · RELAY", "One dash-slashes at the other, who parries: press block as the blade flares white.\n" \
-		+ "Locked together, the dasher holds a direction (8 ways, down too),\nthen boosts that way. Dash back, air jump not.",
+	station(5800, "6 · RELAY", "One holds attack and dashes (a dash-slash), lets go on a beat: 1. The other parries as the blades\n" \
+		+ "meet: 2. On 3 they strike, aiming with the stick (4 ways, down too): the dasher is thrown, and at\nthe top on 4 can dash again. Air jump not.",
 		GROUND_Y - 470)
 	ledge(RELAY_PIT.y + 30, GROUND_Y - 110, 90)
 	ledge(RELAY_PIT.y + 130, GROUND_Y - 220, 90)

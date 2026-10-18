@@ -181,7 +181,7 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   (`ColumnaBifrons.take_pair_strike()`); he slows down and strikes with both swords
   (`in_sync_mode()`, `time_unit()`).
 - `actors/player/player.gd`: one large script (~2700 lines, a contents list at its top) with all player logic: movement,
-  walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
+  walls/ledges, sword swings, partner clashes (launch, relay, pogo clash, chimney clash),
   and the defensive queries the boss uses (`is_perfect_parry()` etc.). Tuning
   constants at the top, grouped by feature. The sword's
   rules are under "THE SWORD" there: a swing commits (windup, cut, return; no block or parry

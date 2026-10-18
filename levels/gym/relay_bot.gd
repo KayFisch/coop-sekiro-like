@@ -1,10 +1,10 @@
 class_name RelayBot
 extends Node
 ## Plays the anchor in the relay gym, so one person can try the relay alone: it stands at its
-## spot, parries every dash-slash that comes at it right as the blades meet, and in a rhythm
-## relay (Moves "relay_rhythm") strikes exactly on beat 3, aiming AIM. It presses the player's
-## own buttons (like BifronsStandIn), so everything that happens is the game's own. It has to run
-## before the players each frame, or they'd miss its presses: add it before them.
+## spot, parries every dash-slash that comes at it right as the blades meet, and strikes exactly
+## on beat 3, aiming AIM. It presses the player's own buttons (like BifronsStandIn), so
+## everything that happens is the game's own. It has to run before the players each frame, or
+## they'd miss its presses: add it before them.
 
 const Player = preload("res://actors/player/player.gd")
 
@@ -32,7 +32,7 @@ func _physics_process(delta):
 	if anchor._hold_kind == Player.Hold.RELAY_ANCHOR:
 		_hold(AIM, true)
 		var beat_3 = Beat.beat_time(dasher.relay_beat + 2)
-		if dasher._relay_rhythm and not _struck and Beat.time() >= beat_3 - delta / 2.0:
+		if not _struck and Beat.time() >= beat_3 - delta / 2.0:
 			_hold("attack", true)
 			_struck = true
 	else:

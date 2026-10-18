@@ -29,7 +29,7 @@ enum Hold { NONE, RELAY_DASHER, RELAY_ANCHOR }
 #   Clashes with the partner .......... launch, momentum relay, chimney clash, rhythm relay
 #   Defensive queries used by the boss  is_blocking(), is_perfect_parry() ...
 #   What a boss does to a player ...... parried, hit, staggered, held in a clash
-#   The boss's body / The tell / Call
+#   The boss's body / The tell
 #   The look .......................... the sword's angle, colors, flashes, effects, hands
 #   The pair's strike ................. the sync mode's draw-back and sabre (core/sync_bond.gd)
 
@@ -239,37 +239,26 @@ const POGO_CLASH_TOLERANCE = 0.15
 const CHIMNEY_WINDOW = 0.7  # s since each one's wall jump: past the meeting and its press window
 const CHIMNEY_PRESS_TOLERANCE = 0.08  # s before or after meeting that a jump press still clashes (weak past WALL_RHYTHM_TOLERANCE)
 const CHIMNEY_REACH = Vector2(60.0, 60.0)  # once met, staying this close still lets a late press clash
-# MOMENTUM RELAY (Moves "momentum_relay"): a dash-slash into a partner who parries it: their
-# block press must come at most RELAY_PARRY_TOLERANCE before the blades meet (the dash-slash's
-# windup is the cue). Just holding block, or pressing too early, only stops the dash with a dull
-# clang and bounces the dasher off (RELAY_FAIL_BOUNCE). On a parry the blades
-# lock for RELAY_CLASH_TIME, both held in place, while the dasher aims (5 directions, sideways
-# or upward, with move and up/jump; never downward; no input keeps the dash's direction); then
-# the dasher is boosted that way, gravity off, and the partner pushed back the other way. The
-# dash comes back only if Moves "relay_refresh_dash" says so; the air jump never does.
-const RELAY_CLASH_TIME = 0.25
-const RELAY_SPEED = 1000.0
-const RELAY_BOOST_TIME = 0.22  # ~220 px
-const RELAY_EXIT_FRACTION = 0.45  # of the boost's speed kept once it ends
-const RELAY_RECOIL = 220.0
-const RELAY_PARRY_TOLERANCE = 0.2
-const RELAY_FAIL_BOUNCE = Vector2(260.0, -220.0)  # the dasher, off a block that wasn't a parry
-# RHYTHM RELAY (Moves "relay_rhythm"): the relay as a bar of the clock (Beat), the partners
-# taking turns: 1 the dasher lets go, 2 the anchor's parry (the blades lock), 3 the anchor's
-# strike, which throws the dasher the way the anchor's stick points (4 ways: up, down, left,
-# right; none: straight on; the arrow on the dasher shows it), 4 the top of the throw, where the
-# level asks the dasher for something (a dash, a pogo point). The dasher doesn't aim.
+# RELAY (Moves "relay"): a dash-slash into a partner who parries it, as a bar of the clock (Beat),
+# the partners taking turns: 1 the dasher lets go, 2 the anchor's parry (the blades lock), 3 the
+# anchor's strike, which throws the dasher the way the anchor's stick points (4 ways: up, down,
+# left, right; none: straight on; the arrow on the dasher shows it), 4 the top of the throw, where
+# the level asks the dasher for something (a dash, a pogo point). The dasher doesn't aim.
 # The dash-slash charges as long as attack is held (blade drawn back, flaring on every beat), and
 # its release has to land on a beat, within a parry's window (RHYTHM_RELEASE_TOLERANCE): that beat
 # is 1, whichever of the bar it is. Off the beat the blade fumbles and the dash is spent. After
 # the release the blade heats up through the beat, and the run takes hardly any time, so the
 # blades meet on beat 2 wherever the partner stands within reach; the parry press has to be close
-# to it too. A strike off beat 3, or none, drops the dasher. Every beat sounds: 1 a tick, 2 the
-# parry, 3 the strike, 4 a high tick. The throw stops a little before beat 4 and the dasher hangs
-# still around it (gravity off), so a move on 4 has as much room early as late; any move ends
-# the hang. Charging in the air hangs you still, as the windup does.
+# to it too (RHYTHM_PARRY_TOLERANCE). Only holding block, or pressing too early, stops the dash
+# with a dull clang and bounces the dasher off (RELAY_FAIL_BOUNCE). A strike off beat 3, or none,
+# drops the dasher. Every beat sounds: 1 a tick, 2 the parry, 3 the strike, 4 a high tick. The
+# throw stops a little before beat 4 and the dasher hangs still around it (gravity off), so a move
+# on 4 has as much room early as late; any move ends the hang. The throw gives the dash back (beat
+# 4 may ask for one), never the air jump. Charging in the air hangs you still, as the windup does.
 # (While the switch is on, every dash-slash is this one, at a boss too; it starts the clock where
 # no level has.)
+const RELAY_RECOIL = 220.0  # px/s the anchor is pushed back, the other way, as it throws
+const RELAY_FAIL_BOUNCE = Vector2(260.0, -220.0)  # the dasher, off a block that wasn't a parry
 const RHYTHM_TOLERANCE = 0.08  # the strike counts this far off beat 3, early or late
 const RHYTHM_RELEASE_TOLERANCE = PARRY_TOLERANCE  # the release counts this far off a beat, early or late
 # The hang at the top: from this long before beat 4 to this long after it. Longer before than
@@ -307,13 +296,6 @@ const PASS_WINDOW = 0.2
 # DASH-SLASH THROUGH (Moves "dash_slash_pass"): a dash-slash at the boss goes through him the same
 # way: in the players' sync mode only (so the two can always get together to bind), always, or
 # never. A dash-slash too short to get past him is pushed back out the nearer side.
-# CALL (Moves "call"): a 3, 2, 1, GO countdown over the caller's head, one beat per CALL_BEAT, so
-# GO lands CALL_COUNT beats after the press. Both players pulse on every beat. Informational only.
-const CALL_BEAT = 0.4
-const CALL_COUNT = 3
-const CALL_GO_HOLD = 0.35  # GO stays up this long
-const CALL_FONT_SIZE = 44
-const CALL_HEIGHT = 112.0  # the number's center, above the caller's
 # The body: half as wide as it's tall, so two players side by side make a square, and their
 # swords and hitboxes sit closer together. The scene's rect and collision shape take this size
 # in _ready().
@@ -447,10 +429,8 @@ var _ledge_climb = -1.0  # time into the climb; < 0 while hanging
 var _ledge_regrab = 0.0
 var _hold_kind = Hold.NONE
 var _hold_timer = 0.0
-var _hold_release = Vector2.ZERO
 var _hold_partner = null
 var _relay_dir = Vector2.RIGHT
-var _relay_rhythm = false  # this relay is a rhythm relay (Moves "relay_rhythm" when it began)
 var _rhythm_dash = false  # this dash-slash is a rhythm relay's: charged, released on a beat, then a quick run
 var _charging = false  # a rhythm dash-slash held, not released yet (while _windup_timer > 0)
 var _windup_length = DASH_SLASH_WINDUP  # s this windup lasts (a rhythm one: from the release to the run)
@@ -470,9 +450,6 @@ var _block_above = false  # clear of the block, above it, last frame
 var _block_sliding = false  # landed on top: sliding off
 var _pass_timer = 0.0  # > 0 just after a perfect parry: a dash started now goes through the boss
 var _passing = false  # this dash goes through the boss's block (see PASS_WINDOW)
-var _call_time = -1.0  # time into the countdown; < 0 while there's none
-var _call_beat = -1
-var _call_label: Label
 
 @onready var body: ColorRect = $ColorRect
 @onready var sword_pivot: Node2D = $SwordPivot
@@ -520,7 +497,6 @@ func _ready():
 	_beat_ring.visible = false
 	_beat_ring.draw.connect(_draw_beat_ring)
 	add_child(_beat_ring)
-	_setup_call_label()
 	_update_player_collision()
 	Moves.changed.connect(_update_player_collision)
 	GameManager.register_player(self)
@@ -541,7 +517,6 @@ func paint(new_body: Color, new_sword: Color):
 
 func _physics_process(delta):
 	_tick_timers(delta)
-	_process_call(delta)
 	if is_clashing:
 		velocity = Vector2.ZERO  # braced, holding the other blade back
 	elif _hold_kind != Hold.NONE:
@@ -634,12 +609,11 @@ func _process_movement(delta):
 		facing = _wall_jump_dir  # holding toward the wall you left doesn't turn you around
 
 	if _boost_timer > 0.0:
-		velocity = _boost_velocity  # a relay boost: straight, gravity off
-		if _relay_rhythm:
-			# The throw covers exactly its distance, however the frames fall; then it hangs.
-			var step = minf(_boost_velocity.length(), _throw_left / delta)
-			velocity = _boost_velocity.normalized() * step
-			_throw_left -= step * delta
+		# A relay's throw: straight, gravity off, covering exactly its distance however the frames
+		# fall; then it hangs.
+		var step = minf(_boost_velocity.length(), _throw_left / delta)
+		velocity = _boost_velocity.normalized() * step
+		_throw_left -= step * delta
 		return
 	if _dash_timer > 0.0:
 		velocity = Vector2(_dash_dir * _dash_speed(), 0.0)
@@ -1239,7 +1213,7 @@ func _start_swing(kind: Swing):
 # The dash-slash's windup: held in place, blade drawn back, then the dash (_process_windup()).
 func _begin_dash_slash():
 	_dash_slash = true
-	_rhythm_dash = Moves.on("momentum_relay") and Moves.on("relay_rhythm")
+	_rhythm_dash = Moves.on("relay")
 	_windup_length = DASH_SLASH_WINDUP
 	_windup_timer = DASH_SLASH_WINDUP  # a rhythm one: held at this until the release
 	_charging = _rhythm_dash
@@ -1517,11 +1491,10 @@ func _check_clashes():
 			if Moves.on("launch") and other.is_launch_ready():
 				_launch(other)
 				return
-			var tolerance = RHYTHM_PARRY_TOLERANCE if _rhythm_dash else RELAY_PARRY_TOLERANCE
-			if Moves.on("momentum_relay") and other.is_relay_parry(tolerance):
+			if _rhythm_dash and other.is_relay_parry():
 				_start_relay(other)
 				return
-			if Moves.on("momentum_relay") and other.is_blocking():
+			if _rhythm_dash and other.is_blocking():
 				_relay_blocked(other)
 				return
 		# Each pair is checked once, by the lower id. Flying at each other, or already bumped
@@ -1585,17 +1558,14 @@ func _chimney_clash(other):
 		cam.shake(4.0)
 
 
-# Blades locked: the dasher aims while both are held, then boosts (see _release_hold()).
+# The blades locked on 2: both held until the anchor's strike on 3 throws the dasher (see
+# _release_hold()), or until its late end drops them.
 func _start_relay(anchor):
-	_relay_dir = Vector2(_dash_dir, 0.0)
-	_relay_rhythm = _rhythm_dash
-	# A rhythm relay waits for the anchor's strike, up to the late end of beat 3.
-	var clash_time = RELAY_CLASH_TIME
-	if _relay_rhythm:
-		clash_time = Beat.beat_time(relay_beat + 2) + RHYTHM_TOLERANCE - Beat.time()
-	_begin_hold(Hold.RELAY_DASHER, clash_time, Vector2.ZERO, anchor)
+	_relay_dir = Vector2(_dash_dir, 0.0)  # thrown straight on, unless the anchor aims
+	var clash_time = Beat.beat_time(relay_beat + 2) + RHYTHM_TOLERANCE - Beat.time()
+	_begin_hold(Hold.RELAY_DASHER, clash_time, anchor)
 	# The anchor's hold outlasts the dasher's, so the dasher's release is what frees them.
-	anchor._begin_hold(Hold.RELAY_ANCHOR, clash_time + 0.1, Vector2.ZERO, self)
+	anchor._begin_hold(Hold.RELAY_ANCHOR, clash_time + 0.1, self)
 	anchor.parry_press_time = -100.0  # one press parries one dash-slash
 	_sword_flash = SWORD_FLASH_TIME
 	anchor._sword_flash = SWORD_FLASH_TIME
@@ -1608,8 +1578,8 @@ func _start_relay(anchor):
 
 
 # The partner parried a dash-slash: blocked, with the press timed to the blades meeting.
-func is_relay_parry(tolerance = RELAY_PARRY_TOLERANCE) -> bool:
-	return is_blocking() and _now() - parry_press_time <= tolerance
+func is_relay_parry() -> bool:
+	return is_blocking() and _now() - parry_press_time <= RHYTHM_PARRY_TOLERANCE
 
 
 # Blocked but not parried: the dash stops dead with a dull clang, and the dasher bounces off.
@@ -1624,10 +1594,9 @@ func _relay_blocked(anchor):
 	Sfx.play("chip")
 
 
-func _begin_hold(kind: Hold, time: float, release = Vector2.ZERO, partner = null):
+func _begin_hold(kind: Hold, time: float, partner = null):
 	_hold_kind = kind
 	_hold_timer = time
-	_hold_release = release
 	_hold_partner = partner
 	velocity = Vector2.ZERO
 	_dash_timer = 0.0
@@ -1644,23 +1613,20 @@ func _begin_hold(kind: Hold, time: float, release = Vector2.ZERO, partner = null
 func _process_hold(delta):
 	velocity = Vector2.ZERO
 	_hold_timer -= delta
-	if _hold_kind == Hold.RELAY_DASHER and not _relay_rhythm:
-		_relay_dir = _aim(_relay_dir)
-	if _hold_kind == Hold.RELAY_ANCHOR and _process_rhythm_strike():
+	if _hold_kind == Hold.RELAY_ANCHOR and _process_relay_strike():
 		return
 	if _hold_timer <= 0.0:
-		if _hold_kind == Hold.RELAY_DASHER and _relay_rhythm:
+		if _hold_kind == Hold.RELAY_DASHER:
 			_relay_dropped()  # no strike on the beat
 		else:
 			_release_hold()
 
 
-# The anchor's side of a rhythm relay: the stick aims the dasher, and the attack press strikes.
-# On beat 3 it throws them; off it, it drops them. True once struck.
-func _process_rhythm_strike() -> bool:
+# The anchor's side of the relay: the stick aims the dasher, and the attack press strikes. On
+# beat 3 it throws them; off it, it drops them. True once struck.
+func _process_relay_strike() -> bool:
 	var dasher = _hold_partner
-	if not (dasher and is_instance_valid(dasher) and dasher._hold_kind == Hold.RELAY_DASHER \
-			and dasher._relay_rhythm):
+	if not (dasher and is_instance_valid(dasher) and dasher._hold_kind == Hold.RELAY_DASHER):
 		return false
 	dasher._relay_dir = _aim_4(Vector2(dasher._dash_dir, 0.0))
 	if not Input.is_action_just_pressed(_action("attack")):
@@ -1674,7 +1640,7 @@ func _process_rhythm_strike() -> bool:
 	return true
 
 
-# A rhythm relay without a strike on the beat: the blades come apart, and the dasher drops.
+# No strike on the beat: the blades come apart, and the dasher drops.
 func _relay_dropped():
 	var anchor = _hold_partner
 	_hold_kind = Hold.NONE
@@ -1689,40 +1655,24 @@ func _relay_dropped():
 func _release_hold():
 	var kind = _hold_kind
 	_hold_kind = Hold.NONE
-	match kind:
-		Hold.RELAY_DASHER:
-			_boost_velocity = _relay_dir * RELAY_SPEED
-			_boost_timer = RELAY_BOOST_TIME
-			if _relay_rhythm:
-				# The throw, reaching the top RHYTHM_HANG_BEFORE before beat 4, then the hang.
-				var to_top = Beat.beat_time(relay_beat + 3) - Beat.time()
-				_boost_timer = to_top + RHYTHM_HANG_AFTER
-				_throw_left = RHYTHM_THROW_HEIGHT
-				_boost_velocity = _relay_dir * RHYTHM_THROW_HEIGHT / maxf(to_top - RHYTHM_HANG_BEFORE, 0.05)
-				rhythm_top_time = _now() + to_top
-			velocity = _boost_velocity
-			if _relay_dir.x != 0.0:
-				facing = signf(_relay_dir.x)
-			if Moves.on("relay_refresh_dash") or _relay_rhythm:  # beat 4 may ask for a dash
-				_dash_ready = true
-				_dash_cooldown = 0.0
-			var anchor = _hold_partner
-			if anchor and is_instance_valid(anchor) and anchor._hold_kind == Hold.RELAY_ANCHOR:
-				anchor._hold_kind = Hold.NONE
-				anchor.apply_knockback(-_relay_dir * RELAY_RECOIL)
-			Sfx.play("launch", -4.0)
+	if kind == Hold.RELAY_DASHER:
+		# The throw, reaching the top RHYTHM_HANG_BEFORE before beat 4, then the hang.
+		var to_top = Beat.beat_time(relay_beat + 3) - Beat.time()
+		_boost_timer = to_top + RHYTHM_HANG_AFTER
+		_throw_left = RHYTHM_THROW_HEIGHT
+		_boost_velocity = _relay_dir * RHYTHM_THROW_HEIGHT / maxf(to_top - RHYTHM_HANG_BEFORE, 0.05)
+		rhythm_top_time = _now() + to_top
+		velocity = _boost_velocity
+		if _relay_dir.x != 0.0:
+			facing = signf(_relay_dir.x)
+		_dash_ready = true  # beat 4 may ask for a dash
+		_dash_cooldown = 0.0
+		var anchor = _hold_partner
+		if anchor and is_instance_valid(anchor) and anchor._hold_kind == Hold.RELAY_ANCHOR:
+			anchor._hold_kind = Hold.NONE
+			anchor.apply_knockback(-_relay_dir * RELAY_RECOIL)
+		Sfx.play("launch", -4.0)
 	_hold_partner = null
-
-
-# The direction held right now, sideways or upward, snapped to 5 ways (down doesn't count);
-# `fallback` if none.
-func _aim(fallback: Vector2) -> Vector2:
-	var aim = Vector2(move_axis(), 0.0)
-	if Input.is_action_pressed(_action("up")) or Input.is_action_pressed(_action("jump")):
-		aim.y -= 1.0
-	if aim.length() < 0.5:
-		return fallback
-	return Vector2.from_angle(snappedf(aim.angle(), PI / 4.0))
 
 
 # The direction held right now, snapped to 4 ways (up, down, left, right); `fallback` if none.
@@ -1849,15 +1799,13 @@ func _tick_timers(delta):
 	_attack_timer = maxf(_attack_timer - delta, 0.0)
 	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
 	_launch_timer = maxf(_launch_timer - delta, 0.0)
-	if _boost_timer > 0.0 and _relay_rhythm:
-		# A rhythm relay's throw (see _process_movement()), then the hang, ticking on 4.
+	if _boost_timer > 0.0:
+		# A relay's throw (see _process_movement()), then the hang, ticking on 4.
 		var left = _boost_timer - delta
 		if _boost_timer > RHYTHM_HANG_AFTER and left <= RHYTHM_HANG_AFTER:
 			Sfx.play("relay_peak")
 		if left <= 0.0:
 			velocity = Vector2.ZERO  # the hang is over: falling from a standstill
-	elif _boost_timer > 0.0 and _boost_timer <= delta:
-		velocity = _boost_velocity * RELAY_EXIT_FRACTION  # the boost runs out: keep some of it
 	_boost_timer = maxf(_boost_timer - delta, 0.0)
 	_uncut_timer = maxf(_uncut_timer - delta, 0.0)
 	_pogo_rise = maxf(_pogo_rise - delta, 0.0)
@@ -2148,77 +2096,6 @@ func _draw_tell():
 	_tell_ring.draw_arc(Vector2.ZERO, tell_radius(), 0.0, TAU, 48, Color(color, _tell_alpha), width, true)
 
 
-# --- Call: a countdown both players can follow ---------------------------------
-
-# The call button starts a 3, 2, 1, GO over this player's head (replacing a partner's running
-# one); pressed again during your own, it cancels it. Works whatever the player is doing.
-func _process_call(delta):
-	if Moves.on("call") and Input.is_action_just_pressed(_action("call")):
-		if _call_time >= 0.0:
-			cancel_call()
-		else:
-			for other in get_tree().get_nodes_in_group("players"):
-				if other != self:
-					other.cancel_call()
-			_call_time = 0.0
-			_call_beat = -1
-	if _call_time < 0.0:
-		return
-	var beat = floori(_call_time / CALL_BEAT + 0.001)
-	if beat > _call_beat and beat <= CALL_COUNT:
-		_call_beat = beat
-		_on_call_beat(beat)
-	if _call_time >= CALL_COUNT * CALL_BEAT + CALL_GO_HOLD:
-		cancel_call()
-	else:
-		_call_time += delta
-
-
-func cancel_call():
-	_call_time = -1.0
-	_call_beat = -1
-	_call_label.visible = false
-
-
-func is_calling() -> bool:
-	return _call_time >= 0.0
-
-
-# Beats 0, 1, 2 show 3, 2, 1 with a tick; beat CALL_COUNT is GO.
-func _on_call_beat(beat: int):
-	var go = beat == CALL_COUNT
-	_call_label.text = "GO" if go else str(CALL_COUNT - beat)
-	_call_label.visible = true
-	_call_label.scale = Vector2.ONE * 1.5
-	_call_label.create_tween().tween_property(_call_label, "scale", Vector2.ONE, CALL_BEAT * 0.5) \
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	for p in get_tree().get_nodes_in_group("players"):
-		p.pulse(Color.WHITE if go else body_color.lightened(0.3), go)
-	Sfx.play("call_go" if go else "call_tick", -2.0)
-
-
-# A ring swelling out of the player and fading: the call's beat, seen by both.
-func pulse(color: Color, strong = false):
-	_spawn_ring(color, 24.0, 70.0 if strong else 48.0, 0.3 if strong else 0.2)
-
-
-func _setup_call_label():
-	_call_label = Label.new()
-	_call_label.size = Vector2(120, 60)
-	_call_label.position = Vector2(-60, -CALL_HEIGHT - 30)
-	_call_label.pivot_offset = _call_label.size / 2
-	_call_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_call_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_call_label.add_theme_font_size_override("font_size", CALL_FONT_SIZE)
-	_call_label.add_theme_constant_override("outline_size", 8)
-	_call_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	_call_label.modulate = body_color.lightened(0.2)
-	_call_label.z_index = 10
-	_call_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_call_label.visible = false
-	add_child(_call_label)
-
-
 # --- The look: the sword's angle, colors, flashes, effects, hands -----------------
 
 # The blade's angle right now: 0 is level, pointing the way the player faces; negative is up.
@@ -2398,20 +2275,6 @@ func _spawn_sparks(point: Vector2, count: int, color: Color):
 		tween.tween_property(spark, "global_position", point + fly, 0.3).set_ease(Tween.EASE_OUT)
 		tween.tween_property(spark, "modulate:a", 0.0, 0.3)
 		tween.chain().tween_callback(spark.queue_free)
-
-
-# A circle outline around the player that swells from `from_radius` to `to_radius` and fades.
-func _spawn_ring(color: Color, from_radius: float, to_radius: float, duration: float):
-	var ring = Node2D.new()
-	ring.z_index = 4
-	ring.set_meta("radius", from_radius)
-	ring.draw.connect(func(): ring.draw_arc(Vector2.ZERO, ring.get_meta("radius"), 0.0, TAU, 40, color, 3.0, true))
-	add_child(ring)
-	var tween = ring.create_tween().set_parallel()
-	tween.tween_method(func(r): ring.set_meta("radius", r); ring.queue_redraw(), from_radius, to_radius, duration) \
-		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_property(ring, "modulate:a", 0.0, duration)
-	tween.chain().tween_callback(ring.queue_free)
 
 
 # The blade a little broader, with a point at its end and a crossguard just past the hands (see

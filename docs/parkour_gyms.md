@@ -32,7 +32,7 @@ autoload); code asks `Moves.on("pogo")`.
 | **Wall:** off / **slide** / cling | slide |
 | Wall jump · wall/ledge contact refreshes the dash (never the air jump) · ledge grab | on |
 | Pogo · pogo refreshes the air jump · pogo refreshes the dash · pogo off your partner | on |
-| Launch · momentum relay · relay refreshes the dash · chimney clash · players collide | on |
+| Launch · relay · chimney clash · players collide | on |
 
 ## The new moves (`player.gd`, each with its tuning block)
 
@@ -71,13 +71,13 @@ autoload); code asks `Moves.on("pogo")`.
   meeting like a wall jump against hitting the wall (full or weak).
 - **Dash-slash windup:** a dash-slash first holds still for 0.15 s with the blade drawn back
   and heating to white, then dashes. That's the partner's cue to parry.
-- **Momentum relay:** dash-slash into your partner and have them **parry** it: their block
-  press must come at most 0.2 s before the blades meet. Just holding block (or pressing too
-  early) only stops the dash with a dull clang and bounces the dasher off. On a parry the
-  blades lock for 0.25 s, and during that time the dasher holds a direction: 8 ways (move,
-  up/jump, down), or nothing to keep the dash's direction. Then the dasher boosts about 220 px
-  that way with gravity off, keeping 45% of the speed afterwards, and the partner is pushed
-  back the other way. It refreshes the dash but never the air jump.
+- **Relay:** a bar of the clock. Hold attack and dash: the dash-slash charges; let go on a
+  beat (1). It runs into your partner on the next beat, and they **parry** it (2: the press at
+  most 0.1 s before the blades meet; just holding block only stops the dash with a dull clang
+  and bounces the dasher off). On 3 they strike, aiming with the stick (4 ways): the dasher is
+  thrown 190 px that way and hangs at the top on 4, with the dash back (never the air jump).
+  Off the beat anywhere, it fails. (Until 2026-10-18 there was also a relay without the clock,
+  where the dasher aimed during the lock.)
 
 ## Movement Gym (1 player): `levels/gym/movement_gym.gd`
 
@@ -103,7 +103,7 @@ autoload); code asks `Moves.on("pogo")`.
 | 3 | **Weight** | Free pans (90 px per player, max 100) and a ledge 330 up between them | Can weight alone get someone up there? Jumping takes your weight off, so timing matters. Is weight a good co-op verb outside the boss fight? |
 | 4 | **Targets** | Dummies 60 / 240 / 380 up | Strikes out of a launch. What attack flows out of the rise? |
 | 5 | **Chimney** | 380 wide (a bell marks the top): too wide to wall-jump up alone, since you fall back before reaching the other wall | Is jumping off together easy to read? Is the clash's height and push-back right? |
-| 6 | **Relay** | Bells to aim at (straight up, up and across), a 640 pit (beyond solo reach), and a high ledge over a lantern field for relaying straight down into a pogo chain | Is 0.25 s long enough to aim, short enough to flow? Which directions get used? |
+| 6 | **Relay** | Bells to aim at (straight up, up and across), a 640 pit (beyond solo reach), and a high ledge over a lantern field for relaying straight down into a pogo chain | Is a bar of the clock quick enough to flow? Which directions get used? |
 | 7 | **Partner pogo** | A 700 spike pit with a pillar in the middle for the partner to stand on | Does bouncing off a partner feel like teamwork? |
 
 ## How it's built
@@ -127,7 +127,7 @@ autoload); code asks `Moves.on("pogo")`.
 The concept doc's platforming plans that still need new mechanics:
 
 - **Mutual air parry:** both players in the air, one dashes into the other, and a timed clash
-  transfers the momentum sideways. The momentum relay covers part of this.
+  transfers the momentum sideways. The relay covers part of this.
 
 Left out on purpose for now: crouch slide, hyper dashes, charged dash, grapple.
 

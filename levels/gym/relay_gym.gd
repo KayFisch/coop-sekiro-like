@@ -1,5 +1,5 @@
 extends GymLevel
-## The relay gym: trying the rhythm relay (Moves "relay_rhythm") alone, on the clock (Beat, M
+## The relay gym: trying the relay (Moves "relay") alone, on the clock (Beat, M
 ## for the click). Player 2 is a bot
 ## (RelayBot) that parries every dash-slash at it right as the blades meet and throws the dasher
 ## up exactly on beat 3. The readout up top says how far apart the beats really came, and how far
@@ -31,7 +31,7 @@ const POGO_TOLERANCE = 0.05
 const LEDGE_SLACK = 4.0
 const TOWER_GAP = 30.0  # from the bot's center to the tower's face
 const TOWER_WIDTH = 300.0
-const NEEDED = ["dash", "dash_slash", "momentum_relay", "relay_rhythm", "pogo_environment"]
+const NEEDED = ["dash", "dash_slash", "relay", "pogo_environment"]
 
 var _bot: RelayBot
 var _readout: Label

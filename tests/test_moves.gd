@@ -304,7 +304,7 @@ func test_ledge_grab():
 func test_rhythm_relay():
 	await _room()
 	set_move("players_collide", false)
-	set_move("relay_rhythm", true)
+	set_move("relay", true)
 	_place(p1, 400.0)
 	_place(p2, 520.0)
 	p1.facing = 1.0

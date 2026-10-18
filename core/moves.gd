@@ -46,12 +46,9 @@ const ENTRIES = [
 	{"key": "pogo_refresh_dash", "tab": "Pogo", "label": "  that pogo refreshes the dash", "default": false},
 	# Partner: moves made of both players
 	{"key": "launch", "tab": "Partner", "label": "Launch (dash-slash into an upslash)", "default": true},
-	{"key": "momentum_relay", "tab": "Partner", "label": "Momentum relay (dash-slash into a block)", "default": true},
-	{"key": "relay_rhythm", "tab": "Partner", "label": "  rhythm relay: partner strikes on the beat, aims", "default": false},
-	{"key": "relay_refresh_dash", "tab": "Partner", "label": "  relay refreshes the dash (rhythm relay: always)", "default": false},
+	{"key": "relay", "tab": "Partner", "label": "Relay (dash-slash let go on a beat, into a parry; the partner throws it on 3)", "default": false},
 	{"key": "chimney_clash", "tab": "Partner", "label": "Chimney clash (wall jumps meeting)", "default": false},
 	{"key": "players_collide", "tab": "Partner", "label": "Players collide (stand on, bump into each other)", "default": true},
-	{"key": "call", "tab": "Partner", "label": "Call countdown (P1 Enter, P2 LB)", "default": true},
 	# Fights: rules that only matter against a boss
 	{"key": "boss_body", "tab": "Fights", "label": "Boss body blocks players", "default": true},
 	{"key": "parry_pass", "tab": "Fights", "label": "Dash-parry: a parry mid-dash goes through the boss", "default": true},
