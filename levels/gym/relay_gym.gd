@@ -31,7 +31,7 @@ const POGO_TOLERANCE = 0.05
 const LEDGE_SLACK = 4.0
 const TOWER_GAP = 30.0  # from the bot's center to the tower's face
 const TOWER_WIDTH = 300.0
-const NEEDED = ["dash", "dash_slash", "relay", "pogo_environment"]
+const NEEDED = ["dash", "dash_slash", "relay"]
 
 var _bot: RelayBot
 var _readout: Label

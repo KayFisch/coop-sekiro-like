@@ -48,8 +48,8 @@ func _ready():
 	var hint = Label.new()
 	hint.text = "P1: A/D move · W jump · ←/→ dash · Space attack · ↑ + Space upslash · L-Ctrl block · S drop" \
 		+ "\nP2 (pad): stick move · A jump · LB/RB dash · X attack · stick up + X upslash · RT block · stick down drop" \
-		+ "\nIn the air: hold down to fast fall, down + attack to pogo · Into a wall: slide / cling, jump off it · Up or toward on a ledge: climb" \
-		+ "\nDash-slash into your partner's upslash: launch · into their block: relay (hold a direction) · Wall jumps meeting: chimney clash"
+		+ "\nIn the air: down + attack to pogo (off lanterns) · Into a wall: slide down, jump off it · Up or toward on a ledge: climb" \
+		+ "\nDash-slash into your partner's upslash: launch · let go on a beat, into their parry: relay · Wall jumps meeting: chimney clash"
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.modulate = Color(1, 1, 1, 0.55)
 	hint.anchor_top = 1.0
@@ -107,10 +107,7 @@ func _track(p, t: Dictionary, delta: float):
 
 func _describe(p, t: Dictionary) -> String:
 	var v = p.velocity
-	var moves = "air jump %s · dash %s · hop %s" % [
-		"✓" if p.can_air_jump() else "–",
-		"✓" if p.can_dash() else "–",
-		"✓" if p.can_hop() else "–"]
+	var moves = "dash %s" % ("✓" if p.can_dash() else "–")
 	return "P%d  %-11s  speed %4d  fall %5d  |  last jump: peak %3d px, %.2f s, %3d px across  |  dash %3d px  |  launch %3d px  |  %s" % [
 		p.player_id, p.movement_state(), roundi(absf(v.x)), roundi(v.y), roundi(t.peak), t.air_time,
 		roundi(t.distance), roundi(t.dash), roundi(t.launch), moves]

@@ -1,8 +1,8 @@
 class_name PlayerSword
 extends PlayerBody
-## A player, part 2 of 5: the sword. THE SWORD's rules (below): the slash, the upslash and its hop,
-## the dash-slash (charged and let go on a beat for the relay), block and the parry window, the
-## pogo; the blade's angle every frame, and the sparks of blades meeting.
+## A player, part 2 of 5: the sword. THE SWORD's rules (below): the slash, the upslash, the
+## dash-slash (charged and let go on a beat for the relay), block and the parry window, the pogo;
+## the blade's angle every frame, and the sparks of blades meeting.
 ## Part 1, the body: player_body.gd. Part 3, walls and ledges: player_walls.gd.
 
 enum Swing { SLASH, UPSLASH, DOWNSLASH }
@@ -63,16 +63,14 @@ const DASH_SLASH_TRAIL_FADE = 0.18
 const RHYTHM_RELEASE_TOLERANCE = PARRY_TOLERANCE  # the release counts this far off a beat, early or late
 const RHYTHM_DASH_TIME = 0.04  # the dash-slash's run, DASH_DISTANCE in this long (a plain dash: DASH_TIME)
 const RHYTHM_CHARGE_FLARE = 0.15  # s: charging, the blade flares white on every beat and fades over this
-# Upslash: attack while holding up. A rising cut with a little hop, a fifth of a jump's height.
-# The hop is once per trip into the air, like the dash; the cut itself can be repeated.
-# Up pressed at most UPSLASH_LATE after the attack still counts, as for the dash-slash.
+# Upslash: attack while holding up, a rising cut. Up pressed at most UPSLASH_LATE after the
+# attack still counts, as for the dash-slash.
 const UPSLASH_LATE = 0.06
 const UPSLASH_WINDUP_TIME = 0.05  # the blade dipping from rest to where the cut starts
 const UPSLASH_ACTIVE_TIME = 0.15
 const UPSLASH_RETURN_TIME = 0.12
 const UPSLASH_COOLDOWN = 0.35
 const UPSLASH_DAMAGE = 10.0
-const UPSLASH_HOP_HEIGHT = JUMP_HEIGHT / 5.0
 const UPSLASH_START_ANGLE = 0.6  # low in front...
 const UPSLASH_END_ANGLE = -1.9  # ...up past vertical
 # POGO: down + attack in the air slashes below you (a downslash; it never hurts the boss). What
@@ -82,8 +80,10 @@ const UPSLASH_END_ANGLE = -1.9  # ...up past vertical
 # The partner below upslashes as you arrive: at most POGO_CLASH_TOLERANCE before your pogo box
 # reaches them, or while it's still checking. Both blades flash, you bounce; nothing is refreshed.
 # A downslash onto a partner who didn't upslash does nothing special.
-# ENVIRONMENT POGO (Moves "pogo_environment", for the gyms): targets, lanterns and spikes bounce
-# it too, refreshing what the pogo_refresh switches say. Never the boss.
+# POGO POINTS: things a level puts there to be pogoed off (in the group "pogo", e.g. a gym's
+# lanterns) bounce it too, and give the dash back if Moves "pogo_refresh_dash" says so. One may
+# take a pogo only at certain moments (accepts_pogo(), e.g. the relay gym's lantern: on beat 4).
+# Nothing else does: not the boss, not spikes, not targets.
 const DOWNSLASH_ACTIVE_TIME = 0.06  # just the look: the pogo is the box (POGO_WINDOW)
 const DOWNSLASH_RETURN_TIME = 0.08
 const DOWNSLASH_START_ANGLE = 0.0  # level in front...
@@ -91,9 +91,10 @@ const DOWNSLASH_END_ANGLE = PI  # ...sweeping under you to level behind
 const DOWNSLASH_DAMAGE = 10.0
 const POGO_HEIGHT = 110.0
 const POGO_RISE_GRAVITY = 1.6  # gravity times this on a pogo's rise: same height, a quicker bounce
-# Anything in this box under you (width, depth below your feet) bounces a downslash right away,
-# checked before you move, so a fast fall can't carry you into spikes first. It's centered and
-# it's the downslash's whole reach (the swinging blade doesn't count), so facing doesn't matter.
+# A pogo point (or the partner) in this box under you (width, depth below your feet) bounces a
+# downslash right away, checked before you move, so falling fast can't carry you past it first.
+# It's centered and it's the downslash's whole reach (the swinging blade doesn't count), so
+# facing doesn't matter.
 const POGO_REACH = Vector2(80.0, 28.0)
 const POGO_WINDOW = 0.15  # the box is checked this long from the press, whatever the blade is doing
 const POGO_GRACE = 0.1  # spikes touched this soon after a pogo don't count (see just_pogoed())
@@ -131,7 +132,6 @@ var _swing_from_angle = SWORD_REST_ANGLE  # where the blade was when the swing (
 var _parry_flick = 0.0  # > 0 while a perfect parry beats the blade up
 var _slash_press_time = -100.0
 var _upslash_press_time = -100.0
-var _upslash_hop_ready = true  # refreshed on the ground
 var _dash_slash = false  # this dash is a dash-slash (also true through its windup)
 var _windup_timer = 0.0  # > 0 while winding up a dash-slash
 var _windup_length = DASH_SLASH_WINDUP  # s this windup lasts (a rhythm one: from the release to the run)
@@ -194,7 +194,7 @@ func _press_attack():
 	if _held("up") and _dash_timer <= 0.0:
 		_press_upslash()
 		return
-	if (Moves.on("pogo") or Moves.on("pogo_environment")) and not is_on_floor() and _dash_timer <= 0.0 \
+	if Moves.on("pogo") and not is_on_floor() and _dash_timer <= 0.0 \
 			and _held("down"):
 		_start_swing(Swing.DOWNSLASH)
 		Sfx.play("slash", -4.0)
@@ -208,10 +208,6 @@ func _press_attack():
 func _press_upslash():
 	_start_swing(Swing.UPSLASH)
 	_upslash_press_time = now()
-	if _upslash_hop_ready and Moves.on("upslash_hop"):
-		_upslash_hop_ready = false
-		velocity.y = minf(velocity.y, -rise_speed(UPSLASH_HOP_HEIGHT))
-		_coyote_timer = 0.0
 	Sfx.play("slash", -4.0)
 
 
@@ -277,8 +273,8 @@ func active_sword_point():
 	return _sword_shape.global_position
 
 
-# Sword hits: damage on the boss (or a target). A downslash never hits the boss; on targets its
-# hits are _check_pogo()'s.
+# Sword hits: damage on the boss (or a target). A downslash never hits the boss; on a pogo point
+# its hit is _check_pogo()'s.
 func _process_attack():
 	if not is_sword_active() or _is_downslash():
 		return
@@ -295,11 +291,6 @@ func _is_downslash() -> bool:
 # The last swing, for readouts: "dash-slash", or its name in SWINGS ("slash", "upslash"...).
 func swing_name() -> String:
 	return "dash-slash" if _dash_slash else SWINGS[_swing_kind].name
-
-
-# The upslash's hop is there to use (once per trip into the air).
-func can_hop() -> bool:
-	return _upslash_hop_ready
 
 
 # Upslashing, pressed at most `tolerance` ago (the launch and the pogo clash).
@@ -416,7 +407,7 @@ func _dash_slash_passes() -> bool:
 # Before moving: a downslash's pogo box, POGO_REACH under you (stretched by how far you fall this
 # frame), so the bounce comes before you'd land. From the press (that same frame) for
 # POGO_WINDOW; the blade's position and timing don't matter. The partner in it with a fresh
-# upslash is a pogo clash; with Moves "pogo_environment", targets, lanterns and spikes bounce it.
+# upslash is a pogo clash; a pogo point in it (POGO POINTS) bounces it.
 func _check_pogo(delta):
 	if _pogoed or _since(downslash_time) > POGO_WINDOW:
 		return
@@ -424,27 +415,23 @@ func _check_pogo(delta):
 	var depth = POGO_REACH.y + maxf(velocity.y * delta, 0.0)
 	if _try_pogo_clash(depth):
 		return
-	if not Moves.on("pogo_environment"):
-		return
 	var shape = RectangleShape2D.new()
 	shape.size = Vector2(POGO_REACH.x, half.y + depth)
 	var query = PhysicsShapeQueryParameters2D.new()
 	query.shape = shape
 	query.transform = Transform2D(0.0, global_position + Vector2(0.0, (half.y + depth) / 2.0))
-	query.collision_mask = 1 << 2  # the boss's layer, where spikes and targets are too
+	query.collision_mask = 1 << 2  # the boss's layer, where pogo points are too
 	query.exclude = [get_rid()]
 	for result in get_world_2d().direct_space_state.intersect_shape(query, 8):
 		var hit = result.collider
-		if hit is BaseBoss:
-			continue  # the boss is never pogoed off
+		if not hit.is_in_group("pogo"):
+			continue  # only pogo points: not the boss, spikes or targets
 		if hit.has_method("accepts_pogo") and not hit.accepts_pogo(self):
 			continue  # e.g. a lantern that only takes a pogo on the beat
 		if hit.is_in_group("boss") and not _attack_landed:
 			_attack_landed = true
-			hit.take_damage(_swing_damage(), self)
-			_pogo()
-		elif hit.is_in_group("pogo"):
-			_pogo()
+			hit.take_damage(_swing_damage(), self)  # a lantern lights up, as struck
+		_pogo()
 
 
 # The pogo box, `depth` below the feet, on the partner: a pogo clash (player_partner.gd). True if
@@ -458,14 +445,11 @@ func just_pogoed() -> bool:
 	return _since(pogo_time) <= POGO_GRACE
 
 
-# A bounce off something in the world (Moves "pogo_environment"), refreshing what the Moves
-# switches say.
+# A bounce off a pogo point, giving the dash back if Moves "pogo_refresh_dash" says so.
 func _pogo():
 	if _pogoed:
 		return
 	_pogo_bounce()
-	if Moves.on("pogo_refresh_air_jump"):
-		refresh_air_jump()
 	if Moves.on("pogo_refresh_dash"):
 		refresh_dash()
 	Fx.sparks(self, global_position + Vector2(0.0, body.size.y / 2.0 + 6.0), 6, _sword_color.lightened(0.5))
@@ -567,17 +551,10 @@ func _speed_scale() -> float:
 	return super() * (BLOCK_SPEED_FACTOR if is_blocking() else 1.0)
 
 
-func refresh_air_jump():
-	super()
-	_upslash_hop_ready = true
-
-
 func _tick_timers(delta):
 	if _dash_timer > 0.0 and _dash_timer <= delta:
 		_dash_slash = false  # the dash-slash ends with its dash
 	super(delta)
-	if is_on_floor():
-		_upslash_hop_ready = true
 	_sword_flash = maxf(_sword_flash - delta, 0.0)
 	_recoil_timer = maxf(_recoil_timer - delta, 0.0)
 	_attack_buffer = maxf(_attack_buffer - delta, 0.0)

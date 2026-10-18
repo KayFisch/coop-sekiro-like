@@ -30,20 +30,14 @@ const ENTRIES = [
 	# Basics: on your own feet
 	{"key": "dash", "tab": "Basics", "label": "Dash (the way you face)", "default": true},
 	{"key": "dash_slash", "tab": "Basics", "label": "Dash-slash (dash + attack)", "default": true},
-	{"key": "double_jump", "tab": "Basics", "label": "Double jump", "default": false},
-	{"key": "upslash_hop", "tab": "Basics", "label": "Upslash hop", "default": false},
-	{"key": "fast_fall", "tab": "Basics", "label": "Fast fall (hold down in the air)", "default": false},
 	# Walls and ledges
-	{"key": "wall", "tab": "Walls", "label": "Wall: slide or cling", "default": "off", "options": ["off", "slide", "cling"]},
+	{"key": "wall", "tab": "Walls", "label": "Walls: stick and slide down", "default": "off", "options": ["off", "slide"]},
 	{"key": "wall_jump", "tab": "Walls", "label": "Wall jump", "default": false},
 	{"key": "wall_rhythm", "tab": "Walls", "label": "  wall rhythm: jump as you hit the wall, else weak", "default": false},
-	{"key": "wall_refresh", "tab": "Walls", "label": "Wall / ledge refreshes the dash", "default": false},
 	{"key": "ledge_grab", "tab": "Walls", "label": "Ledge grab + climb", "default": false},
 	# Pogo
-	{"key": "pogo", "tab": "Pogo", "label": "Pogo clash (downslash onto your partner's upslash)", "default": true},
-	{"key": "pogo_environment", "tab": "Pogo", "label": "Pogo off targets, spikes, lanterns (gyms)", "default": false},
-	{"key": "pogo_refresh_air_jump", "tab": "Pogo", "label": "  that pogo refreshes the air jump", "default": false},
-	{"key": "pogo_refresh_dash", "tab": "Pogo", "label": "  that pogo refreshes the dash", "default": false},
+	{"key": "pogo", "tab": "Pogo", "label": "Pogo (downslash: off your partner's upslash, or a pogo point)", "default": true},
+	{"key": "pogo_refresh_dash", "tab": "Pogo", "label": "  a pogo point gives the dash back", "default": false},
 	# Partner: moves made of both players
 	{"key": "launch", "tab": "Partner", "label": "Launch (dash-slash into an upslash)", "default": true},
 	{"key": "relay", "tab": "Partner", "label": "Relay (dash-slash let go on a beat, into a parry; the partner throws it on 3)", "default": false},

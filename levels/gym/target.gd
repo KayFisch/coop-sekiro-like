@@ -28,6 +28,8 @@ var _body: ColorRect
 
 func _ready():
 	add_to_group("boss")
+	if mode == Mode.LANTERN:
+		add_to_group("pogo")  # a pogo point (see POGO POINTS in player_sword.gd)
 	collision_layer = 4  # where player sword hitboxes look (the boss's layer)
 	collision_mask = 0
 	var size = SIZE[mode]

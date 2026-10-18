@@ -46,7 +46,7 @@ const LAUNCH_STRETCH_TIME = 0.3
 # drops the dasher. Every beat sounds: 1 a tick, 2 the parry, 3 the strike, 4 a high tick. The
 # throw stops a little before beat 4 and the dasher hangs still around it (gravity off), so a move
 # on 4 has as much room early as late; any move ends the hang. The throw gives the dash back (beat
-# 4 may ask for one), never the air jump. Charging in the air hangs you still, as the windup does.
+# 4 may ask for one). Charging in the air hangs you still, as the windup does.
 # (While the switch is on, every dash-slash is this one, at a boss too; it starts the clock where
 # no level has.)
 const RELAY_RECOIL = 220.0  # px/s the anchor is pushed back, the other way, as it throws
@@ -123,7 +123,7 @@ func _launch(other):
 	_launch_timer = rise / GRAVITY  # until the top of the rise
 	_coyote_timer = 0.0
 	_jump_buffer = 0.0
-	refresh_air_moves()
+	refresh_dash()
 	_sword_flash = SWORD_FLASH_TIME
 	_squash(LAUNCH_STRETCH, LAUNCH_STRETCH_TIME)
 	other.on_launch_clash()

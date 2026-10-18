@@ -10,13 +10,13 @@ building levels around. Nothing hurts: falling out puts you back at the last che
 and **R** does the same on demand.
 
 Every surface sits on a **32 px grid** (with a brighter line every 160 px, counted up from the
-floor). Distances are drawn as blue dimension lines, and the key heights (jump, double jump,
+floor). Distances are drawn as blue dimension lines, and the key heights (jump and
 launch) as dashed lines. The numbers are read from the player's tuning constants, so they stay
 right when you retune.
 
 **The readout** (Tab toggles it) shows, per player: what they're doing (ground, air, wall slide,
 ledge, clash, relay boost...), current speed, and for the last jump its peak height, air time and
-distance, the last dash's length, the last launch's height, and which air moves are still
+distance, the last dash's length, the last launch's height, and whether the dash is still
 available.
 
 ## Movement switches (F1, anywhere)
@@ -28,26 +28,28 @@ autoload); code asks `Moves.on("pogo")`.
 
 | Switch | Default |
 |---|---|
-| Double jump, dash, dash-slash, upslash hop, fast fall | on |
-| **Wall:** off / **slide** / cling | slide |
-| Wall jump · wall/ledge contact refreshes the dash (never the air jump) · ledge grab | on |
-| Pogo · pogo refreshes the air jump · pogo refreshes the dash · pogo off your partner | on |
-| Launch · relay · chimney clash · players collide | on |
+| Dash, dash-slash | on |
+| **Wall:** off / slide | off |
+| Wall jump · wall rhythm · ledge grab | off |
+| Pogo (off your partner's upslash, or a pogo point) | on |
+| A pogo point gives the dash back | off |
+| Launch · players collide | on |
+| Relay · chimney clash | off |
+
+The platforming switches are off by default (the fight comes first): turn on what a gym's
+station needs. The wall and relay gyms say which ones they're missing; a kit room switches on
+what its pieces need by itself (a shaft: walls and wall jumps).
 
 ## The new moves (`actors/player/`, each with its tuning block)
 
-- **Fast fall:** hold down in the air while falling. You fall with 2.2× the gravity, up to
-  1900 px/s instead of 1300.
 - **Walls:** in the air, press into a wall (or fly into it fast) and you stick to it, facing
-  away.
-  - **Slide:** you slip down at 140 px/s.
-  - **Cling:** you hang still for 1.2 s, then slide.
+  away, and slip down at 140 px/s.
   - Press away, or land, to let go.
   - **Wall jump:** jump off a wall you're on or touching, up and away (145 px; letting go of
     jump doesn't cut it short). For 0.15 s you can't steer back, so it carries you clear of
     the wall. The wall you jumped off is then spent
-    until you land, catch a ledge or reach another wall: you can't stick to it, jump off it,
-    or get refreshed by it again. One wall alone can't be climbed; two facing walls (a
+    until you land, catch a ledge or reach another wall: you can't stick to it or jump off it
+    again. One wall alone can't be climbed; two facing walls (a
     chimney) can. Your partner doesn't count as a wall. A wall you're only touching counts
     if you're moving into it. For 0.3 s after a wall jump (about 110 px) you're "in flight":
     holding back toward the wall you left (or nothing) doesn't steer, and the wall you reach catches you,
@@ -59,8 +61,9 @@ autoload); code asks `Moves.on("pogo")`.
   your middle, and you catch the edge and hang. Up (or holding toward it) climbs, jump jumps,
   and down or away lets go.
 - **Pogo:** down (S or ↓ on the keyboard) + attack in the air slashes below you, Hollow Knight
-  style. Hitting a target, a boss, spikes or (if switched on) your partner bounces you up
-  110 px however fast you were falling. What it refreshes is up to the switches.
+  style. Only a pogo point (the gyms' lanterns) or your partner's upslash (the pogo clash)
+  bounces you up 110 px, however fast you were falling; spikes, targets and the boss don't. A
+  pogo point gives the dash back if F1 says so.
 - **Chimney clash:** two players who both just wall-jumped, flying at each other, clash in
   mid-air: each is the other's wall. Both wall-jump off each other, back toward the walls
   they came from, exactly like a wall jump (same push and height, no hold or boost), so a
@@ -69,13 +72,13 @@ autoload); code asks `Moves.on("pogo")`.
   walls). Meeting isn't enough: **both press jump** as you meet (within 0.08 s, early or
   late), or you fly on and fall. With wall rhythm on, each press is judged against the
   meeting like a wall jump against hitting the wall (full or weak).
-- **Dash-slash windup:** a dash-slash first holds still for 0.15 s with the blade drawn back
+- **Dash-slash windup:** a dash-slash first holds still for 0.2 s with the blade drawn back
   and heating to white, then dashes. That's the partner's cue to parry.
 - **Relay:** a bar of the clock. Hold attack and dash: the dash-slash charges; let go on a
   beat (1). It runs into your partner on the next beat, and they **parry** it (2: the press at
   most 0.1 s before the blades meet; just holding block only stops the dash with a dull clang
   and bounces the dasher off). On 3 they strike, aiming with the stick (4 ways): the dasher is
-  thrown 190 px that way and hangs at the top on 4, with the dash back (never the air jump).
+  thrown 190 px that way and hangs at the top on 4, with the dash back.
   Off the beat anywhere, it fails. (Until 2026-10-18 there was also a relay without the clock,
   where the dasher aimed during the lock.)
 
@@ -84,21 +87,21 @@ autoload); code asks `Moves.on("pogo")`.
 | # | Station | What's there | Questions it asks |
 |---|---|---|---|
 | 1 | **Run** | Flat track, ticks every 100 px | Does 360 px/s with near-instant start and stop feel right, or too stiff? |
-| 2 | **Height** | Pillars at 96 / 136 (= jump) / 180 / 243 (= double jump) / 270 (= + upslash hop) / 310 | Is exact-max height landable, or does it need a margin? Does the upslash hop feel like a real extension, or a trick? |
-| 3 | **Distance** | Gaps of 160 / 280 / 400 / 520 / 640 over pits, a checkpoint on each ledge | Which combination of jump, double jump and dash crosses each? Is the order of moves expressive? Is 640 possible? |
+| 2 | **Height** | Pillars at 96 / 136 (= jump) / 180 / 220 / 260 / 310 | Is exact-max height landable, or does it need a margin? Which ones does a ledge grab reach? |
+| 3 | **Distance** | Gaps of 160 / 280 / 400 / 520 / 640 over pits, a checkpoint on each ledge | How far do a running jump and a dash after it take you? Is 520 possible alone? |
 | 4 | **Dash** | Low tunnel (64 px clearance, no jumping) over holes of 100 / 140 / 180 | Is a gravity-free dash of exactly 140 px readable? Should the dash carry momentum out of a hole? |
-| 5 | **Climb** | One-way ledges 110 apart (one jump each) and 220 apart (double jumps), drop-through | Is vertical play fun with this jump arc? Is dropping through (S) useful? |
+| 5 | **Climb** | One-way ledges 110 apart (one jump each), drop-through | Is vertical play fun with this jump arc? Is dropping through (S) useful? |
 | 6 | **Sword** | Dummies on the ground, 150 up and 260 up | How do slash, upslash and dash-slash feel as movement tools? Targets name what hit them. |
-| 7 | **Walls** | A 110-wide chimney (90 px of travel for a 20 px body, inside the ~108 px wall-jump flight; walk in under its left wall), and a tall wall beside the walkway at the top | Wall-jumping up a chimney alone. Slide or cling: which feels better? |
-| 8 | **Ledges** | Pillars of 180 / 200 / 280 / 330, with marks for "jump + grab" (206) and "double jump + grab" (313) | Does the grab reach feel generous or sloppy? Should climbing be automatic? |
-| 9 | **Pogo** | A 900 spike pit with lanterns every 180 px, then a 700 pit with only spikes | Does the pogo feel natural? Try it with and without the refreshes (F1). |
-| 10 | **Fall** | Lantern stairs up to a perch, then a 420 px drop onto a 60 px safe spot among spikes | Does fast fall help you aim a landing, or only speed it up? |
+| 7 | **Walls** | A 110-wide chimney (90 px of travel for a 20 px body, inside the ~108 px wall-jump flight; walk in under its left wall), and a tall wall beside the walkway at the top | Wall-jumping up a chimney alone. Does sliding down a wall feel right? |
+| 8 | **Ledges** | Pillars of 180 / 200 / 280 / 330, with a mark for "jump + grab" (206) | Does the grab reach feel generous or sloppy? Should climbing be automatic? |
+| 9 | **Pogo** | A 900 spike pit with lanterns (pogo points) every 180 px | Does the pogo feel natural? Try it with and without the dash refresh (F1). |
+| 10 | **Fall** | Lantern stairs up to a perch, then a 420 px drop onto a 60 px safe spot among spikes | Can you aim a landing from that high? |
 
 ## Duo Gym (2 players): `levels/gym/coop_gym.gd`
 
 | # | Station | What's there | Questions it asks |
 |---|---|---|---|
-| 1 | **Launch** | Bells at 200 / 280 / 340 / 400 / 460 up | How reliably can you time it? How high do you really get, and what can you do at the top (dash, double jump, strike)? |
+| 1 | **Launch** | Bells at 200 / 280 / 340 / 400 / 460 up | How reliably can you time it? How high do you really get, and what can you do at the top (dash, strike)? |
 | 2 | **Cliff** | A 330 px wall: out of solo reach, in launch reach. A **switch** on top opens a staircase | The first "one opens the way for the other" pattern. Does it feel like teamwork or waiting? |
 | 3 | **Weight** | Free pans (90 px per player, max 100) and a ledge 330 up between them | Can weight alone get someone up there? Jumping takes your weight off, so timing matters. Is weight a good co-op verb outside the boss fight? |
 | 4 | **Targets** | Dummies 60 / 240 / 380 up | Strikes out of a launch. What attack flows out of the rise? |
@@ -112,7 +115,7 @@ autoload); code asks `Moves.on("pogo")`.
   with helpers:
   - geometry: `ground()`, `solid()`, `pillar()`, `ledge()`
   - markings: `label()`, `station()`, `measure()`, `height_mark()`
-  - `checkpoint()`, `target()`, and `spikes()` (a hazard that puts you back, and pogo-able)
+  - `checkpoint()`, `target()`, and `spikes()` (a hazard that puts you back)
 
   It also spawns the players, the camera and the HUD, and handles respawning. A new test room
   is a script plus a one-node scene.

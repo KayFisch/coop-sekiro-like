@@ -40,7 +40,6 @@ func player_count() -> int:
 
 func _build():
 	bounds = Rect2(0, -500, 9100, 1220)
-	var double = Player.JUMP_HEIGHT + Player.DOUBLE_JUMP_HEIGHT
 	solid(0, bounds.position.y, 24, GROUND_Y - bounds.position.y)
 	solid(bounds.end.x - 24, bounds.position.y, 24, GROUND_Y - bounds.position.y)
 
@@ -54,7 +53,6 @@ func _build():
 		target(Vector2(bell_x, GROUND_Y - h), GymTarget.Mode.BELL, "%d" % h)
 		bell_x += 130.0
 	height_mark(300, 1130, GROUND_Y - Player.LAUNCH_HEIGHT, "launch %d" % roundi(Player.LAUNCH_HEIGHT))
-	height_mark(300, 1130, GROUND_Y - double, "double jump %d" % roundi(double))
 
 	# 2 CLIFF
 	ground(0, PANS_LEFT.x)

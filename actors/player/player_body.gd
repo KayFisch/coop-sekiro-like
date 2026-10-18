@@ -26,8 +26,6 @@ const GRAVITY = 1800.0  # on the way up
 const FALL_GRAVITY_MULTIPLIER = 1.7  # heavier on the way down: a snappier, less floaty fall
 const MAX_FALL_SPEED = 1300.0
 const JUMP_HEIGHT = 136.0
-const DOUBLE_JUMP_HEIGHT = 107.0
-const AIR_JUMPS = 1  # extra jumps in the air
 const JUMP_CUT = 0.5  # releasing jump early keeps this fraction of upward speed
 const COYOTE_TIME = 0.1  # a jump this soon after running off a ledge still counts as grounded
 const JUMP_BUFFER_TIME = 0.12  # a jump pressed this soon before landing fires on landing
@@ -43,9 +41,6 @@ const DASH_STRETCH = Vector2(1.3, 0.7)  # the dash's squash, springing back...
 const DASH_STRETCH_TIME = 0.1  # ...over this long
 const KNOCKBACK_TIME = 0.25  # input can't steer while this runs
 const KNOCKBACK_FRICTION = 1500.0
-# FAST FALL: holding down in the air, once falling, pulls you down harder and faster.
-const FAST_FALL_GRAVITY = 2.2  # times the usual falling gravity
-const FAST_FALL_MAX_SPEED = 1900.0
 const DROP_THROUGH_TIME = 0.3  # down on a one-way platform: it lets you through this long
 const WORLD_LAYER = 1  # floor and walls
 const PLAYER_LAYER = 2  # players; they collide with each other while Moves "players_collide" is on
@@ -77,7 +72,6 @@ var own_half = false:
 	set(v):
 		own_half = v
 		_update_player_collision()
-var _air_jumps = AIR_JUMPS
 var _coyote_timer = 0.0  # > 0 while a ground jump is still allowed
 var _jump_buffer = 0.0  # > 0 while a jump press is waiting to fire
 var _jump_press_time = -100.0  # the last jump press
@@ -90,7 +84,6 @@ var _drop_timer = 0.0
 var _knockback_timer = 0.0
 var _stagger_timer = 0.0  # > 0 while reeling from a hit: no movement, no input
 var _stretch_tween: Tween
-var _fast_falling = false
 var _uncut_timer = 0.0  # > 0 while releasing jump mustn't cut the rise (a bounce, a wall jump)
 var _heavy_rise = 0.0  # > 0 while rising from a bounce: gravity times _rise_gravity (see bounce())
 var _rise_gravity = 1.0
@@ -186,9 +179,7 @@ func partner():
 
 func _process_movement(delta):
 	var direction = move_axis()
-	_fast_falling = false
 	if is_on_floor():
-		_air_jumps = AIR_JUMPS
 		_coyote_timer = COYOTE_TIME
 	_before_move(direction)
 	_face(direction)
@@ -223,24 +214,18 @@ func _process_movement(delta):
 		else:
 			rate = AIR_ACCEL if speeding_up else AIR_DECEL
 		velocity.x = move_toward(velocity.x, target, rate * delta)
-	_fast_falling = Moves.on("fast_fall") and not is_on_floor() and velocity.y > 0.0 \
-		and _held("down")
-	_apply_gravity(delta, _fast_falling)
+	_apply_gravity(delta)
 	if _let_go("jump") and velocity.y < 0.0 and _launch_timer <= 0.0 \
 			and _uncut_timer <= 0.0:
 		velocity.y *= JUMP_CUT
 
 
-# Normal gravity on the way up, heavier on the way down, up to the fall speed cap; heavier and
-# faster still when fast falling.
-func _apply_gravity(delta, fast = false):
+# Normal gravity on the way up, heavier on the way down, up to the fall speed cap.
+func _apply_gravity(delta):
 	var gravity = GRAVITY * (FALL_GRAVITY_MULTIPLIER if velocity.y > 0.0 else 1.0)
 	if _heavy_rise > 0.0 and velocity.y < 0.0:
 		gravity *= _rise_gravity
-	if fast:
-		velocity.y = minf(velocity.y + gravity * FAST_FALL_GRAVITY * delta, FAST_FALL_MAX_SPEED)
-	else:
-		velocity.y = minf(velocity.y + gravity * delta, MAX_FALL_SPEED)
+	velocity.y = minf(velocity.y + gravity * delta, MAX_FALL_SPEED)
 
 
 # The upward speed that rises `height` px before gravity (times `heavier`) stops it.
@@ -285,19 +270,13 @@ func _process_actions():
 
 # --- Jumping and dashing ---------------------------------------------------------
 
-# Jumps if it can: from the ground (or just off a ledge), off a wall, else with an air jump. A
-# fresh press with none of those stays buffered, and fires on landing (or on reaching a wall)
-# if that comes soon enough.
+# Jumps if it can: from the ground (or just off a ledge), or off a wall. A press with neither
+# stays buffered, and fires on landing (or on reaching a wall) if that comes soon enough.
 func _try_jump():
-	if _coyote_timer > 0.0:
-		velocity.y = -rise_speed(JUMP_HEIGHT)
-	elif _try_wall_jump():
+	if _coyote_timer <= 0.0:
+		_try_wall_jump()
 		return
-	elif Moves.on("double_jump") and _air_jumps > 0 and _pressed("jump") and _may_air_jump():
-		_air_jumps -= 1
-		velocity.y = -rise_speed(DOUBLE_JUMP_HEIGHT)
-	else:
-		return
+	velocity.y = -rise_speed(JUMP_HEIGHT)
 	_jump_buffer = 0.0
 	_coyote_timer = 0.0
 	_end_carry()
@@ -354,22 +333,7 @@ func can_dash() -> bool:
 	return _dash_ready and _dash_cooldown <= 0.0
 
 
-func can_air_jump() -> bool:
-	return _air_jumps > 0
-
-
-# Air jumps, the dash and the upslash hop back, as if touching the ground.
-func refresh_air_moves():
-	refresh_air_jump()
-	refresh_dash()
-
-
-# The air jumps back (a pogo, if its switch says so).
-func refresh_air_jump():
-	_air_jumps = AIR_JUMPS
-
-
-# Just the dash back (walls and ledges: the air jump only comes back on landing or a pogo).
+# The dash back, as if landing (a launch, a relay's throw, a pogo point if its switch says so).
 func refresh_dash():
 	_dash_ready = true
 	_dash_cooldown = 0.0
@@ -416,8 +380,6 @@ func movement_state() -> String:
 		return "dash"
 	if is_on_floor():
 		return "ground"
-	if _fast_falling:
-		return "fast fall"
 	return "air"
 
 
@@ -556,11 +518,6 @@ func _speed_scale() -> float:
 # A jump press that a wall takes. True if it jumped.
 func _try_wall_jump() -> bool:
 	return false
-
-
-# Whether a jump press in the air may be an air jump (it may be a clash's press instead).
-func _may_air_jump() -> bool:
-	return true
 
 
 # The buttons the parts above handle (block, attack), between the dash and dropping through.

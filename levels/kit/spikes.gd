@@ -3,7 +3,7 @@ class_name KitSpikes
 extends Clockwork
 ## A strip of spikes: touching them kills. Their position is one end of the base; they run
 ## `length` along it (right, or down for the ones facing sideways) and point `facing`. Put them
-## on a KitBlock. A downslash bounces off them if F1 "Pogo off targets, spikes" is on.
+## on a KitBlock. They don't bounce a downslash: only pogo points do.
 ## `timed`: they're out only on their beats (`pattern`, `bars`, `offset`, see Clockwork), for
 ## `out_beats`, and down in between: harmless, a strip of holes. In the half beat before they
 ## come out, their tips show.
@@ -61,17 +61,6 @@ func zone() -> Rect2:
 func _ready():
 	if in_editor():
 		return
-	# What a downslash's pogo box finds (see _check_pogo() in player_sword.gd).
-	var pogo = CharacterBody2D.new()
-	pogo.add_to_group("pogo")
-	pogo.collision_layer = 4
-	pogo.collision_mask = 0
-	pogo.position = zone().get_center()
-	var shape = CollisionShape2D.new()
-	shape.shape = RectangleShape2D.new()
-	shape.shape.size = zone().size
-	pogo.add_child(shape)
-	add_child(pogo)
 	if timed:
 		Beat.beat.connect(_on_beat)
 

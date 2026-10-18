@@ -148,7 +148,7 @@ func respawn(p):
 	p.global_position = respawn_point + Vector2((p.player_id - 1) * RESPAWN_SPREAD, 0.0)
 	p.velocity = Vector2.ZERO
 	p.interrupt_movement()
-	p.refresh_air_moves()
+	p.refresh_dash()
 	_on_respawned(p)
 
 
@@ -243,21 +243,11 @@ func checkpoint(x: float, floor_y = GROUND_Y):
 
 
 # A strip of spikes from x1 to x2, points up with their base at `base_y` (or hanging down from
-# it if `down`). Touching them puts you back at the checkpoint; a downslash bounces off them.
+# it if `down`). Touching them puts you back at the checkpoint.
 func spikes(x1: float, x2: float, base_y: float, down = false):
 	var h = SPIKE_HEIGHT
 	var zone = Rect2(x1, base_y if down else base_y - h, x2 - x1, h)
 	_spikes.append(zone.grow(-3.0))
-	var pogo = CharacterBody2D.new()  # what the sword hitboxes see (they pick up bodies like the boss)
-	pogo.add_to_group("pogo")
-	pogo.collision_layer = 4
-	pogo.collision_mask = 0
-	pogo.position = zone.get_center()
-	var shape = CollisionShape2D.new()
-	shape.shape = RectangleShape2D.new()
-	shape.shape.size = zone.size
-	pogo.add_child(shape)
-	add_child(pogo)
 	var teeth = Polygon2D.new()
 	teeth.color = COLOR_SPIKES
 	var points = PackedVector2Array()

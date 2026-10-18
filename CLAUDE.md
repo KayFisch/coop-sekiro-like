@@ -51,6 +51,10 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   `core/dev.gd` reads `p.now()`, `p.last_block_press` and `p.is_swinging()` now.
 - Your two newest overhaul commits (F2 like F1) are merged in; the one conflict, a sentence in
   the code map here, keeps both.
+- Also out now (no level used them): double jump, the upslash's hop, fast fall, wall cling and
+  wall refresh. A downslash bounces only off pogo points now (the group "pogo": the gyms'
+  lanterns) and the partner's upslash, no longer off spikes, targets or switches. The relay
+  and ledge grab stay. Dead code went too (the boss tumble and knock, unused signals).
 
 ## The project
 

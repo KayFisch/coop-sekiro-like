@@ -36,8 +36,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Schichten wie Bifrons. Vorher Tests für die Moves, die bleiben. **Fasst `player.gd` und seine
   Aufrufer an** (Bifrons, Gyms, Kit, `core/`, HUD): bis zum Merge dort bitte nichts ändern.
   Stand 2026-10-18: Code fertig (Fx, Helfer, Verben, `SWINGS`, Resets, fünf Schichten, Aufrufer
-  auf öffentlichen Namen), Nichos zwei neueste Overhaul-Commits drin, 36 Tests grün. Offen:
-  Kays Spieltest.
+  auf öffentlichen Namen), Nichos zwei neueste Overhaul-Commits drin, 36 Tests grün. Danach raus
+  (Kays Entscheidung, kein Level nutzte sie): Doppelsprung, Upslash-Hop, Fast Fall, Wand-Klammern,
+  Wand-Refresh; Pogo nur noch an Pogo-Punkten (Laternen) und am Partner. Offen: Kays Spieltest.
 - [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), Branch `nicho/pep-test`. Testet die
   Grundregel aus den Scribbles: Spieler links und rechts vom Boss, zwei Schwerter, er ist auf
   beiden Seiten gedeckt; ein Parry auf einer Seite bricht kurz die Deckung auf der anderen

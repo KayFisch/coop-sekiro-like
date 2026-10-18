@@ -28,7 +28,7 @@ Nobody has health. The two players share one **sync**, the boss has his own, and
 
 ## Moveset
 
-The fight kit is built for the parry duet: each player's freedom is small, and the big moves take both of you. The platforming kit (double jump, walls, ledges, fast fall, environment pogo) is parked behind switches that are off by default. F1 in game shows every switch.
+The fight kit is built for the parry duet: each player's freedom is small, and the big moves take both of you. The platforming kit (walls, ledges, the relay, the chimney clash) is parked behind switches that are off by default; a kit room switches on what it needs. F1 in game shows every switch.
 
 **Alone**
 - **Run, jump** (136 px), drop through one-way platforms (down).
@@ -40,7 +40,7 @@ The fight kit is built for the parry duet: each player's freedom is small, and t
 **Together**
 - **Launch**: a dash-slash into the partner's upslash throws the dasher 340 px up.
 - **Relay** (off by default): a bar of the clock. The dash-slash is charged and let go on a beat (1), the partner parries it on the next (2), then strikes on 3 and throws the dasher the way they aim (4 ways), who hangs at the top on 4.
-- **Pogo clash**: a downslash onto the partner's upslash bounces the falling player 110 px. Nothing else bounces a downslash in a fight.
+- **Pogo clash**: a downslash onto the partner's upslash bounces the falling player 110 px. Nothing else bounces a downslash in a fight; outside them, pogo points do (a gym's lanterns).
 - **The tell**: a dash-slash headed at the partner puts a ring in the dasher's color around them. It closes 0.08 s before the blades meet, which is the moment to press (block for a relay, upslash for a launch). A short sound ends on the close.
 - **Standing on each other**: players collide.
 
@@ -49,13 +49,13 @@ The fight kit is built for the parry duet: each player's freedom is small, and t
 | Switch | Default |
 |---|---|
 | dash, dash_slash, launch, players_collide | on |
-| pogo (the pogo clash) | on |
+| pogo (the pogo clash, and pogo points) | on |
 | boss_body, parry_pass (the dash-parry) | on |
 | relay | off |
-| double_jump, upslash_hop, fast_fall, wall_jump, ledge_grab, chimney_clash | off |
-| wall | off (slide / cling) |
-| wall_rhythm, wall_refresh | off |
-| pogo_environment (targets, spikes, lanterns: the gyms), pogo_refresh_air_jump, pogo_refresh_dash | off |
+| wall_jump, ledge_grab, chimney_clash | off |
+| wall | off (slide) |
+| wall_rhythm | off |
+| pogo_refresh_dash (a pogo point gives the dash back) | off |
 | swap_controls | off |
 
 Settings are saved in `user://moves.cfg` with a version. When the defaults change, the version goes up, and an older save is reset to the new defaults once.

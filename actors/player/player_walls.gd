@@ -1,13 +1,12 @@
 class_name PlayerWalls
 extends PlayerSword
-## A player, part 3 of 5: walls and ledges. Sliding and clinging, the wall jump and its rhythm on
+## A player, part 3 of 5: walls and ledges. Sliding down walls, the wall jump and its rhythm on
 ## the room's clock, ledges, and the chimney clash, where each of two players is the other's wall.
 ## Part 2, the sword: player_sword.gd. Part 4, moves with the partner: player_partner.gd.
 
-# WALLS (Moves "wall": off / slide / cling). In the air, press into a wall (or fly into it fast)
-# to stick to it, facing away from it; rising, you carry on up along it first. Sliding, you then
-# slip down at WALL_SLIDE_SPEED; clinging, you hang still for WALL_CLING_TIME, then slide. Press
-# away, or land, to let go. Wall jump: jump off a wall you're on or touching, up and away; for
+# WALLS (Moves "wall": off / slide). In the air, press into a wall (or fly into it fast) to stick
+# to it, facing away from it; rising, you carry on up along it first, then slip down at
+# WALL_SLIDE_SPEED. Press away, or land, to let go. Wall jump: jump off a wall you're on or touching, up and away; for
 # WALL_JUMP_LOCK you can't steer back, so it carries you clear of the wall. A wall you jumped off
 # is spent until you land, catch a ledge or reach another wall: you can't stick to it, jump off
 # it or get refreshed by it again, so one wall alone can't be climbed (two facing ones can).
@@ -17,12 +16,10 @@ extends PlayerSword
 # one direction held (or none) and just time the jumps. The flight is short: it carries you
 # across a narrow gap (half a beat) on its own; a wider one needs the stick held toward it
 # (SPEED is the push, so holding keeps the flight's timing). Once it ends you steer freely.
-# Walls and ledges refresh the dash (Moves "wall_refresh"), never the air jump.
 # Partners aren't walls.
 const WALL_PROBE = 4.0  # px: how close a wall has to be to stick to or jump off
 const WALL_ATTACH_SPEED = 150.0  # flying into a wall this fast sticks without pressing into it
 const WALL_SLIDE_SPEED = 140.0
-const WALL_CLING_TIME = 1.2
 const WALL_COYOTE_TIME = 0.1  # a wall jump this soon after letting go of the wall still works
 const WALL_SPENT_RANGE = 24.0  # px: a wall on the spent side this close to where you jumped is the same wall
 const WALL_JUMP_HEIGHT = 145.0  # its top ~0.4 s up, so a beat's flight lands near it; never cut short by letting go of jump
@@ -68,8 +65,8 @@ const LEDGE_REGRAB_TIME = 0.3  # after letting go or jumping off
 # the walls they came from, exactly like a wall jump (same push, same height, no hold), so a
 # chimney twice as wide as one climbed alone is climbed in the same rhythm, the partner standing
 # in for the far wall. They meet when they touch (players collide; if not, when they'd touch).
-# Meeting isn't enough: both press jump, each within CHIMNEY_PRESS_TOLERANCE of the meeting (a
-# press there never air-jumps); without both presses they fly on and fall. With Moves
+# Meeting isn't enough: both press jump, each within CHIMNEY_PRESS_TOLERANCE of the meeting;
+# without both presses they fly on and fall. With Moves
 # "wall_rhythm" on, each one's press is judged against the meeting like a wall jump's against
 # hitting the wall: within WALL_RHYTHM_TOLERANCE a full jump, else a weak one.
 const CHIMNEY_WINDOW = 0.7  # s since each one's wall jump: past the meeting and its press window
@@ -78,7 +75,6 @@ const CHIMNEY_REACH = Vector2(60.0, 60.0)  # once met, staying this close still 
 
 var _wall_side = 0.0  # -1 / 1 while stuck to a wall on that side, else 0
 var _last_wall_side = 0.0
-var _wall_time = 0.0  # time stuck, not counting rising along it
 var _wall_coyote = 0.0
 var _spent_wall_side = 0.0  # the wall last jumped off (see WALL_SPENT_RANGE), 0 once cleared
 var _spent_wall_x = 0.0
@@ -119,7 +115,7 @@ func _ready():
 	add_child(_beat_ring)
 
 
-# --- Walls: slide / cling, wall jump ------------------------------------------
+# --- Walls: slide, wall jump ---------------------------------------------------
 
 # Sticks to, stays on, or lets go of a wall. True while on one (it has moved the player).
 func _update_wall(direction: float, delta: float) -> bool:
@@ -150,12 +146,8 @@ func _update_wall(direction: float, delta: float) -> bool:
 	velocity.x = 0.0
 	if velocity.y < 0.0:
 		_apply_gravity(delta)  # still rising along it
-	elif mode == "cling" and _wall_time < WALL_CLING_TIME:
-		velocity.y = 0.0
-		_wall_time += delta
 	else:
 		velocity.y = WALL_SLIDE_SPEED
-		_wall_time += delta
 	return true
 
 
@@ -217,13 +209,10 @@ func _wall_spent(side: float) -> bool:
 
 func _attach_wall(side: float):
 	_wall_side = side
-	_wall_time = 0.0
 	_wall_flight = 0.0
 	_spent_wall_side = 0.0  # a new wall: the old one is fresh again
 	_end_dash()
 	_end_carry()
-	if Moves.on("wall_refresh"):
-		refresh_dash()
 
 
 # Rode up the wall past its top: hop over onto it, rather than hang beside its edge with no
@@ -431,8 +420,6 @@ func _try_ledge_grab(direction: float) -> bool:
 	velocity = Vector2.ZERO
 	global_position = _ledge_hang
 	facing = side
-	if Moves.on("wall_refresh"):
-		refresh_dash()
 	return true
 
 
@@ -601,11 +588,6 @@ func _try_wall_jump() -> bool:
 	return true
 
 
-# Flying at the partner, a jump press is the chimney clash's, not an air jump.
-func _may_air_jump() -> bool:
-	return super() and not _chimney_partner()
-
-
 # A dash lets go of the wall.
 func _start_dash(direction: float) -> bool:
 	if not super(direction):
@@ -635,5 +617,5 @@ func movement_state() -> String:
 	if _ledge:
 		return "climbing" if _ledge_climb >= 0.0 else "ledge"
 	if _wall_side != 0.0:
-		return "wall cling" if velocity.y == 0.0 else "wall slide"
+		return "wall slide"
 	return super()

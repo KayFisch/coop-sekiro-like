@@ -46,7 +46,7 @@ const COLOR_DONE = Color(0.4, 1.0, 0.6)
 			_backdrop.queue_redraw()
 ## Loaded once both players reach the goal (unless the goal has a `next_room` of its own).
 @export_file("*.tscn") var next_room = ""
-## F1 switches this room needs on (e.g. "double_jump", "ledge_grab"), on while it runs and back
+## F1 switches this room needs on (e.g. "ledge_grab", "relay"), on while it runs and back
 ## as they were after. Shafts add the wall-jump ones themselves.
 @export var moves_on: Array[String] = []
 ## The music (Beat.TRACKS), in time with the clock; it plays on into a next room with the same.
@@ -169,7 +169,7 @@ func start_over():
 		p.global_position = _spawn_point(p.player_id)
 		p.velocity = Vector2.ZERO
 		p.interrupt_movement()
-		p.refresh_air_moves()
+		p.refresh_dash()
 	get_tree().call_group("kit_reset", "reset_piece")
 	if _deaths_label:
 		_deaths_label.text = "deaths %d" % deaths

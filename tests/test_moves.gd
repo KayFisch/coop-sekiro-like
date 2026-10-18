@@ -1,7 +1,7 @@
 extends "res://tests/test_case.gd"
 ## The player's moves the levels are built on, each tried in an empty room (tests/rooms/): the
-## double jump, the dash-slash, a hit's knockback, the launch, the pogo clash and a pogo off
-## spikes, the wall jump and its rhythm, the chimney clash, the ledge grab, and the rhythm relay.
+## dash-slash, a hit's knockback, the launch, the pogo clash and the pogo points, the wall jump
+## and its rhythm, the chimney clash, the ledge grab, and the rhythm relay.
 ## The numbers are the player's own constants, so this checks the code does what they say.
 
 const ROOM = "res://tests/rooms/open_room.tscn"
@@ -63,22 +63,6 @@ func _top_over(p, seconds: float) -> float:
 # `height` px.
 func _wall(x: float, height: float, w = 40.0):
 	level.solid(x, level.GROUND_Y - height, w, height)
-
-
-func test_double_jump():
-	await _room()
-	set_move("double_jump", true)
-	_place(p1, 600.0)
-	await wait(0.2)
-	var floor_y = p1.global_position.y
-	hold(p1, "jump")
-	check(await _until(func(): return p1.velocity.y >= 0.0 and not p1.is_on_floor(), 1.0), "a jump's top")
-	hold(p1, "jump", false)
-	await frames(1)
-	hold(p1, "jump")
-	var top = await _top_over(p1, 0.6)
-	hold(p1, "jump", false)
-	near(floor_y - top, p1.JUMP_HEIGHT + p1.DOUBLE_JUMP_HEIGHT, 14.0, "a jump, then an air jump at its top (px)")
 
 
 func test_dash_slash():
@@ -176,20 +160,29 @@ func test_pogo_clash():
 	check(from - top >= p1.POGO_HEIGHT * 0.7, "...bouncing up %.0f px (POGO_HEIGHT %.0f)" % [from - top, p1.POGO_HEIGHT])
 
 
-func test_pogo_off_spikes():
-	await _room()
-	set_move("pogo_environment", true)
-	level.spikes(560.0, 640.0, level.GROUND_Y)
-	_place(p1, 600.0, level.GROUND_Y - level.SPIKE_HEIGHT - level.PLAYER_HALF - 20.0)
-	await frames(2)
-	var from = p1.global_position.y
+# A downslash in the air at x, feet 20 px over `top_y`: the highest the player gets after it.
+func _downslash_over(x: float, top_y: float) -> float:
+	_place(p1, x, top_y - level.PLAYER_HALF - 20.0)
+	await frames(2)  # off the floor a frame: attack + down is a downslash
 	hold(p1, "down")
 	hold(p1, "attack")
 	await frames(2)
 	hold(p1, "down", false)
 	hold(p1, "attack", false)
-	var top = await _top_over(p1, 0.6)
-	check(from - top >= p1.POGO_HEIGHT * 0.7, "a downslash over spikes bounces off them: up %.0f px (POGO_HEIGHT %.0f)" % [from - top, p1.POGO_HEIGHT])
+	return await _top_over(p1, 0.6)
+
+
+func test_pogo_points():
+	await _room()
+	var lantern_top = level.GROUND_Y - 200.0
+	level.target(Vector2(600.0, lantern_top + 12.0), GymTarget.Mode.LANTERN)  # 24 px tall
+	var from = lantern_top - level.PLAYER_HALF - 20.0
+	var top = await _downslash_over(600.0, lantern_top)
+	check(from - top >= p1.POGO_HEIGHT * 0.7, "a lantern is a pogo point: up %.0f px (POGO_HEIGHT %.0f)" % [from - top, p1.POGO_HEIGHT])
+	level.spikes(860.0, 940.0, level.GROUND_Y)
+	var pogo_before = p1.pogo_time
+	await _downslash_over(900.0, level.GROUND_Y - level.SPIKE_HEIGHT)
+	check(p1.pogo_time == pogo_before, "spikes aren't: a downslash over them doesn't bounce")
 
 
 func test_wall_jump():
