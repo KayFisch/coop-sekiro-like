@@ -83,8 +83,8 @@ methods `test_<what>()`. From `test_case.gd`:
 
 - `await load_scene(path)`: the level from scratch, as the select screen loads it;
 - `set_move(key, value)`, `set_number(key, value)`: a switch or an F2 number for this test only
-  (in memory, never saved, put back afterwards). Set the numbers a test depends on, so a
-  player's saved values don't change the result;
+  (in memory, never saved, put back afterwards). Every test starts with all of them at their
+  defaults, so what's saved on a machine doesn't change the result;
 - `hold(player, "attack")`, `hold(player, "attack", false)`, `await tap(player, "block")`: press
   a player's buttons, as the stand-ins do;
 - `await wait(seconds)`, `await frames(n)` (physics frames; a press is seen the frame after);

@@ -1,8 +1,9 @@
 extends Node
 ## The base of a test file (tests/run.gd runs them). Each method named test_* is one test: it
-## may await (load a level, wait, press buttons) and checks with check() / near(). Switches and
-## numbers changed with set_move() / set_number() are only changed in memory (nothing is saved)
-## and are put back after each test; so are held buttons and the time scale.
+## may await (load a level, wait, press buttons) and checks with check() / near(). Every test
+## starts with all switches and numbers at their defaults, whatever this machine has saved;
+## set_move() / set_number() change them for that test. Both only change them in memory (nothing
+## is saved), and they're put back after each test; so are held buttons and the time scale.
 
 var _failures = []
 var _moves_before = {}
@@ -17,6 +18,7 @@ func run_all(errors) -> Array:
 			continue
 		_failures = []
 		var errors_before = errors.errors
+		_defaults()
 		await call(method.name)
 		if errors.errors > errors_before:
 			_failures.append("%d engine error(s), the last: %s" % [errors.errors - errors_before, errors.last])
@@ -86,6 +88,20 @@ func tap(player, button: String):
 	hold(player, button)
 	await frames(2)
 	hold(player, button, false)
+
+
+# Every switch and number at its default: what a test sees doesn't depend on the saved ones.
+func _defaults():
+	for e in Moves._settings():
+		if not _moves_before.has(e.key):
+			_moves_before[e.key] = Moves.value(e.key)
+		Moves._values[e.key] = e.default
+	Moves.changed.emit()
+	Tuning._load()
+	for e in Tuning._numbers():
+		if not _numbers_before.has(e.key):
+			_numbers_before[e.key] = Tuning.value(e.key)
+		Tuning._values[e.key] = e.default
 
 
 func _restore():
