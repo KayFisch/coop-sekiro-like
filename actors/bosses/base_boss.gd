@@ -51,6 +51,11 @@ var facing = 1.0
 var anim_time = 0.0
 var body_rest = Vector2.ZERO
 
+# Developer tools (core/dev.gd, tests/): while dev_hold is set he starts no attack of his own;
+# dev_next names the attack he starts next, whatever his weights say.
+var dev_hold = false
+var dev_next = ""
+
 var _last_attack: Attack = null
 var _tumbling = false
 var _stagger_knock = Vector2.ZERO
@@ -101,6 +106,12 @@ func get_idle_pause() -> float:
 # A weighted random pick. The last attack isn't repeated unless it's repeatable or it's the
 # only one enabled.
 func pick_attack() -> Attack:
+	if dev_next != "":
+		var forced = find_attack(dev_next)
+		dev_next = ""
+		if forced != null:
+			_last_attack = forced
+			return forced
 	var weights = get_attack_weights()
 	var options = attack_pool.filter(func(a): return weights.get(a.get_attack_name(), 0.0) > 0.0)
 	if options.is_empty():
@@ -225,7 +236,7 @@ func _physics_process(delta):
 	match state:
 		State.IDLE:
 			_idle_motion(delta)
-			if timer <= 0.0:
+			if timer <= 0.0 and (not dev_hold or dev_next != ""):
 				_choose_target()
 				if target_player == null:
 					timer = 0.5

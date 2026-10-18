@@ -481,9 +481,9 @@ func _physics_process(delta):
 	_drift_on(delta)
 	if rules != null:
 		_judge_windows()
-	if state == State.IDLE and _shove_due:
+	if state == State.IDLE and _shove_due and not dev_hold:
 		_shove()
-	elif state == State.IDLE and _is_reactive() and _provocations >= _patience:
+	elif state == State.IDLE and _is_reactive() and _provocations >= _patience and not dev_hold:
 		_strike_back()
 
 
