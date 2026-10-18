@@ -93,6 +93,11 @@ func get_repeatable_attacks() -> Array:
 	return []
 
 
+# How long he idles between two attacks, once recovered from the first.
+func get_idle_pause() -> float:
+	return randf_range(IDLE_PAUSE_MIN, IDLE_PAUSE_MAX)
+
+
 # A weighted random pick. The last attack isn't repeated unless it's repeatable or it's the
 # only one enabled.
 func pick_attack() -> Attack:
@@ -143,6 +148,12 @@ func _update_pose():
 # an empty Rect2 for none. It must move with the boss.
 func body_block() -> Rect2:
 	return Rect2()
+
+
+# True for a boss the players keep facing, whichever way they walk (see _process_movement() in
+# player.gd): one that changes sides on them.
+func holds_facing() -> bool:
+	return false
 
 
 # Where the center charge floats.
@@ -236,7 +247,7 @@ func _physics_process(delta):
 			_recover_motion(delta)
 			if timer <= 0.0:
 				state = State.IDLE
-				timer = randf_range(IDLE_PAUSE_MIN, IDLE_PAUSE_MAX)
+				timer = get_idle_pause()
 
 		State.STAGGER:
 			var flash = fmod(anim_time, 0.16) < 0.08
@@ -330,10 +341,20 @@ func _enter_stagger(finished_attack: Attack, duration: float, tumble: bool, knoc
 	_stagger_knock = knock
 	body.position = body_rest
 	glow.color.a = 0.0
-	finished_attack.cleanup()
+	if finished_attack:
+		finished_attack.cleanup()
 	reset_pose()
 	_reset_body_shape()
 	Sfx.play("stagger", -2.0)
+
+
+# Staggered at once, whatever he's doing (his posture broken, see core/sync_rules.gd).
+func stagger_now(duration: float):
+	var attack = current_attack
+	current_attack = null
+	if attack:
+		attack.interrupt()
+	_enter_stagger(null, duration, false, Vector2.ZERO)
 
 
 # --- Health ---

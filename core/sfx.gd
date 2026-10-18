@@ -6,6 +6,7 @@ extends Node
 const MIX_RATE = 22050.0
 const POOL_SIZE = 16
 const MAX_LENGTH = 2.0  # seconds; each generator buffer must hold a whole sound
+const VOLUME_DB = -8.0  # added to every sound: the game's overall loudness (0 = as synthesized)
 
 var _sounds = {}  # name -> PackedVector2Array
 var _pool: Array = []  # AudioStreamPlayer
@@ -38,7 +39,7 @@ func play(sound: String, volume_db = 0.0) -> Dictionary:
 			slot = i
 	var player: AudioStreamPlayer = _pool[slot]
 	player.stop()
-	player.volume_db = volume_db
+	player.volume_db = volume_db + VOLUME_DB
 	player.play()
 	var playback = player.get_stream_playback() as AudioStreamGeneratorPlayback
 	var available = playback.get_frames_available()
@@ -87,6 +88,13 @@ func _build_sounds():
 	_sounds["call_tick"] = _blip(1100.0, 0.06)
 	_sounds["call_go"] = _notes([784.0, 1174.7], 0.09, true)
 	_sounds["clap"] = _clap(0.09)  # the grab's hands shutting on nothing
+	_sounds["guard_break"] = _clang(700.0, 0.3)  # Columna Bifrons's guard knocked open
+	_sounds["sync_hit"] = _thud(240.0, 80.0, 0.18, 16.0, 0.5)  # a hit through his broken guard
+	# Sync as life (core/sync_rules.gd)
+	_sounds["on_beat"] = _blip(1760.0, 0.05)  # a sync hit right on the beat
+	_sounds["posture_break"] = _with_echo(_explosion(0.5), 0.15, 0.3, 1)
+	_sounds["chaos"] = _notes([311.1, 233.1, 155.6], 0.14, false)
+	_sounds["sync_mode"] = _notes([392.0, 587.3, 784.0, 1174.7], 0.08, true)
 	_sounds["game_over"] = _notes([440.0, 349.2, 293.7], 0.17, false)
 	_sounds["victory"] = _notes([523.3, 659.3, 784.0, 1046.5], 0.125, true)
 

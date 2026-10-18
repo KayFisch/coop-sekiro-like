@@ -7,6 +7,9 @@ const FIGHTS = [
 	{"name": "Sphaera Pendula", "arena": "The Scales", "scene": "res://levels/scales/scales.tscn"},
 	{"name": "Movement Gym", "arena": "1 player", "scene": "res://levels/gym/movement_gym.tscn"},
 	{"name": "Duo Gym", "arena": "2 players", "scene": "res://levels/gym/coop_gym.tscn"},
+	{"name": "Columna Bifrons", "arena": "The Threshold (test)", "scene": "res://levels/threshold/threshold.tscn"},
+	{"name": "Beat-Runner", "arena": "between the bosses (prototype)", "scene": "res://levels/runner/runner.tscn"},
+	{"name": "Beat-Ring", "arena": "between the bosses (prototype 2)", "scene": "res://levels/ring/ring.tscn"},
 ]
 
 var _buttons: Array = []
@@ -43,6 +46,7 @@ func _ready():
 	_swap.add_theme_font_size_override("font_size", 18)
 	_swap.pressed.connect(_toggle_swap)
 	Moves.changed.connect(_label_swap)
+	Pads.changed.connect(_label_swap)  # a pad plugged in or pulled
 	_label_swap()
 	column.add_child(_swap)
 	_buttons.append(_swap)
@@ -82,4 +86,4 @@ func _toggle_swap():
 
 
 func _label_swap():
-	_swap.text = "P1 on the %s   (C / pad Back to swap)" % ("pad" if Moves.on("swap_controls") else "keyboard")
+	_swap.text = "%s   (C / pad Back to swap)" % Pads.describe()

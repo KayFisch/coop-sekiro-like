@@ -35,6 +35,10 @@ const SYNC_GAINS = {
 	"zenith_interrupted": 25.0,
 	"coupled_parried": 6.0,
 	"coupled_collision": 30.0,
+	# Columna Bifrons
+	"bifrons_parried": 3.0,
+	"bifrons_sync_hit": 6.0,  # the partner's hit on the same strike: it took both of you
+	"bifrons_both_parried": 25.0,
 }
 const SYNC_LAUNCH_GAIN = 5.0  # a Launch, relay or pogo clash (see player.gd), in any fight...
 const SYNC_LAUNCH_COOLDOWN = 5.0  # ...at most once per this many seconds
@@ -46,6 +50,9 @@ var state = GameState.PLAYING
 var elapsed_time = 0.0
 var players: Array = []
 var boss = null
+# Sync as life (core/sync_rules.gd), when the fight runs by it (Bifrons, Moves "bifrons_rules");
+# then the sync meter here does nothing.
+var rules: SyncRules = null
 
 var _last_launch_sync = -100.0
 
@@ -60,12 +67,15 @@ func _process(delta):
 		elapsed_time += delta
 	elif Input.is_action_just_pressed("restart"):
 		restart()
-	if Input.is_action_just_pressed("menu") and not Moves.panel_open and get_tree().current_scene \
+	if Input.is_action_just_pressed("menu") and not Moves.panel_open and not Tuning.panel_open \
+			and get_tree().current_scene \
 			and get_tree().current_scene.scene_file_path != SELECT_SCENE:
 		start_fight(SELECT_SCENE)
 
 
 func damage_multiplier() -> float:
+	if rules != null:
+		return 1.0
 	if sync_value > 95.0:
 		return 2.0
 	if sync_value > 75.0:
@@ -114,6 +124,7 @@ func _reset():
 	get_tree().paused = false
 	players.clear()
 	boss = null
+	rules = null
 	sync_value = SYNC_START
 	elapsed_time = 0.0
 	_last_launch_sync = -100.0

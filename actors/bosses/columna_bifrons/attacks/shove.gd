@@ -1,0 +1,157 @@
+class_name Shove
+extends Attack
+## White blades, upright and drawn in against him -> shoved out. Columna Bifrons making room
+## without giving ground: he pulls both swords in, pointing up, and shoves them out flat at the
+## players they fight. It's no strike: no damage, nothing to parry, no guard broken. It throws
+## back every player within its reach on a side a blade is shoved to (a dash carries a player
+## through it). It comes when he wants room and a hop back would take him away from the middle
+## of the room (see "MAKING ROOM" in columna_bifrons.gd), and when a player has been in his way
+## for a while ("PUSHING THROUGH"): then only the blade on their side shoves (`only_side`).
+
+enum Phase { NONE, THRUSTING }
+
+const LEFT = StrikePattern.LEFT
+const RIGHT = StrikePattern.RIGHT
+
+# --- Tuning ---
+const WINDUP_TIME = 0.5  # the swords drawn in: the cue
+const THRUST_TIME = 0.1  # ...and shoved out
+const HOLD_TIME = 0.25  # held out, before they come back
+const NEAR = 150.0  # he only shoves while a player is this close to him: it's for making room
+const REACH = 215.0  # a player this close, on a side a blade is shoved to, is thrown back...
+const PUSH = Vector2(1050.0, -260.0)  # ...at this speed (px/s): about 220 px, and off the floor
+const PUSH_TIME = 0.05  # the shove keeps pushing this long
+# The swords: upright, the flat of the blade toward the players. Drawn in against his flanks,
+# then shoved out. x, y = the hand from his center; z = the blade's angle (upright).
+const POSE_DRAWN = Vector3(14.0, 34.0, -1.571)
+const POSE_SHOVED = Vector3(80.0, 30.0, -1.571)
+const RECOVER_TIME = 0.4
+const LEAN = 16.0  # px his body rears back by, and then into the thrust (players on one side)
+const PULL_IN = Vector2(0.92, 1.05)  # his body, drawn in (a player on each side)
+const SPREAD = Vector3(16.0, -10.0, 0.0)  # the sword that reaches across stands out past the other
+const COLOR = Color(0.95, 0.97, 1.0)  # white: nothing to parry
+
+var only_side = 0  # set by him as it starts: shove on that side only (0: wherever a blade is)
+
+var _name: String
+var _time = 0.0  # seconds into the thrust
+var _thrown = []  # the players it has thrown back
+
+
+func _init(attack_name: String):
+	_name = attack_name
+
+
+func get_attack_name() -> String:
+	return _name
+
+
+# Only while a player he's fighting is close to him.
+func fits(boss_node) -> bool:
+	for blade in [LEFT, RIGHT]:
+		var ward = boss_node.ward_of(blade)
+		if ward != null and boss_node.distance_to(ward) <= NEAR:
+			return true
+	return false
+
+
+func start(boss_node, player_nodes: Array):
+	super(boss_node, player_nodes)
+	_time = 0.0
+	_thrown = []
+
+
+func get_telegraph_color() -> Color:
+	return boss.COLOR_IDLE
+
+
+func get_telegraph_duration() -> float:
+	return WINDUP_TIME
+
+
+# Both swords upright, drawn in against him, his body with them.
+func update_telegraph(progress: float):
+	var draw = smoothstep(0.1, 0.8, progress)
+	_pose(boss.POSE_GUARD.lerp(POSE_DRAWN, draw), false)
+	_lean(-draw)
+	for blade in [LEFT, RIGHT]:
+		if not _shoves(blade):
+			continue
+		boss.tint_sword(blade, boss.COLOR_SWORD.lerp(COLOR, 0.4 + 0.6 * progress))
+		boss.tint_side(blade, COLOR, 0.1 + 0.3 * progress)
+
+
+func execute():
+	phase = Phase.THRUSTING
+	_time = 0.0
+	boss.body.color = boss.COLOR_IDLE
+	boss.set_glow(boss.COLOR_EXECUTE, 0.0)
+	Sfx.play("stab", -2.0)
+
+
+func update(delta: float):
+	_time += delta
+	var out = clampf(_time / THRUST_TIME, 0.0, 1.0)
+	_pose(POSE_DRAWN.lerp(POSE_SHOVED, out), true)
+	_lean(lerpf(-1.0, 0.6, out))
+	for blade in [LEFT, RIGHT]:
+		if not _shoves(blade):
+			continue
+		boss.tint_sword(blade, COLOR)
+		boss.tint_side(blade, COLOR, 0.45 * (1.0 - clampf((_time - THRUST_TIME) / HOLD_TIME, 0.0, 1.0)))
+	if out >= 1.0 and _time < THRUST_TIME + PUSH_TIME:
+		_push()
+	if _time >= THRUST_TIME + HOLD_TIME:
+		finish(RECOVER_TIME)
+
+
+# Nothing to parry.
+func time_to_strike(_player) -> float:
+	return INF
+
+
+# Every player on a side a blade is shoved to, and within its reach, is thrown back. It pushes
+# for a few frames (PUSH_TIME): a player with their partner right behind them can't move until
+# the partner has.
+func _push():
+	var sides = [boss.blade_side(LEFT), boss.blade_side(RIGHT)]
+	if only_side != 0:
+		sides = [only_side]
+	for p in boss.get_players():
+		var side = boss.side_of(p)
+		if not side in sides or (boss.distance_to(p) > REACH and not p in _thrown):
+			continue
+		if p.velocity.x * side < PUSH.x * 0.8:
+			p.apply_knockback(Vector2(side * PUSH.x, PUSH.y))
+		if not p in _thrown:
+			_thrown.append(p)
+			boss.spawn_sparks(p.global_position + Vector2(-side * 16.0, -8.0), 8, COLOR)
+			if _thrown.size() == 1:
+				Sfx.play("thunk", -3.0)
+				boss.shake(6.0)
+
+
+# The blades that shove in that pose, each on its player's side; the one that reaches across
+# stands out past the other, so they're two. A blade that doesn't shove guards.
+func _pose(pose: Vector3, snap: bool):
+	for blade in [LEFT, RIGHT]:
+		if _shoves(blade):
+			boss.pose_sword(blade, pose + (SPREAD if boss.reaches_across(blade) else Vector3.ZERO), snap)
+		else:
+			boss.pose_sword(blade, boss.POSE_GUARD)
+
+
+func _shoves(blade: int) -> bool:
+	return only_side == 0 or boss.blade_side(blade) == only_side
+
+
+# His body: `amount` -1 reared back from the players, 1 leaning into them. With a player on
+# each side he can't lean: he draws himself in instead.
+func _lean(amount: float):
+	var left = boss.blade_side(LEFT)
+	if only_side != 0:
+		boss.squash_body(Vector2.ONE, only_side * LEAN * amount)
+	elif left == boss.blade_side(RIGHT):
+		boss.squash_body(Vector2.ONE, left * LEAN * amount)
+	else:
+		boss.squash_body(Vector2.ONE.lerp(PULL_IN, maxf(-amount, 0.0)))
