@@ -4,7 +4,7 @@
 
 A 2D co-op action game built in Godot 4. Two players fight bosses together, but unlike most co-op games where cooperation just means two people doing the same thing side by side, the core mechanic here requires players to act *through* each other. The game is built around the idea of learning a duet — two players developing a shared combat language over time.
 
-This is currently a **prototype**. The codebase contains one boss fight arena with placeholder visuals. The goal of the prototype is to prove that the core mechanic feels good before building anything else.
+This is currently a **prototype**: one test boss (Columna Bifrons) with placeholder visuals, movement gyms, a coop platformer level built with the level kit, and two prototypes for what comes between the bosses. The goal of the prototype is to prove that the core mechanic feels good before building anything else.
 
 ---
 
@@ -14,20 +14,15 @@ Combat is sword-based. Players attack with their sword, and holding block reduce
 
 A relay means the boss's attack is redirected to the second player, who now has their own parry window. If the second player also perfect parries, the boss staggers and both players get a free window to deal damage. Nail the chain and you deal significantly more damage. Break it and you both pay for it.
 
-Not every attack is parriable. The boss has a vocabulary of attacks that require different responses:
-- **Jump attack** — leaping slash; each parry deflects him into another leap at the other player (P1, P2, P1), and the third parry knocks him into the arena's middle, staggered
-- **Grab** — he charges at you and his hands scoop in from both sides; dash exactly as they reach you to slip out of his grasp. Caught: lifted overhead as he jumps, then slammed into the floor
-- **Ground slam** — get airborne before it lands
-- **Grand slash** — a top-to-bottom arena-wide shockwave, both players must parry near-simultaneously or both take full damage
-- **Shockwave slashes** — a rhythm-based attack where each player must parry three projectiles in a fixed metronome beat; gather all three and you can fire a counterattack back at the boss
+Not every attack is parriable: each boss has a vocabulary of attacks that ask for different responses (the current one's: `docs/boss_columna_bifrons.md`; the first two bosses, Cubus Maximus and Sphaera Pendula, were dropped on 2026-10-18).
 
 Each attack is telegraphed by color so players can read what's coming and coordinate their response without needing to talk.
 
 ---
 
-## The sync meter
+## Sync as life
 
-Successful relays and coordinated responses build a shared **sync meter**. Taking damage or failing parries drops it. High sync increases damage output — up to 2x at maximum. The better you play together, the faster the fight ends. It rewards mastery without gating players behind it.
+Nobody has health. The two players share one **sync**, the boss has his own, and each of the three has a posture, by the same rules on both sides. Playing together (a hit through the guard the partner's parry opened, parrying both his swords at once) wins the players sync back; the boss can't win his back. At full sync the players are in the sync mode, where they bind and strike together; at none, in chaos, the next hit ends it. Details: `docs/boss_columna_bifrons.md` ("Sync as life"), `core/sync_rules.gd`.
 
 ---
 
@@ -37,31 +32,29 @@ The fight kit is built for the parry duet: each player's freedom is small, and t
 
 **Alone**
 - **Run, jump** (136 px), drop through one-way platforms (down).
-- **Dash**: the way you face (hold a direction and press dash on the same frame to dash that way). 140 px, no invulnerability, 0.6 s cooldown, one per trip into the air. Only landing or a Launch gives it back. Pressed as the grab's hands close, it slips out of them whichever way you face, even into his body.
+- **Dash**: the way you face (hold a direction and press dash on the same frame to dash that way). 140 px, no invulnerability, 0.6 s cooldown, one per trip into the air. Only landing or a Launch gives it back.
 - **Slash, upslash** (up + attack), **downslash** (down + attack in the air). A downslash never hurts the boss or bounces off him.
 - **Block / perfect parry**: press block at most 0.133 s before contact.
 - **Dash-slash** (dash + attack): a 0.2 s windup with the blade heating to white, then a long thrust through the whole dash. It stops at his body, but the blade still lands.
 
 **Together**
 - **Launch**: a dash-slash into the partner's upslash throws the dasher 340 px up.
-- **Momentum relay**: a dash-slash into the partner's parry locks the blades. The dasher aims sideways or upward (5 ways) and is boosted that way.
+- **Relay** (off by default): a bar of the clock. The dash-slash is charged and let go on a beat (1), the partner parries it on the next (2), then strikes on 3 and throws the dasher the way they aim (4 ways), who hangs at the top on 4.
 - **Pogo clash**: a downslash onto the partner's upslash bounces the falling player 110 px. Nothing else bounces a downslash in a fight.
 - **The tell**: a dash-slash headed at the partner puts a ring in the dasher's color around them. It closes 0.08 s before the blades meet, which is the moment to press (block for a relay, upslash for a launch). A short sound ends on the close.
 - **Standing on each other**: players collide.
-- **Call** (P1 Enter, P2 LB): a 3, 2, 1, GO countdown over the caller's head on a 0.4 s beat, with both players pulsing. Pressing again cancels your own, and a partner's call replaces it.
-- Launch, relay and pogo clash each give +5 sync, at most once per 5 s between them.
 
-**His body**: Cubus Maximus blocks players from his bottom up to 170 px, above a running jump and far below a launch. The zone moves with him, so you can walk under him while he's in the air. Nobody stands on him: landing on top slides you off the side you came from. Getting past him takes your partner (a launch or a relay). Both players start on the same side of him.
+**A boss's body**: nobody walks, dashes or jumps through it, and nobody stands on it: landing on top slides you off the side you came from. A perfect parry landed mid-dash carries you through it (the dash-parry).
 
 | Switch | Default |
 |---|---|
-| dash, dash_slash, launch, momentum_relay, players_collide | on |
+| dash, dash_slash, launch, players_collide | on |
 | pogo (the pogo clash) | on |
-| boss_body (Cubus only) | on |
-| call | on |
+| boss_body, parry_pass (the dash-parry) | on |
+| relay | off |
 | double_jump, upslash_hop, fast_fall, wall_jump, ledge_grab, chimney_clash | off |
 | wall | off (slide / cling) |
-| wall_refresh, relay_refresh_dash | off |
+| wall_rhythm, wall_refresh | off |
 | pogo_environment (targets, spikes, lanterns: the gyms), pogo_refresh_air_jump, pogo_refresh_dash | off |
 | swap_controls | off |
 
@@ -94,11 +87,11 @@ The throughline is the same as combat: **neither player is just watching while t
 
 ## Current prototype scope
 
-- One boss: **Cubus Maximus** — a sword-wielding boss with five distinct attacks
-- One arena: bounded rectangle with floor, walls, and three floating one-way platforms
-- Two players: keyboard (WASD) and Xbox controller
-- Systems in place: parry relay, sync meter, individual health bars, shared death condition, potion system, screen shake, procedural audio
-- Not yet built: platforming levels, additional bosses, art, music, online multiplayer
+- One test boss: **Columna Bifrons**, fought from both sides at once, in his room, the Threshold (`docs/boss_columna_bifrons.md`)
+- Movement gyms (`docs/parkour_gyms.md`), a coop platformer level built with the level kit (Horologium, `docs/level_kit.md`), and two prototypes for between the bosses (`docs/beat_runner.md`, `docs/beat_ring.md`)
+- Two players: keyboard and gamepads (one pad each)
+- Systems in place: parry relay, sync as life (a shared sync, posture, the sync mode), one clock for everything in time with music (`Beat`), screen shake, procedural audio
+- Not yet built: more bosses, art, online multiplayer
 
 ---
 

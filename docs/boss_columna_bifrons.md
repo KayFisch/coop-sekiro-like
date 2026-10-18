@@ -16,7 +16,7 @@ They come out of `scribbles.md` (2026-09-30 to 2026-10-02). The name is a workin
 Code: `actors/bosses/columna_bifrons/` (boss, `stand_in.gd`, `attacks/strike_pattern.gd`,
 `attacks/sweep.gd`, `attacks/leap.gd`, `attacks/shove.gd`), `levels/threshold/`; the players'
 half of the rules is in `actors/player/player.gd` ("THE SWORD", "DASH-PARRY"). Select screen:
-entry 5. Everything below that can be switched is on the F1 panel.
+entry 1. Everything below that can be switched is on the F1 panel.
 
 ---
 
