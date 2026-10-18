@@ -786,10 +786,8 @@ func _attach_wall(side: float):
 	_wall_time = 0.0
 	_wall_flight = 0.0
 	_spent_wall_side = 0.0  # a new wall: the old one is fresh again
-	_dash_timer = 0.0
-	_dash_slash = false
-	_launch_timer = 0.0
-	_boost_timer = 0.0
+	_end_dash()
+	_end_carry()
 	if Moves.on("wall_refresh"):
 		refresh_dash()
 
@@ -842,9 +840,8 @@ func _wall_jump(side: float):
 	_spent_wall_x = global_position.x
 	_wall_jump_time = now
 	_wall_held_away = 0.0
-	_launch_timer = 0.0
-	_boost_timer = 0.0
-	_dash_timer = 0.0
+	_end_carry()
+	_end_dash()
 	_fly_off(-side, moment, timed)
 
 
@@ -995,9 +992,8 @@ func _try_ledge_grab(direction: float) -> bool:
 	_wall_side = 0.0
 	_wall_flight = 0.0
 	_spent_wall_side = 0.0
-	_dash_timer = 0.0
-	_launch_timer = 0.0
-	_boost_timer = 0.0
+	_end_dash()
+	_end_carry()
 	velocity = Vector2.ZERO
 	global_position = _ledge_hang
 	facing = side
@@ -1130,12 +1126,11 @@ func _try_jump():
 		return
 	_jump_buffer = 0.0
 	_coyote_timer = 0.0
-	_launch_timer = 0.0
-	_boost_timer = 0.0
+	_end_carry()
 	_uncut_timer = 0.0
 	if _dash_timer > 0.0:
 		# Jumping cancels a dash, carrying only a normal amount of its speed.
-		_dash_timer = 0.0
+		_end_dash()
 		velocity.x = clampf(velocity.x, -DASH_EXIT_SPEED, DASH_EXIT_SPEED)
 
 
@@ -1147,7 +1142,7 @@ func _start_dash(direction: float):
 		and _since(_slash_press_time) <= DASH_SLASH_LEAD
 	_leave_wall()
 	_wall_flight = 0.0
-	_boost_timer = 0.0
+	_end_carry()
 	_dash_ready = false
 	_dash_dir = direction
 	_dash_timer = DASH_TIME
@@ -1155,7 +1150,6 @@ func _start_dash(direction: float):
 	_dash_press_time = _now()
 	_dash_slash = false
 	_rhythm_dash = false
-	_launch_timer = 0.0
 	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
 	_passing = _pass_timer > 0.0 and _boss_ahead()  # right after a parry: through him
 	_pass_timer = 0.0
@@ -1287,6 +1281,18 @@ func is_winding_up() -> bool:
 # The speed of the dash running now: a rhythm relay's dash-slash covers the same ground faster.
 func _dash_speed() -> float:
 	return DASH_DISTANCE / RHYTHM_DASH_TIME if _rhythm_dash else DASH_SPEED
+
+
+# The dash (or dash-slash) stops where it is.
+func _end_dash():
+	_dash_timer = 0.0
+	_dash_slash = false
+
+
+# Whatever was carrying the player lets go: a launch's rise, a relay's throw.
+func _end_carry():
+	_launch_timer = 0.0
+	_boost_timer = 0.0
 
 
 # s into the current swing, from its press.
@@ -1426,8 +1432,7 @@ func _bounce():
 	velocity.y = -rise
 	_pogo_rise = rise / (GRAVITY * POGO_RISE_GRAVITY)
 	_uncut_timer = _pogo_rise
-	_launch_timer = 0.0
-	_boost_timer = 0.0
+	_end_carry()
 	_sword_flash = SWORD_FLASH_TIME
 
 
@@ -1525,8 +1530,7 @@ func is_relay_parry() -> bool:
 
 # Blocked but not parried: the dash stops dead with a dull clang, and the dasher bounces off.
 func _relay_blocked(anchor):
-	_dash_timer = 0.0
-	_dash_slash = false
+	_end_dash()
 	var back = -signf(anchor.global_position.x - global_position.x)
 	if back == 0.0:
 		back = -_dash_dir
@@ -1538,13 +1542,11 @@ func _begin_hold(kind: Hold, time: float):
 	_hold_kind = kind
 	_hold_timer = time
 	velocity = Vector2.ZERO
-	_dash_timer = 0.0
-	_dash_slash = false
+	_end_dash()
+	_end_carry()
 	_windup_timer = 0.0
 	_charging = false
 	_attack_timer = 0.0
-	_launch_timer = 0.0
-	_boost_timer = 0.0
 	_wall_side = 0.0
 	_wall_flight = 0.0
 
@@ -1619,19 +1621,18 @@ func _aim_4(fallback: Vector2) -> Vector2:
 	return Vector2(0.0, signf(aim.y))
 
 
-# Stops everything the player was doing in the air: walls, ledges, clashes, boosts. For hits,
-# grabs, respawns and the like.
+# Stops everything the player was doing in the air: dashes, walls, ledges, clashes, whatever was
+# carrying them. For hits, staggers, locked blades, respawns and the like.
 func interrupt_movement():
-	if _windup_timer > 0.0:
-		_windup_timer = 0.0
-		_dash_slash = false
+	_end_dash()
+	_end_carry()
+	_windup_timer = 0.0
 	_charging = false
 	_wall_side = 0.0
 	_wall_flight = 0.0
 	_pogo_rise = 0.0
 	_downslash_time = -100.0
 	_ledge = false
-	_boost_timer = 0.0
 	_hold_kind = Hold.NONE
 	_hold_timer = 0.0
 	_end_tempo()
@@ -1662,8 +1663,7 @@ func movement_state() -> String:
 func _launch(other):
 	var rise = rise_speed(LAUNCH_HEIGHT)
 	velocity = Vector2(_dash_dir * DASH_SPEED * LAUNCH_CARRY, -rise)
-	_dash_timer = 0.0
-	_dash_slash = false
+	_end_dash()
 	_launch_timer = rise / GRAVITY  # until the top of the rise
 	_coyote_timer = 0.0
 	_jump_buffer = 0.0
@@ -1835,9 +1835,7 @@ func take_damage(knockback = Vector2.ZERO, chip = false):
 		var rules = GameManager.rules
 		lethal = rules.player_blocked(self) if chip else rules.player_hit(self)
 	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
-	_dash_timer = 0.0
 	interrupt_movement()
-	_launch_timer = 0.0
 	_hurt_flash = HURT_FLASH_TIME
 	velocity = knockback
 	if chip:
@@ -1861,7 +1859,6 @@ func take_damage(knockback = Vector2.ZERO, chip = false):
 func stagger(duration: float):
 	_stagger_timer = maxf(_stagger_timer, duration)
 	velocity.x = 0.0
-	_dash_timer = 0.0
 	interrupt_movement()
 	_attack_timer = 0.0
 
@@ -1870,7 +1867,6 @@ func stagger(duration: float):
 func set_clashing(clashing: bool):
 	is_clashing = clashing
 	velocity = Vector2.ZERO
-	_dash_timer = 0.0
 	interrupt_movement()
 	_attack_timer = 0.0
 
