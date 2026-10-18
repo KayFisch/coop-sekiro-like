@@ -90,6 +90,8 @@ func _ready():
 
 
 func _process(delta):
+	if Engine.is_editor_hint():
+		return  # it redraws itself when changed in the editor (its setters)
 	_flash = maxf(_flash - delta, 0.0)
 	queue_redraw()
 

@@ -171,7 +171,8 @@ func _process(delta):
 		var b = beats_now()
 		if plays(floori(b) + 1, pattern, offset, bars):
 			_glow = smoothstep(0.0, 1.0, b - floori(b))  # the beat before it fires
-	queue_redraw()
+	if not in_editor():
+		queue_redraw()  # (in the editor, at Clockwork.EDITOR_FPS)
 
 
 # The room starts over: the balls in flight are gone.

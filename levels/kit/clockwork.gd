@@ -17,6 +17,11 @@ const HEAR_FALLOFF = 14.0  # ...and this many dB quieter at the edge of that
 const RULER_CELL = 9.0  # the editor's rhythm ruler: one square a beat
 const COLOR_RULER_ON = Color(1.0, 0.8, 0.35)
 const COLOR_RULER_OFF = Color(1, 1, 1, 0.18)
+# In the editor the pieces move on the stand-in clock, but redraw only this often a second: every
+# frame, the editor's 2D view never rests while a room is open (slow on a weaker machine).
+const EDITOR_FPS = 12.0
+
+var _editor_wait = 0.0
 
 
 # Whether a pattern of counts plays on beat n: counts 1.. over `bars` bars, shifted `offset`
@@ -25,9 +30,12 @@ static func plays(n: int, pattern: Array, offset: int, bars: int) -> bool:
 	return pattern.has(posmod(n - offset, 4 * maxi(bars, 1)) + 1)
 
 
-func _process(_delta):
+func _process(delta):
 	if Engine.is_editor_hint():
-		queue_redraw()  # the editor's clock moves
+		_editor_wait -= delta
+		if _editor_wait <= 0.0:
+			_editor_wait = 1.0 / EDITOR_FPS
+			queue_redraw()  # the editor's clock moves
 
 
 func in_editor() -> bool:
