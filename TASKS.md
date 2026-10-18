@@ -26,6 +26,14 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 
 ## Jetzt
 
+- [ ] **Kays Branch auf main** (@Nicho, 2026-10-18): `nicho/kay-to-main` = `kay/coop-platformer` +
+  aktuelles `main` (Konflikte gelöst, Kays Branch unangetastet). Kurz zusammen testen, dann auf
+  `main`.
+- [ ] **Code-Überarbeitung + Entwicklerwerkzeuge** (@Nicho, 2026-10-18), Branch
+  `nicho/code-overhaul` (auf `nicho/kay-to-main`): Tests im Repo, Werkzeuge zum einzelnen Testen
+  von Angriffen und Regeln (für alle Bosse), einheitliche Stellschrauben (F2), Performance (Kays
+  Levels), Ordnung im Code. Bis zum Merge geteilte Dateien (`player.gd`, `core/`) möglichst nicht
+  parallel ändern.
 - [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), Branch `nicho/pep-test`. Testet die
   Grundregel aus den Scribbles: Spieler links und rechts vom Boss, zwei Schwerter, er ist auf
   beiden Seiten gedeckt; ein Parry auf einer Seite bricht kurz die Deckung auf der anderen
