@@ -92,7 +92,7 @@ var _over_label: Label
 # Its numbers on F2 (core/tuning.gd collects them): a page of its own, in the ring.
 static func tuning_entries() -> Array:
 	return [
-		{"page": "ring", "title": "BEAT-RING", "scenes": ["levels/ring/"], "header": "HIS PATTERNS", "tab": "ring"},
+		{"page": "ring", "title": "Beat Ring", "scenes": ["levels/ring/"], "header": "HIS PATTERNS", "tab": "ring"},
 		{"key": "ring_unit", "label": "seconds per unit of his waits (his own: 0.2)", "default": 0.2, "step": 0.01, "min": 0.08, "max": 0.6},
 		{"key": "ring_gap", "label": "units between two of his patterns", "default": 5.0, "step": 1.0, "min": 1.0, "max": 20.0},
 		{"key": "ring_extra_chance", "label": "between two: chance of a grey shard or a bar", "default": 0.4, "step": 0.05, "min": 0.0, "max": 1.0},

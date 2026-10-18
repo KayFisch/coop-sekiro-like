@@ -65,3 +65,39 @@ func test_log_counts_presses():
 	await wait(0.1)
 	check(s.hit == 2 and s.late.size() == 1, "a hit pressed after it landed counted as late")
 	check(Dev._overlay_text().contains("P1: parried 1"), "the overlay shows it")
+
+
+func test_lab_keys():
+	await _setup()
+	boss.dev_hold = false
+	Dev.lab_on = true
+	var click = Beat.click_on
+	await _key(KEY_M)
+	check(boss.dev_still, "M: his moving off")
+	check(Beat.click_on == click, "...and the click doesn't hear it while the lab is open")
+	var x = boss.global_position.x
+	p1.global_position.x = x - 260.0  # far: he'd walk up to them
+	boss.dev_hold = true
+	await wait(0.6)
+	near(boss.global_position.x, x, 1.0, "still: he stays where he is")
+	var pick = Dev._pick
+	await _key(KEY_E)
+	check(Dev._pick != pick, "E: the next attack")
+	Tuning._set_panel(true)
+	pick = Dev._pick
+	await _key(KEY_E)
+	check(Dev._pick == pick, "with F2 open its keys come first")
+	Tuning._set_panel(false)
+	await _key(KEY_M)
+	check(not boss.dev_still, "M again: he moves")
+	Dev.lab_on = false
+
+
+# A key pressed and let go, as from the keyboard.
+func _key(code: int):
+	for down in [true, false]:
+		var event = InputEventKey.new()
+		event.physical_keycode = code
+		event.pressed = down
+		Input.parse_input_event(event)
+		await frames(2)

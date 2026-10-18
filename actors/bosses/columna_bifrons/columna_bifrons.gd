@@ -126,7 +126,7 @@ var _answering = false  # starting his answer (see orient() and first_wait())
 # weights' defaults are ATTACKS' own.
 static func tuning_entries() -> Array:
 	var entries = [
-		{"page": "bifrons", "title": "COLUMNA BIFRONS", "scenes": ["levels/threshold/"], "header": "TEMPO", "tab": "tempo"},
+		{"page": "bifrons", "title": "Columna Bifrons", "scenes": ["levels/threshold/"], "header": "TEMPO", "tab": "tempo"},
 		{"key": "bifrons_time_unit", "label": "a unit of his waits (s): a strike's wait is 2-6 of them", "default": 0.2, "step": 0.01, "min": 0.05, "max": 1.0},
 		{"key": "bifrons_fall_time", "label": "a strike's drop: the cue to parry (s)", "default": 0.28, "step": 0.01, "min": 0.05, "max": 1.0},
 		{"key": "bifrons_recover_time", "label": "after a series of strikes, recovering (s)", "default": 0.6, "step": 0.05, "min": 0.0, "max": 5.0},
@@ -297,8 +297,9 @@ func _physics_process(delta):
 	_assign_wards()
 	if hp > 0.0:
 		_update_turns(delta)
-	# Nobody in his range: no attack (he walks up to them instead, see walk()).
-	if state == State.IDLE and timer <= delta and not _fought().any(in_range):
+	# Nobody in his range: no attack (he walks up to them instead, see walk()), but the one the
+	# dev tools ask for.
+	if state == State.IDLE and timer <= delta and dev_next == "" and not _fought().any(in_range):
 		timer = RANGE_RECHECK
 	# The players' sync mode: he's on the defensive. While one of them draws back, he holds off his
 	# next attack, on guard (up to "sync_hold_off" in a row).

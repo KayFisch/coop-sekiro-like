@@ -49,7 +49,7 @@ var _flash_left = 0.0
 # Its numbers on F2 (core/tuning.gd collects them): the sync rules' page, tab "sync mode".
 static func tuning_entries() -> Array:
 	return [
-		{"page": "sync", "title": "SYNC RULES", "scenes": ["levels/threshold/"], "header": "SYNC MODE: BINDING", "tab": "sync mode"},
+		{"page": "sync", "title": "Sync Rules", "scenes": ["levels/threshold/"], "header": "SYNC MODE: BINDING", "tab": "sync mode"},
 		{"key": "sync_connect_distance", "label": "bound once you stand this close (px apart)", "default": 30.0, "step": 2.0, "min": 4.0, "max": 200.0},
 		{"key": "sync_break_distance", "label": "...and apart again past this (px)", "default": 90.0, "step": 5.0, "min": 10.0, "max": 400.0},
 		{"header": "THE PAIR'S STRIKE"},

@@ -79,7 +79,7 @@ var _over_label: Label
 # Its numbers on F2 (core/tuning.gd collects them): a page of its own, in the runner.
 static func tuning_entries() -> Array:
 	return [
-		{"page": "runner", "title": "BEAT-RUNNER", "scenes": ["levels/runner/"], "header": "TEMPO", "tab": "runner"},
+		{"page": "runner", "title": "Beat Runner", "scenes": ["levels/runner/"], "header": "TEMPO", "tab": "runner"},
 		{"key": "runner_unit", "label": "seconds per unit of a pattern's waits (Bifrons: 0.2)", "default": 0.2, "step": 0.01, "min": 0.08, "max": 0.5},
 		{"key": "runner_gap", "label": "units between two patterns", "default": 5.0, "step": 1.0, "min": 1.0, "max": 20.0},
 		{"key": "runner_relay_units", "label": "a parry until the partner's shard is due (units)", "default": 2.0, "step": 1.0, "min": 1.0, "max": 6.0},

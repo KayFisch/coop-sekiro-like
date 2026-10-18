@@ -206,10 +206,11 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `Tuning` (F2 panel of numbers to tune while playing, saved to `user://tuning.cfg`; code asks
   `Tuning.value("his_heavy_damage")` each time it needs one). The numbers belong to the systems
   that use them: each script in `Tuning.SOURCES` has a static `tuning_entries()` next to its code
-  (a page per system, tabs within it). Both panels show one tab at a time (Q / E): an entry's
-  "tab" (F1), a header's "tab" (F2). `Dev` (`core/dev.gd`, `docs/dev_tools.md`): F3 overlay
+  (a page per system, Z / C, tabs within it). Both panels show one tab at a time (Q / E): an
+  entry's "tab" (F1), a header's "tab" (F2). `Dev` (`core/dev.gd`, `docs/dev_tools.md`): F3 overlay
   (frame time, the boss's state and attack, the players', this fight in numbers), F4 hitboxes,
-  F5 boss lab (run or loop one attack, hold him, slow the game, set meters and positions), and
+  F5 boss lab (run or loop one attack, stop his attacks or his moving, slow the game, set meters
+  and positions; F1 and F2 come first), and
   the fight log (`Dev.defended()`, `Dev.note()`; with F1 → Dev "fight_log" to a file).
 - `core/sync_rules.gd` (`SyncRules`): sync as life, for now only in Bifrons's fight (Moves
   "bifrons_rules"): no health, no potions, a shared sync for the players and one for the boss,
@@ -238,7 +239,7 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `base_attack.gd`) with hooks `start / update_telegraph / execute / update / on_struck /
   cleanup` and `finish()` / `finish_with_stagger()`. A boss subclass supplies its attack pool,
   weights, pose and HP. For tools and tests a boss can be held off (`dev_hold`: no attack of his
-  own) and told his next attack (`dev_next`). Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs
+  own), told his next attack (`dev_next`) and kept from moving between attacks (`dev_still`). Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs
   the Scales level), and `columna_bifrons/`, a test boss for fighting from both sides, and with
   both players on one (`docs/boss_columna_bifrons.md`), built in three parts, each extending the
   one before: `bifrons_swords.gd` (his swords and their wards, posing, his guard and the

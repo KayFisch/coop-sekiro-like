@@ -9,7 +9,7 @@ tests and a performance probe run from the command line.
 | Key | What |
 |---|---|
 | F1 | Switches (`core/moves.gd`), in tabs: Q / E. Tab "Dev": write the fight log to a file. |
-| F2 | Numbers (`core/tuning.gd`), a page per system (PgUp / PgDn: sync rules, Bifrons, runner, ring), tabs within it (Q / E). Opens on the page of the level it's in. |
+| F2 | Numbers (`core/tuning.gd`), laid out as F1: a page per system (Z / C: sync rules, Bifrons, runner, ring), its tabs (Q / E), its numbers (↑/↓ pick, ←/→ change, Shift: ten steps). Opens on the page of the level it's in. |
 | F3 | Overlay: frame time, the boss and the players right now, and this fight in numbers. |
 | F4 | Hitboxes: every collision shape, and the boss's body block (red). |
 | F5 | Boss lab: run one of his attacks, again and again, and set things up for it. |
@@ -45,14 +45,16 @@ tests and a performance probe run from the command line.
 ### F5: the boss lab
 
 Shows his attacks (any boss: his attack pool). Its keys work while it's open, and are none of
-the players':
+the players'; while F1 or F2 is open (the game paused), theirs come first. Q / E pick, as they
+pick the tab there.
 
 | Key | What |
 |---|---|
-| PgUp / PgDn | pick an attack |
-| Home | he starts it now (or as soon as he's free) |
-| End | he loops it: the same attack each time he's free again (End again: stop) |
-| H | hold him: he starts nothing of his own (the lab's attacks still come) |
+| Q / E | pick an attack |
+| Z | he starts it now (or as soon as he's free), in reach or not |
+| X | he loops it: the same attack each time he's free again (X again: stop) |
+| H | his own attacks off / on: he starts nothing of his own (the lab's attacks still come) |
+| M | his moving off / on: he stays where he is between attacks (his attacks still move him) |
 | T | the game's speed: 1, 0.5, 0.25 |
 | I | the players can't lose (their hits still land, and are logged) |
 | K / J / N | the players' sync full (sync mode) / half / empty (chaos) |
@@ -90,7 +92,8 @@ methods `test_<what>()`. From `test_case.gd`:
 - `await wait(seconds)`, `await frames(n)` (physics frames; a press is seen the frame after);
 - `check(condition, "what")`, `near(got, want, tolerance, "what")`;
 - the boss: `GameManager.boss.dev_hold = true` (he starts nothing of his own), `dev_next = "NAME"`
-  (he starts that next), `set_physics_process(false)` (he doesn't move at all).
+  (he starts that next), `dev_still = true` (he doesn't move between attacks),
+  `set_physics_process(false)` (he doesn't move at all).
 
 Add a test with every rule or mechanic you'd hate to break silently; run them all before a merge.
 
@@ -138,8 +141,9 @@ times a second in the editor (`Clockwork.EDITOR_FPS`).
    boss himself (`columna_bifrons.gd`).
 2. His feel numbers on F2: `tuning_entries()`, listed in `Tuning.SOURCES`. Attack weights too,
    if they're to be tuned (see `ColumnaBifrons.weight_in()`).
-3. The dev tools work for him by themselves: the lab lists his attack pool, `dev_hold` and
-   `dev_next` are `BaseBoss`'s, the overlay reads his state, and the players' parries, blocks
+3. The dev tools work for him by themselves: the lab lists his attack pool, `dev_hold`,
+   `dev_next` and `dev_still` are `BaseBoss`'s (`dev_still` skips his `_idle_motion()` and
+   `_recover_motion()`: move him there), the overlay reads his state, and the players' parries, blocks
    and hits are logged by the player. Anything that starts an attack outside `BaseBoss`'s idle
    timer (as Bifrons's shove and his strike back) has to respect `dev_hold`. Report what's his
    own to `Dev.note(kind, data)`.
