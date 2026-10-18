@@ -83,7 +83,7 @@ func _physics_process(_delta):
 func _hold_walk(p, way: float):
 	var want = ""
 	if p != null and way != 0.0:
-		want = p._action("right" if way > 0.0 else "left")
+		want = p.action("right" if way > 0.0 else "left")
 	if want == _walking:
 		return
 	if _walking != "":
@@ -93,7 +93,7 @@ func _hold_walk(p, way: float):
 		Input.action_press(want)
 
 func _press(p, button: String):
-	var action = p._action(button)
+	var action = p.action(button)
 	Input.action_press(action)
 	_held.append(action)
 

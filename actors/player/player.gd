@@ -554,23 +554,49 @@ func _apply_gravity(delta, fast = false):
 		velocity.y = minf(velocity.y + gravity * delta, MAX_FALL_SPEED)
 
 
-# Each player's input set; "Swap P1 / P2 controls" (Moves) trades them, e.g. to play solo on a pad.
-func _action(action_name: String) -> String:
+# The upward speed that rises `height` px before gravity (times `heavier`) stops it.
+static func rise_speed(height: float, heavier = 1.0) -> float:
+	return sqrt(2.0 * GRAVITY * heavier * height)
+
+
+# The input action behind this player's `button` ("jump" -> "p1_jump"), for anything that reads
+# or presses a player's buttons. Each player has a set of their own; "Swap P1 / P2 controls"
+# (Moves) trades them, e.g. to play solo on a pad.
+func action(button: String) -> String:
 	var id = player_id
 	if Moves.on("swap_controls"):
 		id = 3 - player_id
-	return "p%d_%s" % [id, action_name]
+	return "p%d_%s" % [id, button]
 
 
-func _now() -> float:
-	return Time.get_ticks_msec() / 1000.0
+# This player's `button`: pressed this frame, held down, let go this frame.
+func _pressed(button: String) -> bool:
+	return Input.is_action_just_pressed(action(button))
+
+
+func _held(button: String) -> bool:
+	return Input.is_action_pressed(action(button))
+
+
+func _let_go(button: String) -> bool:
+	return Input.is_action_just_released(action(button))
 
 
 # Left/right input, -1..1.
 func move_axis() -> float:
 	if running_on:
 		return 0.0
-	return Input.get_axis(_action("left"), _action("right"))
+	return Input.get_axis(action("left"), action("right"))
+
+
+# The real clock, in s: the timing windows are measured on it.
+func _now() -> float:
+	return Time.get_ticks_msec() / 1000.0
+
+
+# s since `t`, a moment read off _now().
+func _since(t: float) -> float:
+	return _now() - t
 
 
 # --- Running -------------------------------------------------------------------
@@ -635,9 +661,9 @@ func _process_movement(delta):
 			rate = AIR_ACCEL if speeding_up else AIR_DECEL
 		velocity.x = move_toward(velocity.x, target, rate * delta)
 	_fast_falling = Moves.on("fast_fall") and not is_on_floor() and velocity.y > 0.0 \
-		and Input.is_action_pressed(_action("down"))
+		and _held("down")
 	_apply_gravity(delta, _fast_falling)
-	if Input.is_action_just_released(_action("jump")) and velocity.y < 0.0 and _launch_timer <= 0.0 \
+	if _let_go("jump") and velocity.y < 0.0 and _launch_timer <= 0.0 \
 			and _uncut_timer <= 0.0:
 		velocity.y *= JUMP_CUT
 
@@ -778,7 +804,7 @@ func _wall_jump_side() -> float:
 		if not _wall_spent(side) and _touching_wall(side):
 			return side
 	# Bounced off a wall you didn't stick to: a press late within the window still jumps off it.
-	if _wall_chain and _now() - _wall_contact_time <= WALL_RHYTHM_TOLERANCE \
+	if _wall_chain and _since(_wall_contact_time) <= WALL_RHYTHM_TOLERANCE \
 			and not _wall_spent(_wall_contact_side):
 		return _wall_contact_side
 	return 0.0
@@ -801,7 +827,7 @@ func _wall_jump(side: float):
 		or absf(wall_jump_off) <= WALL_RHYTHM_TOLERANCE
 	if Moves.on("wall_rhythm") and wall_rhythm_sound:
 		Sfx.play("relay_peak" if wall_jump_strong else "chip", -4.0)
-	var rise = sqrt(2.0 * GRAVITY * WALL_JUMP_HEIGHT * (1.0 if wall_jump_strong else WALL_WEAK_HEIGHT))
+	var rise = rise_speed(WALL_JUMP_HEIGHT * (1.0 if wall_jump_strong else WALL_WEAK_HEIGHT))
 	velocity = Vector2(-side * WALL_JUMP_PUSH, -rise)
 	_uncut_timer = rise / GRAVITY  # a tap goes as high as a hold: the timing decides, not the hold
 	facing = -side
@@ -810,7 +836,7 @@ func _wall_jump(side: float):
 	_spent_wall_side = side
 	_spent_wall_x = global_position.x
 	_wall_jump_lock = WALL_JUMP_LOCK
-	_wall_jump_time = _now()
+	_wall_jump_time = now
 	_wall_jump_dir = -side
 	_wall_flight = WALL_FLIGHT_TIME
 	_wall_held_away = 0.0
@@ -881,17 +907,16 @@ func _end_tempo():
 
 # s until the next moment to jump (see WALL RHYTHM), and s since the last one; -1 if none.
 func _jump_cues() -> Vector2:
-	var now = _now()
 	var left = INF
 	var since = INF
 	if _hold_kind != Hold.NONE or is_on_floor():
 		return Vector2(-1.0, -1.0)
 	if _wall_chain:
-		since = now - _wall_contact_time
+		since = _since(_wall_contact_time)
 		if _wall_side == 0.0 and absf(velocity.x) > 1.0:  # flying (or steering) at a wall
 			var side = signf(velocity.x)
 			left = _wall_distance(side, absf(velocity.x) * Beat.beat_length()) / absf(velocity.x)
-		since = minf(since, now - _chimney_meet_time)
+		since = minf(since, _since(_chimney_meet_time))
 		var partner = _chimney_partner()
 		if partner and _chimney_meet_time < 0.0:
 			var gap = partner.global_position.x - global_position.x
@@ -1016,13 +1041,13 @@ func _process_ledge(delta):
 	if signf(direction) != _wall_held_away:
 		_wall_held_away = 0.0
 	var away = direction != 0.0 and signf(direction) == -_ledge_side and _wall_held_away == 0.0
-	if Input.is_action_just_pressed(_action("jump")):
+	if _pressed("jump"):
 		_ledge = false
 		_ledge_regrab = LEDGE_REGRAB_TIME
-		velocity.y = -sqrt(2.0 * GRAVITY * JUMP_HEIGHT)
-	elif Input.is_action_pressed(_action("up")) or (toward and _ledge_time >= LEDGE_MIN_HANG):
+		velocity.y = -rise_speed(JUMP_HEIGHT)
+	elif _held("up") or (toward and _ledge_time >= LEDGE_MIN_HANG):
 		_ledge_climb = 0.0
-	elif away or Input.is_action_just_pressed(_action("down")):
+	elif away or _pressed("down"):
 		_ledge = false
 		_ledge_regrab = LEDGE_REGRAB_TIME
 
@@ -1030,7 +1055,7 @@ func _process_ledge(delta):
 # --- Buttons: what each press does ---------------------------------------------
 
 func _process_actions():
-	if Input.is_action_just_pressed(_action("jump")):
+	if _pressed("jump"):
 		_jump_buffer = JUMP_BUFFER_TIME
 		_jump_press_time = _now()
 	if _jump_buffer > 0.0:
@@ -1038,13 +1063,13 @@ func _process_actions():
 
 	# The dash goes the way you face (_process_movement() has already turned you this frame);
 	# while a boss holds your facing, the way you hold.
-	if Input.is_action_just_pressed(_action("dash")):
+	if _pressed("dash"):
 		var held = move_axis()
 		var boss = GameManager.boss
 		var free = held != 0.0 and is_instance_valid(boss) and boss.holds_facing()
 		_start_dash(signf(held) if free else facing)
 
-	if Input.is_action_just_pressed(_action("block")) and not _is_swinging():
+	if _pressed("block") and not _is_swinging():
 		var now = _now()
 		# Mashing doesn't parry: a press too soon after the previous one isn't a parry attempt.
 		parry_press_time = now if now - _last_block_press >= PARRY_SPAM_LOCK else -100.0
@@ -1052,16 +1077,16 @@ func _process_actions():
 
 	if bond != null:
 		_process_draw()
-	elif Input.is_action_just_pressed(_action("attack")):
+	elif _pressed("attack"):
 		_press_attack()
 	elif _attack_buffer > 0.0 and _attack_cooldown <= 0.0:
 		_press_attack()  # pressed a moment too early: it comes now
-	elif Input.is_action_just_pressed(_action("up")) and _attack_timer > 0.0 \
+	elif _pressed("up") and _attack_timer > 0.0 \
 			and _swing_kind == Swing.SLASH and not _attack_landed \
-			and _now() - _slash_press_time <= UPSLASH_LATE:
+			and _since(_slash_press_time) <= UPSLASH_LATE:
 		_press_upslash()  # up came a moment after the attack: it's an upslash after all
 
-	if Input.is_action_just_pressed(_action("down")) and is_on_floor():
+	if _pressed("down") and is_on_floor():
 		set_collision_mask_value(PLATFORM_LAYER, false)
 		_drop_timer = DROP_THROUGH_TIME
 
@@ -1073,14 +1098,14 @@ func _process_actions():
 # if that comes soon enough.
 func _try_jump():
 	if _coyote_timer > 0.0:
-		velocity.y = -sqrt(2.0 * GRAVITY * JUMP_HEIGHT)
+		velocity.y = -rise_speed(JUMP_HEIGHT)
 	elif Moves.on("wall_jump") and _wall_jump_side() != 0.0:
 		_wall_jump(_wall_jump_side())
 		return
-	elif Moves.on("double_jump") and _air_jumps > 0 and Input.is_action_just_pressed(_action("jump")) \
+	elif Moves.on("double_jump") and _air_jumps > 0 and _pressed("jump") \
 			and not _chimney_partner():  # flying at the partner, it's the clash's press
 		_air_jumps -= 1
-		velocity.y = -sqrt(2.0 * GRAVITY * DOUBLE_JUMP_HEIGHT)
+		velocity.y = -rise_speed(DOUBLE_JUMP_HEIGHT)
 	else:
 		return
 	_jump_buffer = 0.0
@@ -1099,7 +1124,7 @@ func _start_dash(direction: float):
 		return
 	# A slash pressed a moment ago turns into a dash-slash.
 	var slash_lead = Moves.on("dash_slash") and _attack_timer > 0.0 and _swing_kind == Swing.SLASH \
-		and _now() - _slash_press_time <= DASH_SLASH_LEAD
+		and _since(_slash_press_time) <= DASH_SLASH_LEAD
 	_leave_wall()
 	_wall_flight = 0.0
 	_boost_timer = 0.0
@@ -1126,7 +1151,7 @@ func _start_dash(direction: float):
 
 func _press_attack():
 	if Moves.on("dash_slash") and _dash_timer > 0.0 and not _dash_slash \
-			and _now() - _dash_press_time <= DASH_SLASH_LATE:
+			and _since(_dash_press_time) <= DASH_SLASH_LATE:
 		_begin_dash_slash()  # attacking right as the dash starts
 		return
 	if _attack_cooldown > 0.0:
@@ -1135,11 +1160,11 @@ func _press_attack():
 	_attack_buffer = 0.0
 	if is_blocking():
 		return
-	if Input.is_action_pressed(_action("up")) and _dash_timer <= 0.0:
+	if _held("up") and _dash_timer <= 0.0:
 		_press_upslash()
 		return
 	if (Moves.on("pogo") or Moves.on("pogo_environment")) and not is_on_floor() and _dash_timer <= 0.0 \
-			and Input.is_action_pressed(_action("down")):
+			and _held("down"):
 		_start_swing(Swing.DOWNSLASH)
 		Sfx.play("slash", -4.0)
 		return
@@ -1154,7 +1179,7 @@ func _press_upslash():
 	_upslash_press_time = _now()
 	if _upslash_hop_ready and Moves.on("upslash_hop"):
 		_upslash_hop_ready = false
-		velocity.y = minf(velocity.y, -sqrt(2.0 * GRAVITY * UPSLASH_HOP_HEIGHT))
+		velocity.y = minf(velocity.y, -rise_speed(UPSLASH_HOP_HEIGHT))
 		_coyote_timer = 0.0
 	Sfx.play("slash", -4.0)
 
@@ -1195,7 +1220,7 @@ func _process_windup(delta):
 	velocity = Vector2.ZERO  # hanging still, even in the air
 	facing = _dash_dir
 	if _charging:
-		if not Input.is_action_pressed(_action("attack")):
+		if not _held("attack"):
 			_release_charge()
 		return
 	_windup_timer -= delta
@@ -1340,7 +1365,7 @@ func _is_downslash() -> bool:
 # POGO_WINDOW; the blade's position and timing don't matter. The partner in it with a fresh
 # upslash is a pogo clash; with Moves "pogo_environment", targets, lanterns and spikes bounce it.
 func _check_pogo(delta):
-	if _pogoed or _now() - _downslash_time > POGO_WINDOW:
+	if _pogoed or _since(_downslash_time) > POGO_WINDOW:
 		return
 	var half = body.size / 2.0
 	var depth = POGO_REACH.y + maxf(velocity.y * delta, 0.0)
@@ -1377,7 +1402,7 @@ func _check_pogo(delta):
 
 # Spikes touched this soon after a pogo are forgiven (the bounce is already carrying you out).
 func just_pogoed() -> bool:
-	return _now() - _pogo_time <= POGO_GRACE
+	return _since(_pogo_time) <= POGO_GRACE
 
 
 # A bounce off something in the world (Moves "pogo_environment"), refreshing what the Moves
@@ -1412,7 +1437,7 @@ func _pogo_clash(partner):
 func _bounce():
 	_pogoed = true
 	_pogo_time = _now()
-	var rise = sqrt(2.0 * GRAVITY * POGO_RISE_GRAVITY * POGO_HEIGHT)
+	var rise = rise_speed(POGO_HEIGHT, POGO_RISE_GRAVITY)
 	velocity.y = -rise
 	_pogo_rise = rise / (GRAVITY * POGO_RISE_GRAVITY)
 	_uncut_timer = _pogo_rise
@@ -1431,7 +1456,7 @@ func is_launch_ready() -> bool:
 # Upslashing, pressed at most `tolerance` ago (the launch and the pogo clash).
 func is_upslash_fresh(tolerance: float) -> bool:
 	return _swing_kind == Swing.UPSLASH and _attack_timer > 0.0 \
-		and _now() - _upslash_press_time <= tolerance and not is_staggered()
+		and _since(_upslash_press_time) <= tolerance and not is_staggered()
 
 
 # Checked every frame: a dash-slash meeting the partner's upslash (launch) or block (relay), or
@@ -1454,7 +1479,7 @@ func _check_clashes():
 		# Each pair is checked once, by the lower id. Flying at each other, or already bumped
 		# together (the bump stops them) after jumping off opposite walls. Once met, the press
 		# window holds even if they've flown apart again.
-		var met_now = _chimney_meet_time >= 0.0 and _now() - _chimney_meet_time <= CHIMNEY_PRESS_TOLERANCE
+		var met_now = _chimney_meet_time >= 0.0 and _since(_chimney_meet_time) <= CHIMNEY_PRESS_TOLERANCE
 		if Moves.on("chimney_clash") and player_id < other.player_id and _in_wall_flight() \
 				and other._in_wall_flight() and (absf(gap.x) <= CHIMNEY_REACH.x or met_now) \
 				and absf(gap.y) <= CHIMNEY_REACH.y:
@@ -1476,7 +1501,7 @@ func _pressed_near(t: float) -> bool:
 
 
 func _in_wall_flight() -> bool:
-	return not is_on_floor() and _hold_kind == Hold.NONE and _now() - _wall_jump_time <= CHIMNEY_WINDOW
+	return not is_on_floor() and _hold_kind == Hold.NONE and _since(_wall_jump_time) <= CHIMNEY_WINDOW
 
 
 # Both wall-jump off each other, back toward the walls they came from (see CHIMNEY CLASH).
@@ -1492,7 +1517,7 @@ func _chimney_clash(other):
 		p.chimney_clash_time = _now()
 		if Moves.on("wall_rhythm") and p.wall_rhythm_sound:
 			Sfx.play("relay_peak" if p.wall_jump_strong else "chip", -4.0)
-		var rise = sqrt(2.0 * GRAVITY * WALL_JUMP_HEIGHT * (1.0 if p.wall_jump_strong else WALL_WEAK_HEIGHT))
+		var rise = rise_speed(WALL_JUMP_HEIGHT * (1.0 if p.wall_jump_strong else WALL_WEAK_HEIGHT))
 		p.velocity = Vector2(back * WALL_JUMP_PUSH, -rise)
 		p._uncut_timer = rise / GRAVITY
 		p.facing = back
@@ -1529,7 +1554,7 @@ func _start_relay(anchor):
 
 # The partner parried a dash-slash: blocked, with the press timed to the blades meeting.
 func is_relay_parry() -> bool:
-	return is_blocking() and _now() - parry_press_time <= RHYTHM_PARRY_TOLERANCE
+	return is_blocking() and _since(parry_press_time) <= RHYTHM_PARRY_TOLERANCE
 
 
 # Blocked but not parried: the dash stops dead with a dull clang, and the dasher bounces off.
@@ -1579,7 +1604,7 @@ func _process_relay_strike() -> bool:
 	if not (dasher and is_instance_valid(dasher) and dasher._hold_kind == Hold.RELAY_DASHER):
 		return false
 	dasher._relay_dir = _aim_4(Vector2(dasher._dash_dir, 0.0))
-	if not Input.is_action_just_pressed(_action("attack")):
+	if not _pressed("attack"):
 		return false
 	if absf(Beat.time() - Beat.beat_time(dasher.relay_beat + 2)) <= RHYTHM_TOLERANCE:
 		dasher._release_hold()  # the throw; it frees this hold too, and pushes this player back
@@ -1627,7 +1652,7 @@ func _release_hold():
 
 # The direction held right now, snapped to 4 ways (up, down, left, right); `fallback` if none.
 func _aim_4(fallback: Vector2) -> Vector2:
-	var aim = Vector2(move_axis(), Input.get_axis(_action("up"), _action("down")))
+	var aim = Vector2(move_axis(), Input.get_axis(action("up"), action("down")))
 	if aim.length() < 0.5:
 		return fallback
 	if absf(aim.x) >= absf(aim.y):
@@ -1677,11 +1702,11 @@ func movement_state() -> String:
 
 # The blades clash: the dash's momentum turns upward.
 func _launch(partner):
-	var rise_speed = sqrt(2.0 * GRAVITY * LAUNCH_HEIGHT)
-	velocity = Vector2(_dash_dir * DASH_SPEED * LAUNCH_CARRY, -rise_speed)
+	var rise = rise_speed(LAUNCH_HEIGHT)
+	velocity = Vector2(_dash_dir * DASH_SPEED * LAUNCH_CARRY, -rise)
 	_dash_timer = 0.0
 	_dash_slash = false
-	_launch_timer = rise_speed / GRAVITY  # until the top of the rise
+	_launch_timer = rise / GRAVITY  # until the top of the rise
 	_coyote_timer = 0.0
 	_jump_buffer = 0.0
 	refresh_air_moves()
@@ -1780,12 +1805,12 @@ func _track_landing():
 # --- Defensive queries used by the boss at the moment its hitbox connects ---
 
 func is_blocking() -> bool:
-	return not is_staggered() and not _is_swinging() and Input.is_action_pressed(_action("block")) \
+	return not is_staggered() and not _is_swinging() and _held("block") \
 		and (GameManager.rules == null or GameManager.rules.can_block())  # no blocking in chaos
 
 
 func is_perfect_parry() -> bool:
-	return not is_staggered() and _now() - parry_press_time <= PARRY_TOLERANCE
+	return not is_staggered() and _since(parry_press_time) <= PARRY_TOLERANCE
 
 
 func is_staggered() -> bool:
@@ -1815,7 +1840,7 @@ func get_floor_body():
 # --- What a boss does to a player: parried, hit, staggered, held in a clash ---
 
 func on_perfect_parry(strong: bool):
-	Dev.defended(self, "parry", _now() - parry_press_time)
+	Dev.defended(self, "parry", _since(parry_press_time))
 	if GameManager.rules:
 		GameManager.rules.player_parried(self)
 	parry_press_time = -100.0  # one press parries one hit
@@ -1845,7 +1870,7 @@ func cue_sync(duration: float, color: Color):
 func take_damage(knockback = Vector2.ZERO, chip = false):
 	if _is_dead or _invuln_timer > 0.0:
 		return
-	Dev.defended(self, "block" if chip else "hit", _now() - _last_block_press)
+	Dev.defended(self, "block" if chip else "hit", _since(_last_block_press))
 	var lethal = false
 	if GameManager.rules:
 		var rules = GameManager.rules
@@ -2244,10 +2269,10 @@ func blade_point(along: float) -> Vector2:
 # press or a stagger lets it go unstruck.
 func _process_draw():
 	if _drawing:
-		if Input.is_action_just_pressed(_action("block")) or is_staggered():
+		if _pressed("block") or is_staggered():
 			_drawing = false
 			return
-		if Input.is_action_pressed(_action("attack")):
+		if _held("attack"):
 			_draw_time += get_physics_process_delta_time()
 			return
 		var drawn = _sword_angle()
@@ -2258,7 +2283,7 @@ func _process_draw():
 		_attack_landed = true  # the bond deals the pair's hit, not this swing
 		Sfx.play("slash", -2.0)
 		bond.released(self, share)
-	elif Input.is_action_just_pressed(_action("attack")) and not _is_swinging() and not is_staggered():
+	elif _pressed("attack") and not _is_swinging() and not is_staggered():
 		_drawing = true
 		_draw_time = 0.0
 		parry_press_time = -100.0

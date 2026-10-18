@@ -191,7 +191,7 @@ func _play():
 		return
 	var t = Beat.time()
 	for p in players():
-		if Input.is_action_just_pressed(p._action("attack")):  # its input set (swap_controls)
+		if Input.is_action_just_pressed(p.action("attack")):  # its input set (swap_controls)
 			_pressed_at[p.player_id] = t
 	if not _running:
 		return

@@ -52,7 +52,7 @@ func _physics_process(delta):
 
 
 func _hold(button: String, down: bool):
-	var action = anchor._action(button)
+	var action = anchor.action(button)
 	if down and not _held.get(action, false):
 		Input.action_press(action)
 		_held[action] = true

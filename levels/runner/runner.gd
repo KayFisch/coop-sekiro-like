@@ -579,7 +579,7 @@ class StandIn extends Node:
 				continue
 			_answered[thing] = true
 			if randf() < BeatRunner.STAND_IN_SKILL:
-				var action = p._action(BeatRunner.STAND_IN_BUTTON[thing.kind])
+				var action = p.action(BeatRunner.STAND_IN_BUTTON[thing.kind])
 				Input.action_press(action)
 				_held.append(action)
 		for thing in _answered.keys():

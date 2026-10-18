@@ -5,7 +5,7 @@ extends Node
 ## whenever a pad is plugged in or pulled, the gamepad layout is bound per device:
 ##   no pad, or one:  p1_* = the keyboard, p2_* = the pad
 ##   two pads:        p1_* = the keyboard and the first pad, p2_* = the second pad
-## Moves "swap_controls" still trades the two sets between the players (see _action() in
+## Moves "swap_controls" still trades the two sets between the players (see action() in
 ## player.gd); with two pads, that swaps the pads.
 
 signal changed

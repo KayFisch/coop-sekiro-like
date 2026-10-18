@@ -50,7 +50,7 @@ var _dash_wait = 0.0  # s until it may dash-slash through him again
 
 func _physics_process(delta):
 	var player = _played()
-	var buttons = player._action("") if player != null else ""
+	var buttons = player.action("") if player != null else ""
 	if player != _player or buttons != _buttons:
 		# Another player to play, or other buttons (Moves "swap_controls"): start over.
 		_release_all()
@@ -110,7 +110,7 @@ func _strike(player, delta: float):
 	if _strike_in < 0.0:
 		return
 	_strike_in -= delta
-	if _strike_in < 0.0 and not _held.get(player._action("block"), false):
+	if _strike_in < 0.0 and not _held.get(player.action("block"), false):
 		_hold(player, "attack", true)
 
 
@@ -125,7 +125,7 @@ func _strike_bound(player):
 	var hold = drawing and not _let_go
 	if bond.cue_at >= 0.0 and bond.now() >= bond.cue_at:
 		hold = false
-	if _held.get(player._action("block"), false):
+	if _held.get(player.action("block"), false):
 		hold = false
 	if not hold and player.is_drawing():
 		_let_go = drawing  # let go while the partner still draws: not again until they have too
@@ -166,7 +166,7 @@ func _move(player, delta: float):
 
 # Presses or lets go of one of the player's buttons, if that's a change.
 func _hold(player, button: String, down: bool):
-	var action = player._action(button)
+	var action = player.action(button)
 	if down == _held.get(action, false):
 		return
 	_held[action] = down

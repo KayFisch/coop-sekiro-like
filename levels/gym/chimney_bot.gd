@@ -44,11 +44,11 @@ func _physics_process(_delta):
 
 
 func _leader_holds(button: String) -> bool:
-	return Input.is_action_pressed(leader._action(button))
+	return Input.is_action_pressed(leader.action(button))
 
 
 func _hold(button: String, down: bool):
-	var action = follower._action(button)
+	var action = follower.action(button)
 	if down and not _held.get(action, false):
 		Input.action_press(action)
 		_held[action] = true

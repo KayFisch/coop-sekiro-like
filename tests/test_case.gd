@@ -77,7 +77,7 @@ func set_number(key: String, value: float):
 
 # Presses (or lets go of) a player's button, as the stand-ins do.
 func hold(player, button: String, down = true):
-	var action = player._action(button)
+	var action = player.action(button)
 	if down:
 		Input.action_press(action)
 	else:
