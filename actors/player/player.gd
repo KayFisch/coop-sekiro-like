@@ -227,6 +227,17 @@ const POGO_REACH = Vector2(80.0, 28.0)
 const POGO_WINDOW = 0.15  # the box is checked this long from the press, whatever the blade is doing
 const POGO_GRACE = 0.1  # spikes touched this soon after a pogo don't count (see just_pogoed())
 const POGO_CLASH_TOLERANCE = 0.15
+# The swings side by side: the lengths of their three parts (windup, active: the cut, back: the
+# return to rest), how soon the next attack may follow the press, the damage, and the blade's
+# angle where the cut starts and ends.
+const SWINGS = {
+	Swing.SLASH: {"windup": ATTACK_WINDUP_TIME, "active": ATTACK_ACTIVE_TIME, "back": ATTACK_RETURN_TIME,
+		"cooldown": ATTACK_COOLDOWN, "damage": ATTACK_DAMAGE, "from": SWING_START_ANGLE, "to": SWING_END_ANGLE},
+	Swing.UPSLASH: {"windup": UPSLASH_WINDUP_TIME, "active": UPSLASH_ACTIVE_TIME, "back": UPSLASH_RETURN_TIME,
+		"cooldown": UPSLASH_COOLDOWN, "damage": UPSLASH_DAMAGE, "from": UPSLASH_START_ANGLE, "to": UPSLASH_END_ANGLE},
+	Swing.DOWNSLASH: {"windup": 0.0, "active": DOWNSLASH_ACTIVE_TIME, "back": DOWNSLASH_RETURN_TIME,
+		"cooldown": ATTACK_COOLDOWN, "damage": DOWNSLASH_DAMAGE, "from": DOWNSLASH_START_ANGLE, "to": DOWNSLASH_END_ANGLE},
+}
 # CHIMNEY CLASH (Moves "chimney_clash"): two players who both just wall-jumped, flying at each
 # other, clash in mid-air: each is the other's wall. Both wall-jump off each other, back toward
 # the walls they came from, exactly like a wall jump (same push, same height, no hold), so a
@@ -1194,10 +1205,11 @@ func _press_upslash():
 
 
 func _start_swing(kind: Swing):
+	var swing = SWINGS[kind]
 	_swing_from_angle = _sword_angle()
 	_swing_kind = kind
-	_attack_timer = _swing_windup_time() + _swing_active_time() + _swing_return_time()
-	_attack_cooldown = UPSLASH_COOLDOWN if kind == Swing.UPSLASH else ATTACK_COOLDOWN
+	_attack_timer = swing.windup + swing.active + swing.back
+	_attack_cooldown = swing.cooldown
 	_attack_landed = false
 	_pogoed = false
 	_downslash_time = _now() if kind == Swing.DOWNSLASH else -100.0
@@ -1277,35 +1289,10 @@ func _dash_speed() -> float:
 	return DASH_DISTANCE / RHYTHM_DASH_TIME if _rhythm_dash else DASH_SPEED
 
 
-func _swing_windup_time() -> float:
-	match _swing_kind:
-		Swing.UPSLASH:
-			return UPSLASH_WINDUP_TIME
-		Swing.DOWNSLASH:
-			return 0.0
-	return ATTACK_WINDUP_TIME
-
-
-func _swing_active_time() -> float:
-	match _swing_kind:
-		Swing.UPSLASH:
-			return UPSLASH_ACTIVE_TIME
-		Swing.DOWNSLASH:
-			return DOWNSLASH_ACTIVE_TIME
-	return ATTACK_ACTIVE_TIME
-
-
-func _swing_return_time() -> float:
-	match _swing_kind:
-		Swing.UPSLASH:
-			return UPSLASH_RETURN_TIME
-		Swing.DOWNSLASH:
-			return DOWNSLASH_RETURN_TIME
-	return ATTACK_RETURN_TIME
-
-
+# s into the current swing, from its press.
 func _swing_elapsed() -> float:
-	return _swing_windup_time() + _swing_active_time() + _swing_return_time() - _attack_timer
+	var swing = SWINGS[_swing_kind]
+	return swing.windup + swing.active + swing.back - _attack_timer
 
 
 # True from the attack press until the blade is back at rest: a swing from its windup to the end
@@ -1320,8 +1307,9 @@ func _is_swinging() -> bool:
 func _is_sword_active() -> bool:
 	if _dash_slash and _dash_timer > 0.0:
 		return true
-	var cutting = _swing_elapsed() - _swing_windup_time()
-	return _attack_timer > 0.0 and cutting >= 0.0 and cutting < _swing_active_time()
+	var swing = SWINGS[_swing_kind]
+	var cutting = _swing_elapsed() - swing.windup
+	return _attack_timer > 0.0 and cutting >= 0.0 and cutting < swing.active
 
 
 # The enemy's blade met this swing and knocked it back (PARRIED_RECOIL): the hit is lost, and so
@@ -1336,12 +1324,7 @@ func on_swing_parried():
 func _swing_damage() -> float:
 	if _dash_slash and _dash_timer > 0.0:
 		return DASH_SLASH_DAMAGE
-	match _swing_kind:
-		Swing.UPSLASH:
-			return UPSLASH_DAMAGE
-		Swing.DOWNSLASH:
-			return DOWNSLASH_DAMAGE
-	return ATTACK_DAMAGE
+	return SWINGS[_swing_kind].damage
 
 
 # The middle of the blade's hitbox while it can hit, else null. For attacks with parts that
@@ -2044,26 +2027,17 @@ func _sword_angle() -> float:
 	if _windup_timer > 0.0:
 		return -0.35  # drawn back, tip raised a little
 	if _attack_timer > 0.0:
-		var start = SWING_START_ANGLE
-		var end = SWING_END_ANGLE
-		if _swing_kind == Swing.UPSLASH:
-			start = UPSLASH_START_ANGLE
-			end = UPSLASH_END_ANGLE
-		elif _swing_kind == Swing.DOWNSLASH:
-			start = DOWNSLASH_START_ANGLE
-			end = DOWNSLASH_END_ANGLE
+		var swing = SWINGS[_swing_kind]
 		var elapsed = _swing_elapsed()
-		var windup = _swing_windup_time()
-		if elapsed < windup:
-			return lerpf(_swing_from_angle, start, elapsed / windup)  # drawn back to where the cut starts
-		elapsed -= windup
-		var active = _swing_active_time()
-		if elapsed < active:
-			return lerpf(start, end, elapsed / active)
+		if elapsed < swing.windup:
+			return lerpf(_swing_from_angle, swing.from, elapsed / swing.windup)  # drawn back to where the cut starts
+		elapsed -= swing.windup
+		if elapsed < swing.active:
+			return lerpf(swing.from, swing.to, elapsed / swing.active)
 		# Back to rest. A downslash comes back over the top, finishing the circle, rather than
 		# swiping under again.
 		var rest = SWORD_REST_ANGLE + (TAU if _swing_kind == Swing.DOWNSLASH else 0.0)
-		return lerpf(end, rest, (elapsed - active) / _swing_return_time())
+		return lerpf(swing.to, rest, (elapsed - swing.active) / swing.back)
 	if _recoil_timer > 0.0:
 		# Parried: thrown back over the shoulder, then brought forward again, slowly at first.
 		var since = PARRIED_RECOIL - _recoil_timer
