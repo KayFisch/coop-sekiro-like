@@ -4,7 +4,6 @@ extends GymLevel
 ## From then on, a wall jump pressed as you hit the wall is a full one, early or late a weak
 ## one: mashing or hanging on sinks you. Every shaft's width follows from BPM, so the walls
 ## make the rhythm. The readout up top lists your last wall jumps, ms off hitting the wall.
-## With Moves "wall_log" on, every climb is logged for analysis (WallLog).
 ##  1 WIDE     a beat's flight from wall to wall (WIDE_BEATS). Too far for the wall
 ##             jump's own flight (WALL_FLIGHT_TIME): hold toward the far wall.
 ##  2 NARROW   half as wide: twice as fast, on every tick and between, no steering needed.
@@ -32,7 +31,6 @@ var _metronome: Metronome
 var _coop = 0.0  # the coop chimney's width
 var _bot: ChimneyBot
 var _readout: Label
-var _log: WallLog
 var _jumps: Array = []  # [ms off its moment, full jump] for the last wall jumps
 var _last_jump = -100.0
 var _clashes = 0
@@ -71,13 +69,9 @@ func _build():
 		+ "Your first wall jump starts it,\nlanding stops it. Then jump as you hit the wall: a full\njump. Early or late: a weak one.\nWalk in under the left walls.", GROUND_Y - 380)
 	_readout = screen_label()
 
-	_log = WallLog.new()
-	_log.metronome = _metronome
-	_log.top_y = TOP_Y
-	add_child(_log)
-	_shaft(WIDE_X, wide, "1 · WIDE", "a beat across.\nHold toward the far wall", "wide")
-	_shaft(NARROW_X, narrow, "2 · NARROW", "half as wide: twice as fast,\nno steering needed", "narrow")
-	_shaft(COOP_X, _coop, "3 · COOP", "too wide alone. Jump off with your\nmirror (P2), hold toward the middle,\npress jump as you meet (chimney\nclash): you wall-jump off each other.\nHold back toward your wall, jump as you hit it.", "coop")
+	_shaft(WIDE_X, wide, "1 · WIDE", "a beat across.\nHold toward the far wall")
+	_shaft(NARROW_X, narrow, "2 · NARROW", "half as wide: twice as fast,\nno steering needed")
+	_shaft(COOP_X, _coop, "3 · COOP", "too wide alone. Jump off with your\nmirror (P2), hold toward the middle,\npress jump as you meet (chimney\nclash): you wall-jump off each other.\nHold back toward your wall, jump as you hit it.")
 
 	# Before the players, so its presses reach them the same frame.
 	_bot = ChimneyBot.new()
@@ -86,10 +80,8 @@ func _build():
 	add_child(_bot)
 
 
-# Two walls `width` apart (inside), with a way in under the left one. `log_name`: what the
-# climb log calls it.
-func _shaft(x: float, width: float, title: String, hint: String, log_name: String):
-	_log.shafts.append([log_name, x - CAP, x + WALL + width + WALL + CAP])
+# Two walls `width` apart (inside), with a way in under the left one.
+func _shaft(x: float, width: float, title: String, hint: String):
 	solid(x, TOP_Y, WALL, GROUND_Y - ENTRANCE - TOP_Y)
 	solid(x + WALL + width, TOP_Y, WALL, GROUND_Y - TOP_Y)
 	ledge(x - CAP, TOP_Y, CAP)
@@ -102,7 +94,6 @@ func _shaft(x: float, width: float, title: String, hint: String, log_name: Strin
 
 func _ready():
 	super()
-	_log.player = players[0]
 	_bot.leader = players[0]
 	_bot.follower = players[1]
 	players[1].wall_rhythm_sound = false
@@ -147,8 +138,5 @@ func _show():
 		parts.append("%+d%s" % [j[0], " ✓" if j[1] else " weak"])
 	lines.append("wall jumps (ms off hitting the wall or partner): " + ("   ".join(parts) if not parts.is_empty() else "–"))
 	lines.append("%d BPM · on time within ±%d ms   ·   chimney clashes: %d" % [roundi(BPM), roundi(Player.WALL_RHYTHM_TOLERANCE * 1000.0), _clashes])
-	var logged = _log.summary()
-	if logged != "":
-		lines.append(logged)
 	_readout.text = "\n".join(lines)
 	_readout.modulate = Color(1.0, 0.6, 0.5) if not missing.is_empty() else COLOR_LABEL

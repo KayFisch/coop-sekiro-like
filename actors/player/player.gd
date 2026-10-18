@@ -174,7 +174,6 @@ const WALL_TOP_HOP_SPEED = 300.0  # px/s over the edge...
 const WALL_TOP_HOP_RISE = 200.0  # ...rising at least this fast (~11 px up)...
 const WALL_TOP_HOP_TIME = 0.12  # ...unsteerable this long: ~35 px onto the top
 const WALL_FLIGHT_TIME = 0.3  # how long a wall jump flies on its own (~110 px: a narrow shaft's half beat and some, not a wide one's beat)
-const WALL_TURN_GRACE = 0.12  # s (Moves "wall_turn_grace"): this close to the next wall or the partner, holding back keeps flying there (~reaction time: steering early for the jump after)
 # WALL RHYTHM (Moves "wall_rhythm"): a wall jump is timed to the moment you hit the wall. Pressed
 # within WALL_RHYTHM_TOLERANCE of it (an early press waits for the wall, see JUMP_BUFFER_TIME),
 # it's a full one; earlier or later, weak (WALL_WEAK_HEIGHT), so mashing or hanging on sinks you.
@@ -435,9 +434,6 @@ var wall_rhythm_sound = true  # this player's wall jumps sound and show the ring
 var _wall_jump_dir = 0.0  # which way the last wall jump flew
 var _wall_jump_lock = 0.0
 var _wall_flight = 0.0  # > 0 while flying from a wall jump (see WALL_FLIGHT_TIME)
-var _turn_graced = false  # last frame, holding back was ignored just before the next wall (_turn_held())
-var _near_wall_dist = INF  # px: the closest the wall flown to has come since the last wall jump (Moves "wall_reach")
-var _near_wall_time = -100.0  # ...and when
 var _wall_held_away = 0.0  # a key held away from the wall since arriving on it (doesn't let go)
 var _tempo = 1.0  # times the usual sideways speed, flying to the next wall on the beat (see _resync())
 var _tempo_until = -100.0  # flying on the beat (see _resync()) until then at the latest; < 0 if not
@@ -628,16 +624,12 @@ func _process_movement(delta):
 				metronome.stop()
 		_wall_chain = false
 		_wall_touch_side = 0.0
-		_near_wall_dist = INF
 		_end_tempo()
 	else:
 		_track_wall_contact(direction)
 		_steer_tempo(direction)
 	# Flying off a wall, holding back toward it or nothing keeps the flight (see WALLS).
-	# Just before the next wall, holding back too (Moves "wall_turn_grace", see WALL_TURN_GRACE).
-	_turn_graced = _turn_held(direction)
-	var coasting = (_wall_flight > 0.0 and (direction == 0.0 or signf(direction) == -_wall_jump_dir)) \
-		or _turn_graced
+	var coasting = _wall_flight > 0.0 and (direction == 0.0 or signf(direction) == -_wall_jump_dir)
 	if coasting:
 		facing = _wall_jump_dir  # holding toward the wall you left doesn't turn you around
 
@@ -729,7 +721,7 @@ func _sides_moving_into(direction: float) -> Array:
 		sides.append(signf(direction))
 	if absf(velocity.x) >= WALL_ATTACH_SPEED:
 		sides.append(signf(velocity.x))
-	if _wall_flight > 0.0 or _turn_graced:  # (hitting the wall stops you: the grace still carries you into it)
+	if _wall_flight > 0.0:
 		sides.append(_wall_jump_dir)
 	return sides
 
@@ -750,27 +742,6 @@ func _track_wall_contact(direction: float):
 		_wall_contact_side = touching
 		_end_tempo()  # arrived
 	_wall_touch_side = touching
-	# How close the wall flown to came (Moves "wall_reach"): turned back just short of it, a jump
-	# still pushes off it, timed to that closest moment.
-	if _wall_chain and _wall_reach() > 0.0 and not _wall_spent(_wall_jump_dir):
-		var gap = _wall_distance(_wall_jump_dir, WALL_PROBE + _wall_reach())
-		if gap < _near_wall_dist:
-			_near_wall_dist = gap
-			_near_wall_time = _now()
-
-
-# The Metronome's tick or off-beat nearest `t`; `t` itself if none is ticking.
-func _nearest_tick(t: float) -> float:
-	var metronome = _metronome()
-	if not (metronome and metronome.running):
-		return t
-	var step = metronome.beat_length() / 2.0
-	return metronome.origin + roundf((t - metronome.origin) / step) * step
-
-
-# px short of a wall (or the partner) a jump still pushes off, if you turned back early.
-func _wall_reach() -> float:
-	return float(Moves.value("wall_reach")) if Moves.on("wall_reach") else 0.0
 
 
 # A wall right beside you on `side`. Only the world counts: a partner isn't a wall.
@@ -841,12 +812,6 @@ func _wall_jump_side() -> float:
 	if _wall_chain and _now() - _wall_contact_time <= WALL_RHYTHM_TOLERANCE \
 			and not _wall_spent(_wall_contact_side):
 		return _wall_contact_side
-	# Turned back just short of the wall you flew to (Moves "wall_reach"); still flying into it,
-	# an early press waits for the wall.
-	if _wall_chain and _near_wall_dist < INF and not _wall_spent(_wall_jump_dir) \
-			and velocity.x * _wall_jump_dir < WALL_ATTACH_SPEED \
-			and _wall_distance(_wall_jump_dir, WALL_PROBE + _wall_reach()) < INF:
-		return _wall_jump_dir
 	return 0.0
 
 
@@ -858,10 +823,6 @@ func _wall_jump(side: float):
 		wall_jump_moment = now
 		if _wall_contact_side == side and _wall_contact_time > maxf(_wall_jump_time, chimney_clash_time):
 			wall_jump_moment = _wall_contact_time
-		elif side == _wall_jump_dir and _near_wall_dist < INF:
-			# Never touched it: timed to the tick you'd have hit it on (the flight is steered onto
-			# them), else its closest moment.
-			wall_jump_moment = _nearest_tick(_near_wall_time)
 		wall_jump_off = _jump_press_time - wall_jump_moment
 	else:
 		wall_jump_off = 0.0
@@ -887,7 +848,6 @@ func _wall_jump(side: float):
 	_wall_jump_lock = WALL_JUMP_LOCK
 	_wall_jump_time = _now()
 	_wall_jump_dir = -side
-	_near_wall_dist = INF
 	_wall_flight = WALL_FLIGHT_TIME
 	_wall_held_away = 0.0
 	_jump_buffer = 0.0
@@ -929,26 +889,12 @@ func _steer_tempo(direction: float):
 	var left = usual + clampf(on_beat - arrive, -WALL_RESYNC_MAX, WALL_RESYNC_MAX)
 	var k = clampf(usual / maxf(left, 0.001), 1.0 - WALL_TEMPO_RANGE, 1.0 + WALL_TEMPO_RANGE)
 	var on_its_own = _wall_jump_lock > 0.0 \
-		or (_wall_flight > 0.0 and (direction == 0.0 or signf(direction) == -_wall_jump_dir)) \
-		or _turn_held(direction)
+		or (_wall_flight > 0.0 and (direction == 0.0 or signf(direction) == -_wall_jump_dir))
 	if on_its_own and velocity.x * _wall_jump_dir > 0.0:
 		velocity.x = _wall_jump_dir * WALL_JUMP_PUSH * k
 	_tempo = 1.0
 	if direction * _wall_jump_dir > 0.0:
 		_tempo = k * WALL_JUMP_PUSH / (maxf(absf(direction), 0.5) * SPEED)
-
-
-# Moves "wall_turn_grace": holding back toward the wall you left (or nothing), WALL_TURN_GRACE or less before
-# reaching the next wall (or meeting the partner), keeps the flight going there: steering early
-# for the jump after doesn't turn you around short of it.
-func _turn_held(direction: float) -> bool:
-	if not Moves.on("wall_turn_grace") or not _wall_chain or _wall_jump_dir == 0.0:
-		return false
-	# (Letting go counts too: an analog stick turning back passes through the middle.)
-	if signf(direction) == _wall_jump_dir or velocity.x * _wall_jump_dir <= 0.0:
-		return false
-	var distance = _tempo_distance()
-	return distance != INF and distance / WALL_JUMP_PUSH <= WALL_TURN_GRACE
 
 
 func _tempo_distance() -> float:
@@ -1579,8 +1525,8 @@ func _check_clashes():
 				_relay_blocked(other)
 				return
 		# Each pair is checked once, by the lower id. Flying at each other, or already bumped
-		# together (the bump stops them) after jumping off opposite walls. Met while turned back
-		# short of each other (Moves "wall_reach"), they fly apart: the press window still holds.
+		# together (the bump stops them) after jumping off opposite walls. Once met, the press
+		# window holds even if they've flown apart again.
 		var met_now = _chimney_meet_time >= 0.0 and _now() - _chimney_meet_time <= CHIMNEY_PRESS_TOLERANCE
 		if Moves.on("chimney_clash") and player_id < other.player_id and _in_wall_flight() \
 				and other._in_wall_flight() and (absf(gap.x) <= CHIMNEY_REACH.x or met_now) \
@@ -1588,15 +1534,10 @@ func _check_clashes():
 			var touching = absf(gap.x) <= body.size.x + WALL_PROBE
 			var closing = gap.x * velocity.x > 0.0 and gap.x * other.velocity.x < 0.0
 			var bumped = _wall_jump_dir * gap.x > 0.0 and other._wall_jump_dir * gap.x < 0.0
-			# Turned back just short of each other (Moves "wall_reach"): met where they turned.
-			var near = bumped and not closing and absf(gap.x) <= body.size.x + WALL_PROBE + 2.0 * _wall_reach()  # each that short
-			if (touching and (closing or bumped)) or near or _chimney_meet_time >= 0.0:  # once met, in reach is enough
-				var now = _now()
+			if (touching and (closing or bumped)) or _chimney_meet_time >= 0.0:  # once met, in reach is enough
 				if _chimney_meet_time < 0.0:
-					# Never touched: timed to the tick they'd have met on (see _wall_jump()).
-					var meet = now if touching else _nearest_tick(now)
-					_chimney_meet_time = meet
-					other._chimney_meet_time = meet
+					_chimney_meet_time = _now()
+					other._chimney_meet_time = _chimney_meet_time
 				# Both pressed jump around the meeting (see CHIMNEY CLASH); too late, they fly on.
 				if _pressed_near(_chimney_meet_time) and other._pressed_near(_chimney_meet_time):
 					_chimney_clash(other)
@@ -1630,7 +1571,6 @@ func _chimney_clash(other):
 		p.facing = back
 		p._wall_jump_lock = WALL_JUMP_LOCK
 		p._wall_jump_dir = back
-		p._near_wall_dist = INF
 		p._wall_flight = WALL_FLIGHT_TIME
 		p._wall_jump_time = -100.0  # one clash per wall jump
 		p._jump_buffer = 0.0  # the clash's press is spent: it doesn't wall-jump on arrival

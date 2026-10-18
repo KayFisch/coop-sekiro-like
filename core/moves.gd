@@ -36,10 +36,7 @@ const ENTRIES = [
 	# Walls and ledges
 	{"key": "wall", "tab": "Walls", "label": "Wall: slide or cling", "default": "off", "options": ["off", "slide", "cling"]},
 	{"key": "wall_jump", "tab": "Walls", "label": "Wall jump", "default": false},
-	{"key": "wall_turn_grace", "tab": "Walls", "label": "  turn grace: holding back just before a wall or partner keeps flying", "default": false},
-	{"key": "wall_reach", "tab": "Walls", "label": "  wall reach: turned back this many px short, still jumps off", "default": "off", "options": ["off", "4", "8", "12", "16"]},
 	{"key": "wall_rhythm", "tab": "Walls", "label": "  wall rhythm: jump as you hit the wall, else weak", "default": false},
-	{"key": "wall_log", "tab": "Walls", "label": "  wall gym: log every climb's timing (wall_log.jsonl)", "default": false},
 	{"key": "wall_refresh", "tab": "Walls", "label": "Wall / ledge refreshes the dash", "default": false},
 	{"key": "ledge_grab", "tab": "Walls", "label": "Ledge grab + climb", "default": false},
 	# Pogo
