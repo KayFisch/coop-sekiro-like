@@ -26,6 +26,15 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 
 ## Jetzt
 
+- [ ] **`player.gd` aufräumen, ein Baukasten daraus** (@Kay, 2026-10-18), Branch
+  `kay/player-kit` (auf `nicho/code-overhaul`). Raus, wie mit Nicho besprochen: Cubus und Sphaera
+  (mit ihren Spieler-Hooks: Griff, Tumble, Klingen-Clash, Sammeln, Seil, Grube), HP und Tränke
+  (mit Bifrons' altem „hp“-Modus und dem alten Sync-Meter), die Wand-Experimente (turn grace,
+  wall reach, Kletter-Log), das alte Relay mit Zielen und der Call-Countdown. Der Wall-Rhythmus
+  läuft auf `Beat` statt auf einem eigenen Metronom (Gefühl testen). Dann gemeinsame Helfer
+  (`core/fx.gd`: Funken, Ringe, Shake), Spieler-Verben für Bosse und Kit, und `player.gd` in
+  Schichten wie Bifrons. Vorher Tests für die Moves, die bleiben. **Fasst `player.gd` und seine
+  Aufrufer an** (Bifrons, Gyms, Kit, `core/`, HUD): bis zum Merge dort bitte nichts ändern.
 - [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), Branch `nicho/pep-test`. Testet die
   Grundregel aus den Scribbles: Spieler links und rechts vom Boss, zwei Schwerter, er ist auf
   beiden Seiten gedeckt; ein Parry auf einer Seite bricht kurz die Deckung auf der anderen
