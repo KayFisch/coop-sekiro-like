@@ -178,14 +178,13 @@ const WALL_FLIGHT_TIME = 0.3  # how long a wall jump flies on its own (~110 px: 
 # within WALL_RHYTHM_TOLERANCE of it (an early press waits for the wall, see JUMP_BUFFER_TIME),
 # it's a full one; earlier or later, weak (WALL_WEAK_HEIGHT), so mashing or hanging on sinks you.
 # So the rhythm is the walls': a shaft as wide as a beat's flight is climbed on every beat, one
-# half as wide twice as fast. The first wall jump of a climb starts the rhythm: it's always a
-# full one, and a level's Metronome starts ticking on it (landing stops it), unless the
-# partner is already climbing to it. A full jump that's off the beat (pressed late, or the wall
-# reached late or early) flies to the next wall a little faster or slower (_resync()), so it
-# arrives on the beat and nothing adds up and drifts off it. A ring around you closes on the next moment to jump
-# (reaching the wall, meeting the partner for a chimney clash) and flashes white for its window.
-const WALL_BEAT = 0.5  # a beat where the level has no Metronome (a chimney clash's throw): 120 per minute
-const WALL_RESYNC_MAX = 0.1  # s a flight is pulled at most toward arriving on the Metronome's half-beats (see _steer_tempo())
+# half as wide twice as fast. The first wall jump of a climb is always a full one. While the
+# level's clock runs (Beat), a full jump flies to the next wall a little faster or slower
+# (_resync()), so it arrives on one of the clock's beats or half-beats, whatever was off (a late
+# press, a slow flight): nothing adds up and drifts off the room's beat (and its music). A ring
+# around you closes on the next moment to jump (reaching the wall, meeting the partner for a
+# chimney clash) and flashes white for its window.
+const WALL_RESYNC_MAX = 0.1  # s a flight is pulled at most toward arriving on the clock's half-beats (see _steer_tempo())
 const WALL_TEMPO_RANGE = 0.2  # the flight to the next wall goes at most 20% faster or slower to land on the beat
 const WALL_TEMPO_REACH = 1000.0  # px: a wall further than this isn't flown to on the beat
 const WALL_TEMPO_LONGEST = 1.0  # s a flight is steered on the beat at most (it's at a wall long before)
@@ -592,12 +591,7 @@ func _process_movement(delta):
 		_wall_side = 0.0
 		_spent_wall_side = 0.0
 		_wall_flight = 0.0
-		if _wall_chain:
-			# The climb is over: the metronome stops, unless the partner is still climbing.
-			var metronome = _metronome()
-			if metronome and not _climbing_partner():
-				metronome.stop()
-		_wall_chain = false
+		_wall_chain = false  # the climb is over
 		_wall_touch_side = 0.0
 		_end_tempo()
 	else:
@@ -791,19 +785,14 @@ func _wall_jump_side() -> float:
 
 func _wall_jump(side: float):
 	var now = _now()
-	# Timed to hitting this wall; the first of a climb starts the rhythm instead.
+	# Timed to hitting this wall; the first of a climb is always a full one.
 	var timed = _wall_chain
+	wall_jump_moment = now
+	wall_jump_off = 0.0
 	if _wall_chain:
-		wall_jump_moment = now
 		if _wall_contact_side == side and _wall_contact_time > maxf(_wall_jump_time, chimney_clash_time):
 			wall_jump_moment = _wall_contact_time
 		wall_jump_off = _jump_press_time - wall_jump_moment
-	else:
-		wall_jump_off = 0.0
-		wall_jump_moment = now
-		var metronome = _metronome()
-		if metronome and not _climbing_partner():
-			metronome.restart(now)
 	_wall_chain = true
 	wall_beat_time = now
 	_chimney_meet_time = -100.0
@@ -833,34 +822,30 @@ func _wall_jump(side: float):
 
 
 # A full wall jump (or chimney clash) just launched: its flight to the next moment to jump
-# (hitting a wall, meeting the partner) goes on the beat (_steer_tempo()), so neither late
-# presses nor a slow flight (steering) add up and drift off it.
+# (hitting a wall, meeting the partner) goes on the clock's beat (_steer_tempo()), so neither
+# late presses nor a slow flight (steering) add up and drift off it.
 func _resync():
 	_tempo_until = _now() + WALL_TEMPO_LONGEST
 	_steer_tempo(move_axis())
 
 
 # Flying to the next moment to jump on the beat (see _resync()): when it would get there at the
-# usual speed, rounded to the Metronome's nearest half-beat (by at most WALL_RESYNC_MAX), is when
-# it's to get there; this sets the speed that does, within WALL_TEMPO_RANGE of the usual. Flying
-# on its own, the flight's; steered toward it, how fast holding the stick goes (any tilt toward
-# it flies at least half speed's worth of it). Held away or not at all, it doesn't steer for you.
+# usual speed, rounded to the clock's nearest half-beat (by at most WALL_RESYNC_MAX), is when it's
+# to get there; this sets the speed that does, within WALL_TEMPO_RANGE of the usual. Flying on
+# its own, the flight's; steered toward it, how fast holding the stick goes (any tilt toward it
+# flies at least half speed's worth of it). Held away or not at all, it doesn't steer for you.
 func _steer_tempo(direction: float):
 	if _tempo_until < 0.0:
 		return
-	var now = _now()
-	var metronome = _metronome()
 	var distance = _tempo_distance()
-	if now > _tempo_until or distance == INF or not (metronome and metronome.running):
+	if _now() > _tempo_until or distance == INF or not Beat.running:
 		_end_tempo()
 		return
 	var usual = distance / WALL_JUMP_PUSH
 	if usual <= get_physics_process_delta_time():
 		return  # there (or nearly): keep the speed it has
-	var arrive = now + usual + _seen_late()
-	var step = metronome.beat_length() / 2.0
-	var on_beat = metronome.origin + roundf((arrive - metronome.origin) / step) * step
-	var left = usual + clampf(on_beat - arrive, -WALL_RESYNC_MAX, WALL_RESYNC_MAX)
+	var halves = Beat.beats_at(Beat.time() + usual + _seen_late()) * 2.0  # arriving at the usual speed
+	var left = usual + clampf((roundf(halves) - halves) * Beat.beat_length() / 2.0, -WALL_RESYNC_MAX, WALL_RESYNC_MAX)
 	var k = clampf(usual / maxf(left, 0.001), 1.0 - WALL_TEMPO_RANGE, 1.0 + WALL_TEMPO_RANGE)
 	var on_its_own = _wall_jump_lock > 0.0 \
 		or (_wall_flight > 0.0 and (direction == 0.0 or signf(direction) == -_wall_jump_dir))
@@ -893,17 +878,6 @@ func _end_tempo():
 	_tempo_until = -100.0
 
 
-# The level's Metronome, if it has one (see WALL RHYTHM).
-func _metronome():
-	return get_tree().get_first_node_in_group("metronome")
-
-
-# s of a beat: the metronome's, else WALL_BEAT.
-func _beat_length() -> float:
-	var metronome = _metronome()
-	return metronome.beat_length() if metronome else WALL_BEAT
-
-
 # s until the next moment to jump (see WALL RHYTHM), and s since the last one; -1 if none.
 func _jump_cues() -> Vector2:
 	var now = _now()
@@ -915,7 +889,7 @@ func _jump_cues() -> Vector2:
 		since = now - _wall_contact_time
 		if _wall_side == 0.0 and absf(velocity.x) > 1.0:  # flying (or steering) at a wall
 			var side = signf(velocity.x)
-			left = _wall_distance(side, absf(velocity.x) * _beat_length()) / absf(velocity.x)
+			left = _wall_distance(side, absf(velocity.x) * Beat.beat_length()) / absf(velocity.x)
 		since = minf(since, now - _chimney_meet_time)
 		var partner = _chimney_partner()
 		if partner and _chimney_meet_time < 0.0:
@@ -924,14 +898,6 @@ func _jump_cues() -> Vector2:
 			if closing > 1.0:
 				left = minf(left, maxf(absf(gap) - body.size.x, 0.0) / closing)
 	return Vector2(left if left < INF else -1.0, since if since < INF else -1.0)
-
-
-# The partner, if they're climbing (wall-jumped since they were last on the floor).
-func _climbing_partner():
-	for other in get_tree().get_nodes_in_group("players"):
-		if other != self and other._wall_chain and not other.is_on_floor():
-			return other
-	return null
 
 
 # The partner, if both of you are flying from a wall jump (a chimney clash in the making).
@@ -958,7 +924,7 @@ func _draw_beat_ring():
 		return
 	var radius = WALL_RING_RADIUS if closed else WALL_RING_RADIUS + cues.x * WALL_RING_SHRINK
 	var color = Color.WHITE if closed else body_color.lightened(0.4)
-	var alpha = 1.0 if closed else clampf(1.0 - cues.x / _beat_length(), 0.15, 0.8)
+	var alpha = 1.0 if closed else clampf(1.0 - cues.x / Beat.beat_length(), 0.15, 0.8)
 	_beat_ring.draw_arc(Vector2.ZERO, radius, 0.0, TAU, 40, Color(color, alpha), 4.0 if closed else 2.0, true)
 
 

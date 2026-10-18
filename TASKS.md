@@ -362,8 +362,10 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     `elevator` und `walls`. Headless getestet, Gefühl ungetestet.
   - Als Nächstes (Ideen, nicht gebaut): Pendel-Schaukel (pumpen und abspringen), Ruder-Aufzug,
     Weltschalter.
-  - Offen: `Metronome` (Wall Gym, Echtzeit, startet beim Wall Jump) und `Beat` laufen
-    nebeneinander. Später zusammenführen?
+  - ~~Offen: `Metronome` (Wall Gym, Echtzeit, startet beim Wall Jump) und `Beat` laufen
+    nebeneinander. Später zusammenführen?~~ Zusammengeführt (2026-10-18, `kay/player-kit`): der
+    Wall-Rhythmus fliegt auf die Halbschläge von `Beat`, auch im Wall Gym (dort mit Klick); der
+    erste Wall Jump eines Aufstiegs setzt den Takt nicht mehr. **Gefühl testen.**
 - [ ] **Concept aufräumen** (`docs/concept.md`). Befund vom Review 2026-09-30:
   - Vision und technische Spezifikation sind vermischt: „Moveset“ hat genaue Werte
     (136 px, 0.133 s …) und eine Kopie der F1-Schalter-Tabelle aus `core/moves.gd`, die veralten

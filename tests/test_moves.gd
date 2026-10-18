@@ -249,6 +249,38 @@ func test_wall_rhythm():
 	check(not p1.wall_jump_strong, "pressed late (%+.0f ms off): a weak one" % (p1.wall_jump_off * 1000.0))
 
 
+func test_wall_rhythm_on_the_clock():
+	await _room()
+	set_move("wall", "slide")
+	set_move("wall_jump", true)
+	set_move("wall_rhythm", true)
+	Beat.start(120.0, level)
+	# A narrow shaft at 120 BPM: its own flight takes half a beat. The first wall jump comes at
+	# no particular moment; the flights after it are steered onto the clock's half-beats.
+	var left_face = 640.0
+	var right_face = left_face + level.PLAYER_SIZE.x + p1.WALL_JUMP_PUSH * 0.25
+	_wall(left_face - 40.0, 760.0)
+	_wall(right_face, 760.0)
+	_place(p1, right_face - 20.0, level.GROUND_Y - 300.0)
+	hold(p1, "right")
+	check(await _until(func(): return p1.movement_state() == "wall slide", 1.0), "on the right wall")
+	hold(p1, "right", false)
+	await _coyote_gone(p1)
+	await wait(0.13)  # off the clock's grid
+	await tap(p1, "jump")
+	var off = []  # ms from the nearest half-beat, at each wall reached
+	for i in 4:
+		var contact = p1._wall_contact_time
+		if not await _until(func(): return p1._wall_contact_time != contact, 1.0):
+			break
+		var halves = Beat.beats_at(Beat.time()) * 2.0
+		off.append(roundi(absf(halves - roundf(halves)) * Beat.beat_length() / 2.0 * 1000.0))
+		await tap(p1, "jump")
+	check(off.size() == 4, "four walls reached (%d)" % off.size())
+	check(off.size() == 4 and off[2] <= roundi(2000.0 * step) and off[3] <= roundi(2000.0 * step),
+		"from the third wall on, reached on a half-beat of the clock (ms off: %s)" % str(off))
+
+
 func test_chimney_clash():
 	await _room()
 	set_move("wall", "slide")

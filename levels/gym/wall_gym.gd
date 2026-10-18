@@ -1,9 +1,10 @@
 extends GymLevel
-## The wall gym: wall jumps in rhythm (Moves "wall_rhythm", see WALL RHYTHM in player.gd). A
-## metronome (BPM) starts ticking on your first wall jump of a climb and stops when you land.
-## From then on, a wall jump pressed as you hit the wall is a full one, early or late a weak
-## one: mashing or hanging on sinks you. Every shaft's width follows from BPM, so the walls
-## make the rhythm. The readout up top lists your last wall jumps, ms off hitting the wall.
+## The wall gym: wall jumps in rhythm (Moves "wall_rhythm", see WALL RHYTHM in player.gd). The
+## room's clock (Beat) runs at BPM, its click on while you're here. A wall jump pressed as you hit
+## the wall is a full one, early or late a weak one: mashing or hanging on sinks you, and a full
+## one's flight is steered onto the clock's beats and half-beats. Every shaft's width follows
+## from BPM, so the walls make the rhythm. The readout up top lists your last wall jumps, ms off
+## hitting the wall.
 ##  1 WIDE     a beat's flight from wall to wall (WIDE_BEATS). Too far for the wall
 ##             jump's own flight (WALL_FLIGHT_TIME): hold toward the far wall.
 ##  2 NARROW   half as wide: twice as fast, on every tick and between, no steering needed.
@@ -27,7 +28,6 @@ const ENTRANCE = 56.0  # the gap under each shaft's left wall: walk in, but no j
 const NEEDED = ["wall", "wall_jump", "wall_rhythm", "chimney_clash"]
 const READOUT_JUMPS = 8
 
-var _metronome: Metronome
 var _coop = 0.0  # the coop chimney's width
 var _bot: ChimneyBot
 var _readout: Label
@@ -52,9 +52,6 @@ func _gap(beats: float) -> float:
 
 
 func _build():
-	_metronome = Metronome.new()
-	_metronome.bpm = BPM
-	add_child(_metronome)
 	var wide = _gap(WIDE_BEATS)
 	var narrow = _gap(NARROW_BEATS)
 	# The coop chimney: two wide shafts, the partners meeting (touching) in the middle, each the
@@ -65,8 +62,8 @@ func _build():
 	solid(bounds.end.x - 24, bounds.position.y, 24, GROUND_Y - bounds.position.y)
 	ground(0, bounds.end.x)
 	respawn_point = Vector2(120, GROUND_Y - PLAYER_HALF)
-	station(60, "WALL RHYTHM", "Metronome: %d BPM.\n" % roundi(BPM) \
-		+ "Your first wall jump starts it,\nlanding stops it. Then jump as you hit the wall: a full\njump. Early or late: a weak one.\nWalk in under the left walls.", GROUND_Y - 380)
+	station(60, "WALL RHYTHM", "The clock: %d BPM (M: its click).\n" % roundi(BPM) \
+		+ "Jump as you hit the wall: a full\njump. Early or late: a weak one.\nWalk in under the left walls.", GROUND_Y - 380)
 	_readout = screen_label()
 
 	_shaft(WIDE_X, wide, "1 · WIDE", "a beat across.\nHold toward the far wall")
@@ -94,6 +91,11 @@ func _shaft(x: float, width: float, title: String, hint: String):
 
 func _ready():
 	super()
+	Beat.start(BPM, self)
+	# No music here: the click is the beat to climb to, while in the room.
+	var click_was = Beat.click_on
+	Beat.click_on = true
+	tree_exiting.connect(func(): Beat.click_on = click_was)
 	_bot.leader = players[0]
 	_bot.follower = players[1]
 	players[1].wall_rhythm_sound = false

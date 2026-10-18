@@ -10,7 +10,7 @@ extends Node2D
 ## The gap is a player's body (Player.BODY_SIZE.x) plus the ground a wall jump flies
 ## (WALL_JUMP_PUSH) in that many beats at the room's BPM: change the BPM and every shaft follows.
 ## A room with a shaft switches on what wall jumps need (F1: wall, wall jump, chimney clash for
-## COOP, wall rhythm if `rhythm`) while it runs, and ticks a Metronome at its BPM.
+## COOP, wall rhythm if `rhythm`) while it runs; the wall rhythm then flies on the room's clock.
 ## Its position is the left wall's top-left corner (where it would be with `left_drop` 0); the
 ## walls stand `height` tall, on a floor there (put a KitBlock under it). Either wall can start
 ## lower (`left_drop`, `right_drop`), have a way in under it (`entrance`) and a ledge on top

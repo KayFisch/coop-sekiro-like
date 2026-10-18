@@ -78,10 +78,6 @@ func _ready():
 	Beat.start(bpm, self, "" if music == "none" else music)
 	var pieces = _descendants(self)
 	_switch_on_moves(pieces)
-	if pieces.any(func(n): return n.has_method("needed_moves")):  # a KitShaft
-		var metronome = Metronome.new()  # the wall rhythm's clock (see WALL RHYTHM in player.gd)
-		metronome.bpm = bpm
-		add_child(metronome)
 	for n in pieces:
 		if n.has_signal("hit"):
 			n.hit.connect(kill)

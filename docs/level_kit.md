@@ -89,8 +89,9 @@ works out where it is from the clock alone, so they all stay in time with each o
   `beat_in_bar()`, `phase()`, `beats_at(t)`, `offset_to_beat(t)` / `offset_to_downbeat(t)`.
 - `BeatDisplay` (`ui/beat_display.gd`) shows it: four dots, the current one lit, the 1 larger.
 
-The wall gym's `Metronome` (`levels/metronome.gd`) is a separate, older clock the wall rhythm
-uses; a room with a shaft runs one at its BPM next to `Beat`.
+The wall rhythm goes by it too: a full wall jump's flight is steered onto its beats and
+half-beats (until 2026-10-18 a separate `Metronome` did that, restarted by each climb's first
+wall jump).
 
 ## Examples
 
