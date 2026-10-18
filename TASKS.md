@@ -33,8 +33,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   `nicho/code-overhaul` (auf `nicho/kay-to-main`): Tests im Repo, Werkzeuge zum einzelnen Testen
   von Angriffen und Regeln (für alle Bosse), einheitliche Stellschrauben (F2), Performance (Kays
   Levels), Ordnung im Code. Bis zum Merge geteilte Dateien (`player.gd`, `core/`) möglichst nicht
-  parallel ändern.
-- [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), Branch `nicho/pep-test`. Testet die
+  parallel ändern. Nachtrag: F2 wie F1 aufgebaut (Seite Z / C, Tabs Q / E), F5-Tasten neu
+  (Q / E, Z, X, H, M: seine Bewegung aus).
+- [ ] **`player.gd` aufräumen** (@Kay, 2026-10-18). Solange das läuft, fasst sonst niemand
+  `player.gd` an.
+- [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), jetzt auf `main`. Testet die
   Grundregel aus den Scribbles: Spieler links und rechts vom Boss, zwei Schwerter, er ist auf
   beiden Seiten gedeckt; ein Parry auf einer Seite bricht kurz die Deckung auf der anderen
   (Partner trifft im selben Takt), beide Seiten gleichzeitig pariert = Stagger.
