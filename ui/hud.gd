@@ -80,10 +80,7 @@ func _process(_delta):
 			var color = POTION_COLOR if i < p.potions else POTION_USED_COLOR
 			if style.bg_color != color:  # only restyle (and redraw) on change
 				style.bg_color = color
-		if p.is_grabbed:
-			row.status.text = "GRABBED!"
-			row.status.modulate = Color(1.0, 0.6, 0.2)
-		elif p.is_staggered():
+		if p.is_staggered():
 			row.status.text = "STAGGERED"
 			row.status.modulate = Color(0.75, 0.75, 0.75)
 		elif p.is_drinking():

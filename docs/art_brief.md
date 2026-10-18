@@ -6,8 +6,7 @@ how big, which colors, which poses. Paste the block below into the prompt and fi
 Nothing here is decided art direction. Today everything is rectangles drawn in code; the sizes,
 colors and poses below are read from that code (`actors/player/player.gd`,
 `actors/bosses/columna_bifrons/columna_bifrons.gd`, `levels/threshold/threshold.tscn`,
-`ui/mirror_view.gd`). When those change, change them here too. Only Columna Bifrons is covered;
-Cubus and Sphaera aren't.
+`ui/mirror_view.gd`). When those change, change them here too.
 
 ## Inspiration: Gris
 

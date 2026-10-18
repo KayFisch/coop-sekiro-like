@@ -13,28 +13,6 @@ const SYNC_MAX = 100.0
 const SYNC_START = 0.0
 # Sync gained per boss sync_event, by kind.
 const SYNC_GAINS = {
-	# Cubus Maximus
-	"relay_completed": 25.0,
-	"grab_dodged": 15.0,
-	"grand_slash_parried": 40.0,
-	"shockwave_parried": 8.0,
-	"double_counter": 30.0,
-	"single_counter": 15.0,
-	"stab_parried": 8.0,
-	"triple_clash": 10.0,  # on top of the three stab parries
-	"clash_countered": 20.0,
-	# Sphaera Pendula
-	"swing_parried": 6.0,
-	"swing_relay_completed": 25.0,
-	"hook_dodged": 15.0,
-	"hook_rescued": 25.0,  # worth more than a dodge: it took both of you
-	"undertow_exposed": 10.0,
-	"counterweight_catapult": 30.0,
-	"shackle_sweeps_cleared": 8.0,
-	"shackle_slingshot": 35.0,
-	"zenith_interrupted": 25.0,
-	"coupled_parried": 6.0,
-	"coupled_collision": 30.0,
 	# Columna Bifrons
 	"bifrons_parried": 3.0,
 	"bifrons_sync_hit": 6.0,  # the partner's hit on the same strike: it took both of you

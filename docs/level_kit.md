@@ -81,8 +81,7 @@ An autoload, the one clock for everything that goes in time. No piece counts tim
 works out where it is from the clock alone, so they all stay in time with each other.
 
 - The room starts it at its `bpm` (150 by default: 0.4 s a beat, already the game's hidden
-  pulse: the call countdown ticks every 0.4 s, Sphaera's pendulums swing on 0.4, a slash comes
-  back in 0.41 s, a jump rises for 0.39 s). 4 beats a bar.
+  pulse: a slash comes back in 0.41 s, a jump rises for 0.39 s). 4 beats a bar.
 - It's never reset inside a room, not when you die, not on R: what you learn about the room's
   rhythm holds from try to try.
 - It pauses with F1 and stops with the room. A click on every beat, brighter on the 1: off at first, M switches it on.

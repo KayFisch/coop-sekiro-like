@@ -1,13 +1,12 @@
 class_name WeighedPans
 extends Node2D
-## Two linked pans, like the Scales in Sphaera Pendula's arena but free-standing and tunable:
-## each player standing on a pan weighs 1 (in the air, 0), the heavier pan sinks `step` px per
-## unit of difference (up to `max_travel`) and the other rises as much, on a spring.
-## Configure with setup() before adding it to the tree.
+## Two linked pans, free-standing and tunable: each player standing on a pan weighs 1 (in the
+## air, 0), the heavier pan sinks `step` px per unit of difference (up to `max_travel`) and the
+## other rises as much, on a spring. Configure with setup() before adding it to the tree.
 
 const THICKNESS = 20.0
-const STIFFNESS = 90.0  # as in scales.gd
-const DAMPING = 13.0
+const STIFFNESS = 90.0  # the spring toward the height the weight asks for...
+const DAMPING = 13.0  # ...and its damping: a slight overshoot, settled in ~0.5 s
 const COLOR = Color(0.3, 0.27, 0.24)
 const COLOR_EDGE = Color(0.92, 0.82, 0.62)
 const COLOR_CHAIN = Color(0.42, 0.4, 0.38)

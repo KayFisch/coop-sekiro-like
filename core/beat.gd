@@ -14,9 +14,8 @@ extends Node
 signal beat(index)  # every beat, counted from 0 at start(); index 0, 4, 8... is a 1
 signal bar(index)  # every bar's 1, counted from 0
 
-# 150 per minute, 0.4 s a beat: already the game's hidden pulse. The call countdown ticks every
-# 0.4 s (CALL_BEAT), Sphaera's coupled pendulums swing on 0.4, Cubus's shockwave slashes on 0.2,
-# the slash comes back in 0.41 s, and a jump rises for 0.39 s.
+# 150 per minute, 0.4 s a beat: already the game's hidden pulse. The slash comes back in 0.41 s,
+# and a jump rises for 0.39 s.
 const DEFAULT_BPM = 150.0
 const BEATS_PER_BAR = 4
 # s from playing a click to hearing it. Judging (offset_to_beat()) moves this much later, so a

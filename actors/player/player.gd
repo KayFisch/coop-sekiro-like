@@ -29,8 +29,7 @@ enum Hold { NONE, RELAY_DASHER, RELAY_ANCHOR }
 #   Sword ............................. slash, upslash, dash-slash, pogo
 #   Clashes with the partner .......... launch, momentum relay, chimney clash, rhythm relay
 #   Defensive queries used by the boss  is_blocking(), is_perfect_parry() ...
-#   Shockwave gathering
-#   What a boss does to a player ...... parried, hit, grabbed, staggered, tethered, tumbling
+#   What a boss does to a player ...... parried, hit, staggered, held in a clash
 #   The boss's body / The tell / Call
 #   The look .......................... the sword's angle, colors, flashes, effects, hands
 #   The pair's strike ................. the sync mode's draw-back and sabre (core/sync_bond.gd)
@@ -76,9 +75,6 @@ const CHIP_INVULN_TIME = 0.2
 # and a hit connecting inside it is a perfect parry. So the press must come at most this long
 # *before* contact; pressing after the hit has landed is too late. Raise for easier parries.
 const PARRY_TOLERANCE = 0.133
-# DODGE WINDOW (the grab), same idea: a dash press opens a window of this length, and the
-# boss's hands shutting inside it is a clean dodge. Press at most this long before they shut.
-const DODGE_TOLERANCE = 0.133
 const PARRY_SPAM_LOCK = 0.3  # a block press this soon after the previous one can't parry
 # THE SWORD, the rules every blade in the game follows (the bosses' too):
 # A blade either guards or swings. At rest it's held diagonally, up and forward. Block holds it
@@ -300,8 +296,6 @@ const WORLD_LAYER = 1  # floor and walls
 const PLAYER_LAYER = 2  # players; they collide with each other while Moves "players_collide" is on
 const PLATFORM_LAYER = 4  # one-way platforms live on physics layer 4
 const SWORD_FLASH_TIME = 0.1
-const DODGE_FLASH_TIME = 0.25
-const DODGE_COLOR = Color(0.5, 1.0, 1.0)
 const HURT_FLASH_TIME = 0.5  # three 0.1s white flashes with 0.1s gaps...
 const FLASH_DARK_ABOVE = 0.8  # ...black ones on a body this light (luminance), or they'd vanish
 const IDLE_BOB_HEIGHT = 3.0
@@ -309,16 +303,6 @@ const IDLE_BOB_HZ = 0.6
 const DASH_STRETCH = Vector2(1.3, 0.7)
 const DASH_STRETCH_TIME = 0.1
 const DRINK_ORB_SIZE = 14.0
-# Tumbling: thrown by the boss into the floor, one bounce, a short slide, back up; no control
-# until then. The throw itself (launch, bounce, get-up time) is tuned by the attack (grab.gd).
-const TUMBLE_MAX_TIME = 2.0  # safety cap
-const TUMBLE_WALL_BOUNCE = 0.4  # fraction of sideways speed kept off a wall
-const TUMBLE_FRICTION = 1400.0  # sliding along the floor after landing from the bounce
-const TUMBLE_SPIN = 0.012  # body rotation per pixel travelled sideways
-const TUMBLE_IMPACT_SHAKE = 10.0
-# Tethered to the partner (Sphaera Pendula's shackle): a rope of tether_length. Past it, the rope
-# pulls the two together, moving whoever gives more: see _tether_give().
-const TETHER_MAX_CORRECTION = 40.0  # px per frame, so a respawn doesn't yank the partner across
 # BOSS BODY (Moves "boss_body"): a boss may block players with a zone (BaseBoss.body_block()).
 # Nobody walks, dashes or jumps through it, and nobody stands on it; see _keep_out_of_boss().
 const BOSS_SLIDE_SPEED = 900.0  # px/s: landing on top, you slide off the side you came from
@@ -368,8 +352,7 @@ const SABRE_DARK = Color(0.07, 0.07, 0.09)
 
 var hp = MAX_HP
 var potions = POTION_CHARGES
-var is_grabbed = false
-var is_clashing = false  # blades locked with the boss, held in place
+var is_clashing = false  # blades locked with a boss's or an obstacle's, held in place
 var invincible = false  # testing: hits still land (flash, knockback) but take no health
 var facing = 1.0
 var body_color: Color
@@ -383,14 +366,7 @@ var own_half = false:
 		own_half = v
 		_update_player_collision()
 var parry_press_time = -100.0  # when the last block press that can still parry happened
-var gathered = 0  # shockwaves parried in the current volley
 var swing_serial = 0  # bumped by every new swing and dash-slash (see active_sword_point())
-var tether_partner = null  # set_tether()
-var tether_length = 0.0
-
-var _gather_needed = 0  # 0 while no volley is running
-var _gather_failed = false
-var _gather_label: Label
 
 var _air_jumps = AIR_JUMPS
 var _coyote_timer = 0.0  # > 0 while a ground jump is still allowed
@@ -405,7 +381,6 @@ var _windup_timer = 0.0  # > 0 while winding up a dash-slash
 var _invuln_timer = 0.0
 var _drop_timer = 0.0
 var _sword_flash = 0.0
-var _dodge_flash = 0.0
 var _last_block_press = -100.0
 var _swing_kind = Swing.SLASH
 var _attack_timer = 0.0  # counts down through the swing and its return
@@ -423,12 +398,6 @@ var _trail_timer = 0.0
 var _launch_timer = 0.0  # > 0 while rising from a launch: the sideways carry isn't eased off
 var _knockback_timer = 0.0
 var _stagger_timer = 0.0  # > 0 while reeling from a hit: no movement, no input
-var _tumble_timer = 0.0  # > 0 while tumbling (see tumble())
-var _tumble_damage = 0.0  # dealt when the tumble first hits the floor; 0 once dealt
-var _tumble_bounce = Vector2.ZERO  # off the first floor hit: x = sideways speed, y = height
-var _tumble_get_up = 0.0  # counts down once landed from the bounce
-var _tumble_floor_hits = 0
-var _clash_overhead = true  # grand slash clash: sword flat overhead; otherwise level, at the boss
 var _drink_timer = 0.0  # > 0 while drinking a potion
 var _drink_bar: ColorRect
 var _drink_orb: Panel
@@ -515,7 +484,6 @@ var _tell_sounded = false
 var _block_side = 1.0  # which side of the boss's block you're on (see _keep_out_of_boss())
 var _block_above = false  # clear of the block, above it, last frame
 var _block_sliding = false  # landed on top: sliding off
-var _block_ignored = false  # grabbed or thrown into it: passing through until clear
 var _pass_timer = 0.0  # > 0 just after a perfect parry: a dash started now goes through the boss
 var _passing = false  # this dash goes through the boss's block (see PASS_WINDOW)
 var _call_time = -1.0  # time into the countdown; < 0 while there's none
@@ -547,7 +515,6 @@ func _ready():
 	_block_side = -facing
 	_body_rest = body.position
 	body.pivot_offset = body.size / 2  # stretch around the center
-	_setup_gather_label()
 	_setup_drink_bar()
 	_setup_sword()
 	_setup_hands()
@@ -592,14 +559,12 @@ func paint(new_body: Color, new_sword: Color):
 func _physics_process(delta):
 	_tick_timers(delta)
 	_process_call(delta)
-	if is_grabbed or is_clashing:
-		velocity = Vector2.ZERO  # carried by the boss, or braced holding him back
+	if is_clashing:
+		velocity = Vector2.ZERO  # braced, holding the other blade back
 	elif _hold_kind != Hold.NONE:
 		_process_hold(delta)
 	elif _ledge:
 		_process_ledge(delta)
-	elif is_tumbling():
-		_process_tumble(delta)
 	elif is_staggered():
 		velocity.x = 0.0
 		_apply_gravity(delta)
@@ -617,16 +582,13 @@ func _physics_process(delta):
 		move_and_slide()
 		_check_clashes()
 	_keep_out_of_boss(delta)
-	if not is_grabbed and not is_clashing:
-		_apply_tether()
 	_track_landing()
 	_process_attack()
 	_update_visuals()
 
 
 # Normal gravity on the way up, heavier on the way down, up to the fall speed cap; heavier and
-# faster still when fast falling. (Tumbling uses plain GRAVITY, so the grab's bounce height
-# comes out as tuned.)
+# faster still when fast falling.
 func _apply_gravity(delta, fast = false):
 	var gravity = GRAVITY * (FALL_GRAVITY_MULTIPLIER if velocity.y > 0.0 else 1.0)
 	if _pogo_rise > 0.0 and velocity.y < 0.0:
@@ -649,7 +611,7 @@ func _now() -> float:
 	return Time.get_ticks_msec() / 1000.0
 
 
-# Left/right input, -1..1, for attacks that let a held player steer (e.g. swinging on a hook).
+# Left/right input, -1..1.
 func move_axis() -> float:
 	if running_on:
 		return 0.0
@@ -1643,8 +1605,7 @@ func is_launch_ready() -> bool:
 # Upslashing, pressed at most `tolerance` ago (the launch and the pogo clash).
 func is_upslash_fresh(tolerance: float) -> bool:
 	return _swing_kind == Swing.UPSLASH and _attack_timer > 0.0 \
-		and _now() - _upslash_press_time <= tolerance \
-		and not is_grabbed and not is_staggered() and not is_tumbling()
+		and _now() - _upslash_press_time <= tolerance and not is_staggered()
 
 
 # Checked every frame: a dash-slash meeting the partner's upslash (launch) or block (relay), or
@@ -1992,7 +1953,6 @@ func _tick_timers(delta):
 	_attack_buffer = maxf(_attack_buffer - delta, 0.0)
 	_pass_timer = maxf(_pass_timer - delta, 0.0)
 	_parry_flick = maxf(_parry_flick - delta, 0.0)
-	_dodge_flash = maxf(_dodge_flash - delta, 0.0)
 	_hurt_flash = maxf(_hurt_flash - delta, 0.0)
 	_attack_timer = maxf(_attack_timer - delta, 0.0)
 	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
@@ -2037,33 +1997,21 @@ func _track_landing():
 # --- Defensive queries used by the boss at the moment its hitbox connects ---
 
 func is_blocking() -> bool:
-	return not is_grabbed and not is_drinking() and not is_staggered() and not is_tumbling() \
+	return not is_drinking() and not is_staggered() \
 		and not _is_swinging() and Input.is_action_pressed(_action("block")) \
 		and (GameManager.rules == null or GameManager.rules.can_block())  # no blocking in chaos
 
 
 func is_perfect_parry() -> bool:
-	return not is_grabbed and not is_drinking() and not is_staggered() and not is_tumbling() \
-		and _now() - parry_press_time <= PARRY_TOLERANCE
+	return not is_drinking() and not is_staggered() and _now() - parry_press_time <= PARRY_TOLERANCE
 
 
 func is_staggered() -> bool:
 	return _stagger_timer > 0.0
 
 
-func is_perfect_dodge() -> bool:
-	return not is_grabbed and _now() - _dash_press_time <= DODGE_TOLERANCE
-
-
-# Standing on the arena floor itself, not on a one-way platform. Standing on the partner counts
-# as standing where they stand (see get_floor_body()).
-func is_on_main_floor() -> bool:
-	var floor_body = get_floor_body()
-	return floor_body is CollisionObject2D and floor_body.get_collision_layer_value(WORLD_LAYER)
-
-
-# What the player is standing on (e.g. which pan of the Scales), or null in the air. Standing on
-# the partner counts as standing on whatever they stand on.
+# What the player is standing on (e.g. which of the duo gym's pans), or null in the air. Standing
+# on the partner counts as standing on whatever they stand on.
 func get_floor_body():
 	if not is_on_floor():
 		return null
@@ -2077,35 +2025,7 @@ func get_floor_body():
 	return null
 
 
-# --- Shockwave gathering: all-or-nothing per volley --------------------------
-
-func start_gather(needed: int):
-	gathered = 0
-	_gather_needed = needed
-	_gather_failed = false
-
-
-func add_gather():
-	if not _gather_failed:
-		gathered += 1
-
-
-func fail_gather():
-	gathered = 0
-	_gather_failed = true
-
-
-func has_full_gather() -> bool:
-	return _gather_needed > 0 and not _gather_failed and gathered >= _gather_needed
-
-
-func end_gather():
-	_gather_needed = 0
-	gathered = 0
-	_gather_failed = false
-
-
-# --- What a boss does to a player: parried, hit, grabbed, staggered, tethered, tumbling ---
+# --- What a boss does to a player: parried, hit, staggered, held in a clash ---
 
 func on_perfect_parry(strong: bool):
 	Dev.defended(self, "parry", _now() - parry_press_time)
@@ -2134,17 +2054,8 @@ func cue_sync(duration: float, color: Color):
 	_cue_color = color
 
 
-# burst: a ring bursting off the player and a whoosh on top of the flash (Cubus's grab).
-func on_grab_dodged(burst = false):
-	_dodge_flash = DODGE_FLASH_TIME
-	if burst:
-		_spawn_ring(DODGE_COLOR, 22.0, 60.0, DODGE_FLASH_TIME)
-		Sfx.play("slash", -2.0)
-
-
-# ignore_invuln: for hits chained faster than the post-hit invulnerability (the triple stab).
-func take_damage(amount: float, knockback = Vector2.ZERO, chip = false, ignore_invuln = false):
-	if _is_dead or (_invuln_timer > 0.0 and not ignore_invuln):
+func take_damage(amount: float, knockback = Vector2.ZERO, chip = false):
+	if _is_dead or _invuln_timer > 0.0:
 		return
 	Dev.defended(self, "block" if chip else "hit", _now() - _last_block_press)
 	var lethal = false
@@ -2170,7 +2081,7 @@ func take_damage(amount: float, knockback = Vector2.ZERO, chip = false, ignore_i
 	if knockback != Vector2.ZERO:
 		_knockback_timer = KNOCKBACK_TIME
 		if not chip:
-			Sfx.play_delayed("knockback", 0.06, -4.0)  # the tumble, just behind the impact
+			Sfx.play_delayed("knockback", 0.06, -4.0)  # thrown back, just behind the impact
 	health_changed.emit(self, hp)
 	if chip:
 		blocked.emit(self)
@@ -2179,16 +2090,6 @@ func take_damage(amount: float, knockback = Vector2.ZERO, chip = false, ignore_i
 	if hp <= 0.0:
 		_is_dead = true
 		died.emit(self)
-
-
-func set_grabbed(grabbed: bool):
-	is_grabbed = grabbed
-	velocity = Vector2.ZERO
-	_dash_timer = 0.0
-	interrupt_movement()
-	_launch_timer = 0.0
-	if grabbed:
-		_cancel_drink()  # being carried off interrupts the drink like a hit would
 
 
 # Reeling from a hit: can't move, block, parry or act until it wears off.
@@ -2200,9 +2101,9 @@ func stagger(duration: float):
 	_attack_timer = 0.0
 
 
-func set_clashing(clashing: bool, overhead = true):
+# Blades locked with another (an obstacle's, a boss's): held in place, sword level against it.
+func set_clashing(clashing: bool):
 	is_clashing = clashing
-	_clash_overhead = overhead
 	velocity = Vector2.ZERO
 	_dash_timer = 0.0
 	interrupt_movement()
@@ -2212,114 +2113,6 @@ func set_clashing(clashing: bool, overhead = true):
 func apply_knockback(push: Vector2):
 	velocity = push
 	_knockback_timer = KNOCKBACK_TIME
-
-
-# Fell out of the arena (the Scales' pit): back in at `spawn`, hurt, briefly invulnerable.
-func fall_into_pit(spawn: Vector2, damage: float, invuln_time: float):
-	global_position = spawn
-	velocity = Vector2.ZERO
-	_tumble_timer = 0.0
-	body.rotation = 0.0
-	_drop_timer = 0.0
-	set_collision_mask_value(PLATFORM_LAYER, true)
-	_air_time = 0.0
-	take_damage(damage, Vector2.ZERO, false, true)
-	_invuln_timer = maxf(_invuln_timer, invuln_time)
-
-
-# Ties this player to `partner` with a rope of `length` px; null unties. Set it on both.
-func set_tether(partner, length = 0.0):
-	tether_partner = partner
-	tether_length = length
-
-
-# Past the rope's length, pull back toward the partner: this player's share of the excess
-# (the rest is the partner's, on their own frame), and no more speed away from them.
-func _apply_tether():
-	if tether_partner == null or not is_instance_valid(tether_partner):
-		return
-	var to_partner = tether_partner.global_position - global_position
-	var excess = to_partner.length() - tether_length
-	if excess <= 0.0:
-		return
-	var dir = to_partner.normalized()
-	var mine = _tether_give()
-	var theirs = tether_partner._tether_give()
-	var share = 0.5 if mine + theirs <= 0.0 else mine / (mine + theirs)
-	if share <= 0.0:
-		return
-	move_and_collide(dir * minf(excess * share, TETHER_MAX_CORRECTION))
-	var away = -velocity.dot(dir)
-	if away > 0.0:
-		velocity += dir * away
-
-
-# How easily the rope drags this player: an airborne player swings freely, a grounded one digs
-# in, and one blocking on the ground holds fast (an anchor for a partner who fell).
-func _tether_give() -> float:
-	if is_grabbed or is_clashing:
-		return 0.0
-	if not is_on_floor():
-		return 1.0
-	return 0.05 if is_blocking() else 0.3
-
-
-# Thrown: flies at launch until it hits the floor, where impact_damage (if any) lands and it
-# bounces off with bounce.x sideways speed, up to bounce.y pixels high. Landing from that bounce
-# it slides, and gets back up (control returns) after get_up_time. Walls bounce it back;
-# one-way platforms don't catch it, only the arena floor does.
-func tumble(launch: Vector2, impact_damage = 0.0, bounce = Vector2.ZERO, get_up_time = 0.0):
-	velocity = launch
-	_tumble_timer = TUMBLE_MAX_TIME
-	_tumble_damage = impact_damage
-	_tumble_bounce = bounce
-	_tumble_get_up = get_up_time
-	_tumble_floor_hits = 0
-	_block_ignored = true  # thrown out of the boss's hands: through his block until clear of it
-	_dash_timer = 0.0
-	interrupt_movement()
-	_attack_timer = 0.0
-	_knockback_timer = 0.0
-	_launch_timer = 0.0
-	_drop_timer = 0.0
-	set_collision_mask_value(PLATFORM_LAYER, false)
-	_cancel_drink()
-
-
-func is_tumbling() -> bool:
-	return _tumble_timer > 0.0
-
-
-func _process_tumble(delta):
-	_tumble_timer = maxf(_tumble_timer - delta, 0.0)
-	if velocity.y < MAX_FALL_SPEED:  # a throw may be faster than a normal fall; don't slow it
-		velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
-	if _tumble_floor_hits >= 2:
-		velocity.x = move_toward(velocity.x, 0.0, TUMBLE_FRICTION * delta)
-		_tumble_get_up -= delta
-	var before = velocity
-	move_and_slide()
-	body.rotation += before.x * delta * TUMBLE_SPIN
-
-	if is_on_wall():
-		velocity.x = -before.x * TUMBLE_WALL_BOUNCE
-	if is_on_floor() and before.y > 0.0 and _tumble_floor_hits < 2:
-		_tumble_floor_hits += 1
-		if _tumble_floor_hits == 1:
-			velocity = Vector2(_tumble_bounce.x, -sqrt(2.0 * GRAVITY * maxf(_tumble_bounce.y, 0.0)))
-			if _tumble_damage > 0.0:
-				var damage = _tumble_damage
-				_tumble_damage = 0.0
-				take_damage(damage, velocity, false, true)  # keeps the bounce going
-				var cam = get_viewport().get_camera_2d()
-				if cam and cam.has_method("shake"):
-					cam.shake(TUMBLE_IMPACT_SHAKE)
-
-	var got_up = _tumble_floor_hits >= 2 and _tumble_get_up <= 0.0
-	if got_up or _tumble_timer <= 0.0 or _is_dead:
-		_tumble_timer = 0.0
-		body.rotation = 0.0
-		set_collision_mask_value(PLATFORM_LAYER, true)
 
 
 # --- The boss's body (Moves "boss_body") ---------------------------------------
@@ -2333,8 +2126,7 @@ func _process_tumble(delta):
 func _keep_out_of_boss(delta):
 	var boss = GameManager.boss
 	var block: Rect2 = boss.body_block() if is_instance_valid(boss) else Rect2()
-	if block.size == Vector2.ZERO or is_grabbed:
-		_block_ignored = is_grabbed
+	if block.size == Vector2.ZERO:
 		_block_sliding = false
 		return
 	var me = Rect2(global_position - body.size / 2.0, body.size)
@@ -2348,7 +2140,6 @@ func _keep_out_of_boss(delta):
 			_block_sliding = true
 			_block_above = false
 	if not me.intersects(block):
-		_block_ignored = false
 		_block_sliding = false
 		_block_above = me.end.y <= block.position.y
 		# Beside or under him: that's your side. Over him, keep the side you came from.
@@ -2356,8 +2147,6 @@ func _keep_out_of_boss(delta):
 		if not _block_above and side != 0.0:
 			_block_side = side
 		return
-	if _block_ignored:
-		return  # held or thrown: passing through until clear
 	if _block_above:
 		_block_sliding = true  # came down on top of him
 		_block_above = false
@@ -2600,7 +2389,7 @@ func _update_visuals():
 	_update_beat_ring()
 	# Idle bob while standing still on the ground; ease back to rest otherwise.
 	var bob = 0.0
-	if is_on_floor() and absf(velocity.x) < 1.0 and not is_grabbed:
+	if is_on_floor() and absf(velocity.x) < 1.0:
 		_bob_time += get_physics_process_delta_time()
 		# Rises from rest and back, never dipping into the floor.
 		bob = -IDLE_BOB_HEIGHT * (0.5 - 0.5 * cos(_bob_time * TAU * IDLE_BOB_HZ))
@@ -2617,12 +2406,12 @@ func _update_visuals():
 		_relay_arrow.color = body_color.lightened(0.6)
 
 	# Guard pose: sword held diagonally down in front of the chest while blocking; in a clash,
-	# flat overhead (grand slash) or level against the boss's blade (triple stab); thrust forward
-	# through a dash-slash; otherwise held at the side, diagonally up.
+	# level against the other blade; thrust forward through a dash-slash; otherwise held at the
+	# side, diagonally up.
 	_update_sword_idle(get_physics_process_delta_time())
 	var sword_offset = Vector2(0.0, body.position.y - _body_rest.y)
 	if is_clashing:
-		sword_offset = Vector2(-38.0 * facing, -28.0) if _clash_overhead else Vector2(0.0, -4.0)
+		sword_offset = Vector2(0.0, -4.0)
 	elif _dash_slash and _dash_timer > 0.0:
 		sword_offset = Vector2(DASH_SLASH_THRUST * facing, 0.0)
 	elif _windup_timer > 0.0:
@@ -2655,8 +2444,6 @@ func _update_visuals():
 	var color = body_color
 	if _hurt_flash > 0.0 and fmod(HURT_FLASH_TIME - _hurt_flash, 0.2) < 0.1:
 		color = Color.WHITE if body_color.get_luminance() < FLASH_DARK_ABOVE else Color.BLACK
-	elif _dodge_flash > 0.0:
-		color = DODGE_COLOR
 	elif _dash_timer > 0.0:
 		color = body_color.lightened(0.5)
 	elif _windup_timer > 0.0:
@@ -2685,18 +2472,6 @@ func _update_visuals():
 		var d = maxf(DRINK_ORB_SIZE * drink_left, 2.0)
 		_drink_orb.size = Vector2(d, d)
 		_drink_orb.position = Vector2(-d / 2, -40.0 - d / 2)
-
-	_gather_label.visible = _gather_needed > 0
-	if _gather_label.visible:
-		_gather_label.text = "%d/%d" % [gathered, _gather_needed]
-		if _gather_failed:
-			_gather_label.modulate = Color(0.5, 0.5, 0.5, 0.7)
-		elif has_full_gather():
-			# Counter ready: pulse between the player's color and white.
-			var pulse = 0.5 + 0.5 * sin(_now() * 20.0)
-			_gather_label.modulate = body_color.lerp(Color.WHITE, pulse)
-		else:
-			_gather_label.modulate = body_color.lerp(Color.WHITE, 0.5)
 
 
 # 0 -> 1 through a dash-slash's windup; charging, a flare on every beat of the clock.
@@ -2810,10 +2585,10 @@ func blade_point(along: float) -> Vector2:
 # --- The pair's strike (see THE PAIR'S STRIKE) ---
 
 # Bound: attack held draws the sword back, let go it strikes and the bond hears of it. A block
-# press, a stagger or a tumble lets it go unstruck.
+# press or a stagger lets it go unstruck.
 func _process_draw():
 	if _drawing:
-		if Input.is_action_just_pressed(_action("block")) or is_staggered() or is_tumbling():
+		if Input.is_action_just_pressed(_action("block")) or is_staggered():
 			_drawing = false
 			return
 		if Input.is_action_pressed(_action("attack")):
@@ -2915,16 +2690,3 @@ func _update_hands():
 		hand.rotation = sword_pivot.rotation
 		hand.color = body.color.darkened(HAND_DARKEN)
 	_crossguard.color = body.color.darkened(HAND_DARKEN)
-
-
-func _setup_gather_label():
-	_gather_label = Label.new()
-	_gather_label.size = Vector2(60, 20)
-	_gather_label.position = Vector2(-30, -82)  # above the boss's target marker
-	_gather_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_gather_label.add_theme_font_size_override("font_size", 16)
-	_gather_label.add_theme_constant_override("outline_size", 4)
-	_gather_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	_gather_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_gather_label.visible = false
-	add_child(_gather_label)

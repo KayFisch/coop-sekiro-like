@@ -7,9 +7,9 @@ extends Clockwork
 ## blade both kill: it's a sweeping wall, nothing to jump over. Unless you meet it with your own
 ## blade:
 ##  - A perfect parry (block pressed in time, is_perfect_parry() as against the bosses) locks
-##    the blades: the pendulum stops and holds the parrier (set_clashing(), like Cubus's grand
-##    slash) for exactly one swing there and back, so it then goes on in time, away from the
-##    parrier, who is free again and ignored for a moment.
+##    the blades: the pendulum stops and holds the parrier (set_clashing()) for exactly one
+##    swing there and back, so it then goes on in time, away from the parrier, who is free
+##    again and ignored for a moment.
 ##  - Only blocking: knocked away (apply_knockback()), nothing locks.
 ## A held pendulum clears the way for the partner, but whoever holds it can't pass.
 
@@ -118,7 +118,7 @@ func _hold(p):
 	_holder = p
 	_hold_until = Beat.time() + Beat.bar_length() * bars
 	p.on_perfect_parry(true)
-	p.set_clashing(true, false)
+	p.set_clashing(true)
 	_grind = Sfx.play("clash_grind", -6.0)
 
 

@@ -106,8 +106,7 @@ core/                                autoloads: GameManager, Sfx, Moves, Pads, B
                                      sync_rules.gd (sync as life, Bifrons), sync_bond.gd (sync mode)
 actors/player/                       player.gd (+ scene), sync_wave.gd (the parry's energy to the partner)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
-levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
-                                     gym/ (movement test rooms), kit/ (level kit: rooms built in
+levels/                              threshold/ (Bifrons's room), gym/ (movement test rooms), kit/ (level kit: rooms built in
                                      the editor), horologium/ (coop platformer level, kit rooms),
                                      runner/ and ring/ (between the bosses, prototypes)
 ui/                                  boss select, HUD, beat display, audio calibration (F1 → Sound),
@@ -157,7 +156,7 @@ for the *why*.
 | `docs` | docs, CLAUDE.md, TASKS.md, scribbles.md |
 | `chore` | project settings, gitignore, tooling |
 
-Optional scope in parentheses: `feat(cubus): add grab follow-up`, `tune(player): shorter dash`.
+Optional scope in parentheses: `feat(bifrons): add a sweep`, `tune(player): shorter dash`.
 
 ## Checking a change (Claude)
 
@@ -168,7 +167,7 @@ differ). From the repo root:
 ```bash
 godot --headless --import     # reimport: shows parse errors, registers new class_names and .uid files
 godot --headless --script res://tests/run.gd     # the tests (about a minute); -- name ... for some
-godot --headless --fixed-fps 60 --quit-after 600 res://levels/arena/arena.tscn   # 10 s of game time, at once
+godot --headless --fixed-fps 60 --quit-after 600 res://levels/threshold/threshold.tscn   # 10 s of game time, at once
 ```
 
 Any `SCRIPT ERROR` / `Parse Error` in the output means it's broken. The tests end with "N passed,
@@ -180,9 +179,10 @@ For a check that has no place among the tests, drive a scene from a throwaway sc
 `godot --headless --script <file.gd>` with a script that `extends SceneTree`. From
 `_initialize()` on the autoloads exist (reach them with `root.get_node("GameManager")`; their
 names don't compile in such a script); `change_scene_to_file()` loads a level, and the
-`physics_frame` signal runs before every node's `_physics_process`, so `Input.action_press()`
-there is seen by the players that same frame. The player's timing windows (parry, dodge) read
-the real clock, so anything pressing buttons has to run in real time, without `--fixed-fps`.
+`physics_frame` signal runs before every node's `_physics_process`: an `Input.action_press()`
+there is seen as a fresh press (`is_action_just_pressed()`) on the next physics frame, a release
+or a held button that same one. The player's timing windows (the parry's) read the real clock,
+so anything pressing buttons has to run in real time, without `--fixed-fps`.
 Leave the saved switches alone (`Moves.set_value()` writes `user://moves.cfg`); set what a test
 needs in memory (`Moves._values[key] = ...`) once the scene has loaded, including
 `swap_controls = false`: the saved file may have it on. Hold a pressed button a few frames
@@ -224,10 +224,10 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   (`Player._process_draw()`), let go together on the big cue for a heavy strike
   (`ColumnaBifrons.take_pair_strike()`); he slows down and strikes with both swords
   (`in_sync_mode()`, `time_unit()`).
-- `actors/player/player.gd`: one large script (~2900 lines, a contents list at its top) with all player logic: movement,
+- `actors/player/player.gd`: one large script (~2700 lines, a contents list at its top) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
-  potions, defensive queries the boss uses (`is_perfect_parry()` etc.), and some boss-specific
-  hooks (gather, tether, grab). Tuning constants at the top, grouped by feature. The sword's
+  potions, and the defensive queries the boss uses (`is_perfect_parry()` etc.). Tuning
+  constants at the top, grouped by feature. The sword's
   rules are under "THE SWORD" there: a swing commits (windup, cut, return; no block or parry
   until the blade is back at rest), and a swing an enemy blade parries recoils
   (`on_swing_parried()`, called by the boss). A boss that changes sides can hold the players'
@@ -238,8 +238,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `base_attack.gd`) with hooks `start / update_telegraph / execute / update / on_struck /
   cleanup` and `finish()` / `finish_with_stagger()`. A boss subclass supplies its attack pool,
   weights, pose and HP. For tools and tests a boss can be held off (`dev_hold`: no attack of his
-  own) and told his next attack (`dev_next`). Bosses: `cubus_maximus/`, `sphaera_pendula/` (needs
-  the Scales level), and `columna_bifrons/`, a test boss for fighting from both sides, and with
+  own) and told his next attack (`dev_next`). The boss so far: `columna_bifrons/` (the first two,
+  Cubus Maximus and Sphaera Pendula, were dropped on 2026-10-18), a test boss for fighting from both sides, and with
   both players on one (`docs/boss_columna_bifrons.md`), built in three parts, each extending the
   one before: `bifrons_swords.gd` (his swords and their wards, posing, his guard and the
   windows), `bifrons_moves.gd` (where he stands, drift, pushing, lunges, the charge, dashes) and

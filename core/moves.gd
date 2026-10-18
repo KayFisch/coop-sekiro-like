@@ -56,7 +56,7 @@ const ENTRIES = [
 	{"key": "players_collide", "tab": "Partner", "label": "Players collide (stand on, bump into each other)", "default": true},
 	{"key": "call", "tab": "Partner", "label": "Call countdown (P1 Enter, P2 LB)", "default": true},
 	# Fights: rules that only matter against a boss
-	{"key": "boss_body", "tab": "Fights", "label": "Boss body blocks players (Cubus, Bifrons)", "default": true},
+	{"key": "boss_body", "tab": "Fights", "label": "Boss body blocks players", "default": true},
 	{"key": "parry_pass", "tab": "Fights", "label": "Dash-parry: a parry mid-dash goes through the boss", "default": true},
 	{"key": "bifrons_mode", "tab": "Fights", "label": "Bifrons: set patterns, or reactive (strikes back)", "default": "patterns", "options": ["patterns", "reactive"]},
 	{"key": "bifrons_guard_break", "tab": "Fights", "label": "Bifrons: a parry breaks his other guard (off: the window stays, but only a hit he can't parry lands)", "default": true},

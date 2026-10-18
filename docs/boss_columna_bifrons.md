@@ -121,7 +121,7 @@ when he's **cornered**: see "How he moves".
 starts over from there, and his body is no obstacle until it's done. A dash started up to 0.2 s
 after the parry goes through him too. A dash that ends inside him puts you out on the side you
 got closer to. It works at any of his strikes, in pep or ppe. (Moves "parry_pass"; it's a
-player rule in `player.gd`, so it holds for Cubus too.)
+player rule in `player.gd`, so it holds for any boss with a body.)
 
 ## How he moves
 
@@ -254,9 +254,9 @@ hitboxes sit closer together, and the one behind in ppe gets nearer to him.
 - **Both crossguards in one color:** the other player is away, and both swords are on that one.
 - **His body warming to rust (reactive mode):** his patience is running out.
 
-Green means "get off the floor" and purple "dash" with Cubus and Sphaera, and blue is their
-"parry together". Blue was too close to P1's color here; green is a stopgap, to be settled with
-the players' colors.
+Green meant "get off the floor" and purple "dash" with the first two bosses (Cubus and Sphaera,
+removed 2026-10-18), and blue their "parry together". Blue was too close to P1's color here;
+green is a stopgap, to be settled with the players' colors.
 
 ## The partner's hit: the window after a parry (F2, tab "sync hit")
 

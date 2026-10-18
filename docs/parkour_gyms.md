@@ -100,13 +100,11 @@ autoload); code asks `Moves.on("pogo")`.
 |---|---|---|---|
 | 1 | **Launch** | Bells at 200 / 280 / 340 / 400 / 460 up | How reliably can you time it? How high do you really get, and what can you do at the top (dash, double jump, strike)? |
 | 2 | **Cliff** | A 330 px wall: out of solo reach, in launch reach. A **switch** on top opens a staircase | The first "one opens the way for the other" pattern. Does it feel like teamwork or waiting? |
-| 3 | **Weight** | Free pans (twice as strong as the Scales': 90 px per player, max 100) and a ledge 330 up between them | Can weight alone get someone up there? Jumping takes your weight off, so timing matters. Is weight a good co-op verb outside the boss fight? |
-| 4 | **Rope** | Stand on the cyan pad together to be tied (Shackle's 300 px rope). Leapfrog a 560 px pit over one island. The far pad unties you | Does anchoring (block on the ground) and swinging feel good? The rope is brighter when taut. |
-| 5 | **Sync** | Two plates: land on them together | Shows how far apart the landings were, against Counterweight's 0.15 s window. Is that window fair? |
-| 6 | **Targets** | Dummies 60 / 240 / 380 up | Strikes out of a launch. What attack flows out of the rise? |
-| 7 | **Chimney** | 380 wide (a bell marks the top): too wide to wall-jump up alone, since you fall back before reaching the other wall | Is jumping off together easy to read? Is the clash's height and push-back right? |
-| 8 | **Relay** | Bells to aim at (straight up, up and across), a 640 pit (beyond solo reach), and a high ledge over a lantern field for relaying straight down into a pogo chain | Is 0.25 s long enough to aim, short enough to flow? Which directions get used? |
-| 9 | **Partner pogo** | A 700 spike pit with a pillar in the middle for the partner to stand on | Does bouncing off a partner feel like teamwork? |
+| 3 | **Weight** | Free pans (90 px per player, max 100) and a ledge 330 up between them | Can weight alone get someone up there? Jumping takes your weight off, so timing matters. Is weight a good co-op verb outside the boss fight? |
+| 4 | **Targets** | Dummies 60 / 240 / 380 up | Strikes out of a launch. What attack flows out of the rise? |
+| 5 | **Chimney** | 380 wide (a bell marks the top): too wide to wall-jump up alone, since you fall back before reaching the other wall | Is jumping off together easy to read? Is the clash's height and push-back right? |
+| 6 | **Relay** | Bells to aim at (straight up, up and across), a 640 pit (beyond solo reach), and a high ledge over a lantern field for relaying straight down into a pogo chain | Is 0.25 s long enough to aim, short enough to flow? Which directions get used? |
+| 7 | **Partner pogo** | A 700 spike pit with a pillar in the middle for the partner to stand on | Does bouncing off a partner feel like teamwork? |
 
 ## How it's built
 

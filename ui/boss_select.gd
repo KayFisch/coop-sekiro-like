@@ -3,15 +3,13 @@ extends Control
 ## Esc comes back here from anywhere (see GameManager).
 
 const FIGHTS = [
-	{"name": "Cubus Maximus", "arena": "The Arena", "scene": "res://levels/arena/arena.tscn"},
-	{"name": "Sphaera Pendula", "arena": "The Scales", "scene": "res://levels/scales/scales.tscn"},
+	{"name": "Columna Bifrons", "arena": "The Threshold (test)", "scene": "res://levels/threshold/threshold.tscn"},
 	{"name": "Movement Gym", "arena": "1 player", "scene": "res://levels/gym/movement_gym.tscn"},
 	{"name": "Duo Gym", "arena": "2 players", "scene": "res://levels/gym/coop_gym.tscn"},
 	{"name": "Relay Gym", "arena": "1 player + bot", "scene": "res://levels/gym/relay_gym.tscn"},
 	{"name": "Wall Gym", "arena": "1 player + bot", "scene": "res://levels/gym/wall_gym.tscn"},
 	{"name": "Horologium", "arena": "2 players", "scene": "res://levels/horologium/horologium1.tscn"},
 	{"name": "Kit: showcase", "arena": "2 players", "scene": "res://levels/kit/showcase/hub.tscn"},
-	{"name": "Columna Bifrons", "arena": "The Threshold (test)", "scene": "res://levels/threshold/threshold.tscn"},
 	{"name": "Beat-Runner", "arena": "between the bosses (prototype)", "scene": "res://levels/runner/runner.tscn"},
 	{"name": "Beat-Ring", "arena": "between the bosses (prototype 2)", "scene": "res://levels/ring/ring.tscn"},
 ]

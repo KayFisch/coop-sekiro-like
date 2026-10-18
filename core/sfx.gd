@@ -1,7 +1,7 @@
 extends Node
 ## Autoload: procedural sound effects, no audio files. Every sound is synthesized once at
 ## startup into a sample buffer, then played through a pool of AudioStreamGenerator players.
-## play() returns a handle; pass it to stop() to cut a sustained sound (hum, drone, drink) short.
+## play() returns a handle; pass it to stop() to cut a sustained sound (a grind) short.
 
 const MIX_RATE = 22050.0
 const POOL_SIZE = 16
@@ -73,17 +73,13 @@ func _build_sounds():
 	_sounds["knockback"] = _thud(165.0, 62.0, 0.2, 14.0, 0.5)
 	_sounds["drink"] = _bubbles(1.5)
 	_sounds["stagger"] = _with_echo(_thud(75.0, 35.0, 0.3, 10.0, 0.3), 0.16, 0.45, 2)
-	_sounds["hum"] = _hum(1.2)
 	_sounds["counter_fire"] = _rise(0.3)
 	_sounds["counter_hit"] = _explosion(0.8)
-	_sounds["grand_drone"] = _drone(0.9)
 	_sounds["clash_grind"] = _grind(1.6)
-	_sounds["clash_hum"] = _clash_hum(0.8)
 	_sounds["grand_impact"] = _with_echo(_explosion(0.8), 0.2, 0.35, 1)
 	_sounds["launch"] = _rise(0.25)
-	_sounds["swing"] = _whoosh(0.35)  # Sphaera Pendula's heavy swings
-	_sounds["chain"] = _grind(0.3)  # chains paying out and snapping taut
-	_sounds["thunk"] = _thud(90.0, 38.0, 0.35, 8.0, 0.6)  # the sphere landing on a pan
+	_sounds["swing"] = _whoosh(0.35)  # a heavy swing (Bifrons's sweep, his leap)
+	_sounds["thunk"] = _thud(90.0, 38.0, 0.35, 8.0, 0.6)  # something heavy landing
 	_sounds["tell"] = _zip(0.12)  # ends on the tell ring's close (TELL_SOUND_TIME in player.gd)
 	_sounds["call_tick"] = _blip(1100.0, 0.06)
 	# The rhythm relay's beats (see RHYTHM RELAY in player.gd); beat 2 is "parry_strong".
@@ -102,7 +98,6 @@ func _build_sounds():
 	_sounds["pendulum"] = _whoosh(0.28)  # a pendulum passing through the bottom
 	_sounds["big_bell"] = _with_echo(_bell(261.6, 1.6, 2.2), 0.35, 0.4, 1)  # the great bell: done
 	_sounds["call_go"] = _notes([784.0, 1174.7], 0.09, true)
-	_sounds["clap"] = _clap(0.09)  # the grab's hands shutting on nothing
 	_sounds["guard_break"] = _clang(700.0, 0.3)  # Columna Bifrons's guard knocked open
 	_sounds["sync_hit"] = _thud(240.0, 80.0, 0.18, 16.0, 0.5)  # a hit through his broken guard
 	# Sync as life (core/sync_rules.gd)
@@ -210,18 +205,6 @@ func _with_echo(source: PackedVector2Array, delay: float, gain: float, repeats: 
 	return out
 
 
-# Low buzzing hum with a slight tremolo; meant to be stopped early.
-func _hum(duration: float) -> PackedVector2Array:
-	var out = _buffer(duration)
-	for i in out.size():
-		var t = i / MIX_RATE
-		var s = sin(TAU * 85.0 * t) * 0.5 + sin(TAU * 170.0 * t) * 0.25 + sin(TAU * 255.0 * t) * 0.1
-		s *= 0.8 + 0.2 * sin(TAU * 9.0 * t)
-		s *= minf(t / 0.05, 1.0) * minf((duration - t) / 0.05, 1.0)
-		out[i] = Vector2.ONE * s * 0.35
-	return out
-
-
 # Energetic upward sweep for launching a counterattack.
 func _rise(duration: float) -> PackedVector2Array:
 	var out = _buffer(duration)
@@ -258,19 +241,6 @@ func _blip(freq: float, duration: float) -> PackedVector2Array:
 	return out
 
 
-# A dry clap: a bright noise burst with a fast decay.
-func _clap(duration: float) -> PackedVector2Array:
-	var out = _buffer(duration)
-	var last = 0.0
-	for i in out.size():
-		var t = i / MIX_RATE
-		var noise = randf_range(-1.0, 1.0)
-		var bright = noise - last  # a crude high-pass
-		last = noise
-		out[i] = Vector2.ONE * clampf(bright * 0.45 * exp(-t * 45.0) * minf(t / 0.001, 1.0), -1.0, 1.0)
-	return out
-
-
 # Big, dramatic impact: darkening noise burst over a dropping sub-bass sine.
 func _explosion(duration: float) -> PackedVector2Array:
 	var out = _buffer(duration)
@@ -288,24 +258,6 @@ func _explosion(duration: float) -> PackedVector2Array:
 	return out
 
 
-# Ominous rising drone: detuned low tones climbing and swelling.
-func _drone(duration: float) -> PackedVector2Array:
-	var out = _buffer(duration)
-	var phase_a = 0.0
-	var phase_b = 0.0
-	for i in out.size():
-		var t = i / MIX_RATE
-		var k = t / duration
-		var f = 55.0 * pow(130.0 / 55.0, k)
-		phase_a += TAU * f / MIX_RATE
-		phase_b += TAU * f * 1.012 / MIX_RATE
-		var s = sin(phase_a) + sin(phase_b) + (sin(phase_a * 2.0) + sin(phase_b * 3.0)) * 0.3
-		s *= pow(k, 1.5) * 0.8 + 0.2
-		s *= 0.85 + 0.15 * sin(TAU * 6.0 * t)
-		out[i] = Vector2.ONE * s * 0.25
-	return out
-
-
 # Blades straining against each other: scraping noise over wobbling metallic partials.
 func _grind(duration: float) -> PackedVector2Array:
 	var out = _buffer(duration)
@@ -317,19 +269,6 @@ func _grind(duration: float) -> PackedVector2Array:
 			+ sin(TAU * 1310.0 * t) * 0.2 + sin(TAU * 2230.0 * t) * 0.1
 		var s = (noise * 0.7 + metal) * (0.6 + 0.4 * sin(TAU * 14.0 * t))
 		s *= minf(t / 0.03, 1.0) * minf((duration - t) / 0.1, 1.0)
-		out[i] = Vector2.ONE * s * 0.35
-	return out
-
-
-# Blades locked edge to edge: a ringing metallic tone, slowly beating; meant to be stopped early.
-func _clash_hum(duration: float) -> PackedVector2Array:
-	var out = _buffer(duration)
-	for i in out.size():
-		var t = i / MIX_RATE
-		var s = sin(TAU * 660.0 * t) * 0.4 + sin(TAU * 664.0 * t) * 0.3 \
-			+ sin(TAU * 1822.0 * t) * 0.15 + sin(TAU * 2970.0 * t) * 0.08
-		s *= 0.8 + 0.2 * sin(TAU * 11.0 * t)
-		s *= minf(t / 0.01, 1.0) * minf((duration - t) / 0.05, 1.0)
 		out[i] = Vector2.ONE * s * 0.35
 	return out
 
