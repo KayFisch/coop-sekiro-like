@@ -16,6 +16,24 @@ enum Hold { NONE, RELAY_DASHER, RELAY_ANCHOR }
 
 # Which abilities are on is decided by the Moves autoload (core/moves.gd, F1 in game): every
 # ability below checks its switch there.
+#
+# CONTENTS, in this order (each section starts with "# --- <name>"):
+#   tuning constants, grouped by feature (movement, the parry and dodge windows, THE SWORD,
+#     the dash-slash, the tell, launch, walls, pogo, relay, boss body, dash-parry, call, the
+#     pair's strike)
+#   Lifecycle and the frame ........... _ready(), _physics_process(), input helpers
+#   Running ........................... _process_movement()
+#   Walls / Ledges .................... slide, cling, wall jump, wall rhythm; grab, hang, climb
+#   Buttons ........................... _process_actions(): what each press does
+#   Potions / Jumping and dashing
+#   Sword ............................. slash, upslash, dash-slash, pogo
+#   Clashes with the partner .......... launch, momentum relay, chimney clash, rhythm relay
+#   Defensive queries used by the boss  is_blocking(), is_perfect_parry() ...
+#   Shockwave gathering
+#   What a boss does to a player ...... parried, hit, grabbed, staggered, tethered, tumbling
+#   The boss's body / The tell / Call
+#   The look .......................... the sword's angle, colors, flashes, effects, hands
+#   The pair's strike ................. the sync mode's draw-back and sabre (core/sync_bond.gd)
 
 # --- Movement tuning ---
 # Running: a slight ease in and out, never a slide (px/s and px/s²).
@@ -511,6 +529,8 @@ var _call_label: Label
 @onready var _sword_shape: CollisionShape2D = $SwordPivot/SwordHitbox/CollisionShape2D
 
 
+# --- Lifecycle and the frame ---------------------------------------------------
+
 func _ready():
 	body.size = BODY_SIZE
 	body.position = -BODY_SIZE / 2.0
@@ -635,6 +655,8 @@ func move_axis() -> float:
 		return 0.0
 	return Input.get_axis(_action("left"), _action("right"))
 
+
+# --- Running -------------------------------------------------------------------
 
 func _process_movement(delta):
 	var direction = move_axis()
@@ -1172,6 +1194,8 @@ func _process_ledge(delta):
 		_ledge_regrab = LEDGE_REGRAB_TIME
 
 
+# --- Buttons: what each press does ---------------------------------------------
+
 func _process_actions():
 	if Input.is_action_just_pressed(_action("jump")):
 		_jump_buffer = JUMP_BUFFER_TIME
@@ -1240,6 +1264,8 @@ func _cancel_drink():
 		potions -= 1
 		Sfx.stop(_drink_sound)
 
+
+# --- Jumping and dashing ---------------------------------------------------------
 
 # Jumps if it can: from the ground (or just off a ledge), off a wall, else with an air jump. A
 # fresh press with none of those stays buffered, and fires on landing (or on reaching a wall)
@@ -2079,6 +2105,8 @@ func end_gather():
 	_gather_failed = false
 
 
+# --- What a boss does to a player: parried, hit, grabbed, staggered, tethered, tumbling ---
+
 func on_perfect_parry(strong: bool):
 	Dev.defended(self, "parry", _now() - parry_press_time)
 	if GameManager.rules:
@@ -2509,6 +2537,8 @@ func _setup_call_label():
 	_call_label.visible = false
 	add_child(_call_label)
 
+
+# --- The look: the sword's angle, colors, flashes, effects, hands -----------------
 
 # The blade's angle right now: 0 is level, pointing the way the player faces; negative is up.
 func _sword_angle() -> float:
