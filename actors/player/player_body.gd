@@ -11,8 +11,6 @@ extends CharacterBody2D
 ## Which abilities are on is decided by the Moves autoload (core/moves.gd, F1 in game): every
 ## ability checks its switch there.
 
-signal landed(player, air_time)  # touched down after air_time seconds off the ground
-
 # --- Movement tuning ---
 # Running: a slight ease in and out, never a slide (px/s and px/s²).
 const SPEED = 360.0  # top running speed
@@ -92,8 +90,6 @@ var _drop_timer = 0.0
 var _knockback_timer = 0.0
 var _stagger_timer = 0.0  # > 0 while reeling from a hit: no movement, no input
 var _stretch_tween: Tween
-var _was_on_floor = false
-var _air_time = 0.0  # seconds since leaving the ground
 var _fast_falling = false
 var _uncut_timer = 0.0  # > 0 while releasing jump mustn't cut the rise (a bounce, a wall jump)
 var _heavy_rise = 0.0  # > 0 while rising from a bounce: gravity times _rise_gravity (see bounce())
@@ -404,19 +400,6 @@ func _tick_timers(delta):
 		_drop_timer -= delta
 		if _drop_timer <= 0.0:
 			set_collision_mask_value(PLATFORM_LAYER, true)
-
-
-# Emits landed() on touchdown, with how long the player was in the air. (Time, not height: on
-# a moving pan the height fallen says little.)
-func _track_landing():
-	var grounded = is_on_floor()
-	if grounded and not _was_on_floor:
-		landed.emit(self, _air_time)
-	if grounded:
-		_air_time = 0.0
-	else:
-		_air_time += get_physics_process_delta_time()
-	_was_on_floor = grounded
 
 
 # Stops everything the player was doing in the air: dashes, walls, ledges, clashes, whatever was

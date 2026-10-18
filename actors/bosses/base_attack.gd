@@ -18,8 +18,6 @@ var timer = 0.0  # counts down within the current phase
 # How the boss leaves the attack once it's completed.
 var recover_time = 0.8
 var stagger_time = 0.0  # > 0: stagger instead of recovering
-var stagger_tumble = false
-var stagger_knock = Vector2.ZERO
 
 
 # Called when the boss commits to this attack, before its telegraph.
@@ -31,8 +29,6 @@ func start(boss_node, player_nodes: Array):
 	timer = 0.0
 	recover_time = 0.8
 	stagger_time = 0.0
-	stagger_tumble = false
-	stagger_knock = Vector2.ZERO
 
 
 # Called every physics frame while the attack is executing (after its telegraph).
@@ -100,9 +96,7 @@ func finish(recover: float):
 	phase = 0
 
 
-func finish_with_stagger(duration: float, tumble = false, knock = Vector2.ZERO):
+func finish_with_stagger(duration: float):
 	stagger_time = duration
-	stagger_tumble = tumble
-	stagger_knock = knock
 	completed = true
 	phase = 0

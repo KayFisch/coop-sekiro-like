@@ -264,11 +264,6 @@ func phase() -> float:
 	return fposmod(beats_at(_time), 1.0)
 
 
-# How far into the current bar: 0 on the 1, toward 1 just before the next 1.
-func bar_phase() -> float:
-	return fposmod(beats_at(_time), BEATS_PER_BAR) / BEATS_PER_BAR
-
-
 # s from the nearest beat to time t (default: now), heard as the click sounds: < 0 is early
 # (before the beat), > 0 late.
 func offset_to_beat(t = -1.0) -> float:
@@ -280,9 +275,3 @@ func offset_to_beat(t = -1.0) -> float:
 func offset_to_downbeat(t = -1.0) -> float:
 	var bars = beats_at((_time if t < 0.0 else t) - AUDIO_LATENCY) / BEATS_PER_BAR
 	return (bars - roundf(bars)) * bar_length()
-
-
-# Whether a pattern of counts (1-4) plays on beat n, shifted `offset` beats later: [1, 3] with
-# offset 1 plays on the 2 and the 4.
-func plays_on(n: int, pattern: Array, offset = 0) -> bool:
-	return pattern.has(posmod(n - offset, BEATS_PER_BAR) + 1)

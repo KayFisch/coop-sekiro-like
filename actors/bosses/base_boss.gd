@@ -10,7 +10,6 @@ extends CharacterBody2D
 ## RECOVER when an attack ends in a stagger. All attack-specific logic lives in the Attack objects.
 
 signal parry_success(player, kind)  # forwarded from whichever attack produced it
-signal health_changed(hp, max_hp)
 signal defeated
 
 enum State { IDLE, TELEGRAPH, ATTACKING, RECOVER, STAGGER }
@@ -29,9 +28,6 @@ const ARENA_FLOOR_Y = 600.0
 const CENTER_HOVER_HEIGHT = 310.0  # above the boss's floor position
 
 const STAGGER_TILT = 0.087  # radians, about 5 degrees
-const TUMBLE_TILT = 0.2
-const KNOCK_MIN_Y = 90.0  # a knocked-back stagger never carries the boss above this
-const KNOCK_DECELERATION = 2400.0
 const STAGGER_SINK_SPEED = 900.0
 
 const COLOR_IDLE = Color(0.27, 0.27, 0.3)
@@ -58,8 +54,6 @@ var dev_next = ""
 var dev_still = false
 
 var _last_attack: Attack = null
-var _tumbling = false
-var _stagger_knock = Vector2.ZERO
 var _marker: ColorRect
 var _pop_tween: Tween
 
@@ -183,16 +177,9 @@ func _recover_motion(_delta: float):
 
 
 func _stagger_motion(delta: float):
-	# Rock back and forth; a dodged grab's tumble rocks harder.
-	var tilt = TUMBLE_TILT if _tumbling else STAGGER_TILT
-	body.rotation = tilt * sin(anim_time * 12.0)
-	# A knock (the overpowered grand slash) carries the boss off first, then it sinks home.
-	if _stagger_knock != Vector2.ZERO:
-		global_position += _stagger_knock * delta
-		global_position.y = clampf(global_position.y, KNOCK_MIN_Y, ARENA_FLOOR_Y)
-		_stagger_knock = _stagger_knock.move_toward(Vector2.ZERO, KNOCK_DECELERATION * delta)
-	else:
-		global_position.y = move_toward(global_position.y, home_position.y, STAGGER_SINK_SPEED * delta)
+	# Rock back and forth, sinking home.
+	body.rotation = STAGGER_TILT * sin(anim_time * 12.0)
+	global_position.y = move_toward(global_position.y, home_position.y, STAGGER_SINK_SPEED * delta)
 
 
 # --- Lifecycle ---
@@ -328,7 +315,7 @@ func _finish_attack():
 	var attack = current_attack
 	current_attack = null
 	if attack.stagger_time > 0.0:
-		_enter_stagger(attack, attack.stagger_time, attack.stagger_tumble, attack.stagger_knock)
+		_enter_stagger(attack, attack.stagger_time)
 	else:
 		_enter_recover(attack.recover_time, attack)
 
@@ -347,12 +334,10 @@ func _enter_recover(duration: float, finished_attack: Attack = null):
 	_reset_body_shape()
 
 
-func _enter_stagger(finished_attack: Attack, duration: float, tumble: bool, knock: Vector2):
+func _enter_stagger(finished_attack: Attack, duration: float):
 	state = State.STAGGER
 	timer = duration
 	velocity = Vector2.ZERO
-	_tumbling = tumble
-	_stagger_knock = knock
 	body.position = body_rest
 	glow.color.a = 0.0
 	if finished_attack:
@@ -368,7 +353,7 @@ func stagger_now(duration: float):
 	current_attack = null
 	if attack:
 		attack.interrupt()
-	_enter_stagger(null, duration, false, Vector2.ZERO)
+	_enter_stagger(null, duration)
 
 
 # --- Health ---
@@ -378,7 +363,6 @@ func take_damage(amount: float, source = null):
 	if hp <= 0.0:
 		return
 	hp = maxf(hp - amount, 0.0)
-	health_changed.emit(hp, get_max_hp())
 	body.scale = Vector2(1.2, 1.2)
 	create_tween().tween_property(body, "scale", Vector2.ONE, 0.2)
 	if hp <= 0.0:
@@ -433,11 +417,6 @@ func face(x: float):
 	var side = signf(x - global_position.x)
 	if side != 0.0:
 		facing = side
-
-
-# How far the squash_body() pose has moved the body's center from rest (unmirrored).
-func body_center_offset() -> Vector2:
-	return body.position - body_rest
 
 
 # --- Squash and stretch (the Sekiro-style read: a slow, loaded anticipation, then a snap) ---

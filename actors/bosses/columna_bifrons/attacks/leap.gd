@@ -8,7 +8,6 @@ extends Attack
 ## staggered. They're thrown apart: whoever is under him is pushed out to their side, and
 ## everyone near is knocked back, parry or not. Walking out from under him is the other answer.
 
-signal strike_parried(player)
 signal both_parried
 
 enum Phase { NONE, FALLING }
@@ -107,7 +106,6 @@ func update(delta: float):
 		for p in judged[blade].parriers:
 			p.apply_knockback(Vector2(boss.side_of(p) * PARRIED_PUSH, 0.0))
 			parry_success.emit(p, "bifrons_leap")
-			strike_parried.emit(p)
 	boss.shake(12.0 if both else 9.0)
 	boss.ghost(0.0)  # he's there: whoever is under him is pushed out to their side
 	if both:

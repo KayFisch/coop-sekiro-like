@@ -388,10 +388,6 @@ func _release_charge():
 	Sfx.play("relay_beat")  # beat 1
 
 
-func is_winding_up() -> bool:
-	return _windup_timer > 0.0
-
-
 # A rhythm relay's dash-slash covers the dash's ground faster.
 func _dash_speed() -> float:
 	return DASH_DISTANCE / RHYTHM_DASH_TIME if _rhythm_dash else super()

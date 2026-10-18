@@ -321,11 +321,6 @@ func tell_radius() -> float:
 	return TELL_CLOSED_RADIUS + maxf(_tell_left, 0.0) * TELL_SHRINK_SPEED
 
 
-# True from the frame the ring closes until it has faded (for tests and readouts).
-func is_tell_closed() -> bool:
-	return _tell_ring.visible and _tell_left <= 0.0
-
-
 func _draw_tell():
 	var closed = _tell_left <= 0.0
 	var color = body_color.lightened(0.6) if closed else body_color.lightened(0.2)

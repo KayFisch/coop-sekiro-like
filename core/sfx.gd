@@ -71,7 +71,6 @@ func _build_sounds():
 	_sounds["chip"] = _thud(190.0, 110.0, 0.1, 35.0, 0.2)
 	_sounds["hurt"] = _thud(120.0, 45.0, 0.2, 14.0, 0.5)
 	_sounds["knockback"] = _thud(165.0, 62.0, 0.2, 14.0, 0.5)
-	_sounds["drink"] = _bubbles(1.5)
 	_sounds["stagger"] = _with_echo(_thud(75.0, 35.0, 0.3, 10.0, 0.3), 0.16, 0.45, 2)
 	_sounds["counter_fire"] = _rise(0.3)
 	_sounds["counter_hit"] = _explosion(0.8)
@@ -169,27 +168,6 @@ func _thud(f0: float, f1: float, duration: float, decay: float, rumble: float) -
 		var s = sin(phase) * exp(-t * decay) + noise * rumble * 3.0 * exp(-t * decay * 0.7)
 		s *= minf(t / 0.002, 1.0)  # no click at the start
 		out[i] = Vector2.ONE * clampf(s * 0.7, -1.0, 1.0)
-	return out
-
-
-# Rising "blub" chirps whose base pitch climbs over the whole drink.
-func _bubbles(duration: float) -> PackedVector2Array:
-	var out = _buffer(duration)
-	var spacing = 0.08
-	var phase = 0.0
-	var last_bubble = -1
-	var bubble_freq = 0.0
-	for i in out.size():
-		var t = i / MIX_RATE
-		var bubble = int(t / spacing)
-		if bubble != last_bubble:
-			last_bubble = bubble
-			phase = 0.0
-			bubble_freq = lerpf(300.0, 900.0, t / duration) * randf_range(0.85, 1.15)
-		var local = t - bubble * spacing
-		phase += TAU * bubble_freq * (1.0 + local * 25.0) / MIX_RATE
-		var s = sin(phase) * exp(-local * 45.0) * minf(local / 0.003, 1.0)
-		out[i] = Vector2.ONE * s * 0.35
 	return out
 
 

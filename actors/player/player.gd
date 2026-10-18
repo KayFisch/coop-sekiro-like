@@ -6,7 +6,6 @@ extends PlayerPartner
 ## player_partner.gd.
 
 signal damaged(player)
-signal blocked(player)
 signal died(player)
 signal repainted  # new colors (paint()): a boss's swords that carry them follow
 
@@ -97,7 +96,6 @@ func _physics_process(delta):
 		if not _check_clashes():
 			_check_chimney()
 	_keep_out_of_boss(delta)
-	_track_landing()
 	_process_attack()
 	_update_visuals()
 
@@ -165,9 +163,7 @@ func take_damage(knockback = Vector2.ZERO, chip = false):
 		_knockback_timer = KNOCKBACK_TIME
 		if not chip:
 			Sfx.play_delayed("knockback", 0.06, -4.0)  # thrown back, just behind the impact
-	if chip:
-		blocked.emit(self)
-	else:
+	if not chip:
 		damaged.emit(self)
 	if lethal:
 		_is_dead = true

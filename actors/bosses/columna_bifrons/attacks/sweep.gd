@@ -15,7 +15,6 @@ extends Attack
 ##                 No guard at all: staggered.
 ## It's for a player on each side (pep); with both on one side it doesn't come.
 
-signal strike_parried(player)
 signal both_parried
 
 enum Phase { NONE, SWEEPING, AFTER }
@@ -128,7 +127,6 @@ func _reach(blade: int) -> bool:
 	boss.land(judged)
 	for p in judged.parriers:
 		parry_success.emit(p, "bifrons_sweep")
-		strike_parried.emit(p)
 	return judged.parried
 
 

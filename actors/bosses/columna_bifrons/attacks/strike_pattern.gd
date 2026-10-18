@@ -28,7 +28,6 @@ extends Attack
 ## A blade that's drawn back, coming, lying where it landed or thrown back by a parry isn't
 ## guarding: its player's hits land (see ColumnaBifrons.is_guarding()).
 
-signal strike_parried(player)
 signal both_parried
 
 enum Phase { NONE, STRIKING }
@@ -289,7 +288,6 @@ func _land(index: int):
 			boss.land(judged[blade], both, 1.0, sword == BOTH)
 		for p in judged[blade].parriers:
 			parry_success.emit(p, "bifrons_strike")
-			strike_parried.emit(p)
 
 	if both and not on_one:
 		both_parried.emit()
