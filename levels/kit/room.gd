@@ -63,7 +63,7 @@ var _backdrop: Node2D  # draws the background and grid, under everything
 
 
 # The physics layer of one-way platforms carrying both (0), only P1 (1) or only P2 (2). The
-# room puts each player's own layer into their collision mask, so player.gd needn't know them.
+# room puts each player's own layer into their collision mask, so the player needn't know them.
 static func platform_layer(owner_id: int) -> int:
 	return [Player.PLATFORM_LAYER, GymLevel.OWN_PLATFORM_LAYERS[1], GymLevel.OWN_PLATFORM_LAYERS[2]][owner_id]
 

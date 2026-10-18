@@ -24,7 +24,7 @@ extends BifronsSwords
 # down for a moment, so a player can hold him. He starts an attack only while a player is in
 # his range.
 # PUSHING THROUGH. A player in his way doesn't stop him: walking into one (TOUCH_DISTANCE), he
-# slows to PUSH_PACE and his body pushes them along (see _keep_out_of_boss() in player.gd);
+# slows to PUSH_PACE and his body pushes them along (see _keep_out_of_boss() in player_body.gd);
 # after PUSH_PATIENCE of that he shoves them out of the way (attacks/shove.gd, their side only).
 # (Distances are between his center and a player's. Touching is 42; a player's sword reaches
 # him from 118, and two players side by side (20 wide each) both reach him with the nearer one
@@ -105,7 +105,7 @@ var _shove_due = false  # he wants room, and it's the shove: as soon as he's fre
 
 
 # His whole body blocks: taller than a jump. Getting to his other side takes a dash-parry (see
-# player.gd), or him.
+# DASH-PARRY in player_body.gd), or him.
 func body_block() -> Rect2:
 	if not Moves.on("boss_body") or hp <= 0.0 or anim_time < _ghost_until:
 		return Rect2()

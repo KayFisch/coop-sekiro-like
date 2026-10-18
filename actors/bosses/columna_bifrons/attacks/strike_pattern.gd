@@ -58,7 +58,7 @@ const RECOIL_TIME = 0.35
 # "sync_window_delay" after the parry (window_delay()); its first "sync_beat_time" is on the beat,
 # and it stays open "sync_window_late" longer, off the beat (window_time(): all of it). A
 # player's swing lands 0.05 to 0.17 s after its press, sooner the closer they stand (see
-# ATTACK_WINDUP_TIME and ATTACK_ACTIVE_TIME in player.gd): 0.08 s from next to him.
+# ATTACK_WINDUP_TIME and ATTACK_ACTIVE_TIME in player_sword.gd): 0.08 s from next to him.
 # - A delay of 0 (once Moves "bifrons_window" on "beat"): parry and hit are pressed together, the
 #   hitter betting on the parry.
 # - 0.18 (once "after"): the hitter answers the parry instead of betting on it. That's just longer

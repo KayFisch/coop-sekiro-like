@@ -18,7 +18,7 @@ const PARRY_SPAM_LOCK = 0.3  # a block press this soon after the previous one ca
 # THE SLASH is a real swing: drawn back (windup), cut down (active: only then can it hit), and
 # brought back to rest (return). It commits: from the press until the blade is back at rest,
 # block does nothing, and a parry window opened just before the swing is given up; so there's
-# no attacking and parrying at once (see _is_swinging()). There's no cooldown beyond that: the
+# no attacking and parrying at once (see is_swinging()). There's no cooldown beyond that: the
 # blade back at rest is ready again, and an attack pressed up to ATTACK_BUFFER_TIME before it's
 # back comes as soon as it is.
 const ATTACK_WINDUP_TIME = 0.05  # short: the cut has to follow the press
@@ -100,14 +100,17 @@ const POGO_GRACE = 0.1  # spikes touched this soon after a pogo don't count (see
 const POGO_CLASH_TOLERANCE = 0.15
 # The swings side by side: the lengths of their three parts (windup, active: the cut, back: the
 # return to rest), how soon the next attack may follow the press, the damage, and the blade's
-# angle where the cut starts and ends.
+# angle where the cut starts and ends; their names for readouts.
 const SWINGS = {
 	Swing.SLASH: {"windup": ATTACK_WINDUP_TIME, "active": ATTACK_ACTIVE_TIME, "back": ATTACK_RETURN_TIME,
-		"cooldown": ATTACK_COOLDOWN, "damage": ATTACK_DAMAGE, "from": SWING_START_ANGLE, "to": SWING_END_ANGLE},
+		"cooldown": ATTACK_COOLDOWN, "damage": ATTACK_DAMAGE, "from": SWING_START_ANGLE, "to": SWING_END_ANGLE,
+		"name": "slash"},
 	Swing.UPSLASH: {"windup": UPSLASH_WINDUP_TIME, "active": UPSLASH_ACTIVE_TIME, "back": UPSLASH_RETURN_TIME,
-		"cooldown": UPSLASH_COOLDOWN, "damage": UPSLASH_DAMAGE, "from": UPSLASH_START_ANGLE, "to": UPSLASH_END_ANGLE},
+		"cooldown": UPSLASH_COOLDOWN, "damage": UPSLASH_DAMAGE, "from": UPSLASH_START_ANGLE, "to": UPSLASH_END_ANGLE,
+		"name": "upslash"},
 	Swing.DOWNSLASH: {"windup": 0.0, "active": DOWNSLASH_ACTIVE_TIME, "back": DOWNSLASH_RETURN_TIME,
-		"cooldown": ATTACK_COOLDOWN, "damage": DOWNSLASH_DAMAGE, "from": DOWNSLASH_START_ANGLE, "to": DOWNSLASH_END_ANGLE},
+		"cooldown": ATTACK_COOLDOWN, "damage": DOWNSLASH_DAMAGE, "from": DOWNSLASH_START_ANGLE, "to": DOWNSLASH_END_ANGLE,
+		"name": "downslash"},
 }
 
 @export var sword_color = Color(0.62, 0.8, 1)  # a lighter shade of the body color
@@ -116,7 +119,7 @@ var parry_press_time = -100.0  # when the last block press that can still parry 
 var swing_serial = 0  # bumped by every new swing and dash-slash (see active_sword_point())
 var _sword_color: Color
 var _sword_flash = 0.0
-var _last_block_press = -100.0
+var last_block_press = -100.0
 var _swing_kind = Swing.SLASH
 var _attack_timer = 0.0  # counts down through the swing and its return
 var _attack_cooldown = 0.0
@@ -137,8 +140,8 @@ var _charging = false  # a rhythm dash-slash held, not released yet (while _wind
 var relay_beat = -1  # the Beat count of beat 1 of the current rhythm relay (its release)
 var _trail_timer = 0.0  # the dash-slash's afterimages (see the look in player.gd)
 var _pogoed = false  # this downslash already bounced
-var _pogo_time = -100.0
-var _downslash_time = -100.0  # when the current downslash was pressed (see POGO_WINDOW)
+var pogo_time = -100.0
+var downslash_time = -100.0  # when the current downslash was pressed (see POGO_WINDOW)
 
 @onready var sword_pivot: Node2D = $SwordPivot
 @onready var sword: ColorRect = $SwordPivot/Sword
@@ -156,11 +159,11 @@ func _ready():
 
 func _process_other_buttons():
 	super()
-	if _pressed("block") and not _is_swinging():
-		var now = _now()
+	if _pressed("block") and not is_swinging():
+		var t = now()
 		# Mashing doesn't parry: a press too soon after the previous one isn't a parry attempt.
-		parry_press_time = now if now - _last_block_press >= PARRY_SPAM_LOCK else -100.0
-		_last_block_press = now
+		parry_press_time = t if t - last_block_press >= PARRY_SPAM_LOCK else -100.0
+		last_block_press = t
 	_process_attack_buttons()
 
 
@@ -179,7 +182,7 @@ func _process_attack_buttons():
 
 func _press_attack():
 	if Moves.on("dash_slash") and _dash_timer > 0.0 and not _dash_slash \
-			and _since(_dash_press_time) <= DASH_SLASH_LATE:
+			and _since(dash_press_time) <= DASH_SLASH_LATE:
 		_begin_dash_slash()  # attacking right as the dash starts
 		return
 	if _attack_cooldown > 0.0:
@@ -197,14 +200,14 @@ func _press_attack():
 		Sfx.play("slash", -4.0)
 		return
 	_start_swing(Swing.SLASH)
-	_slash_press_time = _now()
+	_slash_press_time = now()
 	Sfx.play("slash", -4.0)
 
 
 # Attack while holding up (also reached from a slash that up followed a moment later).
 func _press_upslash():
 	_start_swing(Swing.UPSLASH)
-	_upslash_press_time = _now()
+	_upslash_press_time = now()
 	if _upslash_hop_ready and Moves.on("upslash_hop"):
 		_upslash_hop_ready = false
 		velocity.y = minf(velocity.y, -rise_speed(UPSLASH_HOP_HEIGHT))
@@ -220,7 +223,7 @@ func _start_swing(kind: Swing):
 	_attack_cooldown = swing.cooldown
 	_attack_landed = false
 	_pogoed = false
-	_downslash_time = _now() if kind == Swing.DOWNSLASH else -100.0
+	downslash_time = now() if kind == Swing.DOWNSLASH else -100.0
 	parry_press_time = -100.0  # a swing gives up the parry window
 	swing_serial += 1
 
@@ -236,13 +239,13 @@ func _swing_elapsed() -> float:
 # True from the attack press until the blade is back at rest: a swing from its windup to the end
 # of its return (or of its recoil, if it was parried), or a dash-slash from its windup to the end
 # of the dash. No blocking or parrying meanwhile.
-func _is_swinging() -> bool:
+func is_swinging() -> bool:
 	return _attack_timer > 0.0 or _recoil_timer > 0.0 or _windup_timer > 0.0 \
 		or (_dash_slash and _dash_timer > 0.0)
 
 
 # True while the blade can hit: a swing's active part, or all through a dash-slash.
-func _is_sword_active() -> bool:
+func is_sword_active() -> bool:
 	if _dash_slash and _dash_timer > 0.0:
 		return true
 	var swing = SWINGS[_swing_kind]
@@ -269,7 +272,7 @@ func _swing_damage() -> float:
 # are struck without being the boss's body (e.g. a chain), together with swing_serial so each
 # swing counts once.
 func active_sword_point():
-	if not _is_sword_active():
+	if not is_sword_active():
 		return null
 	return _sword_shape.global_position
 
@@ -277,7 +280,7 @@ func active_sword_point():
 # Sword hits: damage on the boss (or a target). A downslash never hits the boss; on targets its
 # hits are _check_pogo()'s.
 func _process_attack():
-	if not _is_sword_active() or _is_downslash():
+	if not is_sword_active() or _is_downslash():
 		return
 	for hit in sword_hitbox.get_overlapping_bodies():
 		if hit.is_in_group("boss") and not _attack_landed:
@@ -287,6 +290,16 @@ func _process_attack():
 
 func _is_downslash() -> bool:
 	return _swing_kind == Swing.DOWNSLASH and not (_dash_slash and _dash_timer > 0.0)
+
+
+# The last swing, for readouts: "dash-slash", or its name in SWINGS ("slash", "upslash"...).
+func swing_name() -> String:
+	return "dash-slash" if _dash_slash else SWINGS[_swing_kind].name
+
+
+# The upslash's hop is there to use (once per trip into the air).
+func can_hop() -> bool:
+	return _upslash_hop_ready
 
 
 # Upslashing, pressed at most `tolerance` ago (the launch and the pogo clash).
@@ -325,7 +338,7 @@ func _begin_dash_slash():
 	_dash_timer = 0.0
 	_attack_timer = 0.0
 	_attack_landed = false
-	_downslash_time = -100.0
+	downslash_time = -100.0
 	_attack_cooldown = DASH_SLASH_COOLDOWN
 	parry_press_time = -100.0  # as a swing does
 	facing = _dash_dir
@@ -409,7 +422,7 @@ func _dash_slash_passes() -> bool:
 # POGO_WINDOW; the blade's position and timing don't matter. The partner in it with a fresh
 # upslash is a pogo clash; with Moves "pogo_environment", targets, lanterns and spikes bounce it.
 func _check_pogo(delta):
-	if _pogoed or _since(_downslash_time) > POGO_WINDOW:
+	if _pogoed or _since(downslash_time) > POGO_WINDOW:
 		return
 	var half = body.size / 2.0
 	var depth = POGO_REACH.y + maxf(velocity.y * delta, 0.0)
@@ -446,7 +459,7 @@ func _try_pogo_clash(_depth: float) -> bool:
 
 # Spikes touched this soon after a pogo are forgiven (the bounce is already carrying you out).
 func just_pogoed() -> bool:
-	return _since(_pogo_time) <= POGO_GRACE
+	return _since(pogo_time) <= POGO_GRACE
 
 
 # A bounce off something in the world (Moves "pogo_environment"), refreshing what the Moves
@@ -466,7 +479,7 @@ func _pogo():
 # The bounce off a downslash: up to POGO_HEIGHT, whatever the fall.
 func _pogo_bounce():
 	_pogoed = true
-	_pogo_time = _now()
+	pogo_time = now()
 	bounce(POGO_HEIGHT, POGO_RISE_GRAVITY)
 	_sword_flash = SWORD_FLASH_TIME
 
@@ -474,7 +487,7 @@ func _pogo_bounce():
 # --- Defensive queries used by the boss at the moment its hitbox connects ---
 
 func is_blocking() -> bool:
-	return not is_staggered() and not _is_swinging() and _held("block") \
+	return not is_staggered() and not is_swinging() and _held("block") \
 		and (GameManager.rules == null or GameManager.rules.can_block())  # no blocking in chaos
 
 
@@ -515,7 +528,7 @@ func _sword_angle() -> float:
 # The blade when nothing above is going on: at rest, down in front while blocking, beaten up by
 # a perfect parry; eased from one to the other, so releasing block swings it back up.
 func _update_sword_idle(delta: float):
-	if _is_swinging() or _blade_taken():
+	if is_swinging() or _blade_taken():
 		_sword_idle_angle = wrapf(_sword_angle(), -PI, PI)  # it carries on from wherever that leaves it
 		return
 	var target = SWORD_REST_ANGLE
@@ -581,7 +594,7 @@ func interrupt_movement():
 	super()
 	_windup_timer = 0.0
 	_charging = false
-	_downslash_time = -100.0
+	downslash_time = -100.0
 
 
 func movement_state() -> String:

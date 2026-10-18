@@ -261,7 +261,7 @@ func defended(p, how: String, since_press: float):
 		if since_press < NO_PRESS:
 			s.early.append(since_press)
 		else:
-			_watch[p] = [p._now(), p._last_block_press]
+			_watch[p] = [p.now(), p.last_block_press]
 	note(how, {"player": p.player_id, "since_press": snappedf(since_press, 0.001)})
 
 
@@ -330,11 +330,11 @@ func _watch_late():
 			_watch.erase(p)
 			continue
 		var landed = _watch[p][0]
-		if p._last_block_press > _watch[p][1] and p._last_block_press - landed <= LATE_WATCH:
-			_stats_of(p).late.append(p._last_block_press - landed)
-			note("late_press", {"player": p.player_id, "late_by": snappedf(p._last_block_press - landed, 0.001)})
+		if p.last_block_press > _watch[p][1] and p.last_block_press - landed <= LATE_WATCH:
+			_stats_of(p).late.append(p.last_block_press - landed)
+			note("late_press", {"player": p.player_id, "late_by": snappedf(p.last_block_press - landed, 0.001)})
 			_watch.erase(p)
-		elif p._now() - landed > LATE_WATCH:
+		elif p.now() - landed > LATE_WATCH:
 			_watch.erase(p)
 
 
@@ -382,7 +382,7 @@ func _overlay_text() -> String:
 			parts.append("PARRY WINDOW")
 		elif p.is_blocking():
 			parts.append("blocking")
-		if p._is_swinging():
+		if p.is_swinging():
 			parts.append("swinging")
 		if p.is_staggered():
 			parts.append("staggered")

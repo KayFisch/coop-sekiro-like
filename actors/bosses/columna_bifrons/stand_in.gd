@@ -118,7 +118,7 @@ func _strike(player, delta: float):
 # go first).
 func _strike_bound(player):
 	var bond = boss.rules.bond
-	var partner = boss.partner_of(player)
+	var partner = player.partner()
 	var drawing = partner != null and partner.is_drawing()
 	if not drawing:
 		_let_go = false
@@ -138,8 +138,8 @@ func _move(player, delta: float):
 	if away == 0.0:
 		away = 1.0
 	var distance = boss.distance_to(player)
-	if boss.in_sync_mode() and boss.partner_of(player) != null:
-		var gap = boss.partner_of(player).global_position.x - player.global_position.x
+	if boss.in_sync_mode() and player.partner() != null:
+		var gap = player.partner().global_position.x - player.global_position.x
 		_walk = signf(gap) if absf(gap) > Tuning.value("sync_connect_distance") * 0.5 else 0.0
 		# He's between them: up to him, then a dash-slash through him.
 		_dash_wait = maxf(_dash_wait - delta, 0.0)
@@ -152,7 +152,7 @@ func _move(player, delta: float):
 			_hold(player, "attack", true)
 	else:
 		var want = DISTANCE
-		var partner = boss.partner_of(player)
+		var partner = player.partner()
 		if partner != null and boss.side_of(partner) == boss.side_of(player):
 			var theirs = boss.distance_to(partner)
 			want = DISTANCE_IN_FRONT if theirs > distance else maxf(theirs + DISTANCE_BEHIND, DISTANCE)

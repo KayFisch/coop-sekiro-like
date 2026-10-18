@@ -184,7 +184,7 @@ func _track_wall_contact(direction: float):
 			touching = side
 			break
 	if touching != 0.0 and touching != _wall_touch_side:
-		_wall_contact_time = _now()
+		_wall_contact_time = now()
 		_wall_contact_side = touching
 		_end_tempo()  # arrived
 	_wall_touch_side = touching
@@ -259,20 +259,20 @@ func _wall_jump_side() -> float:
 
 
 func _wall_jump(side: float):
-	var now = _now()
+	var t = now()
 	# Timed to hitting this wall; the first of a climb is always a full one.
 	var timed = _wall_chain
-	var moment = now
+	var moment = t
 	if timed and _wall_contact_side == side and _wall_contact_time > maxf(_wall_jump_time, chimney_clash_time):
 		moment = _wall_contact_time
 	_wall_chain = true
-	wall_beat_time = now
+	wall_beat_time = t
 	_chimney_meet_time = -100.0
 	_wall_side = 0.0
 	_wall_coyote = 0.0
 	_spent_wall_side = side
 	_spent_wall_x = global_position.x
-	_wall_jump_time = now
+	_wall_jump_time = t
 	_wall_held_away = 0.0
 	_end_carry()
 	_end_dash()
@@ -304,7 +304,7 @@ func _fly_off(dir: float, moment: float, timed = true):
 # (hitting a wall, meeting the partner) goes on the clock's beat (_steer_tempo()), so neither
 # late presses nor a slow flight (steering) add up and drift off it.
 func _resync():
-	_tempo_until = _now() + WALL_TEMPO_LONGEST
+	_tempo_until = now() + WALL_TEMPO_LONGEST
 	_steer_tempo(move_axis())
 
 
@@ -317,7 +317,7 @@ func _steer_tempo(direction: float):
 	if _tempo_until < 0.0:
 		return
 	var distance = _tempo_distance()
-	if _now() > _tempo_until or distance == INF or not Beat.running:
+	if now() > _tempo_until or distance == INF or not Beat.running:
 		_end_tempo()
 		return
 	var usual = distance / WALL_JUMP_PUSH
@@ -521,7 +521,7 @@ func _check_chimney():
 		var bumped = _wall_jump_dir * gap.x > 0.0 and other._wall_jump_dir * gap.x < 0.0
 		if (touching and (closing or bumped)) or _chimney_meet_time >= 0.0:  # once met, in reach is enough
 			if _chimney_meet_time < 0.0:
-				_chimney_meet_time = _now()
+				_chimney_meet_time = now()
 				other._chimney_meet_time = _chimney_meet_time
 			# Both pressed jump around the meeting (see CHIMNEY CLASH); too late, they fly on.
 			if _pressed_near(_chimney_meet_time) and other._pressed_near(_chimney_meet_time):
@@ -540,7 +540,7 @@ func _in_wall_flight() -> bool:
 func _chimney_clash(other):
 	var middle = (global_position.x + other.global_position.x) / 2.0
 	for p in [self, other]:
-		p.chimney_clash_time = _now()
+		p.chimney_clash_time = now()
 		p._wall_jump_time = -100.0  # one clash per wall jump
 		p._spent_wall_side = 0.0  # back at the wall they came from: it's climbable again
 		p._sword_flash = SWORD_FLASH_TIME

@@ -1,7 +1,7 @@
 extends "res://tests/test_case.gd"
 ## The player's feel, measured in a quiet room (Bifrons's, him held still and out of the way):
 ## running speed, jump height, dash distance, the parry window, a swing's timing. The numbers are
-## player.gd's own constants, so this checks the code does what they say.
+## the player's own constants, so this checks the code does what they say.
 
 var p
 
@@ -50,7 +50,7 @@ func test_dash_distance():
 	var went = 0.0
 	for i in 30:
 		await get_tree().physics_frame
-		if p._dash_timer > 0.0:
+		if p.is_dashing():
 			went = p.global_position.x - start
 	hold(p, "dash", false)
 	near(went, p.DASH_DISTANCE, p.DASH_DISTANCE / 7.0, "distance covered while dashing (px; a frame's worth either way)")
@@ -82,9 +82,9 @@ func test_swing_timing():
 		elif since >= 0:
 			since += 1
 		var t = since * step
-		if since >= 0 and p._is_sword_active() and active_from < 0.0:
+		if since >= 0 and p.is_sword_active() and active_from < 0.0:
 			active_from = t
-		if active_from >= 0.0 and active_to < 0.0 and not p._is_sword_active():
+		if active_from >= 0.0 and active_to < 0.0 and not p.is_sword_active():
 			active_to = t
 	hold(p, "attack", false)
 	near(active_from, p.ATTACK_WINDUP_TIME, step * 1.5, "the cut starts after the windup")

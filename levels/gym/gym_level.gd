@@ -35,7 +35,7 @@ const COLOR_HINT = Color(1, 1, 1, 0.5)
 const COLOR_MEASURE = Color(0.55, 0.8, 1.0, 0.6)
 const COLOR_CHECKPOINT = Color(0.4, 1.0, 0.6)
 # Physics layers of the platforms only one player stands on (the kit's, see KitRoom): the
-# level puts each in its player's mask, so player.gd needn't know them.
+# level puts each in its player's mask, so the player needn't know them.
 const OWN_PLATFORM_LAYERS = {1: 5, 2: 6}
 
 var bounds = Rect2(0, -500, 3000, 1220)  # the room; set in _build() before placing anything
@@ -189,7 +189,7 @@ func pillar(x: float, w: float, height: float, floor_y = GROUND_Y) -> StaticBody
 # A one-way ledge (jump up through it, S / stick down to drop) with its top at y.
 func ledge(x: float, y: float, w: float) -> StaticBody2D:
 	var body = StaticBody2D.new()
-	body.collision_layer = 8  # physics layer 4: the one-way platforms (see player.gd)
+	body.collision_layer = 8  # physics layer 4: the one-way platforms (PLATFORM_LAYER in player_body.gd)
 	body.collision_mask = 0
 	body.position = Vector2(x + w / 2.0, y + LEDGE_THICKNESS / 2.0)
 	var shape = CollisionShape2D.new()

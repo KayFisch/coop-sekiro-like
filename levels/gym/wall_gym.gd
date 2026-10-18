@@ -1,5 +1,5 @@
 extends GymLevel
-## The wall gym: wall jumps in rhythm (Moves "wall_rhythm", see WALL RHYTHM in player.gd). The
+## The wall gym: wall jumps in rhythm (Moves "wall_rhythm", see WALL RHYTHM in player_walls.gd). The
 ## room's clock (Beat) runs at BPM, its click on while you're here. A wall jump pressed as you hit
 ## the wall is a full one, early or late a weak one: mashing or hanging on sinks you, and a full
 ## one's flight is steered onto the clock's beats and half-beats. Every shaft's width follows

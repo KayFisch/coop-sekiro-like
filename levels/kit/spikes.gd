@@ -61,7 +61,7 @@ func zone() -> Rect2:
 func _ready():
 	if in_editor():
 		return
-	# What a downslash's pogo box finds (see _check_pogo() in player.gd).
+	# What a downslash's pogo box finds (see _check_pogo() in player_sword.gd).
 	var pogo = CharacterBody2D.new()
 	pogo.add_to_group("pogo")
 	pogo.collision_layer = 4

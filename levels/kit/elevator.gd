@@ -55,7 +55,7 @@ const PULSE_FAINT = 0.12  # ... and on the 2 and the 4 (barely)
 const PULSE_HALO = 0.4  # the pulse's halo, at full pulse
 
 
-# What the blade hits (it looks for a body in the "boss" group, see _process_attack() in player.gd).
+# What the blade hits (it looks for a body in the "boss" group, see _process_attack() in player_sword.gd).
 class WheelBox extends CharacterBody2D:
 	var elevator
 

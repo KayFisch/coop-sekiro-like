@@ -6,8 +6,6 @@ extends Node
 ## everything that happens is the game's own. It has to run before the players each frame, or
 ## they'd miss its presses: add it before them.
 
-const Player = preload("res://actors/player/player.gd")
-
 const PARRY_LEAD = 0.05  # s before the blades meet that it presses block (a frame early at least:
 # the dasher checks for the parry before the anchor has registered a press that same frame)
 const BLOCK_HOLD = 0.15  # s it keeps block held after
@@ -29,7 +27,7 @@ func _physics_process(delta):
 	_release("attack")  # a strike is one frame's press
 	_block_left = maxf(_block_left - delta, 0.0)
 	var walk = 0.0
-	if anchor._hold_kind == Player.Hold.RELAY_ANCHOR:
+	if anchor.is_held():  # it only ever anchors
 		_hold(AIM, true)
 		var beat_3 = Beat.beat_time(dasher.relay_beat + 2)
 		if not _struck and Beat.time() >= beat_3 - delta / 2.0:
@@ -38,7 +36,7 @@ func _physics_process(delta):
 	else:
 		_struck = false
 		_hold(AIM, false)
-		var contact = dasher._predict_contact(anchor)
+		var contact = dasher.predict_contact(anchor)
 		if contact >= 0.0 and contact <= PARRY_LEAD + delta and _block_left <= 0.0:
 			_release("block")  # a fresh press, or it's no parry
 			_block_left = BLOCK_HOLD

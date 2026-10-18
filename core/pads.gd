@@ -6,7 +6,7 @@ extends Node
 ##   no pad, or one:  p1_* = the keyboard, p2_* = the pad
 ##   two pads:        p1_* = the keyboard and the first pad, p2_* = the second pad
 ## Moves "swap_controls" still trades the two sets between the players (see action() in
-## player.gd); with two pads, that swaps the pads.
+## player_body.gd); with two pads, that swaps the pads.
 
 signal changed
 

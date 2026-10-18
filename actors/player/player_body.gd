@@ -87,7 +87,7 @@ var _dash_ready = true  # refreshed on the ground
 var _dash_dir = 1.0
 var _dash_timer = 0.0
 var _dash_cooldown = 0.0
-var _dash_press_time = -100.0
+var dash_press_time = -100.0
 var _drop_timer = 0.0
 var _knockback_timer = 0.0
 var _stagger_timer = 0.0  # > 0 while reeling from a hit: no movement, no input
@@ -167,14 +167,15 @@ func move_axis() -> float:
 	return Input.get_axis(action("left"), action("right"))
 
 
-# The real clock, in s: the timing windows are measured on it.
-func _now() -> float:
+# The real clock, in s: the timing windows are measured on it, and so is anything compared with
+# the player's own moments (dash_press_time, parry_press_time...).
+func now() -> float:
 	return Time.get_ticks_msec() / 1000.0
 
 
-# s since `t`, a moment read off _now().
+# s since `t`, a moment read off now().
 func _since(t: float) -> float:
-	return _now() - t
+	return now() - t
 
 
 # The other player; null if there's none.
@@ -267,7 +268,7 @@ func bounce(height: float, heavier = 1.0):
 func _process_actions():
 	if _pressed("jump"):
 		_jump_buffer = JUMP_BUFFER_TIME
-		_jump_press_time = _now()
+		_jump_press_time = now()
 	if _jump_buffer > 0.0:
 		_try_jump()
 
@@ -320,7 +321,7 @@ func _start_dash(direction: float) -> bool:
 	_dash_dir = direction
 	_dash_timer = DASH_TIME
 	_dash_cooldown = DASH_COOLDOWN
-	_dash_press_time = _now()
+	dash_press_time = now()
 	velocity = Vector2(_dash_dir * DASH_SPEED, 0.0)
 	_passing = _pass_timer > 0.0 and _boss_ahead()  # right after a parry: through him
 	_pass_timer = 0.0
@@ -346,6 +347,19 @@ func _end_carry():
 
 func is_launching() -> bool:
 	return _launch_timer > 0.0
+
+
+func is_dashing() -> bool:
+	return _dash_timer > 0.0
+
+
+# The dash is there to use: given back since the last one, and cooled down.
+func can_dash() -> bool:
+	return _dash_ready and _dash_cooldown <= 0.0
+
+
+func can_air_jump() -> bool:
+	return _air_jumps > 0
 
 
 # Air jumps, the dash and the upslash hop back, as if touching the ground.

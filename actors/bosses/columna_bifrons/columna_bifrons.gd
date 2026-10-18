@@ -6,7 +6,7 @@ extends BifronsMoves
 ## what's his own is here: which attacks come and how often, his two swords and whom they fight,
 ## his guard, where he stands and how he gets there, and how he answers being attacked.
 ##
-## THE RULES, the same that hold for the players' swords (see "THE SWORD" in player.gd):
+## THE RULES, the same that hold for the players' swords (see "THE SWORD" in player_sword.gd):
 ## 1. Each of his swords fights one player (its "ward"): it points at them, strikes at them and
 ##    guards against them, on whichever side of him they are. A player on each side: a sword on
 ##    each side. Both on one side: both swords there. A sword whose own player has left his range
@@ -71,7 +71,7 @@ const ATTACKS = {
 	# One sword, from one side of him through to the other.
 	"SWEEP": {"weight": {"pep": 1.5}, "attack": SWEEP},
 	# He jumps and comes down between the players: his way of getting them back on both sides
-	# (theirs is the dash-parry, see player.gd), and out of a corner. The series' weights add up
+	# (theirs is the dash-parry, see player_body.gd), and out of a corner. The series' weights add up
 	# to 6.5, so in ppe about one attack in four is the leap: that's how long ppe lasts if they
 	# leave it to him.
 	"LEAP": {"weight": {"ppe": 2.5, "pep_cornered": 6.0, "ppe_cornered": 6.0}, "attack": LEAP},
@@ -271,14 +271,14 @@ func time_unit() -> float:
 	return Tuning.value("bifrons_time_unit") * (Tuning.value("sync_mode_tempo") if in_sync_mode() else 1.0)
 
 
-# Players keep their eyes on him (see _process_movement() in player.gd): he passes them, and
+# Players keep their eyes on him (see _face() in player_body.gd): he passes them, and
 # they'd turn their backs on him otherwise.
 func holds_facing() -> bool:
 	return hp > 0.0 and Moves.on("bifrons_face")
 
 
 # None of his attacks homes on one player, so a player he pushes may always shove the partner
-# along (see _keep_out_of_boss() in player.gd).
+# along (see _keep_out_of_boss() in player_body.gd).
 func is_attacking(_player) -> bool:
 	return false
 

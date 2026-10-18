@@ -124,9 +124,9 @@ func _physics_process(delta):
 	if state != _last_state:
 		_beat_changed(_last_state, state)
 		_last_state = state
-	if p1._pogo_time != _last_pogo:
-		_last_pogo = p1._pogo_time
-		_beat_move("pogo", p1._downslash_time)
+	if p1.pogo_time != _last_pogo:
+		_last_pogo = p1.pogo_time
+		_beat_move("pogo", p1.downslash_time)
 	# Beat 4: the tick in the hang at the top (whether or not a move cut the throw short).
 	if _times.has(3) and not _times.has(4) and _now() >= p1.rhythm_top_time:
 		_times[4] = _now()
@@ -148,7 +148,7 @@ func _beat_changed(was: String, now: String):
 		else:
 			_result = "dropped: no strike on beat 3"
 	if now == "dash":
-		_beat_move("dash", players[0]._dash_press_time)  # seen here a frame or two after the press
+		_beat_move("dash", players[0].dash_press_time)  # seen here a frame or two after the press
 
 
 # A move of the dasher's after the throw, pressed at time t: how far off beat 4 it came.
@@ -160,11 +160,11 @@ func _beat_move(what: String, t: float, note = ""):
 
 # The lantern's rule: only a downslash pressed close to beat 4 bounces off it.
 func _pogo_on_4(p) -> bool:
-	var off = p._downslash_time - p.rhythm_top_time
+	var off = p.downslash_time - p.rhythm_top_time
 	if absf(off) <= POGO_TOLERANCE:
 		return true
 	if p == players[0]:
-		_beat_move("pogo", p._downslash_time, "  (too far off: ±%d ms)" % roundi(POGO_TOLERANCE * 1000.0))
+		_beat_move("pogo", p.downslash_time, "  (too far off: ±%d ms)" % roundi(POGO_TOLERANCE * 1000.0))
 	return false
 
 

@@ -14,7 +14,7 @@ enum Hold { NONE, RELAY_DASHER, RELAY_ANCHOR }
 # THE TELL: a dash-slash headed at the partner puts a ring in the dasher's color around them,
 # shrinking at a steady rate and closing TELL_LEAD before the blades meet: the moment to press
 # (block for a relay, upslash for a launch; inside both windows). The contact is predicted every
-# frame (see _predict_contact()). A short sound ends on the close.
+# frame (see predict_contact()). A short sound ends on the close.
 const TELL_LEAD = 0.08
 const TELL_CLOSED_RADIUS = 30.0  # just around the partner's body
 const TELL_SHRINK_SPEED = 380.0  # px/s
@@ -256,7 +256,7 @@ func _release_hold():
 		_boost_timer = to_top + RHYTHM_HANG_AFTER
 		_throw_left = RHYTHM_THROW_HEIGHT
 		_boost_velocity = _relay_dir * RHYTHM_THROW_HEIGHT / maxf(to_top - RHYTHM_HANG_BEFORE, 0.05)
-		rhythm_top_time = _now() + to_top
+		rhythm_top_time = now() + to_top
 		velocity = _boost_velocity
 		if _relay_dir.x != 0.0:
 			facing = signf(_relay_dir.x)
@@ -284,7 +284,7 @@ func _aim_4(fallback: Vector2) -> Vector2:
 # what's left of the windup, then the run at dash speed. -1 if it won't reach them: not winding
 # up or dash-slashing, the partner not ahead or too high or low, out of the dash's range, or the
 # boss in the way.
-func _predict_contact(other) -> float:
+func predict_contact(other) -> float:
 	var dashing = _dash_slash and _dash_timer > 0.0
 	if (_windup_timer <= 0.0 or _charging) and not dashing:
 		return -1.0  # a charge has no time to meet yet
@@ -302,7 +302,7 @@ func _predict_contact(other) -> float:
 # over, clashed, or can't reach).
 func _update_tell(delta):
 	var other = partner()
-	var contact = _predict_contact(other) if other else -1.0
+	var contact = predict_contact(other) if other else -1.0
 	if contact >= 0.0:
 		_tell_left = contact - TELL_LEAD
 		_tell_alpha = 1.0

@@ -26,7 +26,7 @@ func _physics_process(_delta):
 	var active = x > inside.x and x < inside.y
 	var jumped = leader.wall_beat_time != _leader_jump
 	_leader_jump = leader.wall_beat_time
-	var free = leader._hold_kind == 0 and follower._hold_kind == 0  # Hold.NONE
+	var free = not leader.is_held() and not follower.is_held()
 	if active:
 		follower._jump_press_time = leader._jump_press_time
 	if active and free:

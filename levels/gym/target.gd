@@ -54,23 +54,16 @@ func _ready():
 		add_child(l)
 
 
-# Asked by a player's downslash before it bounces off this (see _check_pogo() in player.gd).
+# Asked by a player's downslash before it bounces off this (see _check_pogo() in player_sword.gd).
 func accepts_pogo(player) -> bool:
 	return pogo_filter.is_null() or pogo_filter.call(player)
 
 
-# Called by a player's blade (see _process_attack() in player.gd).
+# Called by a player's blade (see _process_attack() in player_sword.gd).
 func take_damage(amount: float, source = null):
 	var kind = "HIT"
 	if source:
-		if source._dash_slash:
-			kind = "DASH-SLASH"
-		elif source._swing_kind == source.Swing.UPSLASH:
-			kind = "UPSLASH"
-		elif source._swing_kind == source.Swing.DOWNSLASH:
-			kind = "DOWNSLASH"
-		else:
-			kind = "SLASH"
+		kind = source.swing_name().to_upper()
 		if source.is_launching():
 			kind += " (launched)"
 		elif source.movement_state() == "relay boost":

@@ -57,7 +57,7 @@ var _pressed = false  # a plate: someone on it last frame
 var _flash = 0.0
 
 
-# What the blade hits (it looks for a body in the "boss" group, see _process_attack() in player.gd).
+# What the blade hits (it looks for a body in the "boss" group, see _process_attack() in player_sword.gd).
 class StrikeBox extends CharacterBody2D:
 	var switch
 

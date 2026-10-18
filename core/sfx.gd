@@ -80,9 +80,9 @@ func _build_sounds():
 	_sounds["launch"] = _rise(0.25)
 	_sounds["swing"] = _whoosh(0.35)  # a heavy swing (Bifrons's sweep, his leap)
 	_sounds["thunk"] = _thud(90.0, 38.0, 0.35, 8.0, 0.6)  # something heavy landing
-	_sounds["tell"] = _zip(0.12)  # ends on the tell ring's close (TELL_SOUND_TIME in player.gd)
+	_sounds["tell"] = _zip(0.12)  # ends on the tell ring's close (TELL_SOUND_TIME in player_partner.gd)
 	_sounds["call_tick"] = _blip(1100.0, 0.06)
-	# The rhythm relay's beats (see RHYTHM RELAY in player.gd); beat 2 is "parry_strong".
+	# The rhythm relay's beats (see RELAY in player_partner.gd); beat 2 is "parry_strong".
 	_sounds["relay_beat"] = _blip(660.0, 0.06)  # 1: the dash-slash winds up
 	_sounds["relay_strike"] = _clang(1000.0, 0.12)  # 3: the partner's strike throws the dasher
 	_sounds["relay_peak"] = _blip(1320.0, 0.07)  # 4: the throw's top

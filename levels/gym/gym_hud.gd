@@ -90,7 +90,7 @@ func _track(p, t: Dictionary, delta: float):
 		t.distance = absf(pos.x - t.takeoff.x)
 	t.grounded = grounded
 
-	var dashing = p._dash_timer > 0.0
+	var dashing = p.is_dashing()
 	if dashing and not t.dashing:
 		t.dash_from = pos.x
 	if t.dashing and not dashing:
@@ -108,9 +108,9 @@ func _track(p, t: Dictionary, delta: float):
 func _describe(p, t: Dictionary) -> String:
 	var v = p.velocity
 	var moves = "air jump %s · dash %s · hop %s" % [
-		"✓" if p._air_jumps > 0 else "–",
-		"✓" if p._dash_ready and p._dash_cooldown <= 0.0 else "–",
-		"✓" if p._upslash_hop_ready else "–"]
+		"✓" if p.can_air_jump() else "–",
+		"✓" if p.can_dash() else "–",
+		"✓" if p.can_hop() else "–"]
 	return "P%d  %-11s  speed %4d  fall %5d  |  last jump: peak %3d px, %.2f s, %3d px across  |  dash %3d px  |  launch %3d px  |  %s" % [
 		p.player_id, p.movement_state(), roundi(absf(v.x)), roundi(v.y), roundi(t.peak), t.air_time,
 		roundi(t.distance), roundi(t.dash), roundi(t.launch), moves]

@@ -2,7 +2,7 @@ extends "res://tests/test_case.gd"
 ## The player's moves the levels are built on, each tried in an empty room (tests/rooms/): the
 ## double jump, the dash-slash, a hit's knockback, the launch, the pogo clash and a pogo off
 ## spikes, the wall jump and its rhythm, the chimney clash, the ledge grab, and the rhythm relay.
-## The numbers are player.gd's own constants, so this checks the code does what they say.
+## The numbers are the player's own constants, so this checks the code does what they say.
 
 const ROOM = "res://tests/rooms/open_room.tscn"
 

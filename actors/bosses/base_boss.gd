@@ -154,14 +154,14 @@ func _update_pose():
 	pass
 
 
-# The zone players can't enter (see _keep_out_of_boss() in player.gd), in world coordinates;
+# The zone players can't enter (see _keep_out_of_boss() in player_body.gd), in world coordinates;
 # an empty Rect2 for none. It must move with the boss.
 func body_block() -> Rect2:
 	return Rect2()
 
 
-# True for a boss the players keep facing, whichever way they walk (see _process_movement() in
-# player.gd): one that changes sides on them.
+# True for a boss the players keep facing, whichever way they walk (see _face() in
+# player_body.gd): one that changes sides on them.
 func holds_facing() -> bool:
 	return false
 
@@ -409,13 +409,6 @@ func get_players() -> Array:
 # True while an attack aimed at `player` is telegraphed or running.
 func is_attacking(player) -> bool:
 	return state in [State.TELEGRAPH, State.ATTACKING] and target_player == player
-
-
-func partner_of(player):
-	for other in get_players():
-		if other != player:
-			return other
-	return null
 
 
 func find_attack(attack_name: String) -> Attack:

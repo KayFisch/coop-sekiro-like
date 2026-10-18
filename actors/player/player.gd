@@ -122,7 +122,7 @@ func on_perfect_parry(strong: bool):
 	if GameManager.rules:
 		GameManager.rules.player_parried(self)
 	parry_press_time = -100.0  # one press parries one hit
-	_last_block_press = -100.0  # a landed parry isn't mashing: the next press may parry at once
+	last_block_press = -100.0  # a landed parry isn't mashing: the next press may parry at once
 	_sword_flash = SWORD_FLASH_TIME
 	_parry_flick = PARRY_FLICK_TIME
 	Sfx.play("parry_strong" if strong else "parry")
@@ -148,7 +148,7 @@ func cue_sync(duration: float, color: Color):
 func take_damage(knockback = Vector2.ZERO, chip = false):
 	if _is_dead or _invuln_timer > 0.0:
 		return
-	Dev.defended(self, "block" if chip else "hit", _since(_last_block_press))
+	Dev.defended(self, "block" if chip else "hit", _since(last_block_press))
 	var lethal = false
 	if GameManager.rules:
 		var rules = GameManager.rules
@@ -273,7 +273,7 @@ func _update_visuals():
 	elif _launch_timer > 0.0:
 		color = body_color.lerp(Color.WHITE, 0.3)
 	elif straining:
-		color = body_color.lerp(Color(1.0, 0.8, 0.3), 0.35 + 0.25 * sin(_now() * 30.0))
+		color = body_color.lerp(Color(1.0, 0.8, 0.3), 0.35 + 0.25 * sin(now() * 30.0))
 	elif _boost_timer > 0.0:
 		color = body_color.lightened(0.5)
 	elif is_staggered():
@@ -371,7 +371,7 @@ func _process_draw():
 		_attack_landed = true  # the bond deals the pair's hit, not this swing
 		Sfx.play("slash", -2.0)
 		bond.released(self, share)
-	elif _pressed("attack") and not _is_swinging() and not is_staggered():
+	elif _pressed("attack") and not is_swinging() and not is_staggered():
 		_drawing = true
 		_draw_time = 0.0
 		parry_press_time = -100.0
