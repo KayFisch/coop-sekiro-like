@@ -2080,6 +2080,7 @@ func end_gather():
 
 
 func on_perfect_parry(strong: bool):
+	Dev.defended(self, "parry", _now() - parry_press_time)
 	if GameManager.rules:
 		GameManager.rules.player_parried(self)
 	parry_press_time = -100.0  # one press parries one hit
@@ -2117,6 +2118,7 @@ func on_grab_dodged(burst = false):
 func take_damage(amount: float, knockback = Vector2.ZERO, chip = false, ignore_invuln = false):
 	if _is_dead or (_invuln_timer > 0.0 and not ignore_invuln):
 		return
+	Dev.defended(self, "block" if chip else "hit", _now() - _last_block_press)
 	var lethal = false
 	if GameManager.rules:
 		# Sync as life (core/sync_rules.gd): a hit costs the pair's sync, a block this one's posture.

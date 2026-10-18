@@ -23,6 +23,7 @@ Moves="*res://core/moves.gd"
 Pads="*res://core/pads.gd"
 Beat="*res://core/beat.gd"
 Tuning="*res://core/tuning.gd"
+Dev="*res://core/dev.gd"
 
 [display]
 

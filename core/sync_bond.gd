@@ -67,7 +67,7 @@ func now() -> float:
 
 
 func _exit_tree():
-	Engine.time_scale = 1.0  # a fight left mid-draw doesn't stay slow
+	Engine.time_scale = Dev.speed  # a fight left mid-draw doesn't stay slow
 
 
 func _process(delta):
@@ -86,7 +86,7 @@ func _process(delta):
 	_floor.queue_redraw()
 	# Time runs slow while one of the bound draws back (Tuning "sync_slow_speed"; 1: not at all).
 	var drawing = bound and players.any(func(p): return p.is_drawing())
-	var speed = Tuning.value("sync_slow_speed") if drawing else 1.0
+	var speed = (Tuning.value("sync_slow_speed") if drawing else 1.0) * Dev.speed  # (the lab's speed too)
 	Engine.time_scale = speed if absf(Engine.time_scale - speed) < 0.01 else lerpf(Engine.time_scale, speed, SLOW_EASE)
 	_flash_left = maxf(_flash_left - delta, 0.0)
 	_flash.color.a = maxf(FLASH_ALPHA * _flash_left / 0.2, SLOW_TINT * (1.0 - Engine.time_scale) * 2.0)
@@ -181,7 +181,9 @@ func _follow_charges(players: Array):
 # A sabre let go (Player._process_draw()): on the big cue, or out of sync.
 func released(p, _share: float):
 	var window = Tuning.value("sync_release_window")
-	if cue_at >= 0.0 and not _spoiled and absf(_time - cue_at) <= window:
+	var in_time = cue_at >= 0.0 and not _spoiled and absf(_time - cue_at) <= window
+	Dev.pair_release(p, _time - cue_at if cue_at >= 0.0 else -99.0, in_time)
+	if in_time:
 		_in_time[p] = true
 		if _in_time.size() == 2:
 			_resolve_at = _time + STRIKE_DELAY

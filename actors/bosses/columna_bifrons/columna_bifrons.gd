@@ -794,6 +794,7 @@ func _judge_windows():
 		var could = get_players().any(func(p): return p != _opened_by[blade] and distance_to(p) <= STRIKE_RANGE)
 		if not _open_used[blade] and could:
 			rules.missed_window()
+			Dev.window_missed()
 
 
 # source: the player whose sword hit landed. Through a guard their partner's parry broke it's a
@@ -852,6 +853,7 @@ func _struck_by_rules(amount: float, source):
 		var blade = open[0]
 		var on_beat = anim_time - _open_from[blade] <= Tuning.value("sync_beat_time")
 		rules.sync_hit(on_beat)
+		Dev.sync_hit(source, anim_time - _open_from[blade], on_beat)
 		Sfx.play("sync_hit")
 		shake(6.0)
 		spawn_sparks(at, 16, SYNC_WAVE.COLOR)  # the parry's energy, passed on into him

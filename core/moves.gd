@@ -19,7 +19,7 @@ const LABEL_WIDTH = 50  # characters: the values line up after this
 const SLIDER_CELLS = 15  # characters a slider's bar takes at most
 
 # The panel's tabs, in order. Every entry names one.
-const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Sync", "Runner", "Ring", "Controls", "Sound"]
+const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Sync", "Runner", "Ring", "Controls", "Sound", "Dev"]
 
 # Each switch: key, its tab, what the panel calls it, and its default (a bool, or one of
 # `options`). Labels starting with "  " belong to the switch above them. A `slider` one stops at
@@ -89,6 +89,8 @@ const ENTRIES = [
 	{"key": "music_volume", "tab": "Sound", "label": "Music volume", "default": "5%", "slider": true, "options": ["0%", "5%", "10%", "15%", "20%", "25%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%"]},
 	{"key": "audio_offset", "tab": "Sound", "label": "Audio ahead (a late headset: Bluetooth ~150-250)", "default": "0 ms", "slider": true, "options": ["-200 ms", "-190 ms", "-180 ms", "-170 ms", "-160 ms", "-150 ms", "-140 ms", "-130 ms", "-120 ms", "-110 ms", "-100 ms", "-90 ms", "-80 ms", "-70 ms", "-60 ms", "-50 ms", "-40 ms", "-30 ms", "-20 ms", "-10 ms", "0 ms", "10 ms", "20 ms", "30 ms", "40 ms", "50 ms", "60 ms", "70 ms", "80 ms", "90 ms", "100 ms", "110 ms", "120 ms", "130 ms", "140 ms", "150 ms", "160 ms", "170 ms", "180 ms", "190 ms", "200 ms", "210 ms", "220 ms", "230 ms", "240 ms", "250 ms", "260 ms", "270 ms", "280 ms", "290 ms", "300 ms"]},
 	{"key": "audio_calibration", "tab": "Sound", "label": "Audio calibration: measure it", "action": "_open_calibration"},
+	# Dev: developer tools (core/dev.gd: F3 overlay, F4 hitboxes, F5 boss lab)
+	{"key": "fight_log", "tab": "Dev", "label": "Write each fight's log to user://fight_log.jsonl (from the next start)", "default": false},
 ]
 
 var panel_open = false
