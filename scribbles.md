@@ -464,6 +464,48 @@ trainiert der Platformer nebenbei den Bosskampf.
 Dasselbe Metronom könnte beide tragen, also absprechen. Für den Moment brauchen wir nur wenige
 davon; die Auswahl folgt.
 
+## 2026-10-16 (Nicho, mit Claude): Sync als Leben, die Umstellung
+
+Ausgangspunkt: Der alte Sync (0 bis 100, Multiplikator ×1,5/×2) wird zu leicht voll und
+belohnt Spielen ohne Partner (Mashen ist gleich schnell). Er wird für den Test gestrichen; das
+alte System bleibt umschaltbar und wird später mit den Erkenntnissen angepasst.
+
+**Anforderungen:** schwerer und länger bis voll; Sieg ohne Sync bleibt möglich; ohne Sync nie
+schneller und nie sicherer als mit; Sync-Spiel fühlt sich besser an. Dazu (Claude, Nicho
+einverstanden): jede Bewegung der Leiste lesbar; kein Strudel ohne Ausgang; eine Belohnung pro
+Zustand; wenige Regeln, für jeden Boss gleich.
+
+**Entscheidungen (Nicho):**
+- Keine Gesundheit, keine Tränke. Ein Sync für beide Spieler, Start in der Mitte; der Boss
+  startet voll (zwei Wesen, schon zusammen) und verliert nur, außer durch einen eigenen
+  Koop-Parry (beide Spieler greifen gleichzeitig an, er pariert beide) oder einen Schlag, der
+  beide trifft.
+- Dazu Haltung wie in Sekiro. Sync und Haltung sind nicht zu viele Leisten (Sekiro hat vier);
+  Haltung kann anders aussehen, z. B. ein Kreis, der schrumpft.
+- Sync verfällt nicht über Zeit; Haltung regeneriert, umso langsamer, je weniger Sync.
+- Gleiche Folgen für Spieler und Boss. Eingehend: ungeblockt = Sync-Schaden, geblockt =
+  Haltungsschaden, pariert = weniger Haltungsschaden (kann nicht brechen), Koop-Parry =
+  Sync-Gewinn. Ausgehend: nicht im Sync = kein Gewinn, im Sync = Gewinn, Fenster verpasst =
+  Verlust.
+- Haltung gebrochen = Stagger und aller Sync weg, wie der Todesstoß in Sekiro.
+- Leerer Sync = Chaos, wie ein Revive: kein Blocken, der nächste unparierte Treffer tötet; vorbei
+  erst, wenn genug Sync zurück ist (Belohnungen bleiben gleich). Vertauschte Steuerung höchstens
+  als Mechanik eines Bosses.
+- Voller Sync = Sync-Modus, die zweite Phase; ab da soll der Kampf nicht mehr lang sein. Ihn zu
+  erreichen ist nicht nötig, also umso mehr Belohnung für sehr sync-fokussiertes Spiel.
+- Ein Koop-Parry ist kein Haltungsbruch: kein oder nur kurzer Stagger.
+- Sync-Hit genau auf dem Beat bringt mehr als daneben (wie Parry gegen Block), sichtbar am
+  Schwert (Aufleuchten im Moment, in dem man treffen müsste).
+- Blocken abhängig vom Sync: verworfen (arbeitet gegen den Sync-Aufbau). Multiplikator: weg.
+- Übertrag aus dem Zwischenlevel: erstmal egal, später gedeckelt möglich.
+
+**Offen:** Ist „nicht blocken“ als Folge des Chaos genug, oder kommt noch etwas dazu, oder fällt
+das Chaos weg und leerer Sync ist direkt der Tod? Die Zahlen (F2).
+
+→ Umgesetzt auf `nicho/pep-test`: `core/sync_rules.gd`, Regeln in
+`docs/boss_columna_bifrons.md` → „Sync as life“. Der eigentliche Sync-Modus (zwei Spieler werden
+einer) ist noch zu bauen.
+
 ## 2026-10-15 (Kay): Platformer in Welten, passend zu den Bossen
 
 Das Platformer-Konzept würde ich mehr oder weniger in **Welten** aufteilen. Die Level wären dann
@@ -504,3 +546,109 @@ Erste Kandidaten zum Weiterdenken (Claude, ungeprüft gesammelt):
 - *Amphisbaena* (griechisch-römisch): Schlange mit einem Kopf an jedem Ende.
 - *Doppelköpfige Schlange* (aztekisch).
 - *Ettin* (englische Folklore): zweiköpfiger Riese.
+
+## 2026-10-17 (Nicho): Abstand schaffen, dann ein heftiger Schlag
+
+Am neuen Crossing gefällt mir sehr: Der Boss schafft Abstand zu einem Spieler (er stößt ihn weg)
+und setzt mit einem heftigen Schlag nach, sodass der andere Spieler hin-dashen muss. Das bringt
+Abwechslung: Vom Spieler wird mehr verlangt als nur stehen und Parry/Hit drücken. Der Kampf wird
+damit wesentlich dynamischer.
+
+→ Mit diesem Gedanken die Patterns noch einmal überarbeiten (Task in `TASKS.md`).
+
+Ideen dazu (Claude, zum Weiterdenken):
+- Ein Schlag, der einen Spieler wegschleudert, und gleich danach einer auf den Partner: Wer
+  weggeschleudert wurde, muss zurück, um im nächsten Fenster wieder dabei zu sein.
+- Ein Rückzug (Hüpfer zurück, Sprung zur Seite), auf den ein Schlag aus der Distanz folgt: Beide
+  müssen nachsetzen, statt zu warten.
+- Ein Stoß, der beide auf eine Seite treibt, und dann ein Hieb auf den hinteren: Der muss am
+  vorderen vorbei (Dash-Parry durch den Boss oder über den Partner).
+- Allgemein: Jedes Pattern, das Abstand schafft, sollte mit einem Schlag enden, der nur trifft
+  oder pariert wird, wenn man den Abstand wieder schließt.
+
+## 2026-10-17 (Nicho): Haltung und Schaden, einfacher (Sync als Leben)
+
+Systemänderung, damit das Kampfsystem verständlicher wird:
+- Haltungsschaden gibt es auch beim Parieren: Der Boss greift an, ein Spieler pariert, und der
+  Boss erleidet Haltungsschaden.
+- Nur kleiner, mittlerer und großer Haltungsschaden, und normale und heftige Angriffe:
+  - klein: ein eigener normaler Angriff wird pariert; man pariert einen normalen Angriff; man
+    blockt einen normalen Angriff;
+  - mittel: man wird normal getroffen (kein Block/Parry); man blockt oder pariert einen heftigen
+    Angriff; ein eigener heftiger Angriff wird pariert;
+  - groß: man wird von einem heftigen Angriff getroffen (kein Block/Parry).
+  - Entscheidend: Blocken verursacht keinen Haltungsschaden beim Gegner.
+- Sync-Schaden ist simpler: viel durch einen heftigen Angriff, ein Drittel bei normalen.
+- Spieler machen normale Angriffe, nur im Sync-Modus immer heftigen Schaden. Boss und Spieler
+  machen erstmal gleich viel Schaden (zwei Variablen, um es anzupassen); entscheidend ist, dass
+  die Spieler weniger Leben (Sync-Max) haben als der Boss.
+- Haltung regeneriert erst wieder 2 s, nachdem kein Angriff mehr landet (egal ob pariert,
+  geblockt oder nichts gemacht) und kein eigener Angriff ausgeführt wird.
+- Block halten, ohne angegriffen zu werden, verdoppelt die eigene Haltungsregeneration (macht
+  eigentlich nur der Spieler).
+- Haltungsregeneration ist bei 50 % Leben (Sync) kaum noch vorhanden, bei 75 % schon auf die
+  Hälfte reduziert.
+- Es ist im Grunde ein fairer Abtausch. Entscheidend ist, dass die Spieler sich heilen können
+  (Sync aufbauen) und der Boss nicht: Irgendwann sorgt jeder Schlagabtausch dafür, dass der
+  Boss mehr ansammelt als die Spieler. Aber der Boss hat eben mehr.
+- Noch zu schauen: wie die Patterns und das Verhalten des Bosses angepasst werden müssen.
+
+Umgesetzt auf `nicho/posture-rules` (Regeln: `docs/boss_columna_bifrons.md` → „Sync as life“).
+Claude dazu:
+- Seine heftigen Angriffe sind die mit beiden Schwertern (grün: beide Schwerter, der Sprung); der
+  Sweep (ein Schwert) zählt als normal. Ein Sync-Hit macht so viel wie jeder normale Treffer und
+  bringt euch Sync; der Sync-Modus macht eure Angriffe heftig (statt dreifach).
+- Der Boss holt keinen Sync mehr zurück (die zwei Ausnahmen vom 2026-10-16 sind raus). Folge:
+  Ist seine Haltung einmal gebrochen, bleibt er im Chaos, und der nächste Treffer tötet ihn: der
+  Todesstoß aus Sekiro.
+- Zwei Stand-ins gegen ihn: Seine Haltung bricht nach 19 bis 40 s, sein Sync steht dann noch bei
+  170 bis 190 von 200. Seine Haltung kommt nur 4 bis 10 % der Zeit zurück, weil er fast immer
+  angreift und seine Pausen kürzer als 2 s sind; wie viel Sync er hat, spielt dafür kaum eine
+  Rolle. Hebel: Pausen in seinen Patterns, die Haltungsgrößen, seine Haltung (200).
+- Ihr startet bei 50 % Sync, also mit kaum Haltungsregeneration (5 %), bis ihr Sync aufbaut.
+  Gewollt? Sonst: Start-Sync höher oder die 50 %-Grenze tiefer (beides in F2).
+
+## 2026-10-17 (Nicho): Sync-Modus
+
+- Die pinke Farbe bleibt (die Energiewelle sieht sehr gut aus und hilft sehr).
+- Wird der Sync-Modus erreicht, bekommen beide Spieler an ihren Füßen das Signal, dass sie sich
+  verbinden können. Kommen sie zusammen, verbinden sich beide Charaktere: wie Yin und Yang fließt
+  das Weiße etwas ins Schwarze und umgekehrt, über die Bodenlinie.
+- Bewegung im verbundenen Zustand: noch offen.
+- Schlagen und Parieren:
+  - Beide Schwerter werden größer und säbelartiger, mit schwarz-weißem Design.
+  - Beide können ihr Schwert durch gedrückt gehaltenen Schlag ausholen; maximal ausgeholt gibt
+    es einen kleinen Hinweis. Sind beide ausgeholt, kommt kurz nach dem späteren ein größerer
+    Hinweis, bei dem beide loslassen müssen.
+  - In Sync: ein heftiger Angriff. Außer Sync: Sie schlagen zwar zu, aber man sieht, dass es kein
+    krasser Schlag war, und sie verlieren Sync.
+  - Im Sync-Modus schwingt der Boss wohl immer beide Schwerter zusammen (die Schwerter könnten
+    dabei näher zusammen sein, damit es weniger wirr aussieht).
+  - Erfolgreich parieren nur, wenn beide in Sync parieren, wie sonst bei heftigen Angriffen.
+  - Der Stand-in reagiert einfach immer perfekt auf den Spieler.
+  - Screen Shake oder ein anderer Effekt?
+  - Überlegung: Im Sync-Modus verschmelzen die getrennten Ebenen zu einer, beide stehen wie im
+    alten ppe zusammen. Dann wächst bei der Vereinigung nicht der Fuß zusammen, sondern der
+    Schatten geht ins Weiße über, und die ganze untere Ebene geht aus dem Fokus: der Bildschirm
+    fast wie vor dem Split.
+  - Ein In-Sync-Schlag könnte auch dann Sync-Schaden machen, wenn der Boss pariert, wie ein
+    normaler Treffer, der durchgeht.
+  - Das Angriffsmuster des Bosses muss wohl angepasst werden, weil die Angriffe vielleicht zu
+    schnell kommen, um auszuholen. Vielleicht hat der Boss sichtbar Probleme, die Angriffe zu
+    parieren, und deshalb einen größeren Cooldown bis zur nächsten Aktion: der Kampf wird etwas
+    langsamer.
+- F1 und F2 in Tabs / Kategorien, damit nicht immer alles gleichzeitig offen ist.
+
+Umgesetzt auf `nicho/posture-rules` (`docs/boss_columna_bifrons.md` → „The sync mode“). Claude
+dazu:
+- Verbunden wird, wer nah genug zusammensteht (30 px, beide am Boden); über 90 px auseinander
+  löst es sich. Bewegung bleibt vorerst, wie sie ist.
+- Die Verschmelzung der Spiegelhälften ist ein Schalter (`sync_merge_view`, aus): ausprobieren
+  und vergleichen.
+- Der In-Sync-Schlag, den er pariert, kostet ihn den Sync eines normalen Treffers und lässt ihn
+  taumeln (0,8 s); euch kostet er nichts.
+- Getrennte Schläge im Sync-Modus sind jetzt normale Angriffe; vorher machte der Sync-Modus jeden
+  Treffer heftig. Sonst lohnt sich das Verbinden nicht.
+- Im Sync-Modus nimmt er nur seine Patterns aus normalen Schlägen (alle mit beiden Schwertern),
+  nichts, was euch auseinanderwirft (Crossing, Sweep, Sprung, Rush), und alles 1,4-mal so
+  langsam.

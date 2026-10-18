@@ -35,25 +35,31 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
-### For Nicho, from Kay (2026-10-15)
+### For Kay, from Nicho (2026-10-18)
 
-- **`Beat`** (`core/beat.gd`) is a new autoload: one clock (150 BPM) that a level starts and
-  everything in time asks, with a click (M) and a display (`ui/beat_display.gd`). It's meant for
-  your beat-runner too: please use it rather than a second clock (`docs/level_kit.md`).
-- `kay/coop-platformer` now has your slimmer players: the changes to `actors/player/` from
-  70470c7 taken character for character (`git apply -3`), so they merge without conflicts.
-  The gyms are adapted to 20 px bodies (chimneys 110 and 380 wide).
-- A level kit for building coop rooms by hand in the Godot editor (`levels/kit/`, `KitRoom` and
-  `Kit*` pieces, `docs/level_kit.md`); Kay builds Horologium with it. `Moves.override()` lets a
-  room switch something on while it runs without saving it. `GymLevel` has a new option
-  `checkpoint_needs_all` (off by default): a checkpoint takes only once every player is in it.
-
-### For Nicho, from Kay (2026-10-16)
-
-- An open question for you on how the bosses look: Kay found two-headed beings in many myths
-  and sees four ways (A: a boss per creature from all mythologies, B: one creature for all,
-  C: one mythology, D: freestyle). Kay leans to A. `scribbles.md` (2026-10-16), `TASKS.md`
-  → "Offene Grundsatzfragen".
+- Everything of Nicho's is on `main` now (merged 2026-10-18, after you both played it), and
+  `nicho/kay-to-main` brings your `kay/coop-platformer` together with it (your branch itself is
+  untouched): if that runs for you too, it goes to `main`. What came in, in short:
+  - **Sync as life** in Bifrons's fight (F1 → Sync, "bifrons_rules"; "hp" is the old way): no
+    health, no potions, a shared sync for the two of you and one for him, a posture each, the
+    same rules on both sides (`core/sync_rules.gd`, `docs/boss_columna_bifrons.md`). Attacks are
+    normal or heavy; posture goes in three sizes, by parrying (both sides), blocking (only the
+    blocker) or being hit.
+  - A first **sync mode** (`core/sync_bond.gd`): standing together binds you, attack is held to
+    draw a sabre back and let go together on a cue. A parry's energy runs visibly to the
+    partner (`actors/player/sync_wave.gd`).
+  - An **F2 panel** for numbers (`core/tuning.gd`, autoload `Tuning`, tabs per page/level). It
+    could take numbers of yours too.
+  - The beat-runner and beat-ring prototypes (`levels/runner/`, `levels/ring/`) and the mirrored
+    screen (`ui/mirror_view.gd`).
+- `player.gd` got hooks that do nothing unless a fight sets them (`GameManager.rules`,
+  `Player.bond`), a little broader sword with a crossguard and a point, and `blade_point()`.
+  Merging your branch, both of us had a `_charging`: yours (the rhythm dash-slash) kept its name,
+  Nicho's (drawing the sabre back) is `_drawing` now (`is_drawing()`, `draw_share()`).
+- The F1 panel is yours (tabs, sliders, actions, overrides); Nicho's switches are in it, in new
+  tabs Sync, Runner and Ring. The switch "bifrons_window" is gone: the partner's window is F2 now
+  (tab "sync hit"). Nicho's Claude will rework the whole code next, on a branch of its own: until
+  that's merged, please keep changes to shared files (`player.gd`, `core/`) small.
 
 ## The project
 
@@ -74,14 +80,18 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 ```
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
 docs/                                design docs: concept.md, boss_*.md (one per boss), level_*.md (one
-                                     per level), parkour_gyms.md
-core/                                autoloads: GameManager, Sfx, Moves, Pads, Beat
-actors/player/                       player.gd (+ scene)
+                                     per level), parkour_gyms.md, art_brief.md (sizes, colors,
+                                     poses: for generating sprites), beat_runner.md, beat_ring.md
+core/                                autoloads: GameManager, Sfx, Moves, Pads, Beat, Tuning;
+                                     sync_rules.gd (sync as life, Bifrons), sync_bond.gd (sync mode)
+actors/player/                       player.gd (+ scene), sync_wave.gd (the parry's energy to the partner)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              arena/ (fight 1), scales/ (fight 2), threshold/ (test boss),
                                      gym/ (movement test rooms), kit/ (level kit: rooms built in
-                                     the editor), horologium/ (coop platformer level, kit rooms)
-ui/                                  boss select, HUD, beat display, audio calibration (F1 → Sound)
+                                     the editor), horologium/ (coop platformer level, kit rooms),
+                                     runner/ and ring/ (between the bosses, prototypes)
+ui/                                  boss select, HUD, beat display, audio calibration (F1 → Sound),
+                                     the mirrored screen (mirror_view.gd)
 addons/kit_handles/                  editor plugin: drag handles to resize kit pieces
 assets/                              music/: the songs (Beat.TRACKS); everything else is procedural
 ```
@@ -168,6 +178,23 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   inside one; signals `beat` / `bar`, `offset_to_downbeat()` etc.; click on M, off at start;
   plays a level's music looped in time with it, `TRACKS`; F1 → Sound: volume, and how far
   ahead the audio plays, for a late headset: music and click go early, the clock stays).
+  `Tuning` (F2 panel of numbers to tune while playing, saved to `user://tuning.cfg`; code asks
+  `Tuning.value("his_heavy_damage")` each time it needs one; a page per level: the runner's and the
+  ring's in theirs, the sync rules elsewhere). Both panels show one tab at a time (Q / E): an
+  entry's "tab" (F1), a header's "tab" (F2).
+- `core/sync_rules.gd` (`SyncRules`): sync as life, for now only in Bifrons's fight (Moves
+  "bifrons_rules"): no health, no potions, a shared sync for the players and one for the boss,
+  a posture each, chaos at no sync, sync mode at full. Attacks are normal or heavy (his: both
+  swords; theirs: in sync mode); posture is lost in three sizes, by parrying (both sides),
+  blocking (the blocker only) or being hit, and comes back 2 s after the last attack in or out.
+  The boss creates it and hands it to `GameManager.rules`; while that's set,
+  `Player.take_damage()` and the boss's hits go through it (`ColumnaBifrons.land()` says whether
+  a strike is heavy: `landing_heavy`), and the HUD shows the two meters instead of health.
+- `core/sync_bond.gd` (`SyncBond`, the rules' `bond`): the sync mode itself. Players standing
+  together bind (`Player.bond`, sabres via `set_sabre()`), hold attack to draw back
+  (`Player._process_draw()`), let go together on the big cue for a heavy strike
+  (`ColumnaBifrons.take_pair_strike()`); he slows down and strikes with both swords
+  (`in_sync_mode()`, `time_unit()`).
 - `actors/player/player.gd`: one large script (~2000 lines) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
   potions, defensive queries the boss uses (`is_perfect_parry()` etc.), and some boss-specific
@@ -203,6 +230,20 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   pieces (`KitBlock`, `KitSpikes`, `KitSwitch` wired to `KitDoor`, `KitShaft`, ...); the ones on
   the clock extend `Clockwork` and work out their state from `Beat` alone (in the editor, from a
   stand-in clock at the room's BPM). `horologium/`: the coop platformer's rooms.
+- `levels/runner/runner.gd` (`BeatRunner`, `docs/beat_runner.md`): a prototype for between the
+  bosses. The mirrored screen, players running on the spot (`Player.running_on`), and things
+  coming at them on a beat (orbs to parry, shards to hit, blocks to jump), planned from
+  `ColumnaBifrons.ATTACKS`; a parry relays a shard to the partner. Its own sync meter and UI.
+- `levels/ring/ring.gd` (`BeatRing`, `docs/beat_ring.md`): the second prototype for between
+  the bosses: Bifrons's fight without him. The mirrored screen in his room, players moving
+  freely, a circle around the middle marking each thing's beat; his patterns (his table, weights
+  and tempo) come level at the players from their sides, diagonally, until his crossing puts both
+  on one side and his leap (a sweep) parts them again; a parry sends the partner a violet shard
+  along the circle, timed like the boss fight's partner hit.
+- `ui/mirror_view.gd` (`MirrorView`, in Bifrons's room, Moves "mirror_view"): an alternative
+  picture of the fight, the screen split at the floor, P1 above, P2 in the reflection below.
+  Two SubViewports on the level's World2D; what each half draws is chosen by visibility layers
+  (`Viewport.canvas_cull_mask`), so the game itself doesn't change.
 
 ## Conventions
 

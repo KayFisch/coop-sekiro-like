@@ -309,6 +309,9 @@ const BOSS_SLIDE_SPEED = 900.0  # px/s: landing on top, you slide off the side y
 # it's done. A dash started up to PASS_WINDOW after the parry goes through him too. Out the far
 # side, you've changed sides; a dash too short for that is pushed back out the nearer side.
 const PASS_WINDOW = 0.2
+# DASH-SLASH THROUGH (Moves "dash_slash_pass"): a dash-slash at the boss goes through him the same
+# way: in the players' sync mode only (so the two can always get together to bind), always, or
+# never. A dash-slash too short to get past him is pushed back out the nearer side.
 # CALL (Moves "call"): a 3, 2, 1, GO countdown over the caller's head, one beat per CALL_BEAT, so
 # GO lands CALL_COUNT beats after the press. Both players pulse on every beat. Informational only.
 const CALL_BEAT = 0.4
@@ -324,6 +327,22 @@ const BODY_SIZE = Vector2(20, 40)
 const HAND_SIZE_RATIO = 0.2
 const HAND_GRIPS = [0.075, 0.275]  # where each hand holds the sword, as a fraction of its length
 const HAND_DARKEN = 0.25
+# The sword's look, a little less of a needle than the scene's plain rect (its hitbox is the
+# scene's, unchanged): a broader blade, a crossguard just past the hands, and a point.
+const SWORD_WIDTH = 8.0  # px thick (the scene's rect: 6)
+const SWORD_POINT = 7.0  # px at its end tapering to the point
+const CROSSGUARD_AT = 0.36  # where the crossguard sits, as a fraction of the sword's length
+const CROSSGUARD_SIZE = Vector2(4, 16)
+# THE PAIR'S STRIKE (sync mode, core/sync_bond.gd): while the two are bound (`bond` set), attack
+# is held to draw the sword back (fully in Tuning "sync_charge_time") and let go to strike; the
+# bond times the two strikes and deals the hit, the swing itself deals none. A block press lets
+# the drawn sword go, unstruck. Bound, the sword is a sabre: longer, curved, half light, half dark.
+const DRAW_ANGLE = -2.5  # drawn back all the way: over the shoulder
+const SABRE_LENGTH = 1.3  # the sabre: this much longer than the sword...
+const SABRE_WIDTH = 11.0  # ...this broad at the hilt (px)...
+const SABRE_CURVE = 12.0  # ...its point curving back by this much (px)
+const SABRE_LIGHT = Color(0.95, 0.94, 0.9)
+const SABRE_DARK = Color(0.07, 0.07, 0.09)
 
 @export var player_id: int = 1  # set to 1 or 2 in the inspector
 @export var player_color = Color(0.25, 0.5, 1)  # body; P1 blue, P2 orange
@@ -336,6 +355,9 @@ var is_clashing = false  # blades locked with the boss, held in place
 var invincible = false  # testing: hits still land (flash, knockback) but take no health
 var facing = 1.0
 var body_color: Color
+# The beat-runner (levels/runner/): the world goes by, the player runs on the spot. No walking
+# (the stick does nothing), and they face the way things come from.
+var running_on = false
 # The mirrored screen (ui/mirror_view.gd) shows each player in a half of their own: there the
 # partner is nobody to bump into.
 var own_half = false:
@@ -399,7 +421,15 @@ var _body_rest = Vector2.ZERO
 var _stretch_tween: Tween
 var _is_dead = false
 var _sword_color: Color
+var _cue_timer = 0.0  # cue_sync()
+var _cue_color = Color.WHITE
 var _hands: Array = []  # [ColorRect, ColorRect]
+var _sword_tip: Polygon2D  # the blade's point (see SWORD_POINT)
+var _crossguard: ColorRect
+var bond = null  # core/sync_bond.gd while the two are bound in sync mode (THE PAIR'S STRIKE)
+var _drawing = false  # attack held, the sword drawing back
+var _draw_time = 0.0
+var _sabre: Node2D  # the sword's look while bound (set_sabre())
 var _was_on_floor = false
 var _air_time = 0.0  # seconds since leaving the ground
 var _fast_falling = false
@@ -499,6 +529,7 @@ func _ready():
 	body.pivot_offset = body.size / 2  # stretch around the center
 	_setup_gather_label()
 	_setup_drink_bar()
+	_setup_sword()
 	_setup_hands()
 	_relay_arrow = ColorRect.new()
 	_relay_arrow.size = Vector2(38, 5)
@@ -600,6 +631,8 @@ func _now() -> float:
 
 # Left/right input, -1..1, for attacks that let a held player steer (e.g. swinging on a hook).
 func move_axis() -> float:
+	if running_on:
+		return 0.0
 	return Input.get_axis(_action("left"), _action("right"))
 
 
@@ -1160,7 +1193,9 @@ func _process_actions():
 		parry_press_time = now if now - _last_block_press >= PARRY_SPAM_LOCK else -100.0
 		_last_block_press = now
 
-	if Input.is_action_just_pressed(_action("attack")):
+	if bond != null:
+		_process_draw()
+	elif Input.is_action_just_pressed(_action("attack")):
 		_press_attack()
 	elif _attack_buffer > 0.0 and _attack_cooldown <= 0.0:
 		_press_attack()  # pressed a moment too early: it comes now
@@ -1348,6 +1383,8 @@ func _process_windup(delta):
 	_windup_timer = 0.0
 	_dash_timer = RHYTHM_DASH_TIME if _rhythm_dash else DASH_TIME
 	velocity = Vector2(_dash_dir * _dash_speed(), 0.0)
+	if _dash_slash_passes() and _boss_ahead():
+		_passing = true  # through him (DASH-SLASH THROUGH)
 	swing_serial += 1
 	_trail_timer = 0.0
 	if _stretch_tween:
@@ -1975,7 +2012,8 @@ func _track_landing():
 
 func is_blocking() -> bool:
 	return not is_grabbed and not is_drinking() and not is_staggered() and not is_tumbling() \
-		and not _is_swinging() and Input.is_action_pressed(_action("block"))
+		and not _is_swinging() and Input.is_action_pressed(_action("block")) \
+		and (GameManager.rules == null or GameManager.rules.can_block())  # no blocking in chaos
 
 
 func is_perfect_parry() -> bool:
@@ -2042,6 +2080,8 @@ func end_gather():
 
 
 func on_perfect_parry(strong: bool):
+	if GameManager.rules:
+		GameManager.rules.player_parried(self)
 	parry_press_time = -100.0  # one press parries one hit
 	_last_block_press = -100.0  # a landed parry isn't mashing: the next press may parry at once
 	_sword_flash = SWORD_FLASH_TIME
@@ -2059,6 +2099,12 @@ func on_perfect_parry(strong: bool):
 			_pass_timer = 0.0
 
 
+# The sword lit in `color` for `duration`: the moment to strike (a sync hit's beat).
+func cue_sync(duration: float, color: Color):
+	_cue_timer = duration
+	_cue_color = color
+
+
 # burst: a ring bursting off the player and a whoosh on top of the flash (Cubus's grab).
 func on_grab_dodged(burst = false):
 	_dodge_flash = DODGE_FLASH_TIME
@@ -2071,8 +2117,15 @@ func on_grab_dodged(burst = false):
 func take_damage(amount: float, knockback = Vector2.ZERO, chip = false, ignore_invuln = false):
 	if _is_dead or (_invuln_timer > 0.0 and not ignore_invuln):
 		return
-	if not invincible:
+	var lethal = false
+	if GameManager.rules:
+		# Sync as life (core/sync_rules.gd): a hit costs the pair's sync, a block this one's posture.
+		var rules = GameManager.rules
+		lethal = rules.player_blocked(self, amount) if chip else rules.player_hit(self, amount)
+	elif not invincible:
 		hp = maxf(hp - amount, 0.0)
+	if lethal:
+		hp = 0.0
 	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
 	_dash_timer = 0.0
 	interrupt_movement()
@@ -2294,6 +2347,16 @@ func _keep_out_of_boss(delta):
 		velocity.x = 0.0  # stopped at his side, like at a wall
 
 
+# DASH-SLASH THROUGH: whether a dash-slash goes through the boss just now.
+func _dash_slash_passes() -> bool:
+	match Moves.value("dash_slash_pass"):
+		"always":
+			return true
+		"sync":
+			return GameManager.rules != null and GameManager.rules.sync_mode
+	return false
+
+
 # The boss's block is in this dash's way.
 func _boss_ahead() -> bool:
 	return _boss_in_the_way(global_position.x + _dash_dir * (DASH_DISTANCE + body.size.x))
@@ -2449,6 +2512,8 @@ func _setup_call_label():
 func _sword_angle() -> float:
 	if is_clashing or _hold_kind != Hold.NONE:
 		return 0.0  # held flat against the other blade
+	if _drawing:
+		return lerpf(SWORD_REST_ANGLE, DRAW_ANGLE, ease(draw_share(), 0.6))  # drawing back
 	if _dash_slash and _dash_timer > 0.0:
 		return 0.0  # thrust out level through the whole dash
 	if _windup_timer > 0.0:
@@ -2487,7 +2552,7 @@ func _sword_angle() -> float:
 # The blade when nothing above is going on: at rest, down in front while blocking, beaten up by
 # a perfect parry; eased from one to the other, so releasing block swings it back up.
 func _update_sword_idle(delta: float):
-	if _is_swinging() or is_clashing or _hold_kind != Hold.NONE:
+	if _is_swinging() or _drawing or is_clashing or _hold_kind != Hold.NONE:
 		_sword_idle_angle = wrapf(_sword_angle(), -PI, PI)  # it carries on from wherever that leaves it
 		return
 	var target = SWORD_REST_ANGLE
@@ -2537,14 +2602,18 @@ func _update_visuals():
 	# A dash-slash draws the blade out long and white-hot (its hitbox scales along with it).
 	sword_pivot.scale = Vector2(facing * (DASH_SLASH_REACH if dash_slashing else 1.0), 1.0)
 	sword_pivot.rotation = _sword_angle() * facing
+	_cue_timer = maxf(_cue_timer - get_physics_process_delta_time(), 0.0)
 	if _sword_flash > 0.0:
 		sword.color = Color.WHITE
+	elif _cue_timer > 0.0:
+		sword.color = _cue_color
 	elif dash_slashing:
 		sword.color = _sword_color.lerp(Color.WHITE, DASH_SLASH_GLOW)
 	elif _windup_timer > 0.0:
 		sword.color = _sword_color.lerp(Color.WHITE, _windup_progress())  # heating up: the cue to parry
 	else:
 		sword.color = _sword_color
+	_sword_tip.color = sword.color
 	if dash_slashing:
 		_trail_timer -= get_physics_process_delta_time()
 		if _trail_timer <= 0.0:
@@ -2677,6 +2746,123 @@ func _setup_drink_bar():
 	add_child(_drink_orb)
 
 
+# The blade a little broader, with a point at its end and a crossguard just past the hands (see
+# SWORD_WIDTH). Both are the sword pivot's, so they swing and stretch with the blade.
+func _setup_sword():
+	var middle = sword.position.y + sword.size.y / 2.0
+	var length = sword.size.x
+	sword.size = Vector2(length - SWORD_POINT, SWORD_WIDTH)
+	sword.position.y = middle - SWORD_WIDTH / 2.0
+	var end = sword.position.x + sword.size.x
+	_sword_tip = Polygon2D.new()
+	_sword_tip.polygon = PackedVector2Array([Vector2(end, middle - SWORD_WIDTH / 2.0),
+		Vector2(end + SWORD_POINT, middle), Vector2(end, middle + SWORD_WIDTH / 2.0)])
+	sword_pivot.add_child(_sword_tip)
+	_crossguard = ColorRect.new()
+	_crossguard.size = CROSSGUARD_SIZE
+	_crossguard.position = Vector2(sword.position.x + length * CROSSGUARD_AT, middle) - CROSSGUARD_SIZE / 2.0
+	_crossguard.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sword_pivot.add_child(_crossguard)
+
+
+# A point on the blade, from where it starts at the hilt (0) to its point (1), in global
+# coordinates (the sync wave runs along it).
+func blade_point(along: float) -> Vector2:
+	var length = sword.size.x + SWORD_POINT
+	var middle = sword.position.y + sword.size.y / 2.0
+	if sabre_on():
+		return sword_pivot.to_global(Vector2(sword.position.x + length * SABRE_LENGTH * along, middle - SABRE_CURVE * along * along))
+	return sword_pivot.to_global(Vector2(sword.position.x + length * along, middle))
+
+
+# --- The pair's strike (see THE PAIR'S STRIKE) ---
+
+# Bound: attack held draws the sword back, let go it strikes and the bond hears of it. A block
+# press, a stagger or a tumble lets it go unstruck.
+func _process_draw():
+	if _drawing:
+		if Input.is_action_just_pressed(_action("block")) or is_staggered() or is_tumbling():
+			_drawing = false
+			return
+		if Input.is_action_pressed(_action("attack")):
+			_draw_time += get_physics_process_delta_time()
+			return
+		var drawn = _sword_angle()
+		var share = draw_share()
+		_drawing = false
+		_start_swing(Swing.SLASH)
+		_swing_from_angle = drawn
+		_attack_landed = true  # the bond deals the pair's hit, not this swing
+		Sfx.play("slash", -2.0)
+		bond.released(self, share)
+	elif Input.is_action_just_pressed(_action("attack")) and not _is_swinging() and not is_staggered():
+		_drawing = true
+		_draw_time = 0.0
+		parry_press_time = -100.0
+
+
+func is_drawing() -> bool:
+	return _drawing
+
+
+# How far the sword is drawn back: 0 to 1 (fully, after Tuning "sync_charge_time").
+func draw_share() -> float:
+	return clampf(_draw_time / Tuning.value("sync_charge_time"), 0.0, 1.0) if _drawing else 0.0
+
+
+func cancel_draw():
+	_drawing = false
+
+
+func sabre_on() -> bool:
+	return _sabre != null and _sabre.visible
+
+
+# Bound in sync mode the sword is a sabre (longer, curved, half light and half dark); unbound, the
+# sword again. The hitbox stays the same.
+func set_sabre(on: bool):
+	if on and _sabre == null:
+		_sabre = Node2D.new()
+		var hilt = sword.position.x
+		var middle = sword.position.y + sword.size.y / 2.0
+		var length = (sword.size.x + SWORD_POINT) * SABRE_LENGTH
+		var top = PackedVector2Array()
+		var bottom = PackedVector2Array()
+		var spine = PackedVector2Array()
+		var steps = 14
+		for i in steps + 1:
+			var t = float(i) / steps
+			var x = hilt + length * t
+			var y = middle - SABRE_CURVE * t * t
+			var half = SABRE_WIDTH / 2.0 * (1.0 - 0.3 * t) * (1.0 if t < 0.85 else (1.0 - t) / 0.15)
+			top.append(Vector2(x, y - half))
+			bottom.append(Vector2(x, y + half))
+			spine.append(Vector2(x, y))
+		var light = Polygon2D.new()
+		var points = top.duplicate()
+		var back = spine.duplicate()
+		back.reverse()
+		points.append_array(back)
+		light.polygon = points
+		light.color = SABRE_LIGHT
+		var dark = Polygon2D.new()
+		points = spine.duplicate()
+		back = bottom.duplicate()
+		back.reverse()
+		points.append_array(back)
+		dark.polygon = points
+		dark.color = SABRE_DARK
+		_sabre.add_child(light)
+		_sabre.add_child(dark)
+		sword_pivot.add_child(_sabre)
+	if _sabre != null:
+		_sabre.visible = on
+	sword.visible = not on
+	_sword_tip.visible = not on
+	if not on:
+		_drawing = false
+
+
 func _setup_hands():
 	for i in 2:
 		var hand = ColorRect.new()
@@ -2700,6 +2886,7 @@ func _update_hands():
 		hand.global_position = grip - hand.size / 2
 		hand.rotation = sword_pivot.rotation
 		hand.color = body.color.darkened(HAND_DARKEN)
+	_crossguard.color = body.color.darkened(HAND_DARKEN)
 
 
 func _setup_gather_label():

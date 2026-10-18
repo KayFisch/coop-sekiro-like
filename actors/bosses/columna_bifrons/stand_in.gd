@@ -3,8 +3,12 @@ extends Node
 ## Testing alone (Moves "bifrons_stand_in"): plays one of the two players in the fight with
 ## Columna Bifrons, so one person can play the other. It presses that player's own buttons, so
 ## everything that happens to them is the game's own: it walks to keep its distance to him,
-## meets each of his strikes with a parry, a block or nothing (by chance), and when its health
-## is low it runs off to drink a potion. It never attacks.
+## meets each of his strikes with a parry, a block or nothing (by chance), strikes through his
+## guard when its partner's parry opens it (a sync hit), and when its health is low it runs off
+## to drink a potion. It doesn't attack otherwise.
+## In the players' sync mode (core/sync_bond.gd) it plays along perfectly: it goes to its partner
+## to bind (with him between them, by a dash-slash through him), parries every strike, and bound it draws its sabre back when its partner does and
+## lets go right on the big cue (or when its partner lets go early).
 
 enum Plan { NOTHING, PARRY, BLOCK }
 
@@ -15,6 +19,11 @@ const PARRY_CHANCE = 0.75
 const BLOCK_CHANCE = 0.15
 const PARRY_LEAD = 0.08  # s before a strike lands that it presses block to parry (the window is 0.133 s)
 const BLOCK_LEAD = 0.35  # ...and to only block: too early for a parry
+# When its partner's parry opens his guard on its side, it strikes through that often, pressing
+# attack after a reaction of up to REACT_TIME (a hit lands about 0.1 s after the press, so a
+# quick one is on the beat and a slow one after it).
+const SYNC_HIT_CHANCE = 0.75
+const REACT_TIME = 0.08
 # Where it stands, from his center: where a player's sword would reach him, and not so close
 # that he steps back (ColumnaBifrons.CROWD_DISTANCE). With its partner on the same side of him
 # it stands closer if it's the one in front (so the partner's sword reaches him from behind
@@ -22,8 +31,9 @@ const BLOCK_LEAD = 0.35  # ...and to only block: too early for a parry
 # stops when it's there.
 const DISTANCE = 95.0
 const DISTANCE_IN_FRONT = 74.0
-const DISTANCE_BEHIND = 42.0  # from its partner (a player is 40 wide)
+const DISTANCE_BEHIND = 22.0  # from its partner: right behind them (a player is 20 wide)
 const SLACK = 12.0
+const DASH_THROUGH_FROM = 70.0  # sync mode, him between it and its partner: it dash-slashes through from this close
 # Below FLEE_HP, with a potion left, it runs away from him, FLEE_DISTANCE or to the wall, and
 # drinks. Then it comes back.
 const FLEE_HP = 20.0
@@ -41,6 +51,10 @@ var _last_due = INF
 var _walk = 0.0  # the way it's walking: -1, 1, or 0
 var _fleeing = false
 var _potion_wait = 0.0
+var _window = 0  # the open guard it has seen (ColumnaBifrons.window_for()), or 0
+var _strike_in = -1.0  # s until it presses attack, or < 0: no strike coming
+var _let_go = false  # bound: it has let go while its partner still draws back
+var _dash_wait = 0.0  # s until it may dash-slash through him again
 
 
 func _physics_process(delta):
@@ -55,9 +69,12 @@ func _physics_process(delta):
 		_last_due = INF
 		_walk = 0.0
 		_fleeing = false
+		_window = 0
+		_strike_in = -1.0
 	if player == null:
 		return
 	_defend(player)
+	_strike(player, delta)
 	_move(player, delta)
 
 
@@ -77,7 +94,7 @@ func _played():
 func _defend(player):
 	var due = boss.time_to_strike(player)
 	if due != INF and (_last_due == INF or due > _last_due):
-		var roll = randf()
+		var roll = -1.0 if boss.in_sync_mode() else randf()  # in sync mode: always a parry
 		_plan = Plan.PARRY if roll < PARRY_CHANCE else (Plan.BLOCK if roll < PARRY_CHANCE + BLOCK_CHANCE else Plan.NOTHING)
 		_hold(player, "block", false)
 	_last_due = due
@@ -89,7 +106,43 @@ func _defend(player):
 	_hold(player, "block", due <= lead)
 
 
-# Its feet: to its distance from him, or away from him to drink.
+# Its sword: a guard of his newly open for it gets a sync hit (by chance), after a reaction.
+# The press is let go the frame after, so the next one counts as a new press.
+func _strike(player, delta: float):
+	if boss.is_bound():
+		_strike_bound(player)
+		return
+	_hold(player, "attack", false)
+	var window = boss.window_for(player)
+	if window != 0 and window != _window and randf() < SYNC_HIT_CHANCE:
+		_strike_in = randf() * REACT_TIME
+	_window = window
+	if _strike_in < 0.0:
+		return
+	_strike_in -= delta
+	if _strike_in < 0.0 and not _held.get(player._action("block"), false):
+		_hold(player, "attack", true)
+
+
+# Bound: attack held while its partner draws back, let go on the big cue (or when the partner lets
+# go first).
+func _strike_bound(player):
+	var bond = boss.rules.bond
+	var partner = boss.partner_of(player)
+	var drawing = partner != null and partner.is_drawing()
+	if not drawing:
+		_let_go = false
+	var hold = drawing and not _let_go
+	if bond.cue_at >= 0.0 and bond.now() >= bond.cue_at:
+		hold = false
+	if _held.get(player._action("block"), false):
+		hold = false
+	if not hold and player.is_drawing():
+		_let_go = drawing  # let go while the partner still draws: not again until they have too
+	_hold(player, "attack", hold)
+
+
+# Its feet: to its distance from him, or away from him to drink. In sync mode: to its partner.
 func _move(player, delta: float):
 	var away = signf(player.global_position.x - boss.global_position.x)
 	if away == 0.0:
@@ -113,6 +166,18 @@ func _move(player, delta: float):
 			if _potion_wait <= 0.0:
 				_potion_wait = POTION_RETRY
 				_hold(player, "potion", true)
+	elif boss.in_sync_mode() and boss.partner_of(player) != null:
+		var gap = boss.partner_of(player).global_position.x - player.global_position.x
+		_walk = signf(gap) if absf(gap) > Tuning.value("sync_connect_distance") * 0.5 else 0.0
+		# He's between them: up to him, then a dash-slash through him.
+		_dash_wait = maxf(_dash_wait - delta, 0.0)
+		var between = signf(boss.global_position.x - player.global_position.x) == signf(gap) 			and absf(gap) > distance
+		var dash = between and distance < DASH_THROUGH_FROM and _dash_wait <= 0.0 and not boss.is_bound()
+		if dash:
+			_dash_wait = 0.6
+		_hold(player, "dash", dash)
+		if dash:
+			_hold(player, "attack", true)
 	else:
 		var want = DISTANCE
 		var partner = boss.partner_of(player)

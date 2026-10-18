@@ -19,7 +19,7 @@ const LABEL_WIDTH = 50  # characters: the values line up after this
 const SLIDER_CELLS = 15  # characters a slider's bar takes at most
 
 # The panel's tabs, in order. Every entry names one.
-const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Controls", "Sound"]
+const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Sync", "Runner", "Ring", "Controls", "Sound"]
 
 # Each switch: key, its tab, what the panel calls it, and its default (a bool, or one of
 # `options`). Labels starting with "  " belong to the switch above them. A `slider` one stops at
@@ -59,9 +59,29 @@ const ENTRIES = [
 	{"key": "boss_body", "tab": "Fights", "label": "Boss body blocks players (Cubus, Bifrons)", "default": true},
 	{"key": "parry_pass", "tab": "Fights", "label": "Dash-parry: a parry mid-dash goes through the boss", "default": true},
 	{"key": "bifrons_mode", "tab": "Fights", "label": "Bifrons: set patterns, or reactive (strikes back)", "default": "patterns", "options": ["patterns", "reactive"]},
-	{"key": "bifrons_window", "tab": "Fights", "label": "Bifrons: partner hits on the beat, or after it", "default": "beat", "options": ["beat", "after"]},
-	{"key": "bifrons_stand_in", "tab": "Fights", "label": "Bifrons: a stand-in plays the player there (alone)", "default": "off", "options": ["off", "left", "right"]},
+	{"key": "bifrons_guard_break", "tab": "Fights", "label": "Bifrons: a parry breaks his other guard (off: the window stays, but only a hit he can't parry lands)", "default": true},
+	{"key": "bifrons_stand_in", "tab": "Fights", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, runner, ring", "default": "off", "options": ["off", "left", "right"]},
 	{"key": "bifrons_face", "tab": "Fights", "label": "Bifrons: players always face him", "default": true},
+	{"key": "mirror_view", "tab": "Fights", "label": "Bifrons: mirrored screen (P1 light above the floor, P2 its shadow below)", "default": false},
+	# Sync: sync as life and the sync mode (core/sync_rules.gd, core/sync_bond.gd)
+	{"key": "bifrons_rules", "tab": "Sync", "label": "Bifrons: rules: sync is life + posture, no potions (sync), or health + old sync (hp); from R", "default": "sync", "options": ["sync", "hp"]},
+	{"key": "swings_hold_posture", "tab": "Sync", "label": "Your own swings hold your posture regen back too (his attacks never do)", "default": true},
+	{"key": "dash_slash_pass", "tab": "Sync", "label": "Dash-slash goes through the boss: in the sync mode only, always, or never", "default": "sync", "options": ["sync", "always", "off"]},
+	{"key": "sync_merge_view", "tab": "Sync", "label": "Sync mode, mirrored screen: bound, the two halves become one (the shadow joins the light)", "default": false},
+	# Runner: the beat-runner (levels/runner/)
+	{"key": "runner_patterns", "tab": "Runner", "label": "Bifrons's patterns only, or mixed with shards and blocks", "default": "mixed", "options": ["mixed", "bifrons"]},
+	{"key": "runner_relay", "tab": "Runner", "label": "A parried orb goes on to the partner as a shard to hit", "default": true},
+	{"key": "runner_rally", "tab": "Runner", "label": "  ...and hitting that shard sends an orb back (a rally)", "default": false},
+	{"key": "runner_blocks", "tab": "Runner", "label": "Now and then a block to jump", "default": true},
+	{"key": "runner_speedup", "tab": "Runner", "label": "The tempo rises as the run goes on", "default": false},
+	{"key": "runner_metronome", "tab": "Runner", "label": "A tick on every beat", "default": false},
+	{"key": "runner_endless", "tab": "Runner", "label": "Endless (an empty meter doesn't end the run)", "default": false},
+	# Ring: the beat-ring (levels/ring/)
+	{"key": "ring_relay", "tab": "Ring", "label": "A parried yellow one sends a violet shard to the partner", "default": true},
+	{"key": "ring_changes", "tab": "Ring", "label": "His crossing (both to one side), sweep and leap (apart again)", "default": true},
+	{"key": "ring_pairs", "tab": "Ring", "label": "His strikes with both swords, as green pairs to parry together", "default": true},
+	{"key": "ring_bars", "tab": "Ring", "label": "Now and then a bar from a side (low: jump, high: stay down)", "default": true},
+	{"key": "ring_endless", "tab": "Ring", "label": "Endless (an empty meter doesn't end the run)", "default": false},
 	# Controls
 	{"key": "swap_controls", "tab": "Controls", "label": "Swap P1 / P2 controls (P1 on the pad; pad Back)", "default": false},
 	{"key": "camera_p1", "tab": "Controls", "label": "Gym camera follows only P1 (testing with a bot)", "default": false},
@@ -162,7 +182,8 @@ func _input(event):
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	if event.physical_keycode == KEY_F1:
-		_set_panel(not panel_open)
+		if not Tuning.panel_open:  # one panel at a time (F2: Tuning)
+			_set_panel(not panel_open)
 		get_viewport().set_input_as_handled()
 		return
 	if not panel_open:

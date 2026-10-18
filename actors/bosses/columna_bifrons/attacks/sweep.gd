@@ -24,11 +24,11 @@ const LEFT = StrikePattern.LEFT
 const RIGHT = StrikePattern.RIGHT
 
 # --- Tuning ---
-const WINDUP_UNITS = 6  # StrikePattern.TIME_UNITs until the blade reaches the first player
-const TRAVEL_TIME = 0.4  # from the first player through to the second
+const WINDUP_UNITS = 5  # StrikePattern.TIME_UNITs until the blade reaches the first player
+const TRAVEL_TIME = 0.26  # from the first player through to the second
 const AWAY_TIME = 1.4  # parried by the first only: how long the blade stays away from its side
 const PROP_TIME = 1.4  # parried by the second only: how long he leans on his other sword
-const RETURN_TIME = 0.3  # the blade swinging back to its own side
+const RETURN_TIME = 0.22  # the blade swinging back to its own side
 const STAGGER_TIME = 2.2  # parried by both
 const RECOVER_TIME = 0.6
 const TREMBLE = 0.04  # radians the drawn-back blade shakes by, just before it comes down
@@ -140,7 +140,7 @@ func _settle():
 		boss.set_stagger_pose(-_first, boss.POSE_PROP)
 		Sfx.play("counter_hit", -2.0)
 		boss.shake(12.0)
-		finish_with_stagger(STAGGER_TIME)
+		finish_with_stagger(boss.coop_stagger(STAGGER_TIME))
 		return
 	phase = Phase.AFTER
 	_after_since = _time

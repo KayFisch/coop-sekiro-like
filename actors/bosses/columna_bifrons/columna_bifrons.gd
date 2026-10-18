@@ -31,6 +31,7 @@ const RIGHT = StrikePattern.RIGHT
 const BOTH = StrikePattern.BOTH
 const CUT = StrikePattern.CUT
 const CHARGE = StrikePattern.CHARGE
+const PUSH = StrikePattern.PUSH
 const RUSH = StrikePattern.RUSH
 const BLADES = [LEFT, RIGHT]  # his two swords, named for the hand that holds each
 const SIDES = [LEFT, RIGHT]
@@ -60,19 +61,20 @@ const MAX_HP = 1600.0
 const SWEEP = preload("attacks/sweep.gd")
 const LEAP = preload("attacks/leap.gd")
 const SHOVE = preload("attacks/shove.gd")
+const SYNC_WAVE = preload("res://actors/player/sync_wave.gd")
 const ATTACKS = {
-	"SINGLE": {"weight": 1.0, "repeats": true, "strikes": [[5, LEFT]]},
-	"DOUBLE": {"weight": 0.5, "strikes": [[5, LEFT], [4, RIGHT]]},
-	"TRIPLE": {"weight": 2.0, "repeats": true, "strikes": [[5, RIGHT], [4, RIGHT], [4, LEFT]]},
-	"QUAD": {"weight": 1.5, "strikes": [[6, LEFT], [4, LEFT], [4, RIGHT], [4, BOTH]]},
+	"SINGLE": {"weight": 0.0, "repeats": true, "strikes": [[3, LEFT]]},
+	"DOUBLE": {"weight": 0.0, "strikes": [[3, LEFT], [3, RIGHT]]},
+	"TRIPLE": {"weight": 2.0, "repeats": true, "strikes": [[4, RIGHT], [4, RIGHT], [2, LEFT]]},
+	"QUAD": {"weight": 0.0, "strikes": [[4, LEFT], [2, LEFT], [2, RIGHT], [3, BOTH]]},
 	"LONG": {"weight": 1.0, "strikes": [
-		[9, RIGHT], [4, RIGHT], [4, LEFT], [4, RIGHT], [4, RIGHT], [4, LEFT], [4, BOTH]]},
-	"BOTH": {"weight": 0.5, "strikes": [[6, BOTH]]},
-	# He charges past one player, so both are on one side of him, and brings both swords down
-	# on them.
-	"CROSSING": {"weight": {"pep": 2.0, "pep_cornered": 6.0}, "strikes": [[5, RIGHT, CHARGE], [6, BOTH]]},
+		[5, RIGHT], [3, RIGHT], [3, LEFT], [4, RIGHT], [3, RIGHT], [3, LEFT], [4, BOTH]]},
+	"BOTH": {"weight": 0.5, "strikes": [[4, BOTH]]},
+	# He shoves one player away, goes after them with a thrust and charges past them, so both
+	# are on one side of him, and brings both swords down on them.
+	"CROSSING": {"weight": {"pep": 2.0, "pep_cornered": 6.0}, "strikes": [[3, RIGHT, PUSH], [4, RIGHT, CHARGE], [4, BOTH]]},
 	# He dashes over to the player who's away, and strikes them.
-	"RUSH": {"weight": {"alone": 2.0}, "strikes": [[7, RIGHT, RUSH]]},
+	"RUSH": {"weight": {"alone": 2.0}, "strikes": [[5, RIGHT, RUSH]]},
 	# One sword, from one side of him through to the other.
 	"SWEEP": {"weight": {"pep": 1.5}, "attack": SWEEP},
 	# He jumps and comes down between the players: his way of getting them back on both sides
@@ -96,8 +98,8 @@ const TEST_ONLY_PATTERN = [] # "TRIPLE", "QUAD", "SINGLE", "LONG", "SWEEP"
 # afresh with every attack. Once that many are parried and he's free, he strikes back at the
 # player whose hit he parried last: with one of the same attacks, turned so its first strike is
 # theirs, and that strike comes quickly (ANSWER_WAIT). Then the series runs to its end, as ever.
-const REACTIVE_WAIT_MIN = 0.5
-const REACTIVE_WAIT_MAX = 0.9
+const REACTIVE_WAIT_MIN = 0.7
+const REACTIVE_WAIT_MAX = 1.7
 const PATIENCE = [1, 1, 2]
 const ANSWER_WAIT = 4  # StrikePattern.TIME_UNITs until an answer's first strike lands, at most
 
@@ -112,26 +114,43 @@ const SYNC_HIT_FACTOR = 2.5  # a sync hit's damage, times the sword hit's own
 # --- Moving ---
 # WHERE HE STANDS: where his blades reach the players, and not right up against one.
 # - A player on each side, close enough together for his blades to reach both: in the middle
-#   between them (once he's PLACE_SLACK off it, he walks there).
+#   between them, give or take his drift (below).
 # - Else (both on one side, only one to fight, or too far apart) he goes by the nearer one:
 #   closer than CROWD_DISTANCE, he steps back to FIT_DISTANCE; out of his blades' reach, he
-#   walks up until they're REACH_MARGIN inside it; in between he's fine where he is.
+#   walks up until they're REACH_MARGIN inside it; in between he drifts (below).
 # - Fine where he is, with the players between him and a wall, he backs toward the room's
 #   middle third, as far as the nearer one stays REACH_MARGIN inside his reach.
+# - Fine where he is, he doesn't stand still: the distance he keeps from the nearer player
+#   drifts, between DRIFT_NEAR and DRIFT_FAR, gliding toward one picked at random (DRIFT_SPEED:
+#   the share of that span per second), and after a pause of up to DRIFT_PAUSE toward the next.
+#   So he steps up to them and back from them. Between two players he drifts off the middle the
+#   same way, by up to PEP_DRIFT, as long as the farther one stays well in his reach; the nearer
+#   one he pushes, if they stand their ground.
 # He walks between his attacks, and at ATTACK_PACE through their windups. Sword hits slow him
 # down for a moment, so a player can hold him. He starts an attack only while a player is in
 # his range.
-# (Distances are between his center and a player's. Touching is 52; a player's sword reaches
-# him from 118, and two players side by side both reach him with the nearer one at 78.)
+# PUSHING THROUGH. A player in his way doesn't stop him: walking into one (TOUCH_DISTANCE), he
+# slows to PUSH_PACE and his body pushes them along (see _keep_out_of_boss() in player.gd);
+# after PUSH_PATIENCE of that he shoves them out of the way (attacks/shove.gd, their side only).
+# (Distances are between his center and a player's. Touching is 42; a player's sword reaches
+# him from 118, and two players side by side (20 wide each) both reach him with the nearer one
+# at 98.)
 const CROWD_DISTANCE = 62.0
 const FIT_DISTANCE = 90.0
 const REACH_MARGIN = 30.0
-const PLACE_SLACK = 28.0
 const WALK_SPEED = 110.0  # px/s
 const ATTACK_PACE = 0.5  # of his walking speed, while he's in an attack
 const SLOWED_FACTOR = 0.3  # of his walking speed, for SLOWED_TIME after a sword hit
 const SLOWED_TIME = 0.6
 const RANGE_RECHECK = 0.2  # nobody in range when an attack is due: he looks again this much later
+const DRIFT_SPEED = 0.6
+const DRIFT_PAUSE = 0.5  # s
+const DRIFT_NEAR = 80.0
+const DRIFT_FAR = 170.0
+const PEP_DRIFT = 60.0
+const TOUCH_DISTANCE = 50.0  # touching is 42: his half-width and a player's
+const PUSH_PACE = 0.5  # of his speed, pushing a player along
+const PUSH_PATIENCE = 2.0  # s
 const WALL_ROOM = 90.0  # his flanks stay this far from the walls: room for both players behind him
 # WITH A STRIKE HE LUNGES at the player it's for, while the blade comes: a short step, or as far
 # as it takes to have the players on that side STRIKE_DISTANCE away as it lands, LUNGE_LONG at
@@ -143,7 +162,8 @@ const LUNGE_LONG = 160.0
 const STRIKE_RANGE = BLADE_REACH + LUNGE_LONG
 const CLOSEST = 72.0  # no lunge or advance takes him closer to a player than this
 # A LONG WINDUP (a single cut with a wait of LONG_WINDUP or more): he walks at the player it's
-# for all through it, until he has reached them, and then lunges. Both players have to move.
+# for all through it, into them if they don't give way (PUSHING THROUGH), and then lunges. Both
+# players have to move.
 const LONG_WINDUP = 6
 const ADVANCE_SPEED = 70.0
 # MAKING ROOM. He wants room when he's been crowded (a player closer than CROWD_DISTANCE) for
@@ -162,11 +182,16 @@ const BACK_OFF_DISTANCE = 110.0
 const BACK_OFF_DELAY = 0.1
 const BACK_OFF_TIME = 0.2
 const BACK_OFF_HOP = 22.0  # px off the floor at the top of it
-# THE CHARGE (a strike of kind CHARGE): a thrust, to be parried like any strike, and CHARGE_DELAY
-# after it lands he follows it through, CHARGE_DISTANCE in CHARGE_TIME, his body no obstacle
-# meanwhile. A player close enough is passed and ends up on his other side: both players on one
+# THE CHARGE (a strike of kind CHARGE): a thrust, to be parried like any strike, lunging at the
+# player as it comes like a cut; CHARGE_DELAY after it lands he follows it through in
+# CHARGE_TIME, his body no obstacle meanwhile: to CHARGE_BEYOND past that player, at least
+# CHARGE_DISTANCE and at most CHARGE_MOST (a hit throws its player back: he goes after them). In the crossing a PUSH comes
+# first (a shove of that player, StrikePattern.PUSH): the thrust then comes from a distance,
+# and its player sees it coming. A player close enough is passed and ends up on his other side: both players on one
 # side (ppe). One who backs off ahead of him, or stands too far away, isn't.
 const CHARGE_DISTANCE = 230.0
+const CHARGE_BEYOND = 70.0
+const CHARGE_MOST = 360.0
 const CHARGE_DELAY = 0.1
 const CHARGE_TIME = 0.25
 const CHARGE_MIN_ROOM = 150.0  # he charges toward the side that has at least this much room
@@ -224,6 +249,7 @@ const COLOR_OPEN = Color(1.0, 0.95, 0.6)  # "hit here, now": a broken guard's fl
 const COLOR_PARRY = Color(1.0, 0.7, 0.3)  # sparks off his own parry
 const COLOR_PLAYER_PARRY = Color(1.0, 0.85, 0.4)  # sparks off a player's
 const COLOR_PROVOKED = Color(0.75, 0.33, 0.16)  # his body, the closer he is to striking back
+const COLOR_SYNC_BEAT = Color(0.7, 0.45, 1.0)  # the beat-ring's violet shard (the fight's cue is SyncWave's)
 const WARD_TINT = 0.85  # how far a sword's crossguard and edge take its player's color: whose it is
 const HAND_SIZE = 16.0
 const HAND_DARKEN = 0.25
@@ -260,22 +286,32 @@ var _open_from = {LEFT: 0.0, RIGHT: 0.0}
 var _open_until = {LEFT: 0.0, RIGHT: 0.0}
 var _open_shown = {LEFT: true, RIGHT: true}  # the opening has made its sound and sparks
 var _opened_by = {LEFT: null, RIGHT: null}  # the player whose parry broke it
+var _open_used = {LEFT: false, RIGHT: false}  # a sync hit came through it
+var _open_judged = {LEFT: true, RIGHT: true}  # its closing has been seen (_judge_windows())
+# Sync as life (core/sync_rules.gd, Moves "bifrons_rules" on "sync"), or null: the old rules,
+# health and the sync meter in GameManager.
+var rules: SyncRules = null
 var _strikes_by = {LEFT: 0, RIGHT: 0}  # strikes of each sword so far (orient())
 
 # Moving.
 var _dash = null  # {from, to, since, time, hop}: a charge or a backing off, under way
 # What he's walking for (see _place()): to the middle between the players, back from one who's
 # too close, or up to one who's out of reach. Each lasts until he's there.
-var _centering = false
 var _backing = false
 var _closing = false
 var _ghost_until = 0.0  # anim_time until which his body blocks nobody
 var _slowed_until = 0.0
 var _crowded_for = 0.0  # how long a player has been closer than CROWD_DISTANCE
+var _drift = 0.5  # where his drift is (see "WHERE HE STANDS"): 0 near, 1 far; around the middle...
+var _drift_to = 0.5  # ...gliding to here...
+var _drift_wait = 0.0  # ...and once there, waiting this long for the next
+var _pushing_for = 0.0  # how long he has been pushing a player along (see "PUSHING THROUGH")
+var _shove_side = 0  # the side a shove is due on: that player's in his way (0: both sides)
 var _room_ready = 0.0  # anim_time from which crowding may make him make room again
 var _shove_due = false  # he wants room, and it's the shove: as soon as he's free
 
 # The reactive mode (see REACTIVE_WAIT).
+var _held_off = 0.0  # the players' sync mode: how long he has held off his next attack (see _physics_process())
 var _provocations = 0  # hits parried since his last attack began
 var _patience = 2  # how many of those he lets go before striking back
 var _provoker = RIGHT  # the sword that parried the last one: its player is who he strikes back at
@@ -289,6 +325,16 @@ func _ready():
 	var stand_in = BifronsStandIn.new()
 	stand_in.boss = self
 	add_child(stand_in)
+	if Moves.value("bifrons_rules") == "sync":
+		rules = SyncRules.new()
+		rules.boss = self
+		add_child(rules)
+		GameManager.rules = rules
+
+
+func _exit_tree():
+	if rules != null and GameManager.rules == rules:
+		GameManager.rules = null
 
 
 func get_max_hp() -> float:
@@ -312,7 +358,19 @@ func get_attack_pool() -> Array:
 		if attack.has_signal("strike_parried"):
 			attack.strike_parried.connect(func(_player): sync_event.emit("bifrons_parried"))
 			attack.both_parried.connect(sync_event.emit.bind("bifrons_both_parried"))
+			attack.both_parried.connect(_on_both_parried)
 	return pool
+
+
+func _on_both_parried():
+	if rules != null:
+		rules.coop_parried()
+
+
+# How long a parry of both swords by both players staggers him: his own number, or the sync
+# rules' (there a coop parry wins sync, and its stagger is shorter).
+func coop_stagger(own: float) -> float:
+	return rules.coop_stagger() if rules != null else own
 
 
 # What he picks from: each attack's weight for the situation he's in (see ATTACKS), as long as
@@ -324,6 +382,13 @@ func get_attack_weights() -> Dictionary:
 		var attack = find_attack(attack_name)
 		var fits = attack == null or attack.fits(self)
 		weights[attack_name] = _weight_in(attack_name, situation) if fits else 0.0
+	if in_sync_mode():
+		# The players' sync mode: only his series of plain cuts (StrikePattern makes them strikes of
+		# both swords), nothing that throws the two apart.
+		for attack_name in weights:
+			var strikes = ATTACKS[attack_name].get("strikes", [])
+			if strikes.is_empty() or strikes.any(func(strike): return strike.size() > 2 and strike[2] != StrikePattern.CUT):
+				weights[attack_name] = 0.0
 	if not TEST_ONLY_PATTERN.is_empty():
 		for attack_name in weights:
 			if not attack_name in TEST_ONLY_PATTERN:
@@ -348,9 +413,26 @@ func get_repeatable_attacks() -> Array:
 
 
 func get_idle_pause() -> float:
-	if _is_reactive():
-		return randf_range(REACTIVE_WAIT_MIN, REACTIVE_WAIT_MAX)
-	return super()
+	var pause = randf_range(REACTIVE_WAIT_MIN, REACTIVE_WAIT_MAX) if _is_reactive() else super()
+	if in_sync_mode():
+		# On the defensive: slower, and a longer pause on guard between his attacks.
+		return pause * Tuning.value("sync_mode_tempo") + Tuning.value("sync_guard_pause")
+	return pause
+
+
+# The players' sync mode (core/sync_rules.gd): he strikes with both swords at once, and slower.
+func in_sync_mode() -> bool:
+	return rules != null and rules.sync_mode
+
+
+# The two bound in it (core/sync_bond.gd): his strikes of both swords take both their parries.
+func is_bound() -> bool:
+	return rules != null and rules.bond != null and rules.bond.bound
+
+
+# One StrikePattern.TIME_UNIT in seconds just now: longer in the players' sync mode.
+func time_unit() -> float:
+	return StrikePattern.TIME_UNIT * (Tuning.value("sync_mode_tempo") if in_sync_mode() else 1.0)
 
 
 # Players keep their eyes on him (see _process_movement() in player.gd): he passes them, and
@@ -384,10 +466,21 @@ func _physics_process(delta):
 	# Nobody in his range: no attack (he walks up to them instead, see walk()).
 	if state == State.IDLE and timer <= delta and not _fought().any(in_range):
 		timer = RANGE_RECHECK
+	# The players' sync mode: he's on the defensive. While one of them draws back, he holds off his
+	# next attack, on guard (up to "sync_hold_off" in a row).
+	if state != State.IDLE:
+		_held_off = 0.0
+	elif in_sync_mode() and get_players().any(func(p): return p.is_drawing()):
+		_held_off += delta
+		if timer <= delta and _held_off < Tuning.value("sync_hold_off"):
+			timer = RANGE_RECHECK
 	super(delta)
 	if hp <= 0.0:
 		return
 	_run_dash()
+	_drift_on(delta)
+	if rules != null:
+		_judge_windows()
 	if state == State.IDLE and _shove_due:
 		_shove()
 	elif state == State.IDLE and _is_reactive() and _provocations >= _patience:
@@ -407,6 +500,9 @@ func _assign_wards():
 	elif players.size() > 1:
 		_wards[LEFT] = players[0]
 		_wards[RIGHT] = players[1]
+	for p in players:
+		if not p.repainted.is_connected(_color_swords):
+			p.repainted.connect(_color_swords)
 	_color_swords()
 
 
@@ -510,6 +606,7 @@ func orient(strikes: Array) -> int:
 	var way = 1
 	var first = strikes[0][1]
 	var kind = strikes[0][2] if strikes[0].size() > 2 else CUT
+	var charge = strikes.filter(func(strike): return strike.size() > 2 and strike[2] == CHARGE)
 	if kind == RUSH and first != BOTH:
 		for blade in BLADES:
 			if _turned[blade]:
@@ -527,8 +624,9 @@ func orient(strikes: Array) -> int:
 				way = -1
 		var there = can_strike(first * way)
 		var other_there = can_strike(-first * way)
-		var cramped = kind == CHARGE and _charge_room(first * way) < CHARGE_MIN_ROOM \
-			and _charge_room(-first * way) >= CHARGE_MIN_ROOM
+		var charging = 0 if charge.is_empty() else charge[0][1]  # the charge's sword, as written
+		var cramped = charging != 0 and _charge_room(charging * way) < CHARGE_MIN_ROOM \
+			and _charge_room(-charging * way) >= CHARGE_MIN_ROOM
 		if other_there and (not there or cramped):
 			way = -way
 	for strike in strikes:
@@ -599,17 +697,21 @@ func judge(blade: int, reach = BLADE_REACH) -> Dictionary:
 
 # The judged strike lands: a parrier parries it (`strong`: the heavier kind of parry), anyone
 # else under it is hit, or chipped behind a block. `damage` and `knock` scale what a hit does
-# (a heavy strike, the leap).
-func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0):
+# (a heavy strike, the leap). `heavy`: a heavy attack for the sync rules (one of both swords).
+func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0, heavy = false):
+	if rules != null:
+		rules.landing_heavy = heavy  # the players' hooks lead to the rules while it lands
 	for p in judged.under:
 		if p in judged.parriers:
 			p.on_perfect_parry(strong)
 			spawn_sparks(p.global_position + Vector2(0.0, -24.0), 10, COLOR_PLAYER_PARRY)
-		elif p.is_blocking():
+		elif p.is_blocking() or p in judged.get("blocked", []):  # (a lone parry, bound: a block)
 			p.take_damage(BLOCKED_DAMAGE * damage, knockback_for(p, BLOCKED_KNOCKBACK * knock), true)
 		else:
 			p.take_damage(BLADE_DAMAGE * damage, knockback_for(p, BLADE_KNOCKBACK * knock))
 			shake(5.0)
+	if rules != null:
+		rules.landing_heavy = false
 	if not judged.parried:
 		Sfx.play("thunk", -6.0)  # the blade hitting the floor
 
@@ -618,50 +720,102 @@ func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0):
 
 # True while that sword is back at its flank, ready: it parries its player's sword hits.
 func is_guarding(blade: int) -> bool:
-	return hp > 0.0 and state != State.STAGGER and _at_guard[blade] and not is_open(blade)
+	return hp > 0.0 and state != State.STAGGER and _at_guard[blade] and not is_broken(blade) \
+		and (rules == null or rules.boss_guards())  # no guard in chaos
 
 
-# True while that sword's guard is broken and open: the other player's hits are sync hits.
+# True while that sword's window is open (a parry of the other sword opened it): the other
+# player's hits are sync hits. Its guard is broken meanwhile, unless Moves "bifrons_guard_break"
+# is off: then the window only times the beat, and a hit in it lands (a sync hit) only if that
+# sword can't parry it just then.
 func is_open(blade: int) -> bool:
 	return anim_time >= _open_from[blade] and anim_time < _open_until[blade]
 
 
+# True while that sword's guard is down because the window is open (see is_open()).
+func is_broken(blade: int) -> bool:
+	return guard_breaks() and is_open(blade)
+
+
+func guard_breaks() -> bool:
+	return Moves.on("bifrons_guard_break")
+
+
+# The sword whose guard is open for `player`'s sync hit (another player's parry broke it), or 0.
+func window_for(player) -> int:
+	for blade in BLADES:
+		if is_open(blade) and _opened_by[blade] != player:
+			return blade
+	return 0
+
+
 # True from the parry that breaks that sword's guard until it's back: open, or about to be.
 func is_breaking(blade: int) -> bool:
-	return anim_time < _open_until[blade]
+	return guard_breaks() and anim_time < _open_until[blade]
 
 
 # A strike of his other sword, parried by `by`: after `delay` this one's guard is gone for
-# `duration`.
+# `duration`. The parry's energy runs over to the partner meanwhile (SyncWave), arriving as the
+# window opens.
 func break_guard(blade: int, duration: float, delay = 0.0, by = null):
 	_open_from[blade] = anim_time + delay
 	_open_until[blade] = _open_from[blade] + duration
 	_open_shown[blade] = false
 	_opened_by[blade] = by
+	_open_used[blade] = false
+	_open_judged[blade] = false
+	if by != null:
+		for p in get_players():
+			if p != by:
+				SYNC_WAVE.send(by, p, delay, Tuning.value("sync_beat_time"), ARENA_FLOOR_Y, get_parent())
 	if delay <= 0.0:
 		_show_open(blade)
 
 
 func _show_open(blade: int):
 	_open_shown[blade] = true
-	Sfx.play("guard_break", -2.0)
-	spawn_sparks(_flank(blade_side(blade), global_position.y), 12, COLOR_PLATE)
+	if guard_breaks():
+		Sfx.play("guard_break", -2.0)
+		spawn_sparks(_flank(blade_side(blade), global_position.y), 12, COLOR_PLATE)
+	# The beat for the partner's hit: their sword lights up while a hit is on it (as the parry's
+	# SyncWave arrives).
+	for p in get_players():
+		if p != _opened_by[blade]:
+			p.cue_sync(Tuning.value("sync_beat_time"), SYNC_WAVE.COLOR)
+
+
+# Sync as life: a window that closed with no sync hit through it, while someone other than the
+# parrier was in reach to make one, costs the players sync.
+func _judge_windows():
+	for blade in BLADES:
+		if _open_judged[blade] or anim_time < _open_until[blade]:
+			continue
+		_open_judged[blade] = true
+		var could = get_players().any(func(p): return p != _opened_by[blade] and distance_to(p) <= STRIKE_RANGE)
+		if not _open_used[blade] and could:
+			rules.missed_window()
 
 
 # source: the player whose sword hit landed. Through a guard their partner's parry broke it's a
-# sync hit; a sword that fights them parries it, if it's guarding; anything else is hit.
+# sync hit; a sword that fights them parries it, if it's guarding; anything else is hit. (With
+# Moves "bifrons_guard_break" off the guard comes first: in the window only a hit it can't parry
+# lands, as a sync hit.)
 func take_damage(amount: float, source = null):
+	if rules != null and source != null and hp > 0.0:
+		_struck_by_rules(amount, source)
+		return
 	if source == null or hp <= 0.0 or state == State.STAGGER:
 		super(amount, source)
 		return
 	_slowed_until = anim_time + SLOWED_TIME
 	var at = _flank(side_of(source), source.global_position.y)
 	var guards = BLADES.filter(func(blade): return ward_of(blade) == source and is_guarding(blade))
-	if BLADES.any(func(blade): return is_open(blade) and _opened_by[blade] != source):
+	var open = BLADES.any(func(blade): return is_open(blade) and _opened_by[blade] != source)
+	if open and (guards.is_empty() or guard_breaks()):
 		sync_event.emit("bifrons_sync_hit")
 		Sfx.play("sync_hit")
 		shake(6.0)
-		spawn_sparks(at, 16, COLOR_OPEN)
+		spawn_sparks(at, 16, SYNC_WAVE.COLOR)  # the parry's energy, passed on into him
 		super(amount * SYNC_HIT_FACTOR, source)
 	elif not guards.is_empty():
 		_parry(guards[0], source, at)
@@ -671,6 +825,84 @@ func take_damage(amount: float, source = null):
 		shake(3.0)
 		spawn_sparks(at, 8, COLOR_EXECUTE)
 		super(amount, source)
+
+
+# Sync as life (core/sync_rules.gd): the same three cases, but they cost his sync and posture
+# (whatever the swing's amount: a player's attack is normal, heavy in their sync mode; a sync hit
+# costs him what any hit does, and wins the players sync), and a guard that's up parries the hit
+# by chance, or else blocks it. Staggered or in chaos he has no guard; a hit that lands in chaos
+# kills him.
+func _struck_by_rules(amount: float, source):
+	_slowed_until = anim_time + SLOWED_TIME
+	var at = _flank(side_of(source), source.global_position.y)
+	var open = BLADES.filter(func(blade): return is_open(blade) and _opened_by[blade] != source)
+	var guards = BLADES.filter(func(blade): return ward_of(blade) == source and is_guarding(blade))
+	var lethal = false
+	if not open.is_empty():
+		_open_used[open[0]] = true  # tried: whatever comes of it, the window wasn't left unused
+	if not guards.is_empty() and (open.is_empty() or not guard_breaks()):
+		if randf() < Tuning.value("boss_parry_chance"):
+			_parry(guards[0], source, at)
+			rules.boss_parried(source)
+		else:
+			_block(guards[0], source, at)
+			rules.boss_blocked()
+		return
+	if not open.is_empty():
+		var blade = open[0]
+		var on_beat = anim_time - _open_from[blade] <= Tuning.value("sync_beat_time")
+		rules.sync_hit(on_beat)
+		Sfx.play("sync_hit")
+		shake(6.0)
+		spawn_sparks(at, 16, SYNC_WAVE.COLOR)  # the parry's energy, passed on into him
+		if on_beat:
+			Sfx.play("on_beat", -4.0)
+			spawn_sparks(at, 14, SYNC_WAVE.CORE)
+		lethal = rules.boss_struck()
+	else:
+		Sfx.play("sync_hit", -6.0)
+		shake(3.0)
+		spawn_sparks(at, 8, COLOR_EXECUTE)
+		lethal = rules.boss_struck()
+	super.take_damage(hp if lethal else 0.0, source)
+
+
+# Sync mode: the bound pair's strike, let go together on the big cue (core/sync_bond.gd). His
+# guard can't stop it: met by a blade that's guarding, it still costs him a normal hit's sync and
+# he reels ("sync_strike_reel"); else it lands heavy. Either way a big blow.
+func take_pair_strike(source):
+	if rules == null or hp <= 0.0:
+		return
+	_slowed_until = anim_time + SLOWED_TIME
+	var at = _flank(side_of(source), source.global_position.y)
+	var pair = get_players()
+	var guards = BLADES.filter(func(blade): return ward_of(blade) in pair and is_guarding(blade))
+	shake(14.0)
+	spawn_sparks(at, 28, SYNC_WAVE.COLOR)
+	spawn_sparks(at, 18, SYNC_WAVE.CORE)
+	Sfx.play("grand_impact", -2.0)
+	var lethal = false
+	if not guards.is_empty():
+		_flick_until[guards[0]] = anim_time + PARRY_FLICK_TIME
+		Sfx.play("parry_strong", -2.0)
+		lethal = rules.pair_strike_parried()
+		if not lethal and state != State.STAGGER:
+			stagger_now(Tuning.value("sync_strike_reel"))
+	else:
+		lethal = rules.boss_struck(true)
+	super.take_damage(hp if lethal else 0.0, source)
+
+
+# Sync as life: he takes a player's sword hit on a sword that fights them, without parrying it.
+# Their blade isn't knocked back, and it costs him posture, them nothing. In the reactive mode it
+# wears on his patience like a parry.
+func _block(blade: int, _player, at: Vector2):
+	Sfx.play("chip", -4.0)
+	shake(2.0)
+	spawn_sparks(at, 6, COLOR_PLATE)
+	if _is_reactive():
+		_provocations += 1
+		_provoker = blade
 
 
 # He parries a player's sword hit with a sword that fights them: the hit is lost and the
@@ -690,6 +922,8 @@ func _parry(blade: int, player, at: Vector2):
 func _shove():
 	_shove_due = false
 	var shove = find_attack("SHOVE")
+	shove.only_side = _shove_side
+	_shove_side = 0
 	if shove.fits(self):
 		_choose_target()
 		_begin_telegraph(shove)
@@ -762,14 +996,13 @@ func _place() -> float:
 		var middle = (near.global_position.x + fought[1].global_position.x) / 2.0
 		_backing = false
 		_closing = false
-		if absf(middle - x) > PLACE_SLACK:
-			_centering = true
-		elif absf(middle - x) < 1.0:
-			_centering = false
-		return middle if _centering else x
+		# Off the middle by his drift, toward one of them (into them, if they don't give way: he
+		# pushes them, see "PUSHING THROUGH"), as long as the other stays well in reach.
+		var half = absf(fought[1].global_position.x - near.global_position.x) / 2.0
+		var most = clampf(BLADE_REACH - REACH_MARGIN - half, 0.0, PEP_DRIFT)
+		return middle + (2.0 * _drift - 1.0) * most
 	# By the nearer one: back from them until they're at his distance, or up to them until they're
 	# well in reach.
-	_centering = false
 	if gap < CROWD_DISTANCE:
 		_backing = true
 	elif gap >= FIT_DISTANCE:
@@ -793,14 +1026,45 @@ func _place() -> float:
 			goal = well_in_reach
 		if (goal - x) * side < 0.0:
 			return goal
-	return x
+	# Else his drift: the distance to keep from the nearer one just now.
+	return near.global_position.x - side * lerpf(DRIFT_NEAR, DRIFT_FAR, _drift)
+
+
+# One frame of his drift: gliding to where it's headed, or waiting there for the next.
+func _drift_on(delta: float):
+	if _drift == _drift_to:
+		_drift_wait -= delta
+		if _drift_wait <= 0.0:
+			_drift_to = randf()
+			_drift_wait = randf_range(0.0, DRIFT_PAUSE)
+	else:
+		_drift = move_toward(_drift, _drift_to, DRIFT_SPEED * delta)
 
 
 # One frame of walking to his place, at `pace` times his speed.
 func walk(delta: float, pace = 1.0):
 	if _dash != null:
 		return
-	global_position.x = move_toward(global_position.x, clamp_x(_place()), WALK_SPEED * pace * _pace() * delta)
+	var x = global_position.x
+	var goal = clamp_x(_place())
+	pace *= _pushing(signf(goal - x), delta)
+	global_position.x = move_toward(x, goal, WALK_SPEED * pace * _pace() * delta)
+
+
+# Walking `way`: into a player? Then slower, and after PUSH_PATIENCE a shove of that side is due
+# (see "PUSHING THROUGH"). Returns his pace for it.
+func _pushing(way: float, delta: float) -> float:
+	var touching = way != 0.0 and get_players().any(
+		func(p): return side_of(p) == way and distance_to(p) <= TOUCH_DISTANCE)
+	if not touching:
+		_pushing_for = 0.0
+		return 1.0
+	_pushing_for += delta
+	if _pushing_for >= PUSH_PATIENCE and not _shove_due:
+		_pushing_for = 0.0
+		_shove_due = true
+		_shove_side = int(way)
+	return PUSH_PACE
 
 
 # No room to keep his distance by walking (see "CORNERED").
@@ -835,18 +1099,18 @@ func _room_toward(side: int) -> float:
 	return maxf(room, 0.0)
 
 
-# A long windup: one frame of walking at that sword's player. False once he has reached them.
+# A long windup: one frame of walking at that sword's player, into them if they don't give way
+# (pushing them along). False if there's nobody to walk at.
 func advance_on(blade: int, delta: float) -> bool:
 	var ward = ward_of(blade)
 	if ward == null:
 		return false
 	if _dash != null:
 		return true
-	var side = side_of(ward)
 	var x = global_position.x
-	var goal = clamp_x(x + side * _room_toward(side))
-	global_position.x = move_toward(x, goal, ADVANCE_SPEED * _pace() * delta)
-	return not is_equal_approx(global_position.x, goal)
+	var pace = _pushing(side_of(ward), delta)
+	global_position.x = move_toward(x, clamp_x(ward.global_position.x), ADVANCE_SPEED * pace * _pace() * delta)
+	return true
 
 
 # Where a strike of that sword (or of BOTH) takes him (see "WITH A STRIKE HE LUNGES"). `rush`:
@@ -882,7 +1146,12 @@ func _charge_room(blade: int) -> float:
 
 # He follows his thrust through, past that sword's player (see "THE CHARGE").
 func charge_through(blade: int):
-	_dash_to(global_position.x + blade_side(blade) * CHARGE_DISTANCE, CHARGE_TIME)
+	var way = blade_side(blade)
+	var length = CHARGE_DISTANCE
+	var ward = ward_of(blade)
+	if ward != null and side_of(ward) == way:
+		length = clampf(distance_to(ward) + CHARGE_BEYOND, CHARGE_DISTANCE, CHARGE_MOST)
+	_dash_to(global_position.x + way * length, CHARGE_TIME)
 	ghost(CHARGE_TIME)
 	pop_body(Vector2(1.2, 0.9), CHARGE_TIME)
 	Sfx.play("swing", -3.0)
@@ -1031,7 +1300,8 @@ func _update_pose():
 		var across = reaches_across(blade)
 		var open = is_open(blade) and not down
 		if open and not _open_shown[blade]:
-			_show_open(blade)  # a guard broken with a delay opens only now
+			_show_open(blade)  # a window opened with a delay opens only now
+		var broken = open and guard_breaks()
 		if across and _front != blade:
 			_front = blade  # it reaches across in front of the other sword
 			move_child(_pivots[blade], -1)
@@ -1040,7 +1310,7 @@ func _update_pose():
 		var snap: bool = _snaps[blade]
 		var home: bool = _homes[blade]
 		# Guarding means back at its flank: an attack wants it there, and it has arrived.
-		var wants_guard = pose == POSE_GUARD and over == 1.0 and not home and not down and not open
+		var wants_guard = pose == POSE_GUARD and over == 1.0 and not home and not down and not broken
 		if not wants_guard:
 			_at_guard[blade] = false
 		elif not _at_guard[blade]:
@@ -1053,7 +1323,7 @@ func _update_pose():
 			over = limp[1]
 			home = false
 			snap = hp <= 0.0  # dead: this is the last frame he's posed
-		elif open and pose == POSE_GUARD:
+		elif broken and pose == POSE_GUARD:
 			pose = POSE_OPEN  # its guard is broken: knocked aside
 		elif anim_time < _flick_until[blade] and not snap:
 			pose = POSE_PARRY  # his parry shows even if the blade is already off to strike back

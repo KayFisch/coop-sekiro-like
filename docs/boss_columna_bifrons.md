@@ -8,6 +8,8 @@ A small boss built to answer questions, not a finished fight:
 4. **What happens when both players are on one side of him** (player - player - boss: "ppe"),
    and how does a fight get from one to the other and back?
 5. **How should he move**, and what does he do when one player walks off?
+6. **Can sync be life?** No health, no potions: one sync for both players, one for him, and a
+   posture each, by the same rules on both sides ("Sync as life", below).
 
 They come out of `scribbles.md` (2026-09-30 to 2026-10-02). The name is a working title.
 
@@ -80,15 +82,17 @@ Three ways lead from one to the other. Two are his:
 
 ### The crossing: pep to ppe
 
-A pattern of two strikes. First **the charge**: one sword is lowered, the point on its player,
-and drawn far back into him, quickly, while he rears back (yellow, 1 s in all); then it's thrust
-(red, 0.28 s). It's parried like any strike. 0.1 s after it lands he follows it through, 230 px
-in 0.25 s, his body no obstacle meanwhile:
-
-- a player next to him is passed, and both players are now on one side of him;
-- a player who backs off ahead of him isn't, nor one who stood further away than about 150 px:
-  he ends up on top of them, and they're pushed out ahead of him. Stepping toward him is what
-  gets such a player past.
+A pattern of three. First **the push**: one sword upright, drawn in against him (white, 0.6 s),
+then shoved out flat: its player is thrown back some 230 px. No damage, nothing to parry. Then
+**the charge** at that player: the same sword lowered at them and drawn far back into him while
+he rears back (yellow, 0.8 s), then thrust (red, 0.28 s), and as it comes he lunges after them
+(up to 160 px). From that distance the thrust can be seen coming: its point isn't on the player
+all through the windup, as it was when it came from close by (Nicho, 2026-10-16). It's parried
+like any strike. 0.1 s after it lands he follows it through in 0.25 s, his body no obstacle
+meanwhile, to 70 px past its player (230 px at least, 360 at most): even a player the thrust
+hit, and threw back, is passed, and both players are now on one side of him. A player who
+backs off further than that ahead of him isn't: he ends up on top of them, and they're pushed
+out ahead of him.
 
 Then, 1.2 s later, **both swords** (green) on wherever the players now are, and with them he
 comes back at the players: a short step or a long one (see "the lunge"), right up to the nearer
@@ -124,21 +128,28 @@ player rule in `player.gd`, so it holds for Cubus too.)
 **Where he stands.** Where his blades reach the players, and not right up against one:
 
 - **A player on each side**, close enough together for his blades to reach both (430 px apart
-  at most): in the middle between them. He walks there once he's 28 px off it.
+  at most): around the middle between them, off it by his drift (below), up to 60 px toward one
+  of them as long as the other stays well in reach.
 - **Otherwise** (both on one side, only one to fight, or too far apart) he goes by the nearer
   player: **closer than 62 px, he steps back** until they're 90 away; **out of his blades'
-  reach (215), he walks up** until they're well in it (185); in between he stays where he is.
+  reach (215), he walks up** until they're well in it (185); in between he drifts.
+- **His drift** (Nicho, 2026-10-16: "less standing around"): the distance he keeps from the
+  nearer player keeps changing, between 80 and 170 px, gliding toward one picked at random
+  (0.6 of that span per second), and after a pause of up to 0.5 s toward the next. So he steps
+  up to them and back from them, about as often.
+- **Pushing through:** a player in his way doesn't stop him. Walking into one, he slows to half
+  his pace and pushes them along; after 2 s of that he shoves them out of the way (the shove,
+  on their side only).
 - **With the players between him and a wall** he backs away from them toward the middle third
   of the room, as far as the nearer one stays well in reach (185): that gives them room, and
-  draws them out. It's the only time he walks for the room's sake: he never walks into a player
-  to get to the middle.
+  draws them out. It's the only time he walks for the room's sake.
 
 He walks (110 px/s) between his attacks, and at half that through their windups. **Sword hits
 slow him** to a third for 0.6 s each, so a player can hold him back. **He starts an attack only
 while a player is in his range** (375 px, see the lunge).
 
-(Distances are between his center and a player's. Touching is 52; a player's sword reaches him
-from 118; two players side by side both reach him with the nearer one at 78.)
+(Distances are between his center and a player's. Touching is 42; a player's sword reaches him
+from 118; two players side by side (20 wide each) both reach him with the nearer one at 98.)
 
 **The lunge.** With every cut he moves at the player it's for while the blade comes (the last
 0.28 s): a short step (14 px), or as far as it takes to have the players on that side 105 px
@@ -146,19 +157,19 @@ away as it lands, 160 px at most. He never gets closer to anyone than 72 px that
 strike reaches a player up to 375 px away, and stepping back out of a strike takes more than a
 step. Then he stands until that blade moves again: that's when the players hit him.
 
-**A long windup** (a single cut with a wait of 6 or more: the first strike of QUAD and LONG)
-brings him up to the player it's for: he walks at them all through it (70 px/s) until he has
-reached them, and then lunges. Both players have to move with him.
+**A long windup** (a single cut with a wait of 6 or more; with Nicho's current table, none)
+brings him up to the player it's for: he walks at them all through it (70 px/s), into them if
+they stand their ground (pushing them), and then lunges. Both players have to move with him.
 
 **Making room.** When a player has stayed closer than 62 px for 0.7 s (at most every 4 s), and
 after a strike of both swords that didn't stagger him, he wants room. With the players on one
 side of him he makes it, one of two ways, so that it never drives him to the wall:
 
 - **a hop back** (110 px), if that takes him toward the middle of the room;
-- else **the shove**: both swords are lowered at the players and drawn back (white, 0.5 s),
-  then thrust out. It's no strike: no damage, nothing to parry. It throws back every player in
-  front of a blade, about 130 px (a player who's dashing isn't moved). He only shoves while a
-  player is within 150 px.
+- else **the shove**: both swords upright, drawn in against him (white, 0.5 s), then shoved out
+  flat. It's no strike: no damage, nothing to parry. It throws back every player within 215 px
+  on a side a blade is shoved to, about 230 px (a player who's dashing isn't moved). He only
+  shoves while a player is within 150 px.
 
 **Cornered** is when there's no room to keep his distance by walking: a player closer than
 62 px on each side, or the players on one side and him in the outer fifth of the room, wall at
@@ -213,7 +224,9 @@ Changed for this boss, in `player.gd`, so it holds in every fight (and needs Kay
 - **The dash-parry**, above.
 
 He is smaller than he was (64 x 150 px, swords 170 px; it was 80 x 200 and 230), so a player's
-cut is something next to him. The players' bodies are the size they were.
+cut is something next to him. The players' bodies are half as wide as they were (20 x 40 px
+instead of 40 x 40, `Player.BODY_SIZE`): two side by side make a square, their swords and
+hitboxes sit closer together, and the one behind in ppe gets nearer to him.
 
 ## Reading him
 
@@ -227,7 +240,7 @@ cut is something next to him. The players' bodies are the size they were.
 - **Blade laid back over his shoulder, lower than the other** (ppe): the sword that reaches
   across, in front; it comes the same way, on a flatter arc.
 - **Blade lowered at you, drawn back into him, his body rearing back:** the charge.
-- **Both blades lowered and drawn back, white:** the shove. Nothing to parry; it throws you
+- **Both blades upright, drawn in against him, white:** the shove. Nothing to parry; it throws you
   back.
 - **Both blades up over his middle, pointing down, his body crouching:** the leap.
 - **Blade held out to the side, low, drawn back** (pep): the sweep. It comes down level and goes
@@ -245,22 +258,27 @@ Green means "get off the floor" and purple "dash" with Cubus and Sphaera, and bl
 "parry together". Blue was too close to P1's color here; green is a stopgap, to be settled with
 the players' colors.
 
-## The partner's hit: on the beat, or after it ("bifrons_window")
+## The partner's hit: the window after a parry (F2, tab "sync hit")
 
-When the guard breaks (rule 5) is the open question, so it's a switch. A swing lands 0.08 s
-after its press from next to him (up to 0.17 s from the edge of its reach), so the press has to
-come that much before the window:
+When the guard breaks (rule 5) is the open question, so it's tunable (since 2026-10-17 on F2,
+tab "sync hit", in place of the switch "bifrons_window", which chose between the two below):
+the window **opens** "sync_window_delay" after the parry (0.18), is **on the beat** for its first
+"sync_beat_time" (0.12) and stays open **off the beat** "sync_window_late" longer (0.18); a hit on
+the beat wins 4 sync, one off it 2, a window left unused (the partner in reach) costs 1. The
+parry's energy (SyncWave) arrives as it opens, and the partner's blade blazes for the beat. A
+swing lands 0.08 s after its press from next to him (up to 0.17 s from the edge of its reach),
+so the press has to come that much before the window. The two settings the switch had:
 
-- **beat** (default): the guard breaks with the parry, for 0.25 s. The attack press has to come
+- **beat**: the guard breaks with the parry (delay 0), for 0.25 s. The attack press has to come
   between 0.08 s before the strike lands and 0.17 s after: with the partner's block press or
   just behind it ("clang, cut"). Nobody can know yet whether the parry will come, it's a bet on
   the partner; lost, the swing is parried and recoils.
-- **after**: the guard breaks 0.18 s after the parry, for 0.3 s: the hitter answers the parry
+- **after** (now the default): the guard breaks 0.18 s after the parry, for 0.3 s: the hitter answers the parry
   instead of betting on it. From next to him the press has to come 0.1 to 0.4 s after the
   strike landed. A swing started with the strike is parried, and its recoil outlasts the window.
-  The delay is as short as it can be: a swing lands 0.05 to 0.17 s after its press (sooner the
-  closer you stand), so with less than that a press right on the strike gets through from
-  further away, and it's "beat" again. (Measured with real presses exactly as the strike lands:
+  0.18 is as short as the delay can be for that: a swing lands 0.05 to 0.17 s after its press
+  (sooner the closer you stand), so with less a press right on the strike gets through from
+  further away, and it's partly a bet again. (Measured with real presses exactly as the strike lands:
   at 0.15 s 11 of 24 got through, at 0.18 s 3 of 17.)
 
 Mashing gets through by luck, since nothing forbids it, and with the quicker swing it does so
@@ -268,11 +286,18 @@ often. Measured with bots that mash attack and stop only to parry the strikes th
 somewhere between 2 and 5 sync hits in 10 strikes, in either window (it varies a lot from run to
 run). A timed press gets all of them. `TASKS.md` has the problem in detail.
 
+**Whether the guard breaks at all ("bifrons_guard_break", on by default).** Off (Nicho,
+2026-10-17), a parry no longer breaks his other sword's guard: the window stays, timed as above
+and cued on the partner's sword, but in it his guard still parries or blocks. A hit in the
+window is a sync hit only if it lands, so the partner has to find a moment that sword can't
+parry: drawn back for its next strike, coming, or thrown back. Trying in the window counts as
+using it (no sync lost for a missed window).
+
 ## The sweep (pep only)
 
 One blade, held out to its side and drawn back (yellow, 0.9 s), comes down level (red, 0.28 s)
-and sweeps through to the other side: it reaches its own player first and the other one 0.4 s
-later. Each has to perfect parry it as it reaches them. A sweep breaks no guard (rule 5 is for
+and sweeps through to the other side: it reaches its own player first and the other one
+0.26 s later. Each has to perfect parry it as it reaches them. A sweep breaks no guard (rule 5 is for
 strikes); what a parry wins is where his swords end up, by rule 2:
 
 | Parried by | What it leaves him with |
@@ -300,18 +325,19 @@ A series is a list of strikes, each `[wait, sword]` or `[wait, sword, kind]`. `w
 time until the strike lands, counted from the series' start or the strike before, in units of
 0.2 s (`StrikePattern.TIME_UNIT`): a rough 1-10 scale, 4 = 0.8 s, a quick follow-up; 9 = 1.8 s,
 a long windup. Below 3 a strike can't be read any more. `sword` is which of his swords strikes
-(left, right, both), at its own player; `kind` is `CUT` (the default), `CHARGE` or `RUSH`.
+(left, right, both), at its own player; `kind` is `CUT` (the default), `CHARGE`, `RUSH` or
+`PUSH` (a shove of that player, no strike: the crossing). The numbers are Nicho's of 2026-10-16.
 
 | Name | What | Weight in pep | in ppe | left alone |
 |---|---|---|---|---|
-| SINGLE | 5 left | 1 | 1 | 1 |
-| DOUBLE | 5 left, 4 right | 0.5 | 0.5 | 0.5 |
-| TRIPLE | 5 right, 4 right, 4 left | 2 | 2 | 2 |
-| QUAD | 6 left, 4 left, 4 right, 4 both | 1.5 | 1.5 | 1.5 |
-| LONG | 9 right, 4 right, 4 left, 4 right, 4 right, 4 left, 4 both | 1 | 1 | 1 |
-| BOTH | 6 both | 0.5 | 0.5 | 0.5 |
-| CROSSING | 5 right (charge), 6 both | 2 (cornered: 6) | - | - |
-| RUSH | 7 right (rush) | - | - | 2 |
+| SINGLE | 3 left | 0 | 0 | 0 |
+| DOUBLE | 3 left, 3 right | 0.5 | 0.5 | 0.5 |
+| TRIPLE | 4 right, 4 right, 2 left | 2 | 2 | 2 |
+| QUAD | 4 left, 2 left, 2 right, 3 both | 1.5 | 1.5 | 1.5 |
+| LONG | 5 right, 3 right, 3 left, 4 right, 3 right, 3 left, 4 both | 1 | 1 | 1 |
+| BOTH | 4 both | 0.5 | 0.5 | 0.5 |
+| CROSSING | 3 right (push), 4 right (charge), 4 both | 2 (cornered: 6) | - | - |
+| RUSH | 5 right (rush) | - | - | 2 |
 | SWEEP | the sweep, above | 1.5 | - | - |
 | LEAP | the leap, above | - (cornered: 6) | 2.5 (cornered: 6) | - |
 | SHOVE | the shove, above | when he wants room | when he wants room | when he wants room |
@@ -341,6 +367,128 @@ partner hits. Provoking is how a pair starts an exchange on its own beat. And gr
 a swing at him while he draws back the sword that's yours lands (rule 2), but it isn't over when
 that sword comes.
 
+## Sync as life ("bifrons_rules")
+
+On "sync" (the default) nobody has health and there are no potions (`core/sync_rules.gd`). On
+"hp" the fight runs the old way: health, potions, and the sync meter in GameManager, whose
+multiplier is left as it was. The switch counts from the next start (R).
+
+**The meters.** At the top two meters meet in the middle: the players' shared sync on the left,
+filling out to the left; his on the right, in a dimmer shade of the same, full at the start
+and emptying toward the middle. The players start halfway. Each of the three has a posture, a
+thin bar under the sync meters, full out to the end like them: P1's and P2's under the players'
+meter, his under his (orange with a quarter left). Next to the posture bars, "regen" says how
+fast posture comes back just now (dimmed while it doesn't). How many points each meter holds
+is set on F2 (the players' sync 100, his 200; posture 100, his 200); the thresholds below are
+shares of it. How posture should look in the end is for later.
+
+**One set of rules for both sides** (Nicho, 2026-10-17: a fair exchange; what tips it is that
+the players can win sync back and he can't, and that he has more of it: 200 to their 100).
+
+Attacks are **normal or heavy**. His heavy ones are those of both swords (green: a strike of both,
+at one player or at two, and the leap); his single-sword strikes are normal, the sweep too. The
+players' attacks are normal; heavy only as the bound pair's strike let go together in their sync
+mode (below).
+
+**Posture** comes in three sizes. As there are two players to attack him, his sizes are set
+apart from theirs on F2 (both 5, 15 and 30 by default):
+
+| | small (5) | medium (15) | large (30) |
+|---|---|---|---|
+| a normal attack | you parry it or block it; yours is parried | it hits you | |
+| a heavy attack | | you parry it or block it; yours is parried | it hits you |
+
+So a parry costs both sides alike (the parrier and the one parried), and **a block only the one
+who blocks: blocking does nothing to the attacker**. His posture goes when the players parry
+him, when their hits land, and when they hit his guard (he blocks or parries by chance, half and
+half; his parry costs them too). A parry never breaks the parrier's own posture; anything else
+can break it.
+
+**Sync** is lost only to a hit that lands: a heavy one costs 18, a normal one a third of that (6);
+his and theirs are set apart too.
+Blocked or parried, no sync. The players win sync back: a sync hit (through the guard their
+partner's parry broke) 4 on the beat and 2 after it, a coop parry (both his swords at once, each
+parried by its player) 6, and it staggers him for 1 s. A window nobody used, while someone other
+than the parrier was in reach, costs them 1. He wins none back.
+
+- **Posture comes back** only once nothing has landed on you (hit, blocked or parried) for 2 s,
+  and, for a player, once you haven't swung for as long (F1 "swings_hold_posture", on); his own
+  attacks never hold his back, as he attacks nearly all the time (Nicho, 2026-10-17). While it
+  doesn't come back, its bar is dimmed. Holding block meanwhile doubles it. How fast follows sync, as in Sekiro: at full sync the full rate (players 20 per second, him
+  30), at 75 % half of it, at 50 % and below hardly any (5 %); "regen" next to the posture bars
+  says how much just now.
+- **Broken:** staggered (players 0.8 s, him 2.5 s), all sync gone; posture comes back full.
+- **No sync is chaos.** The players can't block (parries still work), and the next hit that
+  isn't parried ends the fight. It's over, like a revive, once their sync is back to a quarter.
+  He, split, has no guard, and the next hit that lands kills him; as he wins no sync back, it
+  lasts: breaking his posture is the deathblow of Sekiro.
+- **Full sync is the sync mode**, the players' second phase, until their sync falls below 70 %.
+  The meter turns gold. What happens in it: "The sync mode", below.
+- **The beat:** a parry's energy runs over to the partner (`actors/player/sync_wave.gd`): hot
+  pink, from the parrier's sword down through them into the floor, along it (on the mirrored
+  screen: along the line), and up the partner from their feet into their sword, arriving as the
+  window opens (0.18 s on "after"; at once on "beat"). Then the partner's blade blazes for the
+  beat (0.12 s) with a burst at its point: a hit landing in that time is on the beat. The sync
+  hit passes the energy on into him (pink sparks, white ones on the beat). (Until 2026-10-17 the
+  sword only turned violet, too easy to miss.)
+- **Every number is on the F2 panel** (saved to `user://tuning.cfg`, reset on its last row).
+  The numbers above are the defaults.
+- Testing alone: the stand-in strikes through the guard your parries open for it, three times
+  in four; the windows it leaves unused cost sync.
+
+**What two stand-ins showed** (2026-10-17, his posture at 200): the fight is decided by his
+posture. It broke after 19 to 40 s; by then his sync was still at 170 to 190 of 200. His posture
+came back only 4 to 10 % of the time, as he attacks most of the time and his pauses are shorter
+than 2 s; so how much sync he has hardly matters to it. The players' came back about half the
+time. That's where his patterns and behavior have to change (pauses, or what counts as his
+attacking), and the sizes and meters be tuned.
+
+Before 2026-10-17 the rules were otherwise: posture lost only by the one hit, blocked or parried,
+in amounts per action; a sync hit cost him more than another hit; the sync mode tripled the
+players' hits; he won sync back from a coop parry of his own or one strike hitting both players;
+posture came back 1 s after the last loss, its rate following sync to the power 2.
+
+## The sync mode (bound)
+
+Nicho, 2026-10-17 (`core/sync_bond.gd`; numbers on F2, tab "sync mode"). With their sync full:
+
+- **The sign:** a pink ring pulses at both players' feet: they can join. Standing together (30 px
+  apart or less, both on the floor) **binds** them: a pink flash, and each takes on some of the
+  other's color from the feet up (a third of the body): white flows into black and black into
+  white, across the floor line on the mirrored screen. A pink line runs along the floor between
+  them. Apart again (past 90 px), or out of the sync mode, they're unbound. How they move bound
+  is still open: for now each moves as ever.
+- **Sabres:** bound, their swords become sabres: longer, curved, half light and half dark.
+- **Getting together:** in the sync mode a dash-slash goes through his body (F1
+  "dash_slash_pass": in the sync mode only, always, or never), as a dash-parry does, so the two
+  can always reach each other, whatever he's doing. The stand-in does it too.
+- **The pair's strike:** hold attack to draw the sabre back over the shoulder (0.45 s to full);
+  fully drawn, a small cue (a pink ring at its point, a tick). Once both are, 0.15 s after the
+  later one comes **the big cue** (bigger rings, a pink flash, the line along the floor lights
+  up): both let go on it (within 0.1 s either side) and they **land a heavy strike together**,
+  with a big blow (shake, pink and white sparks, a pink flash). His guard can't stop it: met by a
+  guarding blade it still costs him a normal hit's sync (and a parried heavy one's posture) and he
+  **reels** (0.8 s). Out of sync (too early, too late, alone) each strikes on their own, weakly (a
+  grey puff; a normal attack, which his guard meets as ever), and they lose 5 sync. Bound, a
+  swing deals no hit of its own: only the pair's strike does. A block press lets a drawn sabre go.
+- **Parrying, bound:** his strikes of both swords take both parries; a lone parry is only a block.
+- **Him, in their sync mode: on the defensive.** Every cut comes with both swords at once, he picks
+  only his series of plain cuts (no crossing, sweep, leap or rush: nothing that throws the two
+  apart), his waits and pauses are 1.4 times as long, and between two attacks he stays on guard
+  2 s longer. While one of them draws back he holds off his next attack (up to 1.5 s in a row):
+  the players are the ones attacking now. (Nicho, 2026-10-17: he struck so fast there was no
+  time to draw back.)
+- **Time** (F2 "sync_slow_speed", 1 by default: off): set lower (0.5: half), time runs slow while
+  one of the bound draws back, the screen faintly pink. It slows everything, the players' own
+  movement too, so it's there to compare with the defensive boss.
+- **The mirrored screen** (F1 "sync_merge_view", off by default): bound, the two halves become one:
+  the shadow comes up into the light half (outlined pale, to read on the dark) and the shadow
+  half dims out of focus, almost as the screen was before the split.
+- **The stand-in** plays it perfectly: it goes to its partner to bind, parries every strike, draws
+  back when its partner does and lets go right on the big cue (or when the partner lets go early).
+- Separate swings outside the bond are normal attacks in the sync mode too (before 2026-10-17 the
+  sync mode made every hit heavy).
+
 ## Testing alone ("bifrons_stand_in")
 
 A stand-in plays the player who starts on the left, or on the right, by pressing that player's
@@ -353,7 +501,27 @@ own buttons, so everything that happens to them is the game's own (`stand_in.gd`
 - it gets hurt, and **below 20 health, with a potion left, it runs away from him** (480 px, or
   to the wall) **and drinks**, then comes back: his strikes at it are left out, its sword turns
   on you, he may rush it ("Left alone");
-- it never attacks.
+- **when your parry opens his guard on its side, it strikes through, three times in four**
+  (`SYNC_HIT_CHANCE`), after a reaction of up to 0.08 s, so some of its sync hits are on the
+  beat and some after it; it doesn't attack otherwise.
+
+## The mirrored screen ("mirror_view")
+
+An alternative picture of the same fight, after the mirror scene in *Gris*: the screen split at
+the floor line. Above it the room with P1, in light (white); below it the room's reflection,
+upside down, with P2, in shadow (black on pale ground). He is in both halves, mirrored whole: he
+can't move his light and his shadow apart, the players can. Each half leaves out the other
+player, so they never cover each other, and they pass through each other (there's nobody to bump
+into in a half of your own). Everything else is the same fight: one floor, the same rules, the
+same distances.
+
+- Switch it in F1 (off by default); it goes on and off at once, mid-fight too.
+- The room is drawn at 0.85 so his leap stays inside a half (`MirrorView.ZOOM`). Colors, the
+  pale ground, the outline in the shadow half: constants at the top of `ui/mirror_view.gd`.
+- A body that's nearly white flashes black when hit, instead of white (`FLASH_DARK_ABOVE`).
+- To find out: whether playing upside down (the bottom player's jump goes down the screen) is
+  bearable; whether not seeing the partner next to you costs more than the space gained; what
+  becomes of sync and the partner clashes when the two only meet at the line.
 
 ## Tuning
 
@@ -367,25 +535,26 @@ own buttons, so everything that happens to them is the game's own (`stand_in.gd`
 | Hit window, "after": delay / length | `BREAK_DELAY`, `BREAK_TIME` | 0.18 / 0.3 s |
 | Sync hit damage | `ColumnaBifrons.SYNC_HIT_FACTOR` | x2.5 |
 | Stagger length | `StrikePattern.BOTH_STAGGER_TIME`, `Sweep.STAGGER_TIME`, `Leap.STAGGER_TIME` | 2.2 s |
-| Sweep: until it reaches the first player / on to the second | `Sweep.WINDUP_UNITS`, `TRAVEL_TIME` | 6 (1.2 s) / 0.4 s |
+| Sweep: until it reaches the first player / on to the second | `Sweep.WINDUP_UNITS`, `TRAVEL_TIME` | 5 (1.0 s) / 0.26 s |
 | Sweep: blade away / propped / swinging back | `Sweep.AWAY_TIME`, `PROP_TIME`, `RETURN_TIME` | 1.4 / 1.4 / 0.3 s |
 | How often each attack comes, and where | the weights in `ColumnaBifrons.ATTACKS` | see the table above |
-| Charge: how far, how long after the thrust, how fast | `CHARGE_DISTANCE`, `CHARGE_DELAY`, `CHARGE_TIME` | 230 px / 0.1 / 0.25 s |
+| Charge: how far (at least / past its player / at most), how long after the thrust, how fast | `CHARGE_DISTANCE`, `CHARGE_BEYOND`, `CHARGE_MOST`, `CHARGE_DELAY`, `CHARGE_TIME` | 230 / 70 / 360 px, 0.1 s, 0.25 s |
 | Charge: how far he rears back | `StrikePattern.CHARGE_LEAN`, `POSE_LANCE_BACK` | 24 px, hand 18 px behind his middle |
 | The sword that reaches across: where it strikes from, and lands | `POSE_SLASH_RAISED`, `_COILED`, `_DOWN` | over his shoulder |
 | A blade's edge in its player's color | `EDGE_WIDTH` | 4 px of 12 |
-| Leap: until he lands / rising / hanging | `Leap.WINDUP_UNITS`, `RISE_TIME`, `HANG_TIME` | 7 (1.4 s) / 0.3 / 0.3 s |
+| Leap: until he lands / rising / hanging | `Leap.WINDUP_UNITS`, `RISE_TIME`, `HANG_TIME` | 6 (1.2 s) / 0.22 / 0.2 s |
 | Leap: how close to where he lands a player is hit | `Leap.REACH` | 80 px |
 | Leap: knockback of a hit / push on a parry | `Leap.KNOCKBACK`, `PARRIED_PUSH` | x1.6 / 220 px/s |
 | Where he stands: steps back from / to; walks up from / to | `CROWD_DISTANCE`, `FIT_DISTANCE`; `BLADE_REACH`, `REACH_MARGIN` | 62 / 90; 215 / 185 px |
-| Where he stands: how far off the middle before he walks | `PLACE_SLACK` | 28 px |
+| His drift: distances to the nearer player / speed / pause; off the middle between two | `DRIFT_NEAR`, `DRIFT_FAR`, `DRIFT_SPEED`, `DRIFT_PAUSE`; `PEP_DRIFT` | 80 / 170 px, 0.6 of that per s, 0.5 s; 60 px |
+| Pushing through: touching / his pace / how long before he shoves | `TOUCH_DISTANCE`, `PUSH_PACE`, `PUSH_PATIENCE` | 50 px / half / 2 s |
 | Walking: between attacks / during them | `WALK_SPEED`, `ATTACK_PACE` | 110 px/s / x0.5 |
 | Walking: slowed by a sword hit | `SLOWED_FACTOR`, `SLOWED_TIME` | x0.3 for 0.6 s |
 | Lunge: short / long / where the players are when it lands / never closer than | `LUNGE_SHORT`, `LUNGE_LONG`, `STRIKE_DISTANCE`, `CLOSEST` | 14 / 160 / 105 / 72 px |
 | Long windup: from which wait, how fast he walks | `LONG_WINDUP`, `ADVANCE_SPEED` | 6 / 70 px/s |
 | Making room: after how long crowded, how often | `CROWD_PATIENCE`, `ROOM_COOLDOWN` | 0.7 s / 4 s |
 | Making room, the hop back: how far, how fast | `BACK_OFF_DISTANCE`, `BACK_OFF_TIME` | 110 px / 0.2 s |
-| Making room, the shove: windup / how hard / whom it reaches / how close a player has to be | `Shove.WINDUP_TIME`, `PUSH`, `REACH`, `NEAR` | 0.5 s / 700 px/s (130 px) / 215 px / 150 px |
+| Making room, the shove: windup / how hard / whom it reaches / how close a player has to be | `Shove.WINDUP_TIME`, `PUSH`, `REACH`, `NEAR` | 0.5 s / 1050 px/s (230 px) / 215 px / 150 px |
 | Left alone: until a sword turns / how near its player has to be for it to turn back | `TURN_TIME`, `RETURN_DISTANCE` | 1.5 s / 300 px |
 | Left alone: the rush's dash | `RUSH_TIME` | 0.45 s |
 | Heavy strike (both swords on one player): damage / knockback | `StrikePattern.HEAVY_DAMAGE`, `HEAVY_KNOCKBACK` | x2 / x1.5 |
@@ -444,7 +613,7 @@ in, he uses them all the same.
   and the tempo of his strikes.
 - **Reactive:** does it flow, one exchange into the next? Is being struck back at once a fair
   answer, and does provoking feel like leading the fight?
-- **The sweep:** can the second player read their moment (0.4 s after the first)? Do the four
+- **The sweep:** can the second player read their moment (0.26 s after the first)? Do the four
   outcomes read from where the swords are, without knowing the table?
 
 ## Not in here yet (from the scribbles)

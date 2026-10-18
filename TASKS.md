@@ -87,16 +87,56 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Treffer-Fenster: Nicho tendiert nach dem Solo-Test zu **„beat“** (mit „after“ wartet man nach
   dem Parry erst, und bis man selbst wieder dran ist, dauert es zu lang; „beat“ hält das
   Ganze schneller). Noch mit Kay zu besprechen.
-- [ ] **Sync-Modus** (offen, niemand; Hauptaufgabe neben den Zwischen-Prototypen). Der
+- [ ] **Sync-Modus** (@Nicho; Hauptaufgabe neben den Zwischen-Prototypen). Der
   fehlende Teil des Proof of Concept: in ppe, beide nebeneinander, werden zwei Spieler mit zwei
   Schwertern zu einem mit einem großen Schwert, und der Boss muss sich verteidigen. Ideen:
   Scribble vom 2026-10-02 („Sync-Modus: Verbindung und Movement“). Dazu gehört die
   **schmalere Spieler-Hitbox** (Spieler als zwei Hälften, die zusammen ein Quadrat bilden):
   auf `nicho/pep-test` gemacht (2026-10-14), 20×40 statt 40×40 (`Player.BODY_SIZE`).
+  **Vorstufe: Sync als Leben** (2026-10-16, Branch `nicho/pep-test`, Schalter
+  `bifrons_rules`, Standard „sync“): keine Gesundheit, keine Tränke, ein Sync für beide Spieler,
+  einer für den Boss, Haltung für alle drei, gleiche Regeln für beide Seiten; Chaos bei leerem
+  Sync (Revive), Sync-Modus bei vollem (vorerst nur: Treffer zählen dreifach). Alle Zahlen in F2.
+  Entscheidungen: Scribble vom 2026-10-16; Regeln: `docs/boss_columna_bifrons.md` → „Sync as
+  life“. Das alte System (HP + alter Sync) bleibt auf „hp“ und wird später mit den Erkenntnissen
+  angepasst.
+  **Seit 2026-10-17 einfacher** (Branch `nicho/posture-rules`, enthält `nicho/pep-test` und
+  `nicho/beat-runner`): normale und heftige Angriffe (seine heftigen: beide Schwerter; eure: im
+  Sync-Modus), Haltung in drei Größen (klein, mittel, groß), Parieren kostet beide Seiten,
+  Blocken nur den Blocker, Sync kostet nur ein Treffer (heftig 18, normal ein Drittel), Haltung
+  kommt erst 2 s nach dem letzten Angriff (rein oder raus) zurück, Block halten verdoppelt das,
+  bei 75 % Sync halb so schnell, ab 50 % kaum; er holt keinen Sync mehr zurück. Entscheidungen:
+  Scribble vom 2026-10-17. **Offen:** Bifrons' Verhalten und Patterns dafür anpassen: Er steht
+  kaum je 2 s still, seine Haltung kommt fast nie zurück, und der Kampf entscheidet sich über
+  seine Haltung (mit zwei Stand-ins nach 19 bis 40 s).
+  **Erster Sync-Modus** (2026-10-17, gleicher Branch, `core/sync_bond.gd`): Zeichen an den
+  Füßen, zusammenstehen verbindet (Farben fließen ineinander, Säbel), Angriff halten zum
+  Ausholen, auf das große Signal gemeinsam loslassen = heftiger Schlag, der durch seine Deckung
+  geht; außer Sync = schwacher Schlag und Sync-Verlust. Er schlägt dann nur noch mit beiden
+  Schwertern und langsamer. Ideen: Scribble vom 2026-10-17 („Sync-Modus“). **Offen:** Bewegung
+  im verbundenen Zustand; ob die Spiegelhälften verschmelzen (Schalter `sync_merge_view`).
 - [ ] **Prototyp Beat-Runner** (@Nicho): die andere Antwort auf „Was ist zwischen den
   Bossen?“, etwas zwischen Beat Saber und Geometry Dash (Auto-Runner, Dinge fliegen im Rhythmus
   auf die Spieler zu, parieren und schlagen; vielleicht zwei Lanes für pep/ppe). Siehe Scribble
   vom 2026-10-02 („Was ist der Rest des Spiels?“). Läuft parallel zu Kays Jump'n'Run.
+  Erster Prototyp ab 2026-10-17 auf Branch `nicho/beat-runner` (von `nicho/pep-test`
+  abgezweigt, braucht den Spiegel-Bildschirm): geteilter Bildschirm, die Spieler laufen von
+  selbst, Projektile zum Parieren und zum Zerschlagen, ein Parry schickt dem Partner ein
+  schnelles Projektil, selten Hindernisse zum Drüberspringen. Muster aus Bifrons' Tabelle.
+  Nicho nach dem ersten Ausprobieren: das Prinzip wirkt eher „meh“. Deshalb ein zweiter
+  Prototyp daneben, **Beat-Ring** (gleicher Branch, Eintrag 7, `docs/beat_ring.md`): im
+  Bossraum frei bewegen, ein Kreis um die Mitte markiert den Beat, Balken von den Seiten
+  (springen oder unten bleiben). Runde 2 nach Nichos erstem Versuch („viel zu chaotisch“): Dinge
+  kommen normal waagerecht von links und rechts; aus anderen Winkeln nur Spezialangriffe, vorerst
+  einer: der grüne Sweep-Pfeil, der erst einen Spieler erreicht, durch die Linie fliegt und dann
+  den anderen (wie Bifrons' Sweep). Balken seltener und langsamer.
+  Runde 3/4: Splitter treffen nie; grau = Solo-Treffer, violett nur aus dem Parry des Partners.
+  Seit Runde 4 ist der Ring **Bifrons' Kampf ohne ihn**: seine Patterns, Gewichte und sein Tempo,
+  standardmäßig diagonal (wie pep), sein Crossing bringt beide auf eine Seite, sein Sprung (als
+  Sweep) wieder auseinander; der violette Splitter läuft am Kreis entlang und kommt so spät nach
+  dem Parry an wie der Sync-Hit im Bosskampf (F2, Tab „sync hit“).
+- [ ] **Bifrons' Patterns überarbeiten: Abstand schaffen, dann nachsetzen** (@Nicho). Siehe
+  Scribble vom 2026-10-17.
 - [ ] **Spiegel-Bildschirm** (@Nicho), Branch `nicho/pep-test`, Schalter `mirror_view` (F1,
   Standard aus). Nichos Idee aus dem Scribble vom 2026-10-14: Bildschirm an der Bodenlinie
   geteilt, oben P1 als Licht, unten die Spiegelung mit P2 als Schatten (nach Gris), der Boss
@@ -111,8 +151,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Die Stellschrauben stehen oben in `columna_bifrons.gd` unter „Moving“, mit den aktuellen
   Werten in `docs/boss_columna_bifrons.md` → „Tuning“ (beides auf dem Branch):
   - *Abstand:* ab wann er zurückweicht und wie weit (`CROWD_DISTANCE` 62, `FIT_DISTANCE` 90),
-    ab wann er nachrückt (`BLADE_REACH` 215, `REACH_MARGIN` 30), wie weit er neben der Mitte
-    zwischen den Spielern stehen darf (`PLACE_SLACK` 28).
+    ab wann er nachrückt (`BLADE_REACH` 215, `REACH_MARGIN` 30).
+  - *Drift* (seit 2026-10-16, damit er weniger rumsteht): Abstand zum näheren Spieler, der
+    ständig wandert (`DRIFT_NEAR` 80 bis `DRIFT_FAR` 170, `DRIFT_SPEED` 0,6, `DRIFT_PAUSE`
+    0,5 s), zwischen zwei Spielern bis `PEP_DRIFT` 60 px neben der Mitte; wer im Weg steht,
+    wird mitgeschoben, nach `PUSH_PATIENCE` 2 s weggestoßen (`PUSH_PACE` 0,5).
   - *Tempo:* Gehen (`WALK_SPEED` 110), während Attacken (`ATTACK_PACE` 0,5), gebremst durch
     Treffer (`SLOWED_FACTOR` 0,3 für `SLOWED_TIME` 0,6 s).
   - *Hiebdash:* kurzer Schritt, langer Dash, Zielabstand (`LUNGE_SHORT` 14, `LUNGE_LONG` 160,
@@ -124,8 +167,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   - *Allein gelassen:* ab wann ein Schwert wechselt und zurückwechselt (`TURN_TIME` 1,5 s,
     `RETURN_DISTANCE` 300), wie oft er zum Entfernten rusht (Gewicht von `RUSH`).
 - [ ] **Stoß von Bifrons umbauen** (offen, niemand; Nicho, 2026-10-02, nach dem Test):
-  - Kein Stich mehr: Er schubst die Spieler mit der flachen Seite weg, die Schwerter stehen
-    dabei senkrecht.
+  - ~~Kein Stich mehr: Er schubst die Spieler mit der flachen Seite weg, die Schwerter stehen
+    dabei senkrecht.~~ Erledigt auf `nicho/pep-test` (2026-10-16), dazu stärkerer Rückstoß
+    (etwa 230 statt 130 px).
   - Nur, wenn er nah am Rand des Raums steht.
   - Nicht mehr, weil die Spieler nah an ihm sind: In ppe müssen sie nah stehen (sonst erreicht
     ihn der hintere nicht). Heute löst genau das den Stoß aus (0,7 s näher als 62 px, oder nach

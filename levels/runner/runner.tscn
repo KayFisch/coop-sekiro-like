@@ -1,0 +1,44 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://levels/runner/runner.gd" id="1_runner"]
+[ext_resource type="Script" uid="uid://cerd7p55i2ogi" path="res://core/camera_shake.gd" id="2_cam"]
+[ext_resource type="PackedScene" path="res://actors/player/player.tscn" id="3_player"]
+[ext_resource type="Script" path="res://ui/mirror_view.gd" id="4_mirror"]
+
+[sub_resource type="RectangleShape2D" id="Shape_floor"]
+size = Vector2(1600, 48)
+
+[node name="Runner" type="Node2D"]
+script = ExtResource("1_runner")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(576, 324)
+script = ExtResource("2_cam")
+
+[node name="Stage" type="Node2D" parent="."]
+
+[node name="Background" type="ColorRect" parent="Stage"]
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
+color = Color(0.05, 0.05, 0.07, 1)
+
+[node name="Floor" type="StaticBody2D" parent="Stage"]
+position = Vector2(576, 624)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="Player1" parent="." instance=ExtResource("3_player")]
+position = Vector2(330, 580)
+
+[node name="Player2" parent="." instance=ExtResource("3_player")]
+position = Vector2(330, 580)
+player_id = 2
+player_color = Color(1, 0.55, 0.15, 1)
+sword_color = Color(1, 0.8, 0.55, 1)
+
+[node name="MirrorView" type="CanvasLayer" parent="."]
+script = ExtResource("4_mirror")
+scenery = NodePath("../Stage/Background")
+always_on = true

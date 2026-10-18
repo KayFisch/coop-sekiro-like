@@ -8,14 +8,17 @@ extends Attack
 ## A strike is aimed at the player its sword fights (ColumnaBifrons.ward_of()), and only they
 ## have to perfect parry it. The sword is drawn back, then comes in FALL_TIME: that's the cue,
 ## and both players read it. A parried strike breaks the guard of his *other* sword for a moment
-## (ColumnaBifrons.break_guard()), and the other player's sword hit is a sync hit. Both swords
-## at once come green, and parried by both players they stagger him.
+## (ColumnaBifrons.break_guard()), and the other player's sword hit is a sync hit (with Moves
+## "bifrons_guard_break" off it only opens the window: a hit in it that lands is a sync hit). Both
+## swords at once come green, and parried by both players they stagger him.
 ##
 ## How a sword strikes:
 ## - down from over his head, when it's on the flank its hand is on;
 ## - the same way but from lower, laid back over his shoulder, when it reaches across to the
 ##   other flank (ppe);
 ## - a CHARGE is a thrust, and he follows it through past that player;
+## - a PUSH is no strike: white, the blade upright, drawn in and shoved out flat, it throws that
+##   sword's player (and anyone right behind them) back; no damage, nothing to parry;
 ## - a RUSH is a cut at a player who's far away: he dashes over to them as it comes.
 ##
 ## He moves while he strikes (see "Moving" in columna_bifrons.gd): walking to his place at a
@@ -38,7 +41,8 @@ const RIGHT = 1
 const BOTH = 0
 const CUT = 0  # a strike's kind: the ordinary one...
 const CHARGE = 1  # ...a thrust that he follows through (see "THE CHARGE" in columna_bifrons.gd)...
-const RUSH = 2  # ...or a cut he dashes across the room with (see "LEFT ALONE" there)
+const RUSH = 2  # ...or a cut he dashes across the room with (see "LEFT ALONE" there)...
+const PUSH = 3  # ...or a shove, no strike at all (see "THE CHARGE" there: the crossing)
 
 # --- Tuning ---
 # One unit of a strike's `wait` (see ColumnaBifrons.ATTACKS), in seconds: the tempo of every
@@ -52,18 +56,16 @@ const FALL_POWER = 1.7  # the drop starts slow and lands fast (1 = constant spee
 # again): lying on the floor, or thrown back by a parry, which takes it longer to get over.
 const STICK_TIME = 0.12
 const RECOIL_TIME = 0.35
-# THE PARTNER'S HIT. A parried strike breaks the other sword's guard BREAK_DELAY after the
-# parry, for BREAK_TIME; by Moves "bifrons_window". A player's swing lands 0.05 to 0.17 s after
-# its press, sooner the closer they stand (see ATTACK_WINDUP_TIME and ATTACK_ACTIVE_TIME in
-# player.gd): 0.08 s from next to him.
-# "beat": at once. Parry and hit are pressed together, the hitter betting on the parry: the
-#   attack press has to come between 0.08 s before the strike lands and 0.17 s after.
-# "after": a moment later, so the hitter answers the parry instead of betting on it. The delay
-#   is just longer than a swing can take to land: no swing begun before or on the parry gets
-#   through, however far away the hitter stands; shorter, and it would be "beat" for them.
-#   From next to him the press has to come 0.1 to 0.4 s after the strike landed.
-const BREAK_DELAY = {"beat": 0.0, "after": 0.18}
-const BREAK_TIME = {"beat": 0.25, "after": 0.3}
+# THE PARTNER'S HIT (Tuning, F2 tab "sync hit"): a parried strike breaks the other sword's guard
+# "sync_window_delay" after the parry (window_delay()); its first "sync_beat_time" is on the beat,
+# and it stays open "sync_window_late" longer, off the beat (window_time(): all of it). A
+# player's swing lands 0.05 to 0.17 s after its press, sooner the closer they stand (see
+# ATTACK_WINDUP_TIME and ATTACK_ACTIVE_TIME in player.gd): 0.08 s from next to him.
+# - A delay of 0 (once Moves "bifrons_window" on "beat"): parry and hit are pressed together, the
+#   hitter betting on the parry.
+# - 0.18 (once "after"): the hitter answers the parry instead of betting on it. That's just longer
+#   than a swing can take to land: no swing begun before or on the parry gets through, however
+#   far away the hitter stands; shorter, and it's partly a bet again for those further away.
 const BOTH_STAGGER_TIME = 2.2  # both swords parried at once, by both players
 # BOTH SWORDS ON ONE PLAYER (the other one is away): one heavy strike. One parry meets it, and
 # doesn't stagger him.
@@ -89,11 +91,12 @@ var _strikes: Array  # as written in ColumnaBifrons.ATTACKS: [wait, sword] or [w
 var _contacts: Array = []  # when it lands, in seconds from the pattern's start
 var _waits: Array = []  # its wait, in TIME_UNITs
 var _swords: Array = []  # its sword (see ColumnaBifrons.orient())
-var _kinds: Array = []  # CUT, CHARGE or RUSH
+var _kinds: Array = []  # CUT, CHARGE, RUSH or PUSH
 var _time = 0.0  # seconds into the pattern
 var _next = 0  # the strike that lands next
 var _parried = {LEFT: false, RIGHT: false}  # how each blade's last strike went...
-var _thrust = {LEFT: false, RIGHT: false}  # ...and whether it was a charge
+var _thrust = {LEFT: false, RIGHT: false}  # ...and whether it was a charge...
+var _shoved = {LEFT: false, RIGHT: false}  # ...or a push
 var _sounded = -1.0  # the landing time of the last strike whose drop has made its sound
 var _drawn_since = {LEFT: -1.0, RIGHT: -1.0}  # when each blade was drawn back for the next strike (-1: not yet)
 var _charge_at = -1.0  # when he follows a landed charge through (-1: none due), and with which sword
@@ -101,6 +104,16 @@ var _charge_sword = LEFT
 var _room_at = -1.0  # when he makes room after a strike of both swords (-1: not due)
 var _advance = Advance.NONE  # how he gets through the next strike's windup
 var _lunge = null  # {from, to}: the next strike's lunge, once it's under way
+
+
+# THE PARTNER'S HIT: from the parry until the window opens...
+static func window_delay() -> float:
+	return Tuning.value("sync_window_delay")
+
+
+# ...and how long it stays open: on the beat, then off it.
+static func window_time() -> float:
+	return Tuning.value("sync_beat_time") + Tuning.value("sync_window_late")
 
 
 func _init(pattern_name: String, strikes: Array):
@@ -124,6 +137,11 @@ func start(boss_node, player_nodes: Array):
 	_swords = _strikes.map(func(strike): return strike[1] * way)
 	_kinds = _strikes.map(func(strike): return strike[2] if strike.size() > 2 else CUT)
 	_waits = _strikes.map(func(strike): return strike[0])
+	if boss.in_sync_mode():
+		# The players' sync mode: every cut comes with both swords at once.
+		for i in _swords.size():
+			if _kinds[i] == CUT:
+				_swords[i] = BOTH
 	_waits[0] = lead
 	_contacts = _waits.duplicate()
 	_time = 0.0
@@ -131,6 +149,7 @@ func start(boss_node, player_nodes: Array):
 	_schedule(0)
 	_parried = {LEFT: false, RIGHT: false}
 	_thrust = {LEFT: false, RIGHT: false}
+	_shoved = {LEFT: false, RIGHT: false}
 	_sounded = -1.0
 	_drawn_since = {LEFT: -1.0, RIGHT: -1.0}
 	_charge_at = -1.0
@@ -186,9 +205,10 @@ func update(delta: float):
 	_animate()
 
 
-# Seconds until this pattern's next strike lands on that player; INF if it isn't for them.
+# Seconds until this pattern's next strike lands on that player; INF if it isn't for them (or
+# it's a push: nothing to parry).
 func time_to_strike(player) -> float:
-	if _next >= _contacts.size():
+	if _next >= _contacts.size() or _kinds[_next] == PUSH:
 		return INF
 	for blade in [LEFT, RIGHT]:
 		if _swords[_next] in [blade, BOTH] and boss.ward_of(blade) == player:
@@ -230,7 +250,7 @@ func _leave_out_absent():
 func _schedule(index: int):
 	var landing = _contacts[index - 1] if index > 0 else 0.0
 	for i in range(index, _waits.size()):
-		landing += _waits[i] * TIME_UNIT
+		landing += _waits[i] * boss.time_unit()
 		_contacts[i] = landing
 
 
@@ -239,40 +259,68 @@ func _land(index: int):
 		boss.global_position.x = _lunge.to  # he's there as the blade lands
 		_lunge = null
 	var sword = _swords[index]
+	if _kinds[index] == PUSH:
+		_push(sword)
+		return
 	var striking = [LEFT, RIGHT] if sword == BOTH else [sword]
-	var heavy = sword == BOTH and boss.ward_of(LEFT) == boss.ward_of(RIGHT)  # both on one player
+	var on_one = sword == BOTH and boss.ward_of(LEFT) == boss.ward_of(RIGHT)  # both on one player
 	# Who parried, before anything lands: a parry of both blades is the strong kind.
 	var judged = {}
 	for blade in striking:
-		judged[blade] = judged[LEFT] if heavy and blade == RIGHT else boss.judge(blade)
+		judged[blade] = judged[LEFT] if on_one and blade == RIGHT else boss.judge(blade)
 		_parried[blade] = judged[blade].parried
 		_thrust[blade] = _kinds[index] == CHARGE
 	var both = sword == BOTH and _parried[LEFT] and _parried[RIGHT]
-	for blade in ([LEFT] if heavy else striking):
-		if heavy:
-			boss.land(judged[blade], true, HEAVY_DAMAGE, HEAVY_KNOCKBACK)
+	if sword == BOTH and not both and boss.is_bound():
+		# The two bound (core/sync_bond.gd): a strike of both swords takes both their parries; a
+		# lone one is only a block.
+		for blade in striking:
+			judged[blade]["blocked"] = judged[blade].parriers
+			judged[blade]["parriers"] = []
+			judged[blade]["parried"] = false
+			_parried[blade] = false
+	# A strike of both swords is a heavy attack for the sync rules, on one player or on two.
+	for blade in ([LEFT] if on_one else striking):
+		if on_one:
+			boss.land(judged[blade], true, HEAVY_DAMAGE, HEAVY_KNOCKBACK, true)
 		else:
-			boss.land(judged[blade], both)
+			boss.land(judged[blade], both, 1.0, 1.0, sword == BOTH)
 		for p in judged[blade].parriers:
 			parry_success.emit(p, "bifrons_strike")
 			strike_parried.emit(p)
 
-	if both and not heavy:
+	if both and not on_one:
 		both_parried.emit()
 		Sfx.play("counter_hit", -2.0)
 		boss.shake(12.0)
-		finish_with_stagger(BOTH_STAGGER_TIME)
+		finish_with_stagger(boss.coop_stagger(BOTH_STAGGER_TIME))
 		return
 	if sword == BOTH:
 		if not both:
 			_room_at = _contacts[index] + boss.BACK_OFF_DELAY  # if the players are on one side
 	elif _parried[sword]:
-		var window = Moves.value("bifrons_window")
-		boss.break_guard(-sword, BREAK_TIME[window], BREAK_DELAY[window], judged[sword].parriers[0])
+		boss.break_guard(-sword, window_time(), window_delay(), judged[sword].parriers[0])
 	if _kinds[index] == CHARGE and sword != BOTH:
 		_charge_at = _contacts[index] + boss.CHARGE_DELAY
 		_charge_sword = sword
 		boss.squash_body(Vector2.ONE)  # no longer rearing back
+
+
+# A push lands: every player on that sword's side within the shove's reach is thrown back.
+func _push(sword: int):
+	var side = boss.blade_side(sword)
+	_parried[sword] = false
+	_thrust[sword] = false
+	_shoved[sword] = true
+	var thrown = false
+	for p in boss.get_players():
+		if boss.side_of(p) == side and boss.distance_to(p) <= Shove.REACH:
+			p.apply_knockback(Vector2(side * Shove.PUSH.x, Shove.PUSH.y))
+			boss.spawn_sparks(p.global_position + Vector2(-side * 16.0, -8.0), 8, Shove.COLOR)
+			thrown = true
+	if thrown:
+		Sfx.play("thunk", -3.0)
+		boss.shake(6.0)
 
 
 # How long strike `index`'s drop takes: FALL_TIME, less if the strike before leaves no room.
@@ -289,6 +337,8 @@ func _rest_time(sword: int) -> float:
 		return maxf(_rest_time(LEFT), _rest_time(RIGHT))
 	if _parried[sword]:
 		return RECOIL_TIME
+	if _shoved[sword]:
+		return Shove.HOLD_TIME
 	return boss.CHARGE_DELAY + boss.CHARGE_TIME if _thrust[sword] else STICK_TIME
 
 
@@ -300,19 +350,19 @@ func _animate():
 		var landing = _contacts[_next]
 		if landing > _sounded and _time >= landing - _fall_time(_next):
 			_sounded = landing
-			Sfx.play("stab" if _kinds[_next] == CHARGE else "swing", -3.0)  # the drop starting
+			Sfx.play("swing" if _kinds[_next] == CUT or _kinds[_next] == RUSH else "stab", -3.0)  # the drop starting
 		_move(delta)
 	for blade in [LEFT, RIGHT]:
 		_pose_blade(blade)
 
 
 # His feet, for the strike that's next: walking to his place (or at the strike's player, through
-# a long windup), and as the blade comes, the lunge. For a charge he stands: he follows it
-# through afterwards. And he stands while the blade of his last strike lies where it landed
-# (or is thrown back): that's when the players hit him.
+# a long windup), and as the blade comes, the lunge (for a charge too: he goes after its
+# player). For a push he stands. And he stands while the blade of his last strike lies where it
+# landed (or is thrown back): that's when the players hit him.
 func _move(delta: float):
 	var kind = _kinds[_next]
-	if kind == CHARGE:
+	if kind == PUSH:
 		return
 	var lunge_time = boss.RUSH_TIME if kind == RUSH else _fall_time(_next)
 	var since = _time - (_contacts[_next] - lunge_time)
@@ -350,12 +400,17 @@ func _pose_blade(blade: int):
 	if _next < _contacts.size() and _swords[_next] in [blade, BOTH]:
 		# This blade strikes next.
 		var kind = _kinds[_next]
-		var color = COLOR_TOGETHER if _swords[_next] == BOTH else COLOR
+		var color = COLOR_TOGETHER if _swords[_next] == BOTH else (Shove.COLOR if kind == PUSH else COLOR)
 		var fall_time = _fall_time(_next)
 		var fall_start = _contacts[_next] - fall_time
 		var back = -boss.blade_side(blade)  # the way he rears back: away from its player
 		if _time >= fall_start:
 			var drop = pow(clampf((_time - fall_start) / fall_time, 0.0, 1.0), FALL_POWER)
+			if kind == PUSH:
+				boss.pose_sword(blade, Shove.POSE_DRAWN.lerp(Shove.POSE_SHOVED, drop), true)
+				boss.tint_sword(blade, Shove.COLOR)
+				boss.tint_side(blade, Shove.COLOR, 0.45)
+				return
 			if kind == CHARGE:
 				boss.pose_sword(blade, boss.POSE_LANCE_BACK.lerp(boss.POSE_LANCE, drop), true)
 				boss.squash_body(Vector2.ONE, back * CHARGE_LEAN * (1.0 - drop))
@@ -373,7 +428,10 @@ func _pose_blade(blade: int):
 			# Drawn further back the closer the drop is, and trembling.
 			var tension = clampf((_time - _drawn_since[blade]) / maxf(fall_start - _drawn_since[blade], 0.01), 0.0, 1.0)
 			var pose: Vector3
-			if kind == CHARGE:
+			if kind == PUSH:
+				# Upright, drawn in against him.
+				pose = boss.POSE_GUARD.lerp(Shove.POSE_DRAWN, smoothstep(0.1, 0.8, tension))
+			elif kind == CHARGE:
 				# Lowered at the player, then drawn far back, quickly, and held there.
 				var draw = smoothstep(0.2, 0.75, tension)
 				pose = boss.POSE_LANCE_LOW.lerp(boss.POSE_LANCE_BACK, draw)
@@ -388,10 +446,11 @@ func _pose_blade(blade: int):
 			boss.tint_side(blade, color, 0.1 + 0.3 * tension)
 			return
 	if resting:
-		# Just landed: lying where it came down, or thrown back by the parry.
-		var landed = boss.POSE_LANCE if _kinds[last] == CHARGE else down
+		# Just landed: lying where it came down, or thrown back by the parry; a push held out.
+		var landed = boss.POSE_LANCE if _kinds[last] == CHARGE else (Shove.POSE_SHOVED if _kinds[last] == PUSH else down)
 		boss.pose_sword(blade, boss.POSE_RECOIL if _parried[blade] else landed)
-		boss.tint_sword(blade, boss.COLOR_SWORD if _parried[blade] else boss.COLOR_EXECUTE)
+		var spent = Shove.COLOR if _kinds[last] == PUSH else boss.COLOR_EXECUTE
+		boss.tint_sword(blade, boss.COLOR_SWORD if _parried[blade] else spent)
 		boss.tint_side(blade, COLOR, 0.0)
 		return
 	# Guarding its flank (the boss knocks it aside while that guard is broken).

@@ -17,9 +17,9 @@ const LEFT = StrikePattern.LEFT
 const RIGHT = StrikePattern.RIGHT
 
 # --- Tuning ---
-const WINDUP_UNITS = 7  # StrikePattern.TIME_UNITs until he lands
-const RISE_TIME = 0.3  # from the floor up to HEIGHT, and over to where he'll come down
-const HANG_TIME = 0.3  # up there, before he drops (in StrikePattern.FALL_TIME)
+const WINDUP_UNITS = 6  # StrikePattern.TIME_UNITs until he lands
+const RISE_TIME = 0.22  # from the floor up to HEIGHT, and over to where he'll come down
+const HANG_TIME = 0.2  # up there, before he drops (in StrikePattern.FALL_TIME)
 const HEIGHT = 200.0  # how high he gets: his feet clear the players' heads
 const AHEAD = 50.0  # both players on one side: he lands at most this far past the nearer one
 const REACH = 80.0  # a player this close to where he lands is under the swords
@@ -103,7 +103,7 @@ func update(delta: float):
 		judged[blade] = boss.judge(blade, REACH)
 	var both = judged[LEFT].parried and judged[RIGHT].parried
 	for blade in [LEFT, RIGHT]:
-		boss.land(judged[blade], both, 1.0, KNOCKBACK)
+		boss.land(judged[blade], both, 1.0, KNOCKBACK, true)  # both swords: heavy, for the sync rules
 		for p in judged[blade].parriers:
 			p.apply_knockback(Vector2(boss.side_of(p) * PARRIED_PUSH, 0.0))
 			parry_success.emit(p, "bifrons_leap")
@@ -113,7 +113,7 @@ func update(delta: float):
 	if both:
 		both_parried.emit()
 		Sfx.play("counter_hit", -2.0)
-		finish_with_stagger(STAGGER_TIME)
+		finish_with_stagger(boss.coop_stagger(STAGGER_TIME))
 	else:
 		finish(RECOVER_TIME)
 
