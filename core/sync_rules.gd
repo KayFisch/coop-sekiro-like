@@ -1,9 +1,9 @@
 class_name SyncRules
 extends Node
-## Sync is life (Moves "bifrons_rules" on "sync"; for now only in Bifrons's fight). Nobody has
-## health and there are no potions: the two players share one sync, he has his own, and each of
-## the three has a posture. The same rules hold on both sides: a fair exchange. What tips it is
-## that the players can win sync back and he can't, and that he has more of it.
+## Sync is life (for now only in Bifrons's fight). Nobody has health and there are no potions:
+## the two players share one sync, he has his own, and each of the three has a posture. The same
+## rules hold on both sides: a fair exchange. What tips it is that the players can win sync back
+## and he can't, and that he has more of it.
 ##
 ## Attacks are normal or heavy. His heavy ones are those of both swords (green: a strike of both,
 ## the leap); the players' attacks are normal, and heavy only as the bound pair's strike let go
@@ -192,9 +192,8 @@ func coop_stagger() -> float:
 
 # --- His strikes landing on the players (landing_heavy: which kind) ---
 
-# Unblocked. (amount: the old rules' number; what counts here is landing_heavy.) Returns true if
-# it kills: in chaos.
-func player_hit(p, _amount: float) -> bool:
+# Unblocked (how heavy: landing_heavy). Returns true if it kills: in chaos.
+func player_hit(p) -> bool:
 	if p.invincible:
 		return false
 	_busy_at[p] = _time
@@ -206,7 +205,7 @@ func player_hit(p, _amount: float) -> bool:
 
 
 # Blocked: it costs the one who blocks, not him.
-func player_blocked(p, _amount: float) -> bool:
+func player_blocked(p) -> bool:
 	if not p.invincible:
 		_busy_at[p] = _time
 		_lose_posture(p, MEDIUM if landing_heavy else SMALL, true)
@@ -286,11 +285,10 @@ func _actors() -> Array:
 	return actors
 
 
-# The first time an actor is seen: full posture, and for a player no potions.
+# The first time an actor is seen: full posture.
 func _meet(actor):
 	_posture[actor] = posture_max(actor)
 	if actor != boss:
-		actor.potions = 0
 		_swings[actor] = actor.swing_serial
 
 

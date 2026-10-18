@@ -96,11 +96,8 @@ const PATIENCE = [1, 1, 2]
 const ANSWER_WAIT = 4  # units (time_unit()) until an answer's first strike lands, at most
 
 # A blade landing on a player (any of his attacks; how far it reaches: BLADE_REACH, in his swords' part).
-const BLADE_DAMAGE = 12.0
 const BLADE_KNOCKBACK = 300.0
-const BLOCKED_DAMAGE = 4.0
 const BLOCKED_KNOCKBACK = 150.0
-const SYNC_HIT_FACTOR = 2.5  # a sync hit's damage, times the sword hit's own
 
 # LEFT ALONE. A strike whose player is out of his range when it's due is left out (see
 # StrikePattern). A sword whose own player has been out of range for TURN_TIME turns on the
@@ -161,11 +158,10 @@ func _ready():
 	var stand_in = BifronsStandIn.new()
 	stand_in.boss = self
 	add_child(stand_in)
-	if Moves.value("bifrons_rules") == "sync":
-		rules = SyncRules.new()
-		rules.boss = self
-		add_child(rules)
-		GameManager.rules = rules
+	rules = SyncRules.new()
+	rules.boss = self
+	add_child(rules)
+	GameManager.rules = rules
 
 
 func _exit_tree():
@@ -191,9 +187,7 @@ func get_attack_pool() -> Array:
 		else:
 			pool.append(entry.attack.new(attack_name))
 	for attack in pool:
-		if attack.has_signal("strike_parried"):
-			attack.strike_parried.connect(func(_player): sync_event.emit("bifrons_parried"))
-			attack.both_parried.connect(sync_event.emit.bind("bifrons_both_parried"))
+		if attack.has_signal("both_parried"):
 			attack.both_parried.connect(_on_both_parried)
 	return pool
 
@@ -437,9 +431,9 @@ func judge(blade: int, reach = BLADE_REACH) -> Dictionary:
 
 
 # The judged strike lands: a parrier parries it (`strong`: the heavier kind of parry), anyone
-# else under it is hit, or chipped behind a block. `damage` and `knock` scale what a hit does
-# (a heavy strike, the leap). `heavy`: a heavy attack for the sync rules (one of both swords).
-func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0, heavy = false):
+# else under it is hit, or chipped behind a block. `knock` scales how far a hit throws them
+# back (a heavy strike, the leap). `heavy`: a heavy attack for the sync rules (one of both swords).
+func land(judged: Dictionary, strong = false, knock = 1.0, heavy = false):
 	if rules != null:
 		rules.landing_heavy = heavy  # the players' hooks lead to the rules while it lands
 	for p in judged.under:
@@ -447,9 +441,9 @@ func land(judged: Dictionary, strong = false, damage = 1.0, knock = 1.0, heavy =
 			p.on_perfect_parry(strong)
 			spawn_sparks(p.global_position + Vector2(0.0, -24.0), 10, COLOR_PLAYER_PARRY)
 		elif p.is_blocking() or p in judged.get("blocked", []):  # (a lone parry, bound: a block)
-			p.take_damage(BLOCKED_DAMAGE * damage, knockback_for(p, BLOCKED_KNOCKBACK * knock), true)
+			p.take_damage(knockback_for(p, BLOCKED_KNOCKBACK * knock), true)
 		else:
-			p.take_damage(BLADE_DAMAGE * damage, knockback_for(p, BLADE_KNOCKBACK * knock))
+			p.take_damage(knockback_for(p, BLADE_KNOCKBACK * knock))
 			shake(5.0)
 	if rules != null:
 		rules.landing_heavy = false
@@ -473,35 +467,15 @@ func _judge_windows():
 # source: the player whose sword hit landed. Through a guard their partner's parry broke it's a
 # sync hit; a sword that fights them parries it, if it's guarding; anything else is hit. (With
 # Moves "bifrons_guard_break" off the guard comes first: in the window only a hit it can't parry
-# lands, as a sync hit.)
+# lands, as a sync hit.) What each costs is the sync rules' (_struck_by_rules()).
 func take_damage(amount: float, source = null):
 	if rules != null and source != null and hp > 0.0:
 		_struck_by_rules(amount, source)
 		return
-	if source == null or hp <= 0.0 or state == State.STAGGER:
-		super(amount, source)
-		return
-	_slowed_until = anim_time + SLOWED_TIME
-	var at = _flank(side_of(source), source.global_position.y)
-	var guards = BLADES.filter(func(blade): return ward_of(blade) == source and is_guarding(blade))
-	var open = BLADES.any(func(blade): return is_open(blade) and _opened_by[blade] != source)
-	if open and (guards.is_empty() or guard_breaks()):
-		sync_event.emit("bifrons_sync_hit")
-		Sfx.play("sync_hit")
-		shake(6.0)
-		spawn_sparks(at, 16, SYNC_WAVE.COLOR)  # the parry's energy, passed on into him
-		super(amount * SYNC_HIT_FACTOR, source)
-	elif not guards.is_empty():
-		_parry(guards[0], source, at)
-	else:
-		# No blade of his is guarding against them: busy, thrown back, or turned on their partner.
-		Sfx.play("sync_hit", -6.0)
-		shake(3.0)
-		spawn_sparks(at, 8, COLOR_EXECUTE)
-		super(amount, source)
+	super(amount, source)
 
 
-# Sync as life (core/sync_rules.gd): the same three cases, but they cost his sync and posture
+# Sync as life (core/sync_rules.gd): the three cases, and what they cost his sync and posture
 # (whatever the swing's amount: a player's attack is normal, heavy in their sync mode; a sync hit
 # costs him what any hit does, and wins the players sync), and a guard that's up parries the hit
 # by chance, or else blocks it. Staggered or in chaos he has no guard; a hit that lands in chaos

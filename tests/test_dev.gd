@@ -7,7 +7,6 @@ var p1
 
 
 func _setup():
-	set_move("bifrons_rules", "sync")
 	set_move("bifrons_stand_in", "off")
 	await load_scene("res://levels/threshold/threshold.tscn")
 	boss = GameManager.boss

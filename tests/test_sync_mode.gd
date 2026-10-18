@@ -11,7 +11,6 @@ var p2
 
 
 func _setup(stand_in = "right"):
-	set_move("bifrons_rules", "sync")
 	set_move("bifrons_stand_in", stand_in)
 	set_move("dash_slash_pass", "sync")
 	set_number("sync_connect_distance", 30.0)
@@ -39,6 +38,7 @@ func _setup(stand_in = "right"):
 
 func test_binding():
 	await _setup("off")
+	boss.set_physics_process(false)  # held where he is: his drift can push them apart
 	check(rules.sync_mode, "full sync: the sync mode")
 	p1.global_position.x = boss.global_position.x - 120.0
 	p2.global_position.x = boss.global_position.x + 120.0

@@ -3,9 +3,8 @@ extends Node
 ## Testing alone (Moves "bifrons_stand_in"): plays one of the two players in the fight with
 ## Columna Bifrons, so one person can play the other. It presses that player's own buttons, so
 ## everything that happens to them is the game's own: it walks to keep its distance to him,
-## meets each of his strikes with a parry, a block or nothing (by chance), strikes through his
-## guard when its partner's parry opens it (a sync hit), and when its health is low it runs off
-## to drink a potion. It doesn't attack otherwise.
+## meets each of his strikes with a parry, a block or nothing (by chance), and strikes through
+## his guard when its partner's parry opens it (a sync hit). It doesn't attack otherwise.
 ## In the players' sync mode (core/sync_bond.gd) it plays along perfectly: it goes to its partner
 ## to bind (with him between them, by a dash-slash through him), parries every strike, and bound it draws its sabre back when its partner does and
 ## lets go right on the big cue (or when its partner lets go early).
@@ -34,12 +33,6 @@ const DISTANCE_IN_FRONT = 74.0
 const DISTANCE_BEHIND = 22.0  # from its partner: right behind them (a player is 20 wide)
 const SLACK = 12.0
 const DASH_THROUGH_FROM = 70.0  # sync mode, him between it and its partner: it dash-slashes through from this close
-# Below FLEE_HP, with a potion left, it runs away from him, FLEE_DISTANCE or to the wall, and
-# drinks. Then it comes back.
-const FLEE_HP = 20.0
-const FLEE_DISTANCE = 480.0
-const WALL_NEAR = 30.0  # this close to the arena's edge it's at the wall
-const POTION_RETRY = 0.3  # s between two tries at the potion (a hit can swallow one)
 
 var boss  # the ColumnaBifrons it belongs to
 
@@ -49,8 +42,6 @@ var _held = {}  # action name -> true while the stand-in holds it down
 var _plan = Plan.NOTHING  # for his next strike at it
 var _last_due = INF
 var _walk = 0.0  # the way it's walking: -1, 1, or 0
-var _fleeing = false
-var _potion_wait = 0.0
 var _window = 0  # the open guard it has seen (ColumnaBifrons.window_for()), or 0
 var _strike_in = -1.0  # s until it presses attack, or < 0: no strike coming
 var _let_go = false  # bound: it has let go while its partner still draws back
@@ -68,7 +59,6 @@ func _physics_process(delta):
 		_plan = Plan.NOTHING
 		_last_due = INF
 		_walk = 0.0
-		_fleeing = false
 		_window = 0
 		_strike_in = -1.0
 	if player == null:
@@ -87,7 +77,7 @@ func _played():
 	if boss == null or boss.hp <= 0.0 or GameManager.state != GameManager.GameState.PLAYING:
 		return null
 	var player = boss.stand_in_player()
-	return player if player != null and player.hp > 0.0 else null
+	return player if player != null and not player.is_dead() else null
 
 
 # His strikes at it: a new one coming gets its plan, and block is pressed when the plan says.
@@ -142,31 +132,13 @@ func _strike_bound(player):
 	_hold(player, "attack", hold)
 
 
-# Its feet: to its distance from him, or away from him to drink. In sync mode: to its partner.
+# Its feet: to its distance from him. In sync mode: to its partner.
 func _move(player, delta: float):
 	var away = signf(player.global_position.x - boss.global_position.x)
 	if away == 0.0:
 		away = 1.0
 	var distance = boss.distance_to(player)
-	_potion_wait = maxf(_potion_wait - delta, 0.0)
-	_hold(player, "potion", false)
-	if player.potions > 0 and player.hp < FLEE_HP:
-		_fleeing = true
-	elif not player.is_drinking():
-		_fleeing = false
-	if _fleeing:
-		var x = player.global_position.x
-		var at_wall = x < boss.ARENA_LEFT + WALL_NEAR or x > boss.ARENA_RIGHT - WALL_NEAR
-		if player.is_drinking():
-			_walk = 0.0
-		elif distance < FLEE_DISTANCE and not at_wall:
-			_walk = away
-		else:
-			_walk = 0.0
-			if _potion_wait <= 0.0:
-				_potion_wait = POTION_RETRY
-				_hold(player, "potion", true)
-	elif boss.in_sync_mode() and boss.partner_of(player) != null:
+	if boss.in_sync_mode() and boss.partner_of(player) != null:
 		var gap = boss.partner_of(player).global_position.x - player.global_position.x
 		_walk = signf(gap) if absf(gap) > Tuning.value("sync_connect_distance") * 0.5 else 0.0
 		# He's between them: up to him, then a dash-slash through him.

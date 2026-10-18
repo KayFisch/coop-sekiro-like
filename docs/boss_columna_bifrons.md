@@ -367,11 +367,11 @@ partner hits. Provoking is how a pair starts an exchange on its own beat. And gr
 a swing at him while he draws back the sword that's yours lands (rule 2), but it isn't over when
 that sword comes.
 
-## Sync as life ("bifrons_rules")
+## Sync as life
 
-On "sync" (the default) nobody has health and there are no potions (`core/sync_rules.gd`). On
-"hp" the fight runs the old way: health, potions, and the sync meter in GameManager, whose
-multiplier is left as it was. The switch counts from the next start (R).
+Nobody has health and there are no potions (`core/sync_rules.gd`). (Until 2026-10-18 a switch,
+"bifrons_rules", could still run the fight the old way: health, potions, and a sync meter in
+GameManager that multiplied the damage.)
 
 **The meters.** At the top two meters meet in the middle: the players' shared sync on the left,
 filling out to the left; his on the right, in a dimmer shade of the same, full at the start
@@ -498,9 +498,6 @@ own buttons, so everything that happens to them is the game's own (`stand_in.gd`
 - each of his strikes at it is **perfect parried three times in four, only blocked 15 times in
   a hundred, and hits the rest** (`PARRY_CHANCE`, `BLOCK_CHANCE`), decided as the strike comes
   up, so the other player has to watch whether the parry really came before hitting;
-- it gets hurt, and **below 20 health, with a potion left, it runs away from him** (480 px, or
-  to the wall) **and drinks**, then comes back: his strikes at it are left out, its sword turns
-  on you, he may rush it ("Left alone");
 - **when your parry opens his guard on its side, it strikes through, three times in four**
   (`SYNC_HIT_CHANCE`), after a reaction of up to 0.08 s, so some of its sync hits are on the
   beat and some after it; it doesn't attack otherwise.
@@ -533,7 +530,6 @@ same distances.
 | His blade after a strike: lying / thrown back by a parry | `STICK_TIME`, `RECOIL_TIME` | 0.12 / 0.35 s |
 | Hit window, "beat": delay / length | `BREAK_DELAY`, `BREAK_TIME` | 0 / 0.25 s |
 | Hit window, "after": delay / length | `BREAK_DELAY`, `BREAK_TIME` | 0.18 / 0.3 s |
-| Sync hit damage | `ColumnaBifrons.SYNC_HIT_FACTOR` | x2.5 |
 | Stagger length | `StrikePattern.BOTH_STAGGER_TIME`, `Sweep.STAGGER_TIME`, `Leap.STAGGER_TIME` | 2.2 s |
 | Sweep: until it reaches the first player / on to the second | `Sweep.WINDUP_UNITS`, `TRAVEL_TIME` | 5 (1.0 s) / 0.26 s |
 | Sweep: blade away / propped / swinging back | `Sweep.AWAY_TIME`, `PROP_TIME`, `RETURN_TIME` | 1.4 / 1.4 / 0.3 s |
@@ -557,21 +553,18 @@ same distances.
 | Making room, the shove: windup / how hard / whom it reaches / how close a player has to be | `Shove.WINDUP_TIME`, `PUSH`, `REACH`, `NEAR` | 0.5 s / 1050 px/s (230 px) / 215 px / 150 px |
 | Left alone: until a sword turns / how near its player has to be for it to turn back | `TURN_TIME`, `RETURN_DISTANCE` | 1.5 s / 300 px |
 | Left alone: the rush's dash | `RUSH_TIME` | 0.45 s |
-| Heavy strike (both swords on one player): damage / knockback | `StrikePattern.HEAVY_DAMAGE`, `HEAVY_KNOCKBACK` | x2 / x1.5 |
+| Heavy strike (both swords on one player): knockback | `StrikePattern.HEAVY_KNOCKBACK` | x1.5 |
 | Room he leaves at the walls | `WALL_ROOM` | 90 px |
-| Damage to players (hit / blocked) | `BLADE_DAMAGE`, `BLOCKED_DAMAGE` | 12 / 4 |
-| His health | `ColumnaBifrons.MAX_HP` | 1600 |
 | How close a player has to be for a blade to reach them | `BLADE_REACH` | 215 px |
 | Reactive: his wait | `REACTIVE_WAIT_MIN`, `_MAX` | 0.5 - 0.9 s |
 | Reactive: parried hits before he strikes back | `PATIENCE` | 1, 1 or 2 |
 | Reactive: his answer's first strike lands within | `ANSWER_WAIT` | 4 (0.8 s) |
 | Stand-in: parried / blocked (the rest hits) | `BifronsStandIn.PARRY_CHANCE`, `BLOCK_CHANCE` | 0.75 / 0.15 |
-| Stand-in: where it stands / when it flees / how far | `DISTANCE`, `FLEE_HP`, `FLEE_DISTANCE` | 95 px / 20 / 480 px |
+| Stand-in: where it stands | `DISTANCE` | 95 px |
 | Player: slash windup / cut / return | `ATTACK_WINDUP_TIME`, `_ACTIVE_`, `_RETURN_` (player.gd) | 0.05 / 0.12 / 0.24 s |
 | Player: recoil after being parried | `PARRIED_RECOIL` (player.gd) | 0.45 s |
 | Player: an early attack press still counts | `ATTACK_BUFFER_TIME` (player.gd) | 0.15 s |
 | Player: a dash this soon after a parry goes through him | `PASS_WINDOW` (player.gd) | 0.2 s |
-| Sync gained (parry / sync hit / both parried) | `GameManager.SYNC_GAINS` | 3 / 6 / 25 |
 
 For testing: `TEST_ONLY_PATTERN`, a list of attack names (e.g. `["CROSSING", "LEAP"]`): he
 uses only those, each where it would come anyway; if none of them comes in the situation he's
@@ -609,8 +602,8 @@ in, he uses them all the same.
   20 to 30 damage, against 25 for the sync hit), and a masher's swings find the broken guard
   often. Bots that only parry their own strikes and mash otherwise kill him in 35 to 55 s; bots
   that play it as meant (one parries, the other hits, no windup hits) in 45 s. Whether that's a
-  problem depends on how it feels with people; the knobs are `SYNC_HIT_FACTOR`, `PARRIED_RECOIL`
-  and the tempo of his strikes.
+  problem depends on how it feels with people; the knobs are `PARRIED_RECOIL` and the tempo of
+  his strikes. (Measured on the old health rules, with `SYNC_HIT_FACTOR` 2.5.)
 - **Reactive:** does it flow, one exchange into the next? Is being struck back at once a fair
   answer, and does provoking feel like leading the fight?
 - **The sweep:** can the second player read their moment (0.26 s after the first)? Do the four

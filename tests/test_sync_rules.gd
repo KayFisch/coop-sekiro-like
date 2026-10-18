@@ -23,7 +23,6 @@ var p2
 
 
 func _setup():
-	set_move("bifrons_rules", "sync")
 	set_move("bifrons_stand_in", "off")
 	set_move("swings_hold_posture", true)
 	for key in NUMBERS:
@@ -58,7 +57,7 @@ func _strike(p, heavy: bool, how: String):
 	if how == "block":
 		hold(p, "block")
 	var judged = {"blade": -1, "under": [p], "parriers": [p] if how == "parry" else [], "parried": how == "parry"}
-	boss.land(judged, false, 1.0, 1.0, heavy)
+	boss.land(judged, false, 1.0, heavy)
 	hold(p, "block", false)
 
 

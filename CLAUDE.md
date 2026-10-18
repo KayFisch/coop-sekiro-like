@@ -35,51 +35,6 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
-### For Kay, from Nicho (2026-10-18)
-
-- Everything of Nicho's is on `main` now (merged 2026-10-18, after you both played it), and
-  `nicho/kay-to-main` brings your `kay/coop-platformer` together with it (your branch itself is
-  untouched): if that runs for you too, it goes to `main`. What came in, in short:
-  - **Sync as life** in Bifrons's fight (F1 → Sync, "bifrons_rules"; "hp" is the old way): no
-    health, no potions, a shared sync for the two of you and one for him, a posture each, the
-    same rules on both sides (`core/sync_rules.gd`, `docs/boss_columna_bifrons.md`). Attacks are
-    normal or heavy; posture goes in three sizes, by parrying (both sides), blocking (only the
-    blocker) or being hit.
-  - A first **sync mode** (`core/sync_bond.gd`): standing together binds you, attack is held to
-    draw a sabre back and let go together on a cue. A parry's energy runs visibly to the
-    partner (`actors/player/sync_wave.gd`).
-  - An **F2 panel** for numbers (`core/tuning.gd`, autoload `Tuning`, tabs per page/level). It
-    could take numbers of yours too.
-  - The beat-runner and beat-ring prototypes (`levels/runner/`, `levels/ring/`) and the mirrored
-    screen (`ui/mirror_view.gd`).
-- `player.gd` got hooks that do nothing unless a fight sets them (`GameManager.rules`,
-  `Player.bond`), a little broader sword with a crossguard and a point, and `blade_point()`.
-  Merging your branch, both of us had a `_charging`: yours (the rhythm dash-slash) kept its name,
-  Nicho's (drawing the sabre back) is `_drawing` now (`is_drawing()`, `draw_share()`).
-- The F1 panel is yours (tabs, sliders, actions, overrides); Nicho's switches are in it, in new
-  tabs Sync, Runner and Ring. The switch "bifrons_window" is gone: the partner's window is F2 now
-  (tab "sync hit"). Nicho's Claude will rework the whole code next, on a branch of its own: until
-  that's merged, please keep changes to shared files (`player.gd`, `core/`) small.
-
-### For Kay, from Nicho (2026-10-18): the code overhaul (`nicho/code-overhaul`)
-
-Built on `nicho/kay-to-main`, so it holds your branch too. Proposals, for both of you to look at
-before it goes to `main`:
-- **Tests in the repo** (`tests/`, `godot --headless --script res://tests/run.gd`): the sync
-  rules, the sync mode, the player's feel (speed, jump, dash, parry window, swing), and that every
-  scene runs. Please run them before merging; your gyms and kit could get some too.
-- **Dev tools** (`core/dev.gd`, autoload `Dev`; `docs/dev_tools.md`): F3 overlay (frame time and
-  more), F4 hitboxes, F5 boss lab, a fight log. `player.gd` reports each parry, block and hit to
-  it (two lines).
-- **Performance**: the project renders with **Compatibility** (OpenGL) now, not Forward+
-  (Direct3D 12): much lighter for a 2D game. And your clockwork pieces redraw 12 times a second
-  in the editor instead of every frame (`Clockwork.EDITOR_FPS`), the switches only when changed:
-  the editor's 2D view never rested while a room was open. To see what your machine does:
-  `godot --disable-vsync --script res://tools/perf_probe.gd` (every level's frame time).
-- **F2 numbers** live next to their code now (`tuning_entries()`, `Tuning.SOURCES`); yours could
-  join (a page per level or piece).
-- `player.gd` got a contents list at its top and headers for its sections (comments only).
-
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
@@ -193,8 +148,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
 
 ## Code map
 
-- `core/` autoloads: `GameManager` (sync meter, game state, restart, scene switching;
-  `SYNC_GAINS` maps boss `sync_event` kinds to sync), `Sfx` (all sound synthesized at startup,
+- `core/` autoloads: `GameManager` (game state, restart, scene switching; a fight's rules in
+  `rules`), `Sfx` (all sound synthesized at startup,
   `Sfx.play("name")`), `Moves` (F1 panel toggling movement abilities, in tabs by theme, saved to
   `user://moves.cfg` with a `VERSION`: bump it when defaults change; code asks
   `Moves.on("pogo")`). The fight kit is on by default, the platforming kit is off. `Pads` gives
@@ -211,14 +166,15 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   (frame time, the boss's state and attack, the players', this fight in numbers), F4 hitboxes,
   F5 boss lab (run or loop one attack, hold him, slow the game, set meters and positions), and
   the fight log (`Dev.defended()`, `Dev.note()`; with F1 → Dev "fight_log" to a file).
-- `core/sync_rules.gd` (`SyncRules`): sync as life, for now only in Bifrons's fight (Moves
-  "bifrons_rules"): no health, no potions, a shared sync for the players and one for the boss,
+- `core/sync_rules.gd` (`SyncRules`): sync as life, the rules of Bifrons's fight (no health
+  anywhere in the game, no potions): a shared sync for the players and one for the boss,
   a posture each, chaos at no sync, sync mode at full. Attacks are normal or heavy (his: both
   swords; theirs: in sync mode); posture is lost in three sizes, by parrying (both sides),
   blocking (the blocker only) or being hit, and comes back 2 s after the last attack in or out.
   The boss creates it and hands it to `GameManager.rules`; while that's set,
   `Player.take_damage()` and the boss's hits go through it (`ColumnaBifrons.land()` says whether
-  a strike is heavy: `landing_heavy`), and the HUD shows the two meters instead of health.
+  a strike is heavy: `landing_heavy`), and the HUD shows the two meters. Without it (gyms,
+  kit rooms, runner, ring) a hit only throws a player back.
 - `core/sync_bond.gd` (`SyncBond`, the rules' `bond`): the sync mode itself. Players standing
   together bind (`Player.bond`, sabres via `set_sabre()`), hold attack to draw back
   (`Player._process_draw()`), let go together on the big cue for a heavy strike
@@ -226,7 +182,7 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   (`in_sync_mode()`, `time_unit()`).
 - `actors/player/player.gd`: one large script (~2700 lines, a contents list at its top) with all player logic: movement,
   walls/ledges, sword swings, partner clashes (launch, momentum relay, pogo clash, call),
-  potions, and the defensive queries the boss uses (`is_perfect_parry()` etc.). Tuning
+  and the defensive queries the boss uses (`is_perfect_parry()` etc.). Tuning
   constants at the top, grouped by feature. The sword's
   rules are under "THE SWORD" there: a swing commits (windup, cut, return; no block or parry
   until the blade is back at rest), and a swing an enemy blade parries recoils

@@ -10,7 +10,6 @@ extends CharacterBody2D
 ## RECOVER when an attack ends in a stagger. All attack-specific logic lives in the Attack objects.
 
 signal parry_success(player, kind)  # forwarded from whichever attack produced it
-signal sync_event(kind)  # a coordinated success; GameManager turns it into sync (see SYNC_GAINS)
 signal health_changed(hp, max_hp)
 signal defeated
 

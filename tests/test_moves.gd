@@ -114,15 +114,15 @@ func test_hit_knockback():
 	await wait(0.3)
 	var hits = []
 	p1.damaged.connect(func(p): hits.append(p))
-	p1.take_damage(10.0, Vector2(-300.0, -200.0))
+	p1.take_damage(Vector2(-300.0, -200.0))
 	check(hits.size() == 1, "a hit lands")
 	hold(p1, "right")
 	await wait(p1.KNOCKBACK_TIME * 0.6)
 	check(p1.velocity.x < 0.0, "knocked back: the stick can't steer against it for KNOCKBACK_TIME")
-	p1.take_damage(10.0, Vector2(300.0, -200.0))
+	p1.take_damage(Vector2(300.0, -200.0))
 	check(hits.size() == 1, "right after a hit, another doesn't land (HIT_INVULN_TIME)")
 	await wait(p1.HIT_INVULN_TIME)
-	p1.take_damage(10.0)
+	p1.take_damage()
 	check(hits.size() == 2, "...after HIT_INVULN_TIME it does")
 	hold(p1, "right", false)
 

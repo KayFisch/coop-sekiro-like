@@ -553,7 +553,7 @@ func _answer(orb, off: float, what: String, perfect = -1.0, good = -1.0):
 
 
 func _taken(orb, p):
-	p.take_damage(0.0, (p.global_position - orb.position).normalized() * 220.0 + Vector2(0.0, -120.0))
+	p.take_damage((p.global_position - orb.position).normalized() * 220.0 + Vector2(0.0, -120.0))
 	_lose("ring_hit_loss", orb, "TAKEN", HEAVY_LOSS if orb.heavy else 1.0)
 
 
@@ -593,7 +593,7 @@ func _slide(bar, delta: float):
 		var theirs = Rect2(p.global_position - p.body.size / 2.0, p.body.size)
 		if mine.intersects(theirs):
 			bar.done = true
-			p.take_damage(0.0, Vector2(bar.way * 200.0, -150.0))
+			p.take_damage(Vector2(bar.way * 200.0, -150.0))
 			_combo = 0
 			_meter = maxf(_meter - Tuning.value("ring_hit_loss"), 0.0)
 			_popup(p.global_position + Vector2(0.0, -70.0), bar.visibility_layer, "BAR", COLOR_EMPTY)

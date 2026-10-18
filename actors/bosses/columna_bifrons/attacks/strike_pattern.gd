@@ -67,8 +67,7 @@ const RECOIL_TIME = 0.35
 const BOTH_STAGGER_TIME = 2.2  # both swords parried at once, by both players
 # BOTH SWORDS ON ONE PLAYER (the other one is away): one heavy strike. One parry meets it, and
 # doesn't stagger him.
-const HEAVY_DAMAGE = 2.0  # times a strike's damage...
-const HEAVY_KNOCKBACK = 1.5  # ...and its knockback
+const HEAVY_KNOCKBACK = 1.5  # times a strike's knockback
 # Recovering after a series: F2 "bifrons_recover_time".
 const TREMBLE = 0.05  # radians the drawn-back blade shakes by, just before the drop
 # A blade is drawn back for its strike at least this long before its drop, whatever it was doing
@@ -285,9 +284,9 @@ func _land(index: int):
 	# A strike of both swords is a heavy attack for the sync rules, on one player or on two.
 	for blade in ([LEFT] if on_one else striking):
 		if on_one:
-			boss.land(judged[blade], true, HEAVY_DAMAGE, HEAVY_KNOCKBACK, true)
+			boss.land(judged[blade], true, HEAVY_KNOCKBACK, true)
 		else:
-			boss.land(judged[blade], both, 1.0, 1.0, sword == BOTH)
+			boss.land(judged[blade], both, 1.0, sword == BOTH)
 		for p in judged[blade].parriers:
 			parry_success.emit(p, "bifrons_strike")
 			strike_parried.emit(p)

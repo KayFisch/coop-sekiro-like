@@ -103,7 +103,7 @@ func update(delta: float):
 		judged[blade] = boss.judge(blade, REACH)
 	var both = judged[LEFT].parried and judged[RIGHT].parried
 	for blade in [LEFT, RIGHT]:
-		boss.land(judged[blade], both, 1.0, KNOCKBACK, true)  # both swords: heavy, for the sync rules
+		boss.land(judged[blade], both, KNOCKBACK, true)  # both swords: heavy, for the sync rules
 		for p in judged[blade].parriers:
 			p.apply_knockback(Vector2(boss.side_of(p) * PARRIED_PUSH, 0.0))
 			parry_success.emit(p, "bifrons_leap")

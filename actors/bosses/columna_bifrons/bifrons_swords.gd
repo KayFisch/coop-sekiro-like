@@ -102,8 +102,7 @@ var _open_shown = {LEFT: true, RIGHT: true}  # the opening has made its sound an
 var _opened_by = {LEFT: null, RIGHT: null}  # the player whose parry broke it
 var _open_used = {LEFT: false, RIGHT: false}  # a sync hit came through it
 var _open_judged = {LEFT: true, RIGHT: true}  # its closing has been seen (_judge_windows())
-# Sync as life (core/sync_rules.gd, Moves "bifrons_rules" on "sync"), or null: the old rules,
-# health and the sync meter in GameManager.
+# Sync as life (core/sync_rules.gd): the fight's rules, set once he's ready (columna_bifrons.gd).
 var rules: SyncRules = null
 
 

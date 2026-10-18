@@ -67,7 +67,7 @@ PLAYERS (two, identical shape, different color)
   recoil (own swing was parried): thrown back over the shoulder (-137 deg)
   dash: body stretched (1.3 wide, 0.7 high), afterimages; dash-slash: blade thrust forward,
         glowing toward white
-- Body states needed: idle, run, jump, fall, dash, hurt, drink potion.
+- Body states needed: idle, run, jump, fall, dash, hurt.
 
 BOSS: COLUMNA BIFRONS ("two-faced column")
 - A tall narrow column, 64x150 px in game, dark grey #45454D, left/right symmetric: two fronts,

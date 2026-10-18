@@ -11,7 +11,6 @@ var p2
 
 
 func _setup(guard_breaks: bool):
-	set_move("bifrons_rules", "sync")
 	set_move("bifrons_stand_in", "off")
 	set_move("bifrons_guard_break", guard_breaks)
 	set_number("sync_window_delay", 0.2)

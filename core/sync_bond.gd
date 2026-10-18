@@ -128,7 +128,7 @@ func _process(delta):
 
 
 func _players() -> Array:
-	return GameManager.players.filter(func(p): return is_instance_valid(p) and p.hp > 0.0)
+	return GameManager.players.filter(func(p): return is_instance_valid(p) and not p.is_dead())
 
 
 func _bind(players: Array):

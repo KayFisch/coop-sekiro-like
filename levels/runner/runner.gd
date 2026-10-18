@@ -297,7 +297,7 @@ func _meet_orb(thing, p):
 		_sparks(thing, COLOR_BLOCK, 6)
 		_lose("runner_block_loss", thing, "BLOCKED")
 	else:
-		p.take_damage(0.0, Vector2(-160.0, -120.0))
+		p.take_damage(Vector2(-160.0, -120.0))
 		_lose("runner_hit_loss", thing, "HIT")
 
 
@@ -376,7 +376,7 @@ func _shard_through(thing, p):
 	if thing.sent:
 		_lose("runner_miss_loss", thing, "MISSED")
 	else:
-		p.take_damage(0.0, Vector2(-160.0, -120.0))
+		p.take_damage(Vector2(-160.0, -120.0))
 		_lose("runner_hit_loss", thing, "HIT")
 
 
@@ -384,7 +384,7 @@ func _meet_block(thing, p):
 	_finish(thing)
 	var feet = p.global_position.y + p.body.size.y / 2.0
 	if feet > FLOOR_Y - BLOCK_SIZE.y + 4.0:
-		p.take_damage(0.0, Vector2(-120.0, -260.0))
+		p.take_damage(Vector2(-120.0, -260.0))
 		_lose("runner_hit_loss", thing, "TRIPPED")
 	else:
 		_show(thing, "JUMP", COLOR_BLOCK.lightened(0.4))

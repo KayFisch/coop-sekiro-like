@@ -64,7 +64,6 @@ const ENTRIES = [
 	{"key": "bifrons_face", "tab": "Fights", "label": "Bifrons: players always face him", "default": true},
 	{"key": "mirror_view", "tab": "Fights", "label": "Bifrons: mirrored screen (P1 light above the floor, P2 its shadow below)", "default": false},
 	# Sync: sync as life and the sync mode (core/sync_rules.gd, core/sync_bond.gd)
-	{"key": "bifrons_rules", "tab": "Sync", "label": "Bifrons: rules: sync is life + posture, no potions (sync), or health + old sync (hp); from R", "default": "sync", "options": ["sync", "hp"]},
 	{"key": "swings_hold_posture", "tab": "Sync", "label": "Your own swings hold your posture regen back too (his attacks never do)", "default": true},
 	{"key": "dash_slash_pass", "tab": "Sync", "label": "Dash-slash goes through the boss: in the sync mode only, always, or never", "default": "sync", "options": ["sync", "always", "off"]},
 	{"key": "sync_merge_view", "tab": "Sync", "label": "Sync mode, mirrored screen: bound, the two halves become one (the shadow joins the light)", "default": false},

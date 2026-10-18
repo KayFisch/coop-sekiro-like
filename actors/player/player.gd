@@ -1,6 +1,5 @@
 extends CharacterBody2D
 
-signal health_changed(player, hp)
 signal damaged(player)
 signal blocked(player)
 signal died(player)
@@ -25,7 +24,7 @@ enum Hold { NONE, RELAY_DASHER, RELAY_ANCHOR }
 #   Running ........................... _process_movement()
 #   Walls / Ledges .................... slide, cling, wall jump, wall rhythm; grab, hang, climb
 #   Buttons ........................... _process_actions(): what each press does
-#   Potions / Jumping and dashing
+#   Jumping and dashing
 #   Sword ............................. slash, upslash, dash-slash, pogo
 #   Clashes with the partner .......... launch, momentum relay, chimney clash, rhythm relay
 #   Defensive queries used by the boss  is_blocking(), is_perfect_parry() ...
@@ -63,11 +62,7 @@ const DASH_TIME = 0.14
 const DASH_SPEED = DASH_DISTANCE / DASH_TIME
 const DASH_EXIT_SPEED = 360.0  # speed carried out of a dash (or a jump out of one), then eased off
 const DASH_COOLDOWN = 0.6
-const MAX_HP = 100.0
-const POTION_CHARGES = 3
-const POTION_HEAL = 50.0
-const DRINK_TIME = 1.5
-const KNOCKBACK_TIME = 0.25  # input can't steer and potions can't be drunk while this runs
+const KNOCKBACK_TIME = 0.25  # input can't steer while this runs
 const KNOCKBACK_FRICTION = 1500.0
 const HIT_INVULN_TIME = 0.6
 const CHIP_INVULN_TIME = 0.2
@@ -302,7 +297,6 @@ const IDLE_BOB_HEIGHT = 3.0
 const IDLE_BOB_HZ = 0.6
 const DASH_STRETCH = Vector2(1.3, 0.7)
 const DASH_STRETCH_TIME = 0.1
-const DRINK_ORB_SIZE = 14.0
 # BOSS BODY (Moves "boss_body"): a boss may block players with a zone (BaseBoss.body_block()).
 # Nobody walks, dashes or jumps through it, and nobody stands on it; see _keep_out_of_boss().
 const BOSS_SLIDE_SPEED = 900.0  # px/s: landing on top, you slide off the side you came from
@@ -350,10 +344,8 @@ const SABRE_DARK = Color(0.07, 0.07, 0.09)
 @export var player_color = Color(0.25, 0.5, 1)  # body; P1 blue, P2 orange
 @export var sword_color = Color(0.62, 0.8, 1)  # a lighter shade of the body color
 
-var hp = MAX_HP
-var potions = POTION_CHARGES
 var is_clashing = false  # blades locked with a boss's or an obstacle's, held in place
-var invincible = false  # testing: hits still land (flash, knockback) but take no health
+var invincible = false  # testing: hits still land (flash, knockback) but cost nothing (see SyncRules)
 var facing = 1.0
 var body_color: Color
 # The beat-runner (levels/runner/): the world goes by, the player runs on the spot. No walking
@@ -398,10 +390,6 @@ var _trail_timer = 0.0
 var _launch_timer = 0.0  # > 0 while rising from a launch: the sideways carry isn't eased off
 var _knockback_timer = 0.0
 var _stagger_timer = 0.0  # > 0 while reeling from a hit: no movement, no input
-var _drink_timer = 0.0  # > 0 while drinking a potion
-var _drink_bar: ColorRect
-var _drink_orb: Panel
-var _drink_sound = null  # Sfx handle, cut short if the drink is interrupted
 var _hurt_flash = 0.0
 var _bob_time = 0.0
 var _body_rest = Vector2.ZERO
@@ -515,7 +503,6 @@ func _ready():
 	_block_side = -facing
 	_body_rest = body.position
 	body.pivot_offset = body.size / 2  # stretch around the center
-	_setup_drink_bar()
 	_setup_sword()
 	_setup_hands()
 	_relay_arrow = ColorRect.new()
@@ -568,9 +555,6 @@ func _physics_process(delta):
 	elif is_staggered():
 		velocity.x = 0.0
 		_apply_gravity(delta)
-		move_and_slide()
-	elif is_drinking():
-		_process_drinking(delta)
 		move_and_slide()
 	elif _windup_timer > 0.0:
 		_process_windup(delta)
@@ -1194,38 +1178,6 @@ func _process_actions():
 		set_collision_mask_value(PLATFORM_LAYER, false)
 		_drop_timer = DROP_THROUGH_TIME
 
-	if Input.is_action_just_pressed(_action("potion")) and potions > 0 and _knockback_timer <= 0.0:
-		_drink_timer = DRINK_TIME
-		_dash_timer = 0.0
-		_attack_timer = 0.0
-		velocity.x = 0.0
-		_drink_sound = Sfx.play("drink", -3.0)  # same length as the drink
-
-
-# --- Potions ------------------------------------------------------------------
-
-func is_drinking() -> bool:
-	return _drink_timer > 0.0
-
-
-# Rooted in place while drinking; gravity still applies and hits still land.
-func _process_drinking(delta):
-	velocity.x = 0.0
-	_apply_gravity(delta)
-	_drink_timer = maxf(_drink_timer - delta, 0.0)
-	if _drink_timer <= 0.0:
-		potions -= 1
-		hp = minf(hp + POTION_HEAL, MAX_HP)
-		health_changed.emit(self, hp)
-
-
-# An interrupted drink still uses up the charge.
-func _cancel_drink():
-	if is_drinking():
-		_drink_timer = 0.0
-		potions -= 1
-		Sfx.stop(_drink_sound)
-
 
 # --- Jumping and dashing ---------------------------------------------------------
 
@@ -1500,7 +1452,7 @@ func _process_attack():
 	for hit in sword_hitbox.get_overlapping_bodies():
 		if hit.is_in_group("boss") and not _attack_landed:
 			_attack_landed = true
-			hit.take_damage(_swing_damage() * GameManager.damage_multiplier(), self)
+			hit.take_damage(_swing_damage(), self)
 
 
 func _is_downslash() -> bool:
@@ -1541,7 +1493,7 @@ func _check_pogo(delta):
 			continue  # e.g. a lantern that only takes a pogo on the beat
 		if hit.is_in_group("boss") and not _attack_landed:
 			_attack_landed = true
-			hit.take_damage(_swing_damage() * GameManager.damage_multiplier(), self)
+			hit.take_damage(_swing_damage(), self)
 			_pogo()
 		elif hit.is_in_group("pogo"):
 			_pogo()
@@ -1997,17 +1949,21 @@ func _track_landing():
 # --- Defensive queries used by the boss at the moment its hitbox connects ---
 
 func is_blocking() -> bool:
-	return not is_drinking() and not is_staggered() \
-		and not _is_swinging() and Input.is_action_pressed(_action("block")) \
+	return not is_staggered() and not _is_swinging() and Input.is_action_pressed(_action("block")) \
 		and (GameManager.rules == null or GameManager.rules.can_block())  # no blocking in chaos
 
 
 func is_perfect_parry() -> bool:
-	return not is_drinking() and not is_staggered() and _now() - parry_press_time <= PARRY_TOLERANCE
+	return not is_staggered() and _now() - parry_press_time <= PARRY_TOLERANCE
 
 
 func is_staggered() -> bool:
 	return _stagger_timer > 0.0
+
+
+# Killed by a fight's rules (take_damage()): out until the fight starts over.
+func is_dead() -> bool:
+	return _is_dead
 
 
 # What the player is standing on (e.g. which of the duo gym's pans), or null in the air. Standing
@@ -2054,24 +2010,21 @@ func cue_sync(duration: float, color: Color):
 	_cue_color = color
 
 
-func take_damage(amount: float, knockback = Vector2.ZERO, chip = false):
+# A blow lands (`chip`: on a block): thrown back by `knockback`, briefly untouchable. What it
+# costs is the fight's: on sync as life (core/sync_rules.gd) a hit costs the pair's sync and a
+# block this one's posture, and in chaos a hit is the end. Elsewhere it costs nothing.
+func take_damage(knockback = Vector2.ZERO, chip = false):
 	if _is_dead or _invuln_timer > 0.0:
 		return
 	Dev.defended(self, "block" if chip else "hit", _now() - _last_block_press)
 	var lethal = false
 	if GameManager.rules:
-		# Sync as life (core/sync_rules.gd): a hit costs the pair's sync, a block this one's posture.
 		var rules = GameManager.rules
-		lethal = rules.player_blocked(self, amount) if chip else rules.player_hit(self, amount)
-	elif not invincible:
-		hp = maxf(hp - amount, 0.0)
-	if lethal:
-		hp = 0.0
+		lethal = rules.player_blocked(self) if chip else rules.player_hit(self)
 	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
 	_dash_timer = 0.0
 	interrupt_movement()
 	_launch_timer = 0.0
-	_cancel_drink()
 	_hurt_flash = HURT_FLASH_TIME
 	velocity = knockback
 	if chip:
@@ -2082,12 +2035,11 @@ func take_damage(amount: float, knockback = Vector2.ZERO, chip = false):
 		_knockback_timer = KNOCKBACK_TIME
 		if not chip:
 			Sfx.play_delayed("knockback", 0.06, -4.0)  # thrown back, just behind the impact
-	health_changed.emit(self, hp)
 	if chip:
 		blocked.emit(self)
 	else:
 		damaged.emit(self)
-	if hp <= 0.0:
+	if lethal:
 		_is_dead = true
 		died.emit(self)
 
@@ -2461,18 +2413,6 @@ func _update_visuals():
 	body.color = color
 	_update_hands()
 
-	# Drinking cues: a bar under the feet and an orb over the head, both shrinking with the timer.
-	var drink_left = _drink_timer / DRINK_TIME
-	_drink_bar.visible = is_drinking()
-	_drink_orb.visible = is_drinking()
-	if is_drinking():
-		var width = 44.0 * drink_left
-		_drink_bar.size.x = width
-		_drink_bar.position.x = -width / 2
-		var d = maxf(DRINK_ORB_SIZE * drink_left, 2.0)
-		_drink_orb.size = Vector2(d, d)
-		_drink_orb.position = Vector2(-d / 2, -40.0 - d / 2)
-
 
 # 0 -> 1 through a dash-slash's windup; charging, a flare on every beat of the clock.
 func _windup_progress() -> float:
@@ -2532,25 +2472,6 @@ func _spawn_ring(color: Color, from_radius: float, to_radius: float, duration: f
 		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	tween.tween_property(ring, "modulate:a", 0.0, duration)
 	tween.chain().tween_callback(ring.queue_free)
-
-
-func _setup_drink_bar():
-	_drink_bar = ColorRect.new()
-	_drink_bar.size = Vector2(44, 5)
-	_drink_bar.position = Vector2(-22, 24)
-	_drink_bar.color = Color(0.4, 1.0, 0.55)
-	_drink_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_drink_bar.visible = false
-	add_child(_drink_bar)
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = _drink_bar.color
-	style.set_corner_radius_all(int(DRINK_ORB_SIZE))  # clamps to a circle at any size
-	_drink_orb = Panel.new()
-	_drink_orb.add_theme_stylebox_override("panel", style)
-	_drink_orb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_drink_orb.visible = false
-	add_child(_drink_orb)
 
 
 # The blade a little broader, with a point at its end and a crossguard just past the hands (see
