@@ -429,7 +429,6 @@ var _ledge_climb = -1.0  # time into the climb; < 0 while hanging
 var _ledge_regrab = 0.0
 var _hold_kind = Hold.NONE
 var _hold_timer = 0.0
-var _hold_partner = null
 var _relay_dir = Vector2.RIGHT
 var _rhythm_dash = false  # this dash-slash is a rhythm relay's: charged, released on a beat, then a quick run
 var _charging = false  # a rhythm dash-slash held, not released yet (while _windup_timer > 0)
@@ -441,7 +440,6 @@ var _boost_velocity = Vector2.ZERO
 var _throw_left = 0.0  # px a rhythm relay's throw still has to go before the hang
 var rhythm_top_time = -100.0  # beat 4 of the last rhythm relay thrown (when it belongs)
 var _tell_ring: Node2D  # drawn around the partner (see _update_tell())
-var _tell_partner = null
 var _tell_left = 0.0  # seconds to the ring's close
 var _tell_alpha = 0.0
 var _tell_sounded = false
@@ -599,6 +597,14 @@ func _since(t: float) -> float:
 	return _now() - t
 
 
+# The other player; null if there's none.
+func partner():
+	for other in GameManager.players:
+		if other != self and is_instance_valid(other):
+			return other
+	return null
+
+
 # --- Running -------------------------------------------------------------------
 
 func _process_movement(delta):
@@ -749,11 +755,10 @@ func _wall_distance(side: float, reach: float) -> float:
 	var params = PhysicsTestMotionParameters2D.new()
 	params.from = global_transform
 	params.motion = Vector2(side * reach, 0.0)
-	var partners: Array[RID] = []
-	for other in get_tree().get_nodes_in_group("players"):
-		if other != self:
-			partners.append(other.get_rid())
-	params.exclude_bodies = partners
+	var other = partner()
+	if other:
+		var skip: Array[RID] = [other.get_rid()]
+		params.exclude_bodies = skip
 	var result = PhysicsTestMotionResult2D.new()
 	if not PhysicsServer2D.body_test_motion(get_rid(), params, result):
 		return INF
@@ -814,36 +819,41 @@ func _wall_jump(side: float):
 	var now = _now()
 	# Timed to hitting this wall; the first of a climb is always a full one.
 	var timed = _wall_chain
-	wall_jump_moment = now
-	wall_jump_off = 0.0
-	if _wall_chain:
-		if _wall_contact_side == side and _wall_contact_time > maxf(_wall_jump_time, chimney_clash_time):
-			wall_jump_moment = _wall_contact_time
-		wall_jump_off = _jump_press_time - wall_jump_moment
+	var moment = now
+	if timed and _wall_contact_side == side and _wall_contact_time > maxf(_wall_jump_time, chimney_clash_time):
+		moment = _wall_contact_time
 	_wall_chain = true
 	wall_beat_time = now
 	_chimney_meet_time = -100.0
-	wall_jump_strong = not Moves.on("wall_rhythm") or not timed \
-		or absf(wall_jump_off) <= WALL_RHYTHM_TOLERANCE
-	if Moves.on("wall_rhythm") and wall_rhythm_sound:
-		Sfx.play("relay_peak" if wall_jump_strong else "chip", -4.0)
-	var rise = rise_speed(WALL_JUMP_HEIGHT * (1.0 if wall_jump_strong else WALL_WEAK_HEIGHT))
-	velocity = Vector2(-side * WALL_JUMP_PUSH, -rise)
-	_uncut_timer = rise / GRAVITY  # a tap goes as high as a hold: the timing decides, not the hold
-	facing = -side
 	_wall_side = 0.0
 	_wall_coyote = 0.0
 	_spent_wall_side = side
 	_spent_wall_x = global_position.x
-	_wall_jump_lock = WALL_JUMP_LOCK
 	_wall_jump_time = now
-	_wall_jump_dir = -side
-	_wall_flight = WALL_FLIGHT_TIME
 	_wall_held_away = 0.0
-	_jump_buffer = 0.0
 	_launch_timer = 0.0
 	_boost_timer = 0.0
 	_dash_timer = 0.0
+	_fly_off(-side, moment, timed)
+
+
+# The flight off a wall, or off the partner in a chimney clash: up and the way `dir`. With WALL
+# RHYTHM it's judged by how far the jump press was off `moment` (when it should have come): a full
+# jump within WALL_RHYTHM_TOLERANCE, else a weak one. Not `timed` (a climb's first), always full.
+func _fly_off(dir: float, moment: float, timed = true):
+	wall_jump_moment = moment
+	wall_jump_off = _jump_press_time - moment if timed else 0.0
+	wall_jump_strong = not Moves.on("wall_rhythm") or absf(wall_jump_off) <= WALL_RHYTHM_TOLERANCE
+	if Moves.on("wall_rhythm") and wall_rhythm_sound:
+		Sfx.play("relay_peak" if wall_jump_strong else "chip", -4.0)
+	var rise = rise_speed(WALL_JUMP_HEIGHT * (1.0 if wall_jump_strong else WALL_WEAK_HEIGHT))
+	velocity = Vector2(dir * WALL_JUMP_PUSH, -rise)
+	_uncut_timer = rise / GRAVITY  # a tap goes as high as a hold: the timing decides, not the hold
+	facing = dir
+	_wall_jump_lock = WALL_JUMP_LOCK
+	_wall_jump_dir = dir
+	_wall_flight = WALL_FLIGHT_TIME
+	_jump_buffer = 0.0  # the press is spent: it doesn't wall-jump again on arrival
 	if Moves.on("wall_rhythm") and wall_jump_strong:
 		_resync()
 
@@ -887,9 +897,10 @@ func _tempo_distance() -> float:
 	var gap = _wall_distance(_wall_jump_dir, WALL_TEMPO_REACH)
 	if gap == INF:
 		return INF
-	for other in get_tree().get_nodes_in_group("players"):
+	var other = partner()
+	if other and not other.is_on_floor():
 		var ahead = (other.global_position.x - global_position.x) * _wall_jump_dir
-		if other != self and not other.is_on_floor() and ahead > 0.0 and ahead < gap:
+		if ahead > 0.0 and ahead < gap:
 			return maxf(ahead - body.size.x - WALL_PROBE, 0.0) / 2.0  # met once in reach (see _check_clashes)
 	return gap
 
@@ -917,10 +928,10 @@ func _jump_cues() -> Vector2:
 			var side = signf(velocity.x)
 			left = _wall_distance(side, absf(velocity.x) * Beat.beat_length()) / absf(velocity.x)
 		since = minf(since, _since(_chimney_meet_time))
-		var partner = _chimney_partner()
-		if partner and _chimney_meet_time < 0.0:
-			var gap = partner.global_position.x - global_position.x
-			var closing = velocity.x * signf(gap) - partner.velocity.x * signf(gap)
+		var other = _chimney_partner()
+		if other and _chimney_meet_time < 0.0:
+			var gap = other.global_position.x - global_position.x
+			var closing = velocity.x * signf(gap) - other.velocity.x * signf(gap)
 			if closing > 1.0:
 				left = minf(left, maxf(absf(gap) - body.size.x, 0.0) / closing)
 	return Vector2(left if left < INF else -1.0, since if since < INF else -1.0)
@@ -928,11 +939,9 @@ func _jump_cues() -> Vector2:
 
 # The partner, if both of you are flying from a wall jump (a chimney clash in the making).
 func _chimney_partner():
-	if not Moves.on("chimney_clash") or not _in_wall_flight():
-		return null
-	for other in get_tree().get_nodes_in_group("players"):
-		if other != self and other._in_wall_flight():
-			return other
+	var other = partner()
+	if Moves.on("chimney_clash") and _in_wall_flight() and other and other._in_wall_flight():
+		return other
 	return null
 
 
@@ -1251,8 +1260,7 @@ func _release_charge():
 		_dash_slash = false
 		_swing_from_angle = _sword_angle()
 		_recoil_timer = PARRIED_RECOIL
-		Fx.sparks(self, sword_pivot.global_position, 5, Color(0.6, 0.6, 0.6))
-		Sfx.play("chip")
+		_fumble_fx(sword_pivot.global_position)
 		return
 	relay_beat = roundi(Beat.beats_at(t))
 	_windup_length = Beat.beat_time(relay_beat + 1) - RHYTHM_DASH_TIME / 2.0 - t
@@ -1369,14 +1377,13 @@ func _check_pogo(delta):
 		return
 	var half = body.size / 2.0
 	var depth = POGO_REACH.y + maxf(velocity.y * delta, 0.0)
-	if Moves.on("pogo"):
-		for other in get_tree().get_nodes_in_group("players"):
-			var gap = other.global_position - global_position
-			if other != self and absf(gap.x) <= POGO_REACH.x / 2.0 + half.x \
-					and gap.y >= half.y and gap.y <= body.size.y + depth \
-					and other.is_upslash_fresh(POGO_CLASH_TOLERANCE):
-				_pogo_clash(other)
-				return
+	var other = partner()
+	if Moves.on("pogo") and other:
+		var gap = other.global_position - global_position
+		if absf(gap.x) <= POGO_REACH.x / 2.0 + half.x and gap.y >= half.y and gap.y <= body.size.y + depth \
+				and other.is_upslash_fresh(POGO_CLASH_TOLERANCE):
+			_pogo_clash(other)
+			return
 	if not Moves.on("pogo_environment"):
 		return
 	var shape = RectangleShape2D.new()
@@ -1412,24 +1419,19 @@ func _pogo():
 		return
 	_bounce()
 	if Moves.on("pogo_refresh_air_jump"):
-		_air_jumps = AIR_JUMPS
-		_upslash_hop_ready = true
+		refresh_air_jump()
 	if Moves.on("pogo_refresh_dash"):
-		_dash_ready = true
-		_dash_cooldown = 0.0
+		refresh_dash()
 	Fx.sparks(self, global_position + Vector2(0.0, body.size.y / 2.0 + 6.0), 6, _sword_color.lightened(0.5))
 	Sfx.play("parry", -8.0)
 
 
 # The downslash met the partner's upslash: both blades flash and the downslasher bounces. No
 # refreshes. It counts toward the launch's sync gain (see GameManager).
-func _pogo_clash(partner):
+func _pogo_clash(other):
 	_bounce()
-	partner.on_launch_clash()
-	var point = (global_position + partner.global_position) / 2.0
-	Fx.sparks(self, point, 14, body_color.lerp(partner.body_color, 0.5).lightened(0.5))
-	Sfx.play("parry_strong")
-	Fx.shake(self, 4.0)
+	other.on_launch_clash()
+	_clash_fx(other, 14)
 	pogo_clashed.emit(self)
 
 
@@ -1462,38 +1464,37 @@ func is_upslash_fresh(tolerance: float) -> bool:
 # Checked every frame: a dash-slash meeting the partner's upslash (launch) or block (relay), or
 # two wall jumps meeting (chimney clash).
 func _check_clashes():
-	for other in get_tree().get_nodes_in_group("players"):
-		if other == self or other._hold_kind != Hold.NONE:
-			continue
-		var gap = other.global_position - global_position
-		if _dash_slash and _dash_timer > 0.0 and absf(gap.x) <= LAUNCH_REACH.x and absf(gap.y) <= LAUNCH_REACH.y:
-			if Moves.on("launch") and other.is_launch_ready():
-				_launch(other)
-				return
-			if _rhythm_dash and other.is_relay_parry():
-				_start_relay(other)
-				return
-			if _rhythm_dash and other.is_blocking():
-				_relay_blocked(other)
-				return
-		# Each pair is checked once, by the lower id. Flying at each other, or already bumped
-		# together (the bump stops them) after jumping off opposite walls. Once met, the press
-		# window holds even if they've flown apart again.
-		var met_now = _chimney_meet_time >= 0.0 and _since(_chimney_meet_time) <= CHIMNEY_PRESS_TOLERANCE
-		if Moves.on("chimney_clash") and player_id < other.player_id and _in_wall_flight() \
-				and other._in_wall_flight() and (absf(gap.x) <= CHIMNEY_REACH.x or met_now) \
-				and absf(gap.y) <= CHIMNEY_REACH.y:
-			var touching = absf(gap.x) <= body.size.x + WALL_PROBE
-			var closing = gap.x * velocity.x > 0.0 and gap.x * other.velocity.x < 0.0
-			var bumped = _wall_jump_dir * gap.x > 0.0 and other._wall_jump_dir * gap.x < 0.0
-			if (touching and (closing or bumped)) or _chimney_meet_time >= 0.0:  # once met, in reach is enough
-				if _chimney_meet_time < 0.0:
-					_chimney_meet_time = _now()
-					other._chimney_meet_time = _chimney_meet_time
-				# Both pressed jump around the meeting (see CHIMNEY CLASH); too late, they fly on.
-				if _pressed_near(_chimney_meet_time) and other._pressed_near(_chimney_meet_time):
-					_chimney_clash(other)
-					return
+	var other = partner()
+	if other == null or other._hold_kind != Hold.NONE:
+		return
+	var gap = other.global_position - global_position
+	if _dash_slash and _dash_timer > 0.0 and absf(gap.x) <= LAUNCH_REACH.x and absf(gap.y) <= LAUNCH_REACH.y:
+		if Moves.on("launch") and other.is_launch_ready():
+			_launch(other)
+			return
+		if _rhythm_dash and other.is_relay_parry():
+			_start_relay(other)
+			return
+		if _rhythm_dash and other.is_blocking():
+			_relay_blocked(other)
+			return
+	# Each pair is checked once, by the lower id. Flying at each other, or already bumped together
+	# (the bump stops them) after jumping off opposite walls. Once met, the press window holds even
+	# if they've flown apart again.
+	var met_now = _chimney_meet_time >= 0.0 and _since(_chimney_meet_time) <= CHIMNEY_PRESS_TOLERANCE
+	if Moves.on("chimney_clash") and player_id < other.player_id and _in_wall_flight() \
+			and other._in_wall_flight() and (absf(gap.x) <= CHIMNEY_REACH.x or met_now) \
+			and absf(gap.y) <= CHIMNEY_REACH.y:
+		var touching = absf(gap.x) <= body.size.x + WALL_PROBE
+		var closing = gap.x * velocity.x > 0.0 and gap.x * other.velocity.x < 0.0
+		var bumped = _wall_jump_dir * gap.x > 0.0 and other._wall_jump_dir * gap.x < 0.0
+		if (touching and (closing or bumped)) or _chimney_meet_time >= 0.0:  # once met, in reach is enough
+			if _chimney_meet_time < 0.0:
+				_chimney_meet_time = _now()
+				other._chimney_meet_time = _chimney_meet_time
+			# Both pressed jump around the meeting (see CHIMNEY CLASH); too late, they fly on.
+			if _pressed_near(_chimney_meet_time) and other._pressed_near(_chimney_meet_time):
+				_chimney_clash(other)
 
 
 func _pressed_near(t: float) -> bool:
@@ -1506,33 +1507,15 @@ func _in_wall_flight() -> bool:
 
 # Both wall-jump off each other, back toward the walls they came from (see CHIMNEY CLASH).
 func _chimney_clash(other):
-	var point = (global_position + other.global_position) / 2.0
-	var meet = _chimney_meet_time
+	var middle = (global_position.x + other.global_position.x) / 2.0
 	for p in [self, other]:
-		var back = signf(p.global_position.x - point.x)
-		# Timed to the meeting, as a wall jump is to hitting the wall (see WALL RHYTHM).
-		p.wall_jump_moment = meet
-		p.wall_jump_off = p._jump_press_time - meet
-		p.wall_jump_strong = not Moves.on("wall_rhythm") or absf(p.wall_jump_off) <= WALL_RHYTHM_TOLERANCE
 		p.chimney_clash_time = _now()
-		if Moves.on("wall_rhythm") and p.wall_rhythm_sound:
-			Sfx.play("relay_peak" if p.wall_jump_strong else "chip", -4.0)
-		var rise = rise_speed(WALL_JUMP_HEIGHT * (1.0 if p.wall_jump_strong else WALL_WEAK_HEIGHT))
-		p.velocity = Vector2(back * WALL_JUMP_PUSH, -rise)
-		p._uncut_timer = rise / GRAVITY
-		p.facing = back
-		p._wall_jump_lock = WALL_JUMP_LOCK
-		p._wall_jump_dir = back
-		p._wall_flight = WALL_FLIGHT_TIME
 		p._wall_jump_time = -100.0  # one clash per wall jump
-		p._jump_buffer = 0.0  # the clash's press is spent: it doesn't wall-jump on arrival
 		p._spent_wall_side = 0.0  # back at the wall they came from: it's climbable again
 		p._sword_flash = SWORD_FLASH_TIME
-		if Moves.on("wall_rhythm") and p.wall_jump_strong:
-			p._resync()
-	Fx.sparks(self, point, 14, body_color.lerp(other.body_color, 0.5).lightened(0.5))
-	Sfx.play("parry_strong")
-	Fx.shake(self, 4.0)
+		# Timed to the meeting, as a wall jump is to hitting the wall (see WALL RHYTHM).
+		p._fly_off(signf(p.global_position.x - middle), _chimney_meet_time)
+	_clash_fx(other, 14)
 
 
 # The blades locked on 2: both held until the anchor's strike on 3 throws the dasher (see
@@ -1540,9 +1523,9 @@ func _chimney_clash(other):
 func _start_relay(anchor):
 	_relay_dir = Vector2(_dash_dir, 0.0)  # thrown straight on, unless the anchor aims
 	var clash_time = Beat.beat_time(relay_beat + 2) + RHYTHM_TOLERANCE - Beat.time()
-	_begin_hold(Hold.RELAY_DASHER, clash_time, anchor)
+	_begin_hold(Hold.RELAY_DASHER, clash_time)
 	# The anchor's hold outlasts the dasher's, so the dasher's release is what frees them.
-	anchor._begin_hold(Hold.RELAY_ANCHOR, clash_time + 0.1, self)
+	anchor._begin_hold(Hold.RELAY_ANCHOR, clash_time + 0.1)
 	anchor.parry_press_time = -100.0  # one press parries one dash-slash
 	_sword_flash = SWORD_FLASH_TIME
 	anchor._sword_flash = SWORD_FLASH_TIME
@@ -1565,14 +1548,12 @@ func _relay_blocked(anchor):
 	if back == 0.0:
 		back = -_dash_dir
 	apply_knockback(Vector2(back * RELAY_FAIL_BOUNCE.x, RELAY_FAIL_BOUNCE.y))
-	Fx.sparks(self, (global_position + anchor.global_position) / 2.0, 5, Color(0.6, 0.6, 0.6))
-	Sfx.play("chip")
+	_fumble_fx((global_position + anchor.global_position) / 2.0)
 
 
-func _begin_hold(kind: Hold, time: float, partner = null):
+func _begin_hold(kind: Hold, time: float):
 	_hold_kind = kind
 	_hold_timer = time
-	_hold_partner = partner
 	velocity = Vector2.ZERO
 	_dash_timer = 0.0
 	_dash_slash = false
@@ -1600,8 +1581,8 @@ func _process_hold(delta):
 # The anchor's side of the relay: the stick aims the dasher, and the attack press strikes. On
 # beat 3 it throws them; off it, it drops them. True once struck.
 func _process_relay_strike() -> bool:
-	var dasher = _hold_partner
-	if not (dasher and is_instance_valid(dasher) and dasher._hold_kind == Hold.RELAY_DASHER):
+	var dasher = partner()
+	if not (dasher and dasher._hold_kind == Hold.RELAY_DASHER):
 		return false
 	dasher._relay_dir = _aim_4(Vector2(dasher._dash_dir, 0.0))
 	if not _pressed("attack"):
@@ -1617,14 +1598,11 @@ func _process_relay_strike() -> bool:
 
 # No strike on the beat: the blades come apart, and the dasher drops.
 func _relay_dropped():
-	var anchor = _hold_partner
 	_hold_kind = Hold.NONE
-	_hold_partner = null
-	if anchor and is_instance_valid(anchor) and anchor._hold_kind == Hold.RELAY_ANCHOR:
+	var anchor = partner()
+	if anchor and anchor._hold_kind == Hold.RELAY_ANCHOR:
 		anchor._hold_kind = Hold.NONE
-		anchor._hold_partner = null
-	Fx.sparks(self, global_position, 5, Color(0.6, 0.6, 0.6))
-	Sfx.play("chip")
+	_fumble_fx(global_position)
 
 
 func _release_hold():
@@ -1640,14 +1618,12 @@ func _release_hold():
 		velocity = _boost_velocity
 		if _relay_dir.x != 0.0:
 			facing = signf(_relay_dir.x)
-		_dash_ready = true  # beat 4 may ask for a dash
-		_dash_cooldown = 0.0
-		var anchor = _hold_partner
-		if anchor and is_instance_valid(anchor) and anchor._hold_kind == Hold.RELAY_ANCHOR:
+		refresh_dash()  # beat 4 may ask for a dash
+		var anchor = partner()
+		if anchor and anchor._hold_kind == Hold.RELAY_ANCHOR:
 			anchor._hold_kind = Hold.NONE
 			anchor.apply_knockback(-_relay_dir * RELAY_RECOIL)
 		Sfx.play("launch", -4.0)
-	_hold_partner = null
 
 
 # The direction held right now, snapped to 4 ways (up, down, left, right); `fallback` if none.
@@ -1675,7 +1651,6 @@ func interrupt_movement():
 	_boost_timer = 0.0
 	_hold_kind = Hold.NONE
 	_hold_timer = 0.0
-	_hold_partner = null
 	_end_tempo()
 
 
@@ -1701,7 +1676,7 @@ func movement_state() -> String:
 
 
 # The blades clash: the dash's momentum turns upward.
-func _launch(partner):
+func _launch(other):
 	var rise = rise_speed(LAUNCH_HEIGHT)
 	velocity = Vector2(_dash_dir * DASH_SPEED * LAUNCH_CARRY, -rise)
 	_dash_timer = 0.0
@@ -1712,12 +1687,9 @@ func _launch(partner):
 	refresh_air_moves()
 	_sword_flash = SWORD_FLASH_TIME
 	_squash(LAUNCH_STRETCH, LAUNCH_STRETCH_TIME)
-	partner.on_launch_clash()
-	var point = (global_position + partner.global_position) / 2.0
-	Fx.sparks(self, point, 16, body_color.lerp(partner.body_color, 0.5).lightened(0.5))
-	Sfx.play("parry_strong")
+	other.on_launch_clash()
+	_clash_fx(other, 16, 6.0)
 	Sfx.play("launch", -3.0)
-	Fx.shake(self, 6.0)
 	launched.emit(self)
 
 
@@ -1733,9 +1705,13 @@ func is_launching() -> bool:
 
 # Air jumps, the dash and the upslash hop back, as if touching the ground.
 func refresh_air_moves():
+	refresh_air_jump()
+	refresh_dash()
+
+
+# The air jumps and the upslash hop back (a pogo, if its switch says so).
+func refresh_air_jump():
 	_air_jumps = AIR_JUMPS
-	_dash_ready = true
-	_dash_cooldown = 0.0
 	_upslash_hop_ready = true
 
 
@@ -2023,16 +1999,9 @@ func _predict_contact(other) -> float:
 # Every frame: the ring follows the prediction, and fades once there's none (the dash-slash is
 # over, clashed, or can't reach).
 func _update_tell(delta):
-	var partner = null
-	var contact = -1.0
-	for other in get_tree().get_nodes_in_group("players"):
-		if other != self:
-			contact = _predict_contact(other)
-			if contact >= 0.0:
-				partner = other
-				break
-	if partner:
-		_tell_partner = partner
+	var other = partner()
+	var contact = _predict_contact(other) if other else -1.0
+	if contact >= 0.0:
 		_tell_left = contact - TELL_LEAD
 		_tell_alpha = 1.0
 		if not _tell_sounded and _tell_left <= TELL_SOUND_TIME and not _rhythm_dash:  # that has its beats
@@ -2040,9 +2009,9 @@ func _update_tell(delta):
 			Sfx.play("tell", -3.0)
 	else:
 		_tell_alpha = move_toward(_tell_alpha, 0.0, delta / TELL_FADE)
-	_tell_ring.visible = _tell_alpha > 0.0 and is_instance_valid(_tell_partner)
+	_tell_ring.visible = _tell_alpha > 0.0 and other != null
 	if _tell_ring.visible:
-		_tell_ring.global_position = _tell_partner.global_position
+		_tell_ring.global_position = other.global_position
 		_tell_ring.queue_redraw()
 
 
@@ -2232,6 +2201,20 @@ func _squash(shape: Vector2, time: float):
 	if _stretch_tween:
 		_stretch_tween.kill()
 	_stretch_tween = Fx.squash(body, shape, time)
+
+
+# Blades meeting between this player and `other`: sparks in both their colors, a clang, a shake.
+func _clash_fx(other, sparks: int, shake = 4.0):
+	var point = (global_position + other.global_position) / 2.0
+	Fx.sparks(self, point, sparks, body_color.lerp(other.body_color, 0.5).lightened(0.5))
+	Sfx.play("parry_strong")
+	Fx.shake(self, shake)
+
+
+# A dull clang at `point`: a blade fumbled, blocked or let go, and nothing came of it.
+func _fumble_fx(point: Vector2):
+	Fx.sparks(self, point, 5, Color(0.6, 0.6, 0.6))
+	Sfx.play("chip")
 
 
 # The blade a little broader, with a point at its end and a crossguard just past the hands (see
