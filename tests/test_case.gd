@@ -95,6 +95,9 @@ func _restore():
 		Tuning._values[key] = _numbers_before[key]
 	_moves_before.clear()
 	_numbers_before.clear()
+	if Tuning.panel_open:
+		Tuning._set_panel(false)
+	Tuning.saving = true
 	Moves.changed.emit()
 	for action in InputMap.get_actions():
 		if Input.is_action_pressed(action):

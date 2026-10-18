@@ -1,8 +1,9 @@
 extends Node
 ## Autoload: numbers to tune while playing. F2 opens a panel anywhere (the game pauses): Z / C for
 ## the page, Q / E (or Tab) for the tab, up/down to pick, left/right to change by a step (Shift:
-## ten steps), F2 again to close. Laid out as the F1 panel: page, keys, tabs, then the numbers. Values are saved to user://tuning.cfg and survive
-## restarts; a tab's last row resets it. Code asks Tuning.value("his_heavy_damage") each time it
+## ten steps, Ctrl: a tenth of one), F2 again to close. Laid out as the F1 panel: page, keys,
+## tabs, then the numbers. No number has a limit but 0. Values are saved to user://tuning.cfg and
+## survive restarts; a tab's last row resets it. Code asks Tuning.value("his_heavy_damage") each time it
 ## needs the number, so a change counts at once.
 ##
 ## The numbers belong to the systems that use them: each of SOURCES has a static
@@ -27,14 +28,15 @@ const LINE_SPACING = 5  # px between two rows
 const COLUMN_WIDTH = 560.0
 const VALUE_X = 410.0  # where a column's numbers stand, right-aligned
 const VALUE_WIDTH = 120.0
-const KEYS = "Z / C: page   Q / E: tab   ↑/↓: pick   ←/→: change (Shift: x10)   F2: close"
+const KEYS = "Z / C: page   Q / E: tab   ↑/↓: pick   ←/→: change (Shift: x10, Ctrl: x0.1)   F2: close"
 
-# An entry (from a tuning_entries()) is a number: key, what the panel calls it, default, step,
-# and its range. Or a "header" row, grouping the ones below it: "column": 1 starts the panel's
+# An entry (from a tuning_entries()) is a number: key, what the panel calls it, default and step
+# (none goes below 0, none has a top). Or a "header" row, grouping the ones below it: "column": 1 starts the panel's
 # second column; "page" (with its "title" and the "scenes" it opens in, path parts) and "tab"
 # hold for the entries after it until a header names others.
 
 var panel_open = false
+var saving = true  # tests turn it off, to leave the saved numbers alone
 
 var _entries = []  # every entry, each with its page and tab: {entry, page, tab, title}
 var _scenes = {}  # page -> the scene paths it opens in
@@ -80,7 +82,7 @@ func _load():
 	for e in _numbers():
 		var saved = cfg.get_value("tuning", e.key, e.default)
 		if saved is float or saved is int:
-			_values[e.key] = clampf(saved, e.min, e.max)
+			_values[e.key] = maxf(saved, 0.0)
 
 
 func value(key: String) -> float:
@@ -139,6 +141,8 @@ func _scene_tab() -> int:
 
 
 func _save():
+	if not saving:
+		return
 	var cfg = ConfigFile.new()
 	cfg.set_value("meta", "version", VERSION)
 	for e in _numbers():
@@ -160,22 +164,22 @@ func _input(event):
 		return
 	var tabs = _tabs()
 	var rows = _rows()
-	match event.physical_keycode:
+	var key = key_of(event)
+	match key:
 		KEY_Q, KEY_E, KEY_TAB:
-			var back = event.physical_keycode == KEY_Q or (event.physical_keycode == KEY_TAB and event.shift_pressed)
+			var back = key == KEY_Q or (key == KEY_TAB and event.shift_pressed)
 			_tab = posmod(_tab + (-1 if back else 1), tabs.size())
 			_selected = 0
 		KEY_Z, KEY_C:
-			_tab = _next_page(1 if event.physical_keycode == KEY_C else -1)
+			_tab = _next_page(1 if key == KEY_C else -1)
 			_selected = 0
 		KEY_UP, KEY_W:
 			_selected = posmod(_selected - 1, rows.size())
 		KEY_DOWN, KEY_S:
 			_selected = posmod(_selected + 1, rows.size())
-		KEY_LEFT, KEY_A:
-			_change(-10 if event.shift_pressed else -1)
-		KEY_RIGHT, KEY_D:
-			_change(10 if event.shift_pressed else 1)
+		KEY_LEFT, KEY_A, KEY_RIGHT, KEY_D:
+			var steps = 10.0 if event.shift_pressed else (0.1 if event.ctrl_pressed else 1.0)
+			_change(steps * (-1.0 if key in [KEY_LEFT, KEY_A] else 1.0))
 		KEY_ENTER, KEY_SPACE:
 			if rows[_selected] == null:
 				reset_defaults()
@@ -197,12 +201,19 @@ func _next_page(step: int) -> int:
 	return 0
 
 
-func _change(steps: int):
+# The panels' key: by its letter on this keyboard (Z is where Y is on a German one), not by
+# where it sits (as the players' keys go).
+static func key_of(event: InputEventKey) -> int:
+	return event.keycode if event.keycode != KEY_NONE else event.physical_keycode
+
+
+# Changes the selected number by that many steps (a tenth of one with Ctrl), never below 0.
+func _change(steps: float):
 	var e = _rows()[_selected]
 	if e == null:
 		return
-	var v = clampf(_values[e.key] + steps * e.step, e.min, e.max)
-	set_value(e.key, snappedf(v, e.step))
+	var v = maxf(_values[e.key] + steps * e.step, 0.0)
+	set_value(e.key, snappedf(v, e.step / 10.0))  # a value in Ctrl's finer steps keeps them
 
 
 func _set_panel(open: bool):
@@ -309,4 +320,6 @@ func _refresh():
 
 func _shown(e: Dictionary, v: float) -> String:
 	var decimals = 0 if e.step >= 1.0 else (1 if e.step >= 0.1 else 2)
+	if not is_equal_approx(snappedf(v, e.step), v):  # in Ctrl's finer steps
+		decimals += 1
 	return ("%." + str(decimals) + "f") % v

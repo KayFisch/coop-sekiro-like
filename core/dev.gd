@@ -122,7 +122,7 @@ func _input(event):
 		KEY_F5:
 			lab_on = not lab_on
 		_:
-			if not lab_on or not _lab_key(event.physical_keycode):
+			if not lab_on or not _lab_key(Tuning.key_of(event)):
 				return
 	_refresh_visibility()
 	get_viewport().set_input_as_handled()

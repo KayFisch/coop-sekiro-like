@@ -9,7 +9,7 @@ tests and a performance probe run from the command line.
 | Key | What |
 |---|---|
 | F1 | Switches (`core/moves.gd`), in tabs: Q / E. Tab "Dev": write the fight log to a file. |
-| F2 | Numbers (`core/tuning.gd`), laid out as F1: a page per system (Z / C: sync rules, Bifrons, runner, ring), its tabs (Q / E), its numbers (↑/↓ pick, ←/→ change, Shift: ten steps). Opens on the page of the level it's in. |
+| F2 | Numbers (`core/tuning.gd`), laid out as F1: a page per system (Z / C: sync rules, Bifrons, runner, ring), its tabs (Q / E), its numbers (↑/↓ pick, ←/→ change, Shift: ten steps, Ctrl: a tenth of one; no number has a limit but 0). Opens on the page of the level it's in. |
 | F3 | Overlay: frame time, the boss and the players right now, and this fight in numbers. |
 | F4 | Hitboxes: every collision shape, and the boss's body block (red). |
 | F5 | Boss lab: run one of his attacks, again and again, and set things up for it. |
@@ -46,13 +46,13 @@ tests and a performance probe run from the command line.
 
 Shows his attacks (any boss: his attack pool). Its keys work while it's open, and are none of
 the players'; while F1 or F2 is open (the game paused), theirs come first. Q / E pick, as they
-pick the tab there.
+pick the tab there. Letters go by what's on the key (Z is Z on a German keyboard too).
 
 | Key | What |
 |---|---|
 | Q / E | pick an attack |
-| Z | he starts it now (or as soon as he's free), in reach or not |
-| X | he loops it: the same attack each time he's free again (X again: stop) |
+| Z | he starts it next (now, if he's free), in reach or not; then he fights on, or, held (H), does nothing more |
+| X | he loops it: the same attack each time he's free again, held or not (X again: stop) |
 | H | his own attacks off / on: he starts nothing of his own (the lab's attacks still come) |
 | M | his moving off / on: he stays where he is between attacks (his attacks still move him) |
 | T | the game's speed: 1, 0.5, 0.25 |
@@ -108,7 +108,7 @@ code:
 static func tuning_entries() -> Array:
 	return [
 		{"page": "mine", "title": "MY BOSS", "scenes": ["levels/my_room/"], "header": "TEMPO", "tab": "tempo"},
-		{"key": "mine_wait", "label": "between two attacks (s)", "default": 0.5, "step": 0.05, "min": 0.0, "max": 5.0},
+		{"key": "mine_wait", "label": "between two attacks (s)", "default": 0.5, "step": 0.05},
 		{"header": "...", "column": 1},  # the panel's second column
 	]
 ```

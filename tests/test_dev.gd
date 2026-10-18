@@ -93,11 +93,75 @@ func test_lab_keys():
 	Dev.lab_on = false
 
 
-# A key pressed and let go, as from the keyboard.
-func _key(code: int):
+# A key pressed and let go, as from the keyboard: `code` where it sits (US layout), `label` what
+# it says on it (a German keyboard's Z sits where the US Y does).
+func _key(code: int, label = KEY_NONE, ctrl = false):
 	for down in [true, false]:
 		var event = InputEventKey.new()
 		event.physical_keycode = code
+		event.keycode = label
+		event.ctrl_pressed = ctrl
 		event.pressed = down
 		Input.parse_input_event(event)
 		await frames(2)
+
+
+# Z on a German keyboard: his next attack is that one. Held (H): that one, and then nothing; not
+# held: that one, and then he fights on.
+func test_lab_runs_one_next():
+	await _setup()
+	Dev.lab_on = true
+	Dev._pick = Dev._attack_names().find("TRIPLE")
+	p1.global_position.x = boss.global_position.x - 120.0
+	await _key(KEY_Y, KEY_Z)
+	await wait(0.3)
+	check(boss.current_attack != null and boss.current_attack.get_attack_name() == "TRIPLE", "held, Z: TRIPLE")
+	await _until_idle()
+	await wait(2.0)
+	check(boss.state == BaseBoss.State.IDLE, "...and then nothing")
+	boss.dev_hold = false
+	set_number("bifrons_pause_min", 0.2)
+	set_number("bifrons_pause_max", 0.2)
+	await _key(KEY_Y, KEY_Z)
+	await wait(0.3)
+	check(boss.current_attack != null and boss.current_attack.get_attack_name() == "TRIPLE", "not held, Z: TRIPLE")
+	await _until_idle()
+	var fights_on = false
+	for i in 240:
+		await get_tree().physics_frame
+		if boss.state != BaseBoss.State.IDLE:
+			fights_on = true
+			break
+	check(fights_on, "...and then he fights on")
+	Dev.lab_on = false
+
+
+func _until_idle():
+	for i in 600:
+		if boss.state == BaseBoss.State.IDLE:
+			return
+		await get_tree().physics_frame
+
+
+# F2: Ctrl changes by a tenth of a step; nothing goes below 0, nothing has a top.
+func test_tuning_steps():
+	await _setup()
+	Tuning.saving = false  # the panel's keys save; not this test's numbers
+	Tuning._set_panel(true)
+	var key = "his_heavy_damage"
+	var row = Tuning._rows().find_custom(func(e): return e != null and e.key == key)
+	if row < 0:
+		Tuning._tab = Tuning._tabs().find_custom(func(t): return t[0] == "sync" and t[1] == "damage")
+		row = Tuning._rows().find_custom(func(e): return e != null and e.key == key)
+	Tuning._selected = row
+	set_number(key, 18.0)
+	await _key(KEY_RIGHT, KEY_RIGHT, true)
+	near(Tuning.value(key), 18.1, 0.001, "Ctrl: a tenth of a step")
+	set_number(key, 5000.0)
+	await _key(KEY_RIGHT)
+	near(Tuning.value(key), 5001.0, 0.001, "no top")
+	set_number(key, 0.5)
+	await _key(KEY_LEFT)
+	near(Tuning.value(key), 0.0, 0.001, "never below 0")
+	Tuning._set_panel(false)
+	Tuning.saving = true
