@@ -173,7 +173,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     „dash left“ (L1 Dash, R1 Block). **Ausprobieren**, welche sich für den Dash-Parry gut anfühlt.
   - [ ] Bildhälften: Klingen je Hälfte (F1-Schalter mirror / hold / fade), `docs/concept.md` →
     „The two screen halves“ (@Nicho). Gebaut (2026-10-19, F1 „mirror_blades“, Standard fade,
-    F2 „bifrons_fade_alpha“), headless getestet; **Gefühl testen**, alle drei Werte.
+    F2 „bifrons_fade_alpha“), headless getestet; **Gefühl testen**, alle Werte. Dazu (2026-10-19,
+    Nichos Idee) ein vierter Wert „color“, jetzt Standard: Klinge in der Farbe ihres Spielers,
+    Schneide silbern, nicht durchsichtig; der Untergrund macht den Kontrast.
   - [ ] Regeln in der Werkbank: pro Klinge ein Parry, Knockback nach Ausgang, Stagger
     0,5 + 0,2 s (`docs/concept.md` → „Blade rules: additions“) (@Nicho). Gebaut (2026-10-19,
     Branch `nicho/blade-rules` auf `nicho/blade-halves`): drei F1-Schalter (Standard an),

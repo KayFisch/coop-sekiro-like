@@ -72,9 +72,13 @@ const CROSSGUARD = Vector2(6.0, 32.0)
 # each half shows him from its own player's side. A blade is drawn as it is in the half of the
 # player it fights (ward_of()); in the other half its echo stands in for it: "mirror" the same as
 # ever (one boss, mirrored whole), "hold" back at its guard, still, "fade" the same but faint (F2
-# "bifrons_fade_alpha"). A strike of both swords on one place (both on one side of him, see
+# "bifrons_fade_alpha"), "color" the same, but a blade is in the color of the player it fights,
+# its edge silver (the strike's colors go onto the edge): white on the light half's dark ground,
+# black on the shadow half's pale one, so in its own half it stands out and in the other it all but
+# vanishes. A strike of both swords on one place (both on one side of him, see
 # StrikePattern.both_swords_next()) is heavy: from its windup until it lands it stands out in
-# both halves, whatever the switch says. Two blades in your half: you need your partner. Only the
+# both halves, whatever the switch says ("color": both take the strike's colors, as without the
+# halves, so they stand out alike). Two blades in your half: you need your partner. Only the
 # picture changes: every rule reads the real blade. Merged in the sync mode, the halves are one
 # again and so is he.
 const HEAVY_SHOW_TIME = 0.12  # s for an echo to become its blade, as a heavy strike's windup begins
@@ -105,6 +109,7 @@ var _crosses = {LEFT: 1.0, RIGHT: 1.0}
 var _front = 0  # the sword drawn in front of the other: the one that last reached across
 var _stagger_poses = {}  # sword -> [pose, over] for a stagger, instead of POSE_LIMP (set_stagger_pose())
 var _side_tints = {LEFT: Color(1, 1, 1, 0), RIGHT: Color(1, 1, 1, 0)}  # sword -> tint_side()
+var _tints = {LEFT: COLOR_SWORD, RIGHT: COLOR_SWORD}  # sword -> tint_sword(): the steel's color
 var _at_guard = {LEFT: true, RIGHT: true}  # that blade is back at its flank (see is_guarding())
 var _flick_until = {LEFT: 0.0, RIGHT: 0.0}  # anim_time until which that blade is parrying
 
@@ -349,6 +354,7 @@ func pose_sword_home(blade: int, pose: Vector3, snap = false):
 
 
 func tint_sword(blade: int, color: Color):
+	_tints[blade] = color
 	_blades[blade].color = color
 
 
@@ -416,11 +422,11 @@ func _update_pose():
 		var drawn = _crosses[blade]
 		_place_pivot(_pivots[blade], blade, _poses[blade], drawn)
 		if down:
-			_blades[blade].color = COLOR_SWORD_LIMP
+			tint_sword(blade, COLOR_SWORD_LIMP)
 		elif flicking:
-			_blades[blade].color = Color.WHITE
+			tint_sword(blade, Color.WHITE)
 		elif _targets[blade] == POSE_GUARD:
-			_blades[blade].color = COLOR_SWORD
+			tint_sword(blade, COLOR_SWORD)
 		# Its guard, down the flank it's on (outside the other's, if both are there).
 		var plate: ColorRect = _plates[blade]
 		var lane = PLATE_WIDTH if across else 0.0
@@ -462,6 +468,13 @@ func _draw_halves(down: bool, follow: float):
 		var pivot: Node2D = _pivots[blade]
 		var echo: Node2D = _echoes[blade]
 		var ward = ward_of(blade)
+		_blades[blade].color = _tints[blade]
+		_edges[blade].color = _crossguards[blade].color
+		if split and ward != null and mode == "color":
+			# In its player's color, the strike's colors on its edge; a heavy strike (or down) as ever.
+			var shown_as_ever = 1.0 if down else _heavy_shown
+			_blades[blade].color = ward.player_color.lerp(_tints[blade], shown_as_ever)
+			_edges[blade].color = _tints[blade].lerp(_crossguards[blade].color, shown_as_ever)
 		if not split or ward == null:
 			_set_layer(pivot, MirrorView.WORLD)  # one boss, in both halves
 			echo.visible = false
@@ -478,8 +491,11 @@ func _draw_halves(down: bool, follow: float):
 				echo_parts[i].get_child(j).color = parts[i].get_child(j).color
 		# On hold: eased back to its guard on its player's side, as when it isn't striking, and
 		# silver (a strike's color would say it's coming at you).
-		var shown = 1.0 if mode == "fade" or down else _heavy_shown
+		var shown = 1.0 if mode in ["fade", "color"] or down else _heavy_shown
 		echo_parts[0].color = COLOR_SWORD.lerp(parts[0].color, shown)
+		if mode == "color":
+			# Not aimed at this half's player: no strike's colors on its edge.
+			echo_parts[0].get_child(0).color = COLOR_SWORD.lerp(_crossguards[blade].color, 1.0 if down else _heavy_shown)
 		var guard = POSE_GUARD + (ACROSS_SHIFT if reaches_across(blade) else Vector3.ZERO)
 		_echo_poses[blade] = _echo_poses[blade].lerp(guard, follow)
 		_echo_crosses[blade] = lerpf(_echo_crosses[blade], blade * blade_side(blade), follow)

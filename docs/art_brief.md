@@ -107,6 +107,10 @@ player stand out. Two blades standing out in your half means a heavy attack.
 If variant b is chosen (the foreign blade moves with low contrast), each half's background has
 to be close to the color of the *other* player's blade, and the faint blade must stay faint
 enough never to be mistaken for a strike at you.
+In the prototype (Moves "mirror_blades" = "color", 2026-10-19) the blade itself does it: each
+blade in its player's color (white for P1, black for P2) with a silver edge, opaque; on the
+light half's dark ground the white one stands out and the black one all but vanishes, on the
+shadow half's pale ground the other way round. A heavy strike changes the look of both alike.
 
 Bosses are still rectangles, and their attacks differ mostly in how long the first windup is.
 Each motif needs a visible tell (a sword held at an angle, a step back, ...).

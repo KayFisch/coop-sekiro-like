@@ -566,10 +566,17 @@ of the player it fights (`ward_of()`); in the other half a copy of it stands in 
 
 - **mirror**: the same as ever (as before 2026-10-19).
 - **hold**: back on guard there, still and silver.
-- **fade** (default): the same, but faint (F2 "bifrons_fade_alpha", tab "halves", 0.2).
-- With either of the last two, a **strike of both swords on one side of him** (ppe, or both on one
+- **fade**: the same, but faint (F2 "bifrons_fade_alpha", tab "halves", 0.2).
+- **color** (default, Nicho 2026-10-19): the same, opaque, but each blade is in its player's color
+  and its edge silver (white sword, silver edge for P1; black for P2), the strike's colors (yellow,
+  green, red) on the edge. The ground does the rest: in your half your blade stands out (white on
+  dark, black on pale), the partner's all but vanishes (black on dark, white on pale), no
+  transparency needed. In the other half the edge stays silver: the strike isn't aimed there.
+- With any of the last three, a **strike of both swords on one side of him** (ppe, or both on one
   player) stands out in both halves, from its windup until it lands: two blades in your half
-  means heavy. Both swords in pep (one on each player) don't: each is in its own half.
+  means heavy. Both swords in pep (one on each player) don't: each is in its own half. On
+  "color" both blades then look as without the halves (the strike's colors on the steel, the
+  player's on the edge), so they stand out alike in both halves.
 - Only the picture: every rule reads the real blade. Bound in the sync mode with
   "sync_merge_view", the halves merge and he is drawn whole again.
 

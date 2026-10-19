@@ -95,3 +95,28 @@ func test_heavy_stands_out_in_both_halves():
 	check(full, "a strike of both swords in ppe: both echoes in full, before it lands")
 	await wait(1.5)
 	near(boss._echoes[LEFT].modulate.a, Tuning.value("bifrons_fade_alpha"), 0.01, "after it: faint again")
+
+
+func test_color_keeps_each_blade_in_its_players_color():
+	await _setup("color")
+	for blade in [LEFT, RIGHT]:
+		var ward = boss.ward_of(blade)
+		var echo = boss._echoes[blade]
+		check(boss._blades[blade].color.is_equal_approx(ward.player_color), "color: blade %d in its player's color" % blade)
+		check(echo.get_child(0).color.is_equal_approx(ward.player_color), "...its echo too")
+		near(echo.modulate.a, 1.0, 0.01, "...not faint: its color does it")
+		check(echo.get_child(0).get_child(0).color.is_equal_approx(boss.COLOR_SWORD), "...a silver edge")
+	# A heavy strike (ppe): both look as ever, alike in both halves.
+	p2.global_position.x = boss.global_position.x - 120.0
+	p1.global_position.x = boss.global_position.x - 160.0
+	await wait(0.4)
+	boss.dev_next = "BOTH"
+	boss.timer = 0.0
+	var alike = false
+	for i in 90:
+		await get_tree().physics_frame
+		if boss._heavy_shown >= 1.0:
+			alike = [LEFT, RIGHT].all(func(b): return boss._blades[b].color.is_equal_approx(boss._tints[b]) \
+				and boss._echoes[b].get_child(0).color.is_equal_approx(boss._tints[b]))
+			break
+	check(alike, "color, a heavy strike: both blades in the strike's colors, in both halves")

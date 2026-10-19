@@ -10,7 +10,7 @@ signal changed
 const SAVE_PATH = "user://moves.cfg"
 # Bumped whenever the defaults change: a save from an older version is dropped once, so the new
 # defaults reach it (see _ready()).
-const VERSION = 3
+const VERSION = 4
 # The panel's text: shrunk as far as it takes for the whole tab to fit on screen.
 const PANEL_MARGIN = Vector2(80, 16)
 const PANEL_FONT_SIZE = 17
@@ -54,7 +54,7 @@ const ENTRIES = [
 	{"key": "bifrons_stand_in", "tab": "Fights", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, runner, ring", "default": "off", "options": ["off", "left", "right"]},
 	{"key": "bifrons_face", "tab": "Fights", "label": "Bifrons: players always face him", "default": true},
 	{"key": "mirror_view", "tab": "Fights", "label": "Bifrons: mirrored screen (P1 light above the floor, P2 its shadow below)", "default": false},
-	{"key": "mirror_blades", "tab": "Fights", "label": "  a blade at the partner, in your half: mirror (as theirs), hold (on guard), fade (faint)", "default": "fade", "options": ["mirror", "hold", "fade"]},
+	{"key": "mirror_blades", "tab": "Fights", "label": "  a blade at the partner, in your half: mirror (as theirs), hold (on guard), fade (faint), color (in its player's color)", "default": "color", "options": ["mirror", "hold", "fade", "color"]},
 	# Sync: sync as life and the sync mode (core/sync_rules.gd, core/sync_bond.gd)
 	{"key": "swings_hold_posture", "tab": "Sync", "label": "Your own swings hold your posture regen back too (his attacks never do)", "default": true},
 	{"key": "dash_slash_pass", "tab": "Sync", "label": "Dash-slash goes through the boss: in the sync mode only, always, or never", "default": "sync", "options": ["sync", "always", "off"]},
