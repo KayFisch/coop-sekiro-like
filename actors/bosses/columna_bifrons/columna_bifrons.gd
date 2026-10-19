@@ -114,10 +114,17 @@ const PATIENCE = [1, 1, 2]
 const ANSWER_WAIT = 4  # units (time_unit()) until an answer's first strike lands, at most
 
 # THE CHAINS (the chains mode; attacks/chain.gd). He attacks only with chains, a motif repeated
-# and a finale, picked by weight. Which finale is never chance (chain_finale()): the players have
-# pressed him (his posture is low): the double strike, their chance to stagger him; the chain has
-# run its length: the finale that changes the formation (pep: the crossing; ppe: the gate leap, or
-# the leap where it doesn't fit); one player away, or no room for those: the double strike.
+# and a finale, picked by weight; a chain ends sooner once his posture is low (F2
+# "bifrons_chain_posture").
+# THE CHAINS' FINALES are never chance (chain_finale()): he goes by what anyone can see.
+# - He wants to change the formation: in pep the crossing, in ppe the gate leap (or the leap,
+#   where that doesn't fit).
+# - By a wall (the room's outer fifth) he does, whatever else: he wants out.
+# - If his last change failed (they're in the formation they were in then): the double strike.
+# - Once the formation has been the same for more than "bifrons_chain_stale" of his finales: he
+#   changes it, even pressed.
+# - Pressed (his posture low): the double strike, the players' chance to stagger him.
+# - No change possible (one player away, no room for it): the double strike.
 # THE BREATH: after each chain a pause (F2 "bifrons_breath_min" / "_max", after his recovery). He
 # doesn't attack; he walks toward the middle of the room (no nearer a player than FIT_DISTANCE), and
 # turns to the other player (his eye, a mark at the top of his body in their color, goes over to
@@ -126,6 +133,7 @@ const ANSWER_WAIT = 4  # units (time_unit()) until an answer's first strike land
 # at the attacker, quickly (ANSWER_WAIT). The finale of a chain that's under way comes even while
 # the dev tools hold him (dev_hold); a new chain, an answer too, doesn't.
 # (Not in the players' sync mode: there he fights as in the patterns mode.)
+const CHANGES = ["CROSSING", "GATE_LEAP", "LEAP"]  # the finales that change the formation
 const EYE_SIZE = Vector2(10.0, 6.0)
 const EYE_TOP = 14.0  # px down from his top
 const EYE_INSET = 5.0  # px in from his flank
@@ -179,6 +187,10 @@ var _breath_until = 0.0  # anim_time the breath lasts until
 var _provoked = false  # a hit at his guard in the breath: he answers
 var _handed = ""  # a chain's finale of its own, due as soon as the chain is over
 var _carry_parries = false  # that finale's parries count on from the chain's
+var _last_finale = ""  # his last chain's finale (THE CHAINS' FINALES)...
+var _finale_formation = ""  # ...the formation then ("pep" / "ppe")...
+var _same_for = 0  # ...and how many of his finales in a row came in that formation
+var finale_reason = ""  # why the last one was what it was
 var _eye: ColorRect
 
 
@@ -213,7 +225,8 @@ static func tuning_entries() -> Array:
 		{"header": "THE CHAINS (F1: bifrons_mode chains)", "tab": "chains"},
 		{"key": "bifrons_chain_reps_min", "label": "a chain repeats its motif at least (times; at random up to...)", "default": 2.0, "step": 1.0},
 		{"key": "bifrons_chain_reps_max", "label": "...at most (times), then its finale", "default": 4.0, "step": 1.0},
-		{"key": "bifrons_chain_posture", "label": "...the double strike sooner, his posture under (% of it)", "default": 50.0, "step": 5.0},
+		{"key": "bifrons_chain_posture", "label": "...sooner, his posture under (% of it): pressed, the double strike", "default": 50.0, "step": 5.0},
+		{"key": "bifrons_chain_stale", "label": "he changes the formation after this many finales in it, even pressed", "default": 2.0, "step": 1.0},
 		{"header": "THE BREATH AFTER A CHAIN", "column": 1},
 		{"key": "bifrons_breath_min", "label": "he moves, and doesn't attack, from (s)", "default": 2.5, "step": 0.1},
 		{"key": "bifrons_breath_max", "label": "...to (s)", "default": 3.5, "step": 0.1},
@@ -764,16 +777,51 @@ func is_chains() -> bool:
 	return Moves.value("bifrons_mode") == "chains" and not in_sync_mode()
 
 
-# Which finale a chain ends with (attacks/chain.gd): an entry of ATTACKS.
+# Which finale a chain ends with (attacks/chain.gd): an entry of ATTACKS, by THE CHAINS' FINALES.
+# Why is left in finale_reason (for the log and the tests).
 func chain_finale(posture_low: bool) -> String:
-	if posture_low or _situation() == "alone":
-		return "BOTH"
+	var formation = "ppe" if is_ppe() else "pep"
+	_same_for = _same_for + 1 if formation == _finale_formation else 1
+	var failed = _last_finale in CHANGES and formation == _finale_formation
+	var change = _formation_change()
+	var finale = change
+	finale_reason = "change"
+	if change == "":
+		finale = "BOTH"
+		finale_reason = "no change possible"
+	elif _by_the_wall():
+		finale_reason = "by the wall"
+	elif failed:
+		finale = "BOTH"
+		finale_reason = "his change failed"
+	elif _same_for > int(Tuning.value("bifrons_chain_stale")):
+		finale_reason = "the formation's gone stale"
+	elif posture_low:
+		finale = "BOTH"
+		finale_reason = "pressed"
+	_finale_formation = formation
+	_last_finale = finale
+	return finale
+
+
+# The finale that changes the formation where they are now, or "" if none fits: one player away,
+# no room for it.
+func _formation_change() -> String:
+	if _situation() == "alone":
+		return ""
 	if is_ppe():
 		for attack_name in ["GATE_LEAP", "LEAP"]:
 			if find_attack(attack_name).fits(self):
 				return attack_name
-		return "BOTH"
-	return "CROSSING" if finale_way("CROSSING") != 0 else "BOTH"
+		return ""
+	return "CROSSING" if finale_way("CROSSING") != 0 else ""
+
+
+# In the outer fifth of the room, by either wall.
+func _by_the_wall() -> bool:
+	var room = ARENA_RIGHT - ARENA_LEFT
+	var x = global_position.x
+	return x < ARENA_LEFT + room / 5.0 or x > ARENA_RIGHT - room / 5.0
 
 
 # Which way round a chain's finale of strikes goes: the crossing toward whichever side has more

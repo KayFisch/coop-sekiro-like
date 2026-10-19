@@ -103,6 +103,52 @@ func test_motif_then_the_finale():
 	check(run.names == ["CHAIN_RRL"], "...and nothing after it")
 
 
+# THE CHAINS' FINALES, asked straight as at a chain's end: he wants the formation changed; a failed
+# change brings the double strike; pressed, the double strike, until the formation has gone stale;
+# by a wall, a change whatever else; nothing to change it with, the double strike.
+func test_the_finales_rules():
+	await _setup()
+	await _place()
+	check(_ask(false) == ["CROSSING", "change"], "pep: he wants to change it: the crossing (%s)" % [_ask_was])
+	check(_ask(false) == ["BOTH", "his change failed"], "still pep: it failed, so the double strike (%s)" % [_ask_was])
+	check(_ask(false) == ["CROSSING", "the formation's gone stale"], "...and then he tries again (%s)" % [_ask_was])
+	_forget()
+	check(_ask(true) == ["BOTH", "pressed"], "pressed: the double strike (%s)" % [_ask_was])
+	check(_ask(true) == ["BOTH", "pressed"], "...and again (%s)" % [_ask_was])
+	check(_ask(true) == ["CROSSING", "the formation's gone stale"], "...but not a third time in pep: he changes it, pressed or not (%s)" % [_ask_was])
+	_forget()
+	boss.global_position.x = BaseBoss.ARENA_LEFT + 160.0
+	left.global_position.x = boss.global_position.x - 100.0
+	right.global_position.x = boss.global_position.x + 100.0
+	check(_ask(true) == ["CROSSING", "by the wall"], "pressed, but by a wall: he changes it (%s)" % [_ask_was])
+	check(boss.finale_way("CROSSING") == 1, "...charging out toward the room")
+	_forget()
+	boss.global_position.x = middle
+	left.global_position.x = middle - 100.0
+	right.global_position.x = middle - 130.0
+	check(_ask(false) == ["GATE_LEAP", "change"], "ppe: the gate leap (%s)" % [_ask_was])
+	_forget()
+	right.global_position.x = middle + 420.0
+	boss._turn(RIGHT, true)  # both swords on the one who's there (LEFT ALONE)
+	check(_ask(false) == ["BOTH", "no change possible"], "one of them away: the double strike (%s)" % [_ask_was])
+	boss._turn(RIGHT, false)
+
+
+var _ask_was = []
+
+
+func _ask(low: bool) -> Array:
+	_ask_was = [boss.chain_finale(low), boss.finale_reason]
+	return _ask_was
+
+
+# As if he'd had no finale yet.
+func _forget():
+	boss._last_finale = ""
+	boss._finale_formation = ""
+	boss._same_for = 0
+
+
 func test_low_posture_brings_the_double_strike():
 	await _setup()
 	set_number("bifrons_chain_posture", 101.0)  # always "low"

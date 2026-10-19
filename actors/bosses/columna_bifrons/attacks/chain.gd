@@ -7,11 +7,13 @@ extends StrikePattern
 ## It runs as a series of strikes does (the same cuts, lunges, parries and windows), but it
 ## lengthens itself. Before its first strike he holds the motif's stance a moment (STANCES): each
 ## motif has its own, so they can be told apart. Then, only as the last strike of a repetition
-## lands, he decides (ColumnaBifrons.chain_finale()):
+## lands, he decides whether it goes on:
 ##   - his posture under F2 "bifrons_chain_posture": the finale, now;
 ##   - the repetitions this chain was to have (at random, F2 "bifrons_chain_reps_min" to "_max"):
 ##     the finale;
 ##   - else the motif once more, the same way round.
+## Which finale is his to say, by what he sees (ColumnaBifrons.chain_finale(), THE CHAINS'
+## FINALES), never chance.
 ## A finale of strikes (the double strike, the crossing) is part of the chain; a leap is an attack
 ## of its own, which he starts as the chain is over (ColumnaBifrons.hand_over()), and its parries
 ## count toward the chain's stagger. Only the motif and the number of repetitions are chance.
@@ -96,7 +98,7 @@ func _end_repetition():
 		_append(_motif, _reps_done, _way)
 		return
 	_finale = boss.chain_finale(low)
-	Dev.note("chain", {"motif": _name, "repetitions": _reps_done, "finale": _finale, "posture_low": low})
+	Dev.note("chain", {"motif": _name, "repetitions": _reps_done, "finale": _finale, "why": boss.finale_reason, "posture_low": low})
 	var strikes = boss.ATTACKS[_finale].get("strikes", [])
 	if strikes.is_empty():
 		_handover = _finale

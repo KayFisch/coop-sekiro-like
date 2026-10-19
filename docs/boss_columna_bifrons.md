@@ -474,13 +474,23 @@ reactive mode become one: **chains are his initiative, the pauses the players'.*
   F2 "bifrons_chain_posture" (his page, tab "chains", 50 %): the finale now. Else the motif again,
   until the chain has the repetitions it was given (at random from "bifrons_chain_reps_min" to
   "_max": 2 to 4), then the finale.
-- **Which finale is never chance.** Pressed (his posture low): **the double strike** (BOTH), the
-  players' chance to stagger him. Run its length: **the finale that changes the formation**: in pep
-  the crossing (toward the side with more room for its charge), in ppe the gate leap (the leap if
-  it doesn't fit). One player away, or no room for those: the double strike. The double strike
-  and the crossing are the chain's own last strikes; the leaps come straight after it. The
-  stagger counts every parry of the chain and its finale (e.g. one repetition of RRL and a gate
-  leap, all parried: 0.5 + 9 x 0.2 = 2.3 s).
+- **Which finale is never chance** (Nicho, 2026-10-19: not too rigid; he goes by what anyone can
+  see, `chain_finale()`):
+  - He wants to **change the formation**: in pep the crossing (toward the side with more room for
+    its charge), in ppe the gate leap (the leap if it doesn't fit).
+  - **By a wall** (the room's outer fifth) he does, whatever else: he wants out.
+  - **His last change failed** (they're in the formation they were in then, e.g. they dashed
+    through him): **the double strike** (BOTH).
+  - **The formation has gone stale** (more than F2 "bifrons_chain_stale", 2, of his finales in a
+    row in it): he changes it, even pressed.
+  - **Pressed** (his posture low): the double strike, the players' chance to stagger him.
+  - One player away, or no room for a change: the double strike.
+
+  So he alternates crossing and gate leap while they let him; resisting him, or pressing him,
+  brings the double strike, but never for long in one formation. The log says why each finale came
+  ("why" in the "chain" line). The double strike and the crossing are the chain's own last strikes;
+  the leaps come straight after it. The stagger counts every parry of the chain and its finale
+  (e.g. one repetition of RRL and a gate leap, all parried: 0.5 + 9 x 0.2 = 2.3 s).
 - **Then the breath** (F2 "bifrons_breath_min" / "_max", 2.5 to 3.5 s, after his 0.6 s
   recovery). He doesn't attack. He walks toward the middle of the room (no nearer a player than
   90 px), and **turns to the other player**: a mark at the top of him, his eye, in the color of
@@ -708,6 +718,7 @@ of the player it fights (`ward_of()`); in the other half a copy of it stands in 
 | Gate leap: the rip's throw | `GateLeap.RIP_KNOCKBACK` | x3 (about 180 px; parried 65) |
 | The sword in the floor: the wall | `WALL_WIDTH`, `WALL_HEIGHT` (bifrons_swords.gd) | 14 / 230 px |
 | Chains: repetitions (at random) / the finale sooner, his posture under | F2 "bifrons_chain_reps_min", "_max" / "bifrons_chain_posture" | 2 - 4 / 50 % |
+| Chains: finales in one formation before he changes it, even pressed | F2 "bifrons_chain_stale" | 2 |
 | Chains: the breath after one | F2 "bifrons_breath_min", "_max" | 2.5 - 3.5 s |
 | Chains: a motif's stance, how long / the poses | `Chain.STANCE_TIME`, `STANCES` | 0.45 s |
 | Chains: his eye (size, how fast it turns) | `EYE_SIZE`, `EYE_TURN` (columna_bifrons.gd) | 10 x 6 px, 6/s |
@@ -782,10 +793,10 @@ in, he uses them all the same.
   outcomes read from where the swords are, without knowing the table?
 - **The chains** (F1 "bifrons_mode" chains): does a motif read as one, from its stance and from
   being repeated? Do you know *when* he may branch (a repetition's end), and do you feel you
-  caused the finale (pressed: the double strike) without steering him? Is the breath yours: do
-  you press him, or let both sides recover? Does his eye say whom the next chain is for? And with
-  "bifrons_guard_break" motif_end: is one opening per clean repetition enough reward, or too
-  little?
+  caused the finale (resisting his change, or pressing him: the double strike) without steering
+  him? Is the breath yours: do you press him, or let both sides recover? Does his eye say whom
+  the next chain is for? And with "bifrons_guard_break" motif_end: is one opening per clean
+  repetition enough reward, or too little?
 - **The gate leap** (F5: GATE_LEAP, both players on one side first, ← / →): can you tell it from
   the leap and the crossing as it starts? Does the sword in the floor read as a wall, and the vault
   as his choice of where everyone ends up? Is the finish's rule ("A in his reach as the swords come

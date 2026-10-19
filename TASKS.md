@@ -210,9 +210,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   - [ ] (optional) Ketten-Grammatik und „Phrase, dann Atem“ in der Werkbank (eigener Branch)
     (@Nicho). Gebaut (2026-10-19, Branch `nicho/chains` auf `nicho/gate-leap`): F1
     `bifrons_mode` „chains“. Drei Platzhalter-Motive (CHAIN_RRL, _RLRL, _RRLL), je mit eigener
-    Haltung vorher; Entscheidung nur am Ende einer Wiederholung; Finale nie per Zufall: Haltung
-    niedrig → Doppelhieb, sonst nach 2–4 Wiederholungen der Formationswechsel (pep: Crossing,
-    ppe: Torsprung); danach der Atem (2,5–3,5 s, Richtung Raummitte, ein „Auge“ in der Farbe des
+    Haltung vorher; Entscheidung nur am Ende einer Wiederholung (nach 2–4 Wiederholungen, bei
+    niedriger Haltung früher). Finale nie per Zufall (Nicho: nicht zu starr): er will die
+    Formation wechseln (pep: Crossing, ppe: Torsprung); ist der letzte Wechsel misslungen oder
+    seine Haltung niedrig, kommt der Doppelhieb, aber nach 2 Finales in derselben Formation
+    (F2) oder an der Wand wechselt er trotzdem. Danach der Atem (2,5–3,5 s, Richtung Raummitte, ein „Auge“ in der Farbe des
     Spielers, bei dem die nächste Kette anfängt); Angriff auf seine Deckung im Atem → Kette beim
     Angreifer. `bifrons_guard_break` hat jetzt drei Werte (on / off / motif_end; ein
     gespeichertes on/off bleibt). Zahlen auf F2 (Tab „chains“), Test `test_chains`.
