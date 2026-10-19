@@ -35,6 +35,22 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
+### For Kay, from Nicho (2026-10-19)
+
+- Design session with Claude (no code), decisions in `docs/concept.md` (new sections: boss
+  design principles, blade rules, the two screen halves, the sync mode, bosses), two new boss
+  docs and `scribbles.md` (2026-10-19). The short version:
+  - Today's Bifrons stays as it is as the **try-out boss** (needs a new name). **Columna
+    Bifrons** is redesigned from scratch (the Warden, `docs/boss_bifrons_warden.md`); next comes
+    a **Heavy Hitter** (`docs/boss_heavy_hitter.md`), later an **Acrobat** who may use the beat
+    ring as one of his phases.
+  - Bosses should feel like **Sekiro, not Hollow Knight**: chains of strikes with a finale, then
+    a pause in which he moves; few reactions, on details only.
+  - The **mirrored screen** is our base for boss fights; the halves become two connected sides
+    (each shows the blades aimed at its player). Players may pick mirrored or one-sided view.
+  - The **sync mode** is the players' boss phase and ends the fight by default.
+  - Your input welcome on anything there, especially the boss myths and the screen halves.
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
@@ -53,9 +69,12 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 
 ```
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
-docs/                                design docs: concept.md, boss_*.md (one per boss), level_*.md (one
-                                     per level), parkour_gyms.md, art_brief.md (sizes, colors,
-                                     poses: for generating sprites), beat_runner.md, beat_ring.md,
+docs/                                design docs: concept.md, boss_*.md (one per boss:
+                                     columna_bifrons = the try-out boss, bifrons_warden,
+                                     heavy_hitter), attack_pool.md (attacks no boss has yet),
+                                     level_*.md (one per level), parkour_gyms.md, art_brief.md
+                                     (sizes, colors, poses: for generating sprites),
+                                     beat_runner.md, beat_ring.md,
                                      dev_tools.md (F3-F5, tests, F2 numbers, measuring, a new boss)
 core/                                autoloads: GameManager, Sfx, Moves, Pads, Beat, Tuning, Dev;
                                      sync_rules.gd (sync as life, Bifrons), sync_bond.gd (sync mode)
@@ -208,7 +227,9 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   own), told his next attack (`dev_next`) and kept from moving between attacks (`dev_still`).
   The boss so far: `columna_bifrons/` (the first two, Cubus Maximus and Sphaera Pendula, were
   dropped on 2026-10-18), a test boss for fighting from both sides, and with
-  both players on one (`docs/boss_columna_bifrons.md`), built in three parts, each extending the
+  both players on one (`docs/boss_columna_bifrons.md`); since 2026-10-19 the try-out boss, kept
+  as a workbench, while his name goes to a boss designed from scratch
+  (`docs/boss_bifrons_warden.md`). Built in three parts, each extending the
   one before: `bifrons_swords.gd` (his swords and their wards, posing, his guard and the
   windows), `bifrons_moves.gd` (where he stands, drift, pushing, lunges, the charge, dashes) and
   `columna_bifrons.gd` (the boss: attacks, weights, the sync rules' hooks, the reactive mode;
@@ -258,7 +279,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   want to tune while playing goes on F2 instead: in its system's `tuning_entries()`, read with
   `Tuning.value()` (`docs/dev_tools.md`). A new boss: the checklist in `docs/dev_tools.md`.
 - New movement abilities get a `Moves` switch so they can be A/B tested.
-- Attacks telegraph by color; each color means one player response (see the boss 2 doc).
+- Attacks telegraph by color; each color means one player response (`docs/concept.md`,
+  "Telegraphs"; Kay's scribble of 2026-10-02 on colors, "Wer und Was getrennt").
 - Input: two sets of actions, `p1_*` (keyboard) and `p2_*` (gamepad); the player reads
   `_action("jump")`. One pad: P1 keyboard, P2 pad. Two pads: one each (P1 keeps the keyboard too).
 - Code, comments, docs and commit messages in English; `TASKS.md` / `scribbles.md` in any language.

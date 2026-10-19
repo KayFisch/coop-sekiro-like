@@ -652,3 +652,95 @@ dazu:
 - Im Sync-Modus nimmt er nur seine Patterns aus normalen Schlägen (alle mit beiden Schwertern),
   nichts, was euch auseinanderwirft (Crossing, Sweep, Sprung, Rush), und alles 1,4-mal so
   langsam.
+
+## 2026-10-19 (Nicho, mit Claude): Sync-Modus, Bosse, Ketten, Bildhälften
+
+Chat-Session ohne Code (2026-10-18/19). Die Entscheidungen stehen jetzt in `docs/concept.md`,
+`docs/boss_bifrons_warden.md`, `docs/boss_heavy_hitter.md` und `TASKS.md`. Hier das Warum und
+was verworfen wurde.
+
+**Sync-Hit:** kommt nach dem Parry, nicht zeitgleich („after“ statt „beat“, überholt meine
+Tendenz vom 2026-10-14). Wie genau das Timing ist und wovon es abhängt, ist noch offen.
+
+**Spiegel-Bildschirm:** Kay und ich finden ihn für die Bosse sehr gut, Bossfragen beantworten
+wir ab jetzt damit als Grundlage. Spieler sollen selbst zwischen gespiegelt und einseitig wählen
+und wechseln können (gespiegelt: keiner blockiert den anderen, gut für Kämpfe; einseitig: direkte
+Interaktion, gut für Kays Jump'n'Run). Neu: **keine reine Spiegelung mehr, sondern zwei
+verbundene Seiten**, die nicht gleich sein müssen; jede Hälfte zeigt die Klingen, die auf ihren
+Spieler zielen. Heute bewegt sich ein Schwert auch in der Hälfte, wo es nur in die Luft schlägt:
+Schwertchaos, und es erklärt schlecht, warum heftige Angriffe anders sind. Noch offen: Bleibt die
+fremde Klinge in der eigenen Hälfte stehen, oder bewegt sie sich mit wenig Kontrast (und ein
+heftiger Angriff „manifestiert“ sie kontrastreich in der falschen Ebene)? Claude empfiehlt das
+Zweite (ein Körper, eine Bewegung; man sieht den Hieb auf den Partner noch und kann den Sync-Hit
+timen; „heftig“ ist gleich mit angekündigt). Wird per Schalter getestet.
+
+**Sync-Modus = die Bossphase der Spieler.** Belohnung wie ein Todesstoß in Sekiro, aber mehr
+als ein Knopf und kein Quicktime-Event. Beendet den Kampf standardmäßig, fühlt sich aber wie eine
+Phase an, eine halbe bis ganze Minute. Der Boss antwortet mit eigenen Sync-Modus-Patterns; wie
+wir treffen, entscheiden wir. Ende: sein Sync leer (Finisher) oder unser Sync unter der Grenze
+(zurück). Paarschläge machen viel Schaden; hat er beim Erreichen noch viel Sync, ist das kein
+Widerspruch, sondern genau die Belohnung (man baut ihn jetzt viel schneller ab). Keine Obergrenze,
+keine bewusste Trennung. Die Hälften verschmelzen (der Untere fließt in den Oberen).
+Bewegung im verbundenen Zustand, verworfen: gemeinsam lenken (Frust, unreaktiv; parieren und
+schlagen zusammen ist genug Sync), Schritte im Takt / Quicktime (langweilig, keine Kontrolle),
+freie Bewegung mit Gummiband, Rollenwechsel nach jedem Paarschlag (zu chaotisch). Im Rennen,
+je nach Boss: einer bewegt, der andere startet den Cue, beide schlagen aufs Cue-Ende; oder Verben
+aufgeteilt (einer läuft, einer springt / dasht). Rollenwechsel: offen. Sync-Modus-Patterns:
+kommen später.
+
+**Bosse:** Der heutige Bifrons bleibt, wie er ist, als **Try-out-Boss** (Werkbank, braucht einen
+neuen Namen). **Columna Bifrons** wird neu entworfen, von Grund auf: Wächter der Schwelle (Janus),
+Duellant mit zwei langen senkrechten Schwertern, **er bestimmt die Formation**. Als Nächstes
+der **Heavy Hitter** (eine Waffe, langsamer, False Knight / Watcher Knights): **er erzwingt
+Bewegung**, wie wir umstellen, entscheiden wir. Später der **Akrobat** (Richtung Lady Butterfly),
+eine seiner Phasen ist der Beat-Ring. Seitenwechsel bleibt Grundverb aller Kämpfe; die Bosse
+unterscheiden sich darin, wer die Formation kontrolliert. Nicht erst alles an Bifrons testen und
+dann verteilen, sondern Bosse direkt mit Identität entwerfen; Rest in einen Angriffs-Pool.
+
+**Kampfgefühl: Sekiro, nicht Hollow Knight.** Kein „einzelner Angriff, ausweichen, Pause, drauf“,
+sondern ein Rhythmus, der lange hält. Hiebe nie einzeln, Schlagfolgen verlängern sich fließend
+(Genichiro); dafür war der reaktive Modus gedacht, der hat sich aber leer angefühlt (zu langsam
+zwischen den Angriffen, der Boss hat sich nicht bewegt). Jetzt: **Ketten** (ein Motiv wie R R L
+wiederholt, bis z. B. seine Haltung niedrig ist, dann ein Finale: Doppelhieb, Crossing oder
+Torsprung), danach eine **Pause, in der er sich bewegt** und seine Haltung zurückkommen kann,
+wenn wir ihn lassen. Die Pause gehört uns.
+**Der Boss reagiert auf das, was passiert** (Vorbild: der Sweep, der je parierter Seite anders
+ausgeht), aber wenig, nicht auf alles, und nur auf Detailebene: Es passiert ungefähr gleich viel,
+nur wer als Nächstes dran ist oder wie weit jemand fliegt, ändert sich. Eine Aktion am Anfang
+bricht nie den ganzen Ablauf ab. Wir sollen Muster erkennen und verstehen, was er warum macht,
+ohne ihn steuern zu können.
+**Stagger:** heute nach jedem gemeinsam parierten heftigen Schlag, auch wenn der allein steht.
+Neu: 0,5 s plus 0,2 s je erfolgreichem Parry der Kette bis einschließlich Finale. Nicht über seine
+Haltung (Claudes Vorschlag): Das snowballt, weil hoher Haltungsschaden plus langer Stagger noch
+schlimmer wäre.
+**Pro Klinge ein Parry:** Doppelhieb in ppe (beide Schwerter auf eine Seite) muss zusammen
+pariert werden. In pep ergibt es keinen Sinn, dass ein einzelner Parry nicht reicht: Stagger nur,
+wenn beide parieren, aber ein einzelner Parry zählt als Parry, nicht als Block. Und er macht
+„both“ nur dorthin, wo seine Klingen jemanden erreichen.
+**Knockback:** pariert = 0 oder halb, geblockt oder getroffen = voll.
+**Telegraphs:** Die Finale sind gut unterscheidbar; das Problem waren die Patterns aus nur
+normalen Hieben, die sich nur in der Länge des ersten Ausholens unterscheiden. Die Motive
+brauchen visuelle Zeichen (Schwert kurz in einem Winkel, kleiner Schritt zurück …). Ausholen und
+Halten gibt es; der Schlag selbst kommt bei Sweep und Crossing-Stich zu langsam.
+
+**Torsprung** (der neue Leap): Der alte Leap ließ uns die Formation selbst wählen. Neu: Er hebt
+das Schwert auf der vom Sprung abgewandten Seite und lässt es nach vorn zeigen, rammt es zwischen
+uns in den Boden (parierbar, leichter Knockback), schwingt sich über den vorderen, schlägt in
+der Landung den hinteren, reißt das Schwert als Aufwärtshieb heraus (wirft den vorderen zurück)
+und nutzt den Schwung für einen heftigen Angriff: Ist der vordere nah genug, auf beide (Stagger
+möglich), sonst mit beiden Schwertern auf den hinteren (sein Parry hat dann nur die Wirkung eines
+Blocks, solange der Partner nicht auch pariert). Verworfen:
+Sprung misslingt, wenn beide den ersten Stich parieren (eine Aktion bricht den ganzen Ablauf ab);
+Telegraph „Schwertspitze nach unten“ (die langen Schwerter belegen zu viel Raum); vier Reaktionen
+in einem Finale (nur das neue Ende bleibt).
+
+**Heavy Hitter:** eine Waffe, eher waagerecht gehalten, das Griffende blockt die andere Seite.
+Klinge und Knauf als zwei Enden (Klinge heftig und langsam, Knauf normal und schnell). Beim
+Ausholen ungedeckt. Heftige Schläge sammeln uns (pep → ppe), Schockwellen kommen auf der
+anderen Bildhälfte an und treiben uns auseinander (ppe → pep). Etwas kleiner, man kann über ihn
+bzw. seine Waffe springen, und wenn er springt, drunter durch.
+
+**Offen:** Durchgang durch Bosse (nur die Waffen sperren, nicht der Körper?); Deckung öffnet beim
+Parry am Motivende, wenn alle Hiebe der Wiederholung pariert wurden (heute spiele ich mit
+`bifrons_guard_break` aus, weil der Sync-Schaden zu schnell kam); die drei Motive des Wächters; seine
+Verzweigungsregeln; alle Sync-Modus-Patterns; was die Schockwelle in der einseitigen Ansicht ist.

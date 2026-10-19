@@ -99,6 +99,18 @@ BOSS: COLUMNA BIFRONS ("two-faced column")
 The shove is described as it's meant to become (a push with the flat side, swords vertical; the
 task is in `TASKS.md`). In the code it's still a thrust.
 
+## Screen halves and blades (2026-10-19)
+
+The two halves are two connected sides, not a pure mirror (`docs/concept.md`, "The two screen
+halves"): each half shows the boss from its player's point of view, and the blades aimed at that
+player stand out. Two blades standing out in your half means a heavy attack.
+If variant b is chosen (the foreign blade moves with low contrast), each half's background has
+to be close to the color of the *other* player's blade, and the faint blade must stay faint
+enough never to be mistaken for a strike at you.
+
+Bosses are still rectangles, and their attacks differ mostly in how long the first windup is.
+Each motif needs a visible tell (a sword held at an angle, a step back, ...).
+
 ## Working with an image model
 
 - **Consistency:** get one reference image per figure first and pass it along with every later

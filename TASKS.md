@@ -14,19 +14,36 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Stand nach dem Durchsprechen (Scribble vom 2026-10-02, „Was ist der Rest des Spiels?“):
   lineare Story und Roguelike mit Mobs fallen wohl raus; im Rennen sind Fokus auf Bosse, eine
   Aufwärmphase als Auto-Runner/Beat-Saber, Platformer und der Berg mit Fortschrittsverlust.
+  Neu (2026-10-19): Der Beat-Ring könnte eine Phase des Akrobaten werden, statt zwischen den
+  Bossen zu stehen.
 - [ ] **Woher kommen die Boss-Designs?** (Kay, 2026-10-16) Zweiköpfige Wesen aus Mythen: A aus
   allen Mythologien (ein Boss je Kreatur, evtl. eine Welt je Mythologie), B eine Kreatur für
   alle, C eine Mythologie, D frei. Kay neigt zu A. Details: `scribbles.md`, 2026-10-16.
+  Stand 2026-10-19: geplant sind der Wächter (Columna Bifrons, Janus), der Heavy Hitter (Mythos
+  offen, z. B. Ettin) und der Akrobat.
 - [ ] _(weitere eintragen)_
 
 ## Entscheidungen
 
 - **2026-09-30 – Side-Scroller, nicht Top-Down.** Kays Vorschlag; Nicho hatte Top-Down im
   Kopf, sieht aber die Vorteile. Muss noch in `docs/concept.md` rein.
+- **2026-10-19 – Sync-Hit „after“, nicht „beat“.** Timing im Detail noch offen.
+- **2026-10-19 – Spiegel-Bildschirm ist Grundlage der Bosskämpfe** (Nicho und Kay). Ansicht frei
+  wählbar (gespiegelt / einseitig). Die Hälften sind zwei verbundene Seiten: Jede zeigt die
+  Klingen, die auf ihren Spieler zielen.
+- **2026-10-19 – Sync-Modus = Bossphase der Spieler** (beendet den Kampf standardmäßig, eine
+  halbe bis ganze Minute, eigene Patterns des Bosses). `docs/concept.md`.
+- **2026-10-19 – Bosse:** heutiger Bifrons = Try-out-Boss; Columna Bifrons neu (Wächter);
+  als Nächstes Heavy Hitter; später Akrobat. Leitlinien (Sekiro statt Hollow Knight, Ketten,
+  Reaktionen auf Detailebene, Lesbarkeit, pro Klinge ein Parry, Stagger, Knockback):
+  `docs/concept.md`.
 
 ## Jetzt
 
-- [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), jetzt auf `main`. Testet die
+- [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), jetzt auf `main`. **Seit 2026-10-19 der
+  Try-out-Boss:** bleibt, wie er ist, als Werkbank für Regeln und rohe Ideen (braucht einen
+  neuen Namen; der Name Columna Bifrons geht an den neuen Wächter). Treffer-Fenster
+  entschieden: „after“ (im Code schon Standard). Testet die
   Grundregel aus den Scribbles: Spieler links und rechts vom Boss, zwei Schwerter, er ist auf
   beiden Seiten gedeckt; ein Parry auf einer Seite bricht kurz die Deckung auf der anderen
   (Partner trifft im selben Takt), beide Seiten gleichzeitig pariert = Stagger.
@@ -84,9 +101,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   48 px, mehr Reichweite) und wird anders gehalten. Gilt in jedem Kampf, also vor dem Merge
   gemeinsam entscheiden; Cubus und Sphaera sind nicht darauf abgestimmt.
   **Getestet (2026-10-14): für einen Prototyp sehr gut.**
-  Treffer-Fenster: Nicho tendiert nach dem Solo-Test zu **„beat“** (mit „after“ wartet man nach
+  ~~Treffer-Fenster: Nicho tendiert nach dem Solo-Test zu **„beat“** (mit „after“ wartet man nach
   dem Parry erst, und bis man selbst wieder dran ist, dauert es zu lang; „beat“ hält das
-  Ganze schneller). Noch mit Kay zu besprechen.
+  Ganze schneller). Noch mit Kay zu besprechen.~~ Überholt: „after“ (Scribble vom 2026-10-19).
 - [ ] **Sync-Modus** (@Nicho; Hauptaufgabe neben den Zwischen-Prototypen). Der
   fehlende Teil des Proof of Concept: in ppe, beide nebeneinander, werden zwei Spieler mit zwei
   Schwertern zu einem mit einem großen Schwert, und der Boss muss sich verteidigen. Ideen:
@@ -113,8 +130,12 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Füßen, zusammenstehen verbindet (Farben fließen ineinander, Säbel), Angriff halten zum
   Ausholen, auf das große Signal gemeinsam loslassen = heftiger Schlag, der durch seine Deckung
   geht; außer Sync = schwacher Schlag und Sync-Verlust. Er schlägt dann nur noch mit beiden
-  Schwertern und langsamer. Ideen: Scribble vom 2026-10-17 („Sync-Modus“). **Offen:** Bewegung
-  im verbundenen Zustand; ob die Spiegelhälften verschmelzen (Schalter `sync_merge_view`).
+  Schwertern und langsamer. Ideen: Scribble vom 2026-10-17 („Sync-Modus“).
+  **Stand 2026-10-19:** Grundmodell steht (Bossphase der Spieler, `docs/concept.md`). Die
+  Hälften verschmelzen (der Untere fließt in den Oberen); `sync_merge_view` wird Standard, sobald
+  die Bewegung steht. **Offen:** Bewegung im verbundenen Zustand (im Rennen: einer bewegt, der
+  andere startet den Cue; oder Verben aufgeteilt), Rollenwechsel, die Sync-Modus-Patterns der
+  Bosse.
 - [ ] **Prototyp Beat-Runner** (@Nicho): die andere Antwort auf „Was ist zwischen den
   Bossen?“, etwas zwischen Beat Saber und Geometry Dash (Auto-Runner, Dinge fliegen im Rhythmus
   auf die Spieler zu, parieren und schlagen; vielleicht zwei Lanes für pep/ppe). Siehe Scribble
@@ -135,8 +156,25 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   standardmäßig diagonal (wie pep), sein Crossing bringt beide auf eine Seite, sein Sprung (als
   Sweep) wieder auseinander; der violette Splitter läuft am Kreis entlang und kommt so spät nach
   dem Parry an wie der Sync-Hit im Bosskampf (F2, Tab „sync hit“).
-- [ ] **Bifrons' Patterns überarbeiten: Abstand schaffen, dann nachsetzen** (@Nicho). Siehe
-  Scribble vom 2026-10-17.
+- [ ] **Columna Bifrons (Wächter) fertig designen** (@Nicho). `docs/boss_bifrons_warden.md` →
+  „Open“: die drei Motive und ihre Haltungen, Verzweigungsregeln, Deckungsöffnung am Motivende,
+  Torsprung Schritt 5, Sync-Modus-Pattern. (Ersetzt „Bifrons' Patterns überarbeiten“.)
+- [ ] **Heavy Hitter designen** (@Nicho). `docs/boss_heavy_hitter.md`.
+- [ ] **Name für den Try-out-Boss** (offen). Danach Docs umbenennen: altes
+  `boss_columna_bifrons.md` → `boss_<name>.md`, `boss_bifrons_warden.md` →
+  `boss_columna_bifrons.md` (Verweise mitziehen).
+- [ ] **Durchgang durch Bosse klären** (offen): nur die Waffen sperren einen Dash, nicht der
+  Körper? Oder nur Bifrons ist undurchdringlich?
+- [ ] **Code-Aufträge aus dem Design vom 2026-10-19** (offen, niemand; Details in den Docs und
+  im Scribble vom 2026-10-19). Fassen den Spieler und Bifrons an, also vorher claimen:
+  - [ ] Dash-Parry: Controller-Belegung bequemer machen (erst Vorschläge, nichts umbelegen)
+  - [ ] Bildhälften: Klingen je Hälfte (F1-Schalter mirror / hold / fade), `docs/concept.md` →
+    „The two screen halves“
+  - [ ] Regeln in der Werkbank: pro Klinge ein Parry, Knockback nach Ausgang, Stagger
+    0,5 + 0,2 s (`docs/concept.md` → „Blade rules: additions“)
+  - [ ] Schlagphase von Sweep und Crossing-Stich schneller (eigene F2-Zahl)
+  - [ ] (optional) Torsprung in der Werkbank (`docs/boss_bifrons_warden.md` → „Gate leap“)
+  - [ ] (optional) Ketten-Grammatik und „Phrase, dann Atem“ in der Werkbank (eigener Branch)
 - [ ] **Spiegel-Bildschirm** (@Nicho), Branch `nicho/pep-test`, Schalter `mirror_view` (F1,
   Standard aus). Nichos Idee aus dem Scribble vom 2026-10-14: Bildschirm an der Bodenlinie
   geteilt, oben P1 als Licht, unten die Spiegelung mit P2 als Schatten (nach Gris), der Boss
@@ -144,7 +182,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   durcheinander durch. Zu klären beim Spielen: Ist kopfüber spielbar? Fehlt der Partner neben
   einem mehr, als der Platz bringt? Was wird aus Sync und Partner-Clashes, wenn man sich nur an
   der Linie trifft?
-- [ ] **Movement von Bifrons weiter tunen** (offen, niemand). Nach dem Test vom 2026-10-02:
+  **Seit 2026-10-19 Grundlage der Bosskämpfe;** die Hälften werden zwei verbundene Seiten, jede
+  zeigt die Klingen, die auf ihren Spieler zielen (`docs/concept.md`, „The two screen halves“).
+- [ ] **Movement von Bifrons weiter tunen (Try-out-Boss)** (offen, niemand). Nach dem Test vom 2026-10-02:
   Das Schema steht (Abstand halten, Schritt oder Dash mit jedem Hieb, Platz schaffen, auf den
   Spieler wechseln, der noch da ist), fühlt sich aber insgesamt noch nicht rund an. Erst beim
   Spielen notieren, *was* stört (zu nervös, zu träge, steht falsch, kommt zu nah), dann drehen.
@@ -166,7 +206,7 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     gilt (äußeres Fünftel des Raums).
   - *Allein gelassen:* ab wann ein Schwert wechselt und zurückwechselt (`TURN_TIME` 1,5 s,
     `RETURN_DISTANCE` 300), wie oft er zum Entfernten rusht (Gewicht von `RUSH`).
-- [ ] **Stoß von Bifrons umbauen** (offen, niemand; Nicho, 2026-10-02, nach dem Test):
+- [ ] **Stoß von Bifrons umbauen (Try-out-Boss)** (offen, niemand; Nicho, 2026-10-02, nach dem Test):
   - ~~Kein Stich mehr: Er schubst die Spieler mit der flachen Seite weg, die Schwerter stehen
     dabei senkrecht.~~ Erledigt auf `nicho/pep-test` (2026-10-16), dazu stärkerer Rückstoß
     (etwa 230 statt 130 px).
@@ -175,7 +215,7 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     ihn der hintere nicht). Heute löst genau das den Stoß aus (0,7 s näher als 62 px, oder nach
     einem Doppelhieb ohne Stagger, wenn Zurückhüpfen ihn von der Raummitte wegführt):
     `make_room()` in `columna_bifrons.gd`, `attacks/shove.gd`.
-- [ ] **Mash-Problem bei Bifrons anschauen** (offen, niemand). Seit die Sonderregeln raus sind
+- [ ] **Mash-Problem bei Bifrons anschauen (Try-out-Boss)** (offen, niemand). Seit die Sonderregeln raus sind
   (keine Mash-Sperre, kein Treffer-Limit im Windup), lohnt sich Dauerdrücken auf Angriff:
   - **Was passiert:** Ein Spieler pariert nur die Schläge auf seiner eigenen Seite und drückt
     sonst durchgehend Angriff. Zwei Quellen bringen Schaden, ohne dass er mit dem Partner
@@ -204,6 +244,8 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     Windup), Windup-Treffer weniger Schaden.
   - **Mit Sonderregel** (wollten wir eigentlich nicht): Deckung bricht nicht, wenn sie gerade
     selbst pariert hat (die alte Mash-Sperre).
+  - Möglicher Ansatz (2026-10-19): Deckung öffnet nur am Motivende, wenn alle Hiebe der
+    Wiederholung pariert wurden (`docs/boss_bifrons_warden.md` → „Open“).
 - [ ] **Prototyp Koop-Jump'n'Run** (@Kay), Branch `kay/coop-platformer`. Testet eine Antwort
   auf „Was ist zwischen den Bossen?“: ein kurzer Abschnitt, den man nur zu zweit schafft.
   Baut auf den Gyms (`levels/gym/`) und dem Platforming-Kit in `Moves` auf. Der Branch hat

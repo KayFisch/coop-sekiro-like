@@ -6,6 +6,9 @@ of its own: `levels/ring/` (`ring.gd`, `ring.tscn`), entry 7 on the select scree
 `nicho/beat-runner`. Since round 4 it's **Columna Bifrons's fight without him**: his patterns,
 his tempo, his sides, his partner's hit.
 
+2026-10-19: one of the planned bosses, the Acrobat, may use the ring as one of his phases (he is
+out of reach and his attacks come as projectiles). See `docs/concept.md`, "Bosses".
+
 ## What it is
 
 - **His room, split as in the mirrored boss fight** (always on): P1 in light above the floor

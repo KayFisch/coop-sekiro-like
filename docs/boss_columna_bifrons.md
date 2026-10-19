@@ -1,5 +1,11 @@
 # Columna Bifrons, in "The Threshold" (test boss)
 
+> **Note (2026-10-19):** This doc describes the **try-out boss**: today's Columna Bifrons,
+> kept as it is as a workbench for rules, systems and raw attack ideas. It needs a new name; the
+> name Columna Bifrons goes to a new boss designed from scratch (`docs/boss_bifrons_warden.md`).
+> Rules that now hold for all bosses (boss design principles, one parry per blade, stagger,
+> knockback, the screen halves, the sync mode) are in `docs/concept.md`.
+
 A small boss built to answer questions, not a finished fight:
 
 1. **Does fighting from both sides at once feel like co-op?** (player - boss - player: "pep")
@@ -490,6 +496,9 @@ Nicho, 2026-10-17 (`core/sync_bond.gd`; numbers on F2, tab "sync mode"). With th
 - Separate swings outside the bond are normal attacks in the sync mode too (before 2026-10-17 the
   sync mode made every hit heavy).
 
+The sync mode's general model (the players' boss phase) is now in `docs/concept.md`; what is
+described here is the first prototype.
+
 ## Testing alone ("bifrons_stand_in")
 
 A stand-in plays the player who starts on the left, or on the right, by pressing that player's
@@ -513,6 +522,10 @@ player, so they never cover each other, and they pass through each other (there'
 into in a half of your own). Everything else is the same fight: one floor, the same rules, the
 same distances.
 
+Decided 2026-10-19: the halves are to become two connected sides instead of a pure mirror, each
+showing the blades aimed at its own player (`docs/concept.md`, "The two screen halves"). Not
+built yet.
+
 - Switch it in F1 (off by default); it goes on and off at once, mid-fight too.
 - The room is drawn at 0.85 so his leap stays inside a half (`MirrorView.ZOOM`). Colors, the
   pale ground, the outline in the shadow half: constants at the top of `ui/mirror_view.gd`.
@@ -526,7 +539,7 @@ same distances.
 | What | Where | Now |
 |---|---|---|
 | Tempo of everything | `StrikePattern.TIME_UNIT` | 0.2 s |
-| How long the drop takes (the reaction time) | `StrikePattern.FALL_TIME` | 0.28 s |
+| How long the drop takes (the reaction time) | F2 "bifrons_fall_time" (`StrikePattern.fall_time()`) | 0.28 s |
 | How the drop accelerates (and his lunge) | `StrikePattern.FALL_POWER` | 1.7 |
 | His blade after a strike: lying / thrown back by a parry | `STICK_TIME`, `RECOIL_TIME` | 0.12 / 0.35 s |
 | Hit window, "beat": delay / length | `BREAK_DELAY`, `BREAK_TIME` | 0 / 0.25 s |
