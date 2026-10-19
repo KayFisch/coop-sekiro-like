@@ -40,7 +40,7 @@ tests and a performance probe run from the command line.
 - **The log**, with F1 → Dev "fight_log": the same events, one JSON line each, in
   `user://fight_log.jsonl` (on Windows `%APPDATA%/Godot/app_userdata/<project>/`), new for each
   fight. Each line has the fight time `t`, `kind` (parry, block, hit, late_press, sync_hit,
-  window_missed, pair_release) and its details.
+  window_missed, pair_release; Bifrons's chains: chain) and its details.
 
 ### F5: the boss lab
 
@@ -78,7 +78,8 @@ engine reports any error while it runs. The output ends with "N passed, M failed
 What's there: the sync rules (what each landing costs whom, breaking, regen), the partner's
 window, the sync mode (binding, the strike together, his hold-off, the dash-slash through him),
 the ring's violet shard, the player's feel (speed, jump, dash, parry window, swing timing), the
-dev tools, and that every scene loads and runs.
+dev tools, Bifrons's blade rules, screen halves, gate leap and chains, and that every scene loads
+and runs.
 
 Writing one: a file `tests/test_<topic>.gd` that `extends "res://tests/test_case.gd"`, with
 methods `test_<what>()`. From `test_case.gd`:

@@ -22,15 +22,18 @@ extends BifronsMoves
 ## 6. Both swords on one side of him come down on one place: a heavy strike, parried by both
 ##    players together or not at all (see THE BLADE RULES).
 ##
-## TWO MODES (Moves "bifrons_mode"), one set of attacks. "patterns": he runs one attack after
-## another, and the players' part is to answer them. "reactive": he leaves a little more room
-## between them, and a hit he parries calls up his next attack at once, aimed at whoever
-## attacked him.
+## THREE MODES (Moves "bifrons_mode"). "patterns": he runs one attack after another, and the
+## players' part is to answer them. "reactive": the same attacks, a little more room between them,
+## and a hit he parries calls up his next attack at once, aimed at whoever attacked him.
+## "chains": a try-out of the boss design principles (docs/concept.md): his attacks are chains, a
+## motif repeated and then a finale (attacks/chain.gd), and after each a pause that's the players'
+## (see THE CHAINS).
 ## docs/boss_columna_bifrons.md has the design and what it's meant to find out.
 ##
 ## He's built in three parts, each extending the one before: his swords (bifrons_swords.gd),
 ## his moving (bifrons_moves.gd), and this one, the boss himself: his attacks, how often each
-## comes, the sync rules' hooks, his guard's answers to the players' hits, and the reactive mode.
+## comes, the sync rules' hooks, his guard's answers to the players' hits, and the reactive and
+## chains modes.
 
 # --- Tuning ---
 const MAX_HP = 1600.0
@@ -53,11 +56,15 @@ const MAX_HP = 1600.0
 #   or BOTH: which of his swords strikes, at its own player. `kind` is CUT (the default),
 #   CHARGE (see "THE CHARGE" below) or RUSH ("LEFT ALONE"). Each series is written once and
 #   also comes mirrored (MIRROR_PATTERNS).
+# "motif": a chain (attacks/chain.gd): these strikes, as a series' are written, repeated, and a
+#   finale; with the "stance" he holds before it (Chain.STANCES). They come only in the chains
+#   mode, and there only they do (THE CHAINS).
 # "attack": the script of an attack of its own, one of the four here.
 const SWEEP = preload("attacks/sweep.gd")
 const LEAP = preload("attacks/leap.gd")
 const GATE_LEAP = preload("attacks/gate_leap.gd")
 const SHOVE = preload("attacks/shove.gd")
+const CHAIN = preload("attacks/chain.gd")
 const ATTACKS = {
 	"SINGLE": {"weight": 0.0, "repeats": true, "strikes": [[3, LEFT]]},
 	"DOUBLE": {"weight": 0.0, "strikes": [[3, LEFT], [3, RIGHT]]},
@@ -85,6 +92,10 @@ const ATTACKS = {
 	# Both swords thrust at the players, to throw them back. It comes when he wants room (see
 	# "MAKING ROOM"), not by weight; give it one to have it come among the others as well.
 	"SHOVE": {"weight": 0.0, "attack": SHOVE},
+	# The chains (placeholders for the Warden's motifs): which one comes is chance, by weight.
+	"CHAIN_RRL": {"weight": 1.0, "repeats": true, "motif": [[4, RIGHT], [4, RIGHT], [3, LEFT]], "stance": "level"},
+	"CHAIN_RLRL": {"weight": 1.0, "repeats": true, "motif": [[4, RIGHT], [3, LEFT], [3, RIGHT], [3, LEFT]], "stance": "cross"},
+	"CHAIN_RRLL": {"weight": 1.0, "repeats": true, "motif": [[4, RIGHT], [3, RIGHT], [3, LEFT], [3, LEFT]], "stance": "high"},
 }
 # Runs each series of strikes as written or mirrored, whichever keeps the strikes even between
 # his two swords (at random while they're even). Off: always as written.
@@ -101,6 +112,24 @@ const TEST_ONLY_PATTERN = [] # "TRIPLE", "QUAD", "SINGLE", "LONG", "SWEEP"
 # (REACTIVE_WAIT: F2 "bifrons_reactive_min" / "_max".)
 const PATIENCE = [1, 1, 2]
 const ANSWER_WAIT = 4  # units (time_unit()) until an answer's first strike lands, at most
+
+# THE CHAINS (the chains mode; attacks/chain.gd). He attacks only with chains, a motif repeated
+# and a finale, picked by weight. Which finale is never chance (chain_finale()): the players have
+# pressed him (his posture is low): the double strike, their chance to stagger him; the chain has
+# run its length: the finale that changes the formation (pep: the crossing; ppe: the gate leap, or
+# the leap where it doesn't fit); one player away, or no room for those: the double strike.
+# THE BREATH: after each chain a pause (F2 "bifrons_breath_min" / "_max", after his recovery). He
+# doesn't attack; he walks toward the middle of the room (no nearer a player than FIT_DISTANCE), and
+# turns to the other player (his eye, a mark at the top of his body in their color, goes over to
+# their side): the next chain starts with them. His posture comes back if they leave him be. A hit
+# at his guard meanwhile (parried or blocked) is answered at once: the next chain, its first strike
+# at the attacker, quickly (ANSWER_WAIT). The finale of a chain that's under way comes even while
+# the dev tools hold him (dev_hold); a new chain, an answer too, doesn't.
+# (Not in the players' sync mode: there he fights as in the patterns mode.)
+const EYE_SIZE = Vector2(10.0, 6.0)
+const EYE_TOP = 14.0  # px down from his top
+const EYE_INSET = 5.0  # px in from his flank
+const EYE_TURN = 6.0  # how fast it goes over to the other side (1/s)
 
 # A blade landing on a player (any of his attacks; how far it reaches: BLADE_REACH, in his swords' part).
 const BLADE_KNOCKBACK = 300.0
@@ -142,6 +171,16 @@ var _provoker = RIGHT  # the sword that parried the last one: its player is who 
 var _answering = false  # starting his answer (see orient() and first_wait())
 var _attack_parries = 0  # blades parried in his attack so far (THE STAGGER FROM THE ATTACK)
 
+# The chains (see THE CHAINS).
+var _lead_blade = 0  # the sword the next attack's first strike is to be (orient()), or 0: as it comes
+var _last_lead = RIGHT  # the sword the last attack's first strike was
+var _gaze = RIGHT  # the sword whose player he's turned to: the next chain starts with them
+var _breath_until = 0.0  # anim_time the breath lasts until
+var _provoked = false  # a hit at his guard in the breath: he answers
+var _handed = ""  # a chain's finale of its own, due as soon as the chain is over
+var _carry_parries = false  # that finale's parries count on from the chain's
+var _eye: ColorRect
+
 
 # His numbers on F2 (core/tuning.gd collects them): a page of his own, in his room. The pattern
 # weights' defaults are ATTACKS' own.
@@ -171,6 +210,13 @@ static func tuning_entries() -> Array:
 		{"header": "THE STAGGER FROM THE ATTACK (F1: bifrons_chain_stagger)", "column": 1},
 		{"key": "bifrons_stagger_least", "label": "a coop parry staggers him (s)", "default": 0.5, "step": 0.1},
 		{"key": "bifrons_stagger_per_parry", "label": "...and longer by this per blade parried in that attack (s)", "default": 0.2, "step": 0.05},
+		{"header": "THE CHAINS (F1: bifrons_mode chains)", "tab": "chains"},
+		{"key": "bifrons_chain_reps_min", "label": "a chain repeats its motif at least (times; at random up to...)", "default": 2.0, "step": 1.0},
+		{"key": "bifrons_chain_reps_max", "label": "...at most (times), then its finale", "default": 4.0, "step": 1.0},
+		{"key": "bifrons_chain_posture", "label": "...the double strike sooner, his posture under (% of it)", "default": 50.0, "step": 5.0},
+		{"header": "THE BREATH AFTER A CHAIN", "column": 1},
+		{"key": "bifrons_breath_min", "label": "he moves, and doesn't attack, from (s)", "default": 2.5, "step": 0.1},
+		{"key": "bifrons_breath_max", "label": "...to (s)", "default": 3.5, "step": 0.1},
 		{"header": "THE GATE LEAP (attacks/gate_leap.gd)", "tab": "gate leap"},
 		{"key": "bifrons_gate_lift", "label": "after the upward cut, the heavy strike's windup (s): A's time to come back", "default": 0.7, "step": 0.05},
 		{"header": "HOW OFTEN EACH OF HIS ATTACKS COMES", "tab": "patterns"},
@@ -196,6 +242,9 @@ func _ready():
 	rules.boss = self
 	add_child(rules)
 	GameManager.rules = rules
+	_eye = _rect(EYE_SIZE, Color.WHITE)  # THE BREATH: whom he's turned to
+	_eye.visible = false
+	body.add_child(_eye)
 
 
 func _exit_tree():
@@ -218,6 +267,8 @@ func get_attack_pool() -> Array:
 		var entry = ATTACKS[attack_name]
 		if entry.has("strikes"):
 			pool.append(StrikePattern.new(attack_name, entry.strikes))
+		elif entry.has("motif"):
+			pool.append(CHAIN.new(attack_name, entry.motif, entry.get("stance", "")))
 		else:
 			pool.append(entry.attack.new(attack_name))
 	for attack in pool:
@@ -240,9 +291,16 @@ func coop_stagger(own: float) -> float:
 	return rules.coop_stagger() if rules != null else own
 
 
-# Every attack counts its parried blades from its start.
+# Every attack counts its parried blades from its start; a chain's finale of its own counts on from
+# the chain's. A chain starts with the player he's turned to (THE BREATH), unless he's answering.
 func _begin_telegraph(attack: Attack):
-	_attack_parries = 0
+	if not _carry_parries:
+		_attack_parries = 0
+	_carry_parries = false
+	if attack is CHAIN:
+		_provoked = false
+		if _lead_blade == 0:
+			_lead_blade = _gaze
 	super(attack)
 
 
@@ -250,11 +308,13 @@ func _begin_telegraph(attack: Attack):
 # the attack is possible at all just now (its fits()).
 func get_attack_weights() -> Dictionary:
 	var situation = _situation()
+	var chains = is_chains()
 	var weights = {}
 	for attack_name in ATTACKS:
 		var attack = find_attack(attack_name)
 		var fits = attack == null or attack.fits(self)
-		weights[attack_name] = weight_in(attack_name, situation) if fits else 0.0
+		var here = ATTACKS[attack_name].has("motif") == chains  # the chains in their mode, and only they
+		weights[attack_name] = weight_in(attack_name, situation) if fits and here else 0.0
 	if in_sync_mode():
 		# The players' sync mode: only his series of plain cuts (StrikePattern makes them strikes of
 		# both swords), nothing that throws the two apart.
@@ -289,6 +349,14 @@ func get_repeatable_attacks() -> Array:
 
 
 func get_idle_pause() -> float:
+	if _handed != "":
+		return 0.0  # a chain's finale comes at once
+	if is_chains():
+		# THE BREATH: he turns to the other player, whom the next chain is for.
+		var breath = randf_range(Tuning.value("bifrons_breath_min"), Tuning.value("bifrons_breath_max"))
+		_breath_until = anim_time + breath
+		_gaze = -_last_lead
+		return breath
 	var pause = randf_range(Tuning.value("bifrons_pause_min"), Tuning.value("bifrons_pause_max"))
 	if _is_reactive():
 		pause = randf_range(Tuning.value("bifrons_reactive_min"), Tuning.value("bifrons_reactive_max"))
@@ -353,10 +421,14 @@ func _physics_process(delta):
 	_drift_on(delta)
 	if rules != null:
 		_judge_windows()
-	if state == State.IDLE and _shove_due and not dev_hold:
+	if state == State.IDLE and _handed != "":
+		_begin_finale()
+	elif state == State.IDLE and _shove_due and not dev_hold:
 		_shove()
 	elif state == State.IDLE and _is_reactive() and _provocations >= _patience and not dev_hold:
 		_strike_back()
+	elif state == State.IDLE and is_chains() and _provoked and not dev_hold:
+		_answer_chain()
 
 
 # Where the players are, as ATTACKS has it: "alone" (both swords on one player), "ppe" (both
@@ -402,6 +474,11 @@ func orient(strikes: Array) -> int:
 				_turn(blade, false)  # back on its own player, for this
 	elif _answering and first != BOTH:
 		way = first * _provoker
+	elif _lead_blade != 0 and first != BOTH:
+		# A chain, starting with the player he's turned to; or with the other one, if they're away.
+		way = first * _lead_blade
+		if not can_strike(first * way) and can_strike(-first * way):
+			way = -way
 	elif first != BOTH:
 		if MIRROR_PATTERNS:
 			var lean = 0  # > 0: as written, the right sword strikes more often than the left
@@ -420,6 +497,9 @@ func orient(strikes: Array) -> int:
 	for strike in strikes:
 		if strike[1] != BOTH:
 			_strikes_by[strike[1] * way] += 1
+	if first != BOTH:
+		_last_lead = first * way
+	_lead_blade = 0
 	_provocations = 0
 	_patience = PATIENCE.pick_random()
 	return way
@@ -575,7 +655,7 @@ func _struck_by_rules(amount: float, source):
 	var lethal = false
 	if not open.is_empty():
 		_open_used[open[0]] = true  # tried: whatever comes of it, the window wasn't left unused
-	if not guards.is_empty() and (open.is_empty() or not guard_breaks()):
+	if not guards.is_empty() and (open.is_empty() or not _open_breaks[open[0]]):
 		if randf() < Tuning.value("boss_parry_chance"):
 			_parry(guards[0], source, at)
 			rules.boss_parried(source)
@@ -639,6 +719,7 @@ func _block(blade: int, _player, at: Vector2):
 	if _is_reactive():
 		_provocations += 1
 		_provoker = blade
+	_provoke(blade)
 
 
 # He parries a player's sword hit with a sword that fights them: the hit is lost and the
@@ -652,6 +733,7 @@ func _parry(blade: int, player, at: Vector2):
 	if _is_reactive():
 		_provocations += 1
 		_provoker = blade
+	_provoke(blade)
 
 
 # He's free, and he wanted room (see "MAKING ROOM"): the shove, if anyone is still that close.
@@ -674,6 +756,91 @@ func _strike_back():
 	_answering = true
 	_begin_telegraph(pick_attack())
 	_answering = false
+
+
+# --- The chains (see THE CHAINS) ---
+
+func is_chains() -> bool:
+	return Moves.value("bifrons_mode") == "chains" and not in_sync_mode()
+
+
+# Which finale a chain ends with (attacks/chain.gd): an entry of ATTACKS.
+func chain_finale(posture_low: bool) -> String:
+	if posture_low or _situation() == "alone":
+		return "BOTH"
+	if is_ppe():
+		for attack_name in ["GATE_LEAP", "LEAP"]:
+			if find_attack(attack_name).fits(self):
+				return attack_name
+		return "BOTH"
+	return "CROSSING" if finale_way("CROSSING") != 0 else "BOTH"
+
+
+# Which way round a chain's finale of strikes goes: the crossing toward whichever side has more
+# room for its charge (0: neither has enough); anything else as written.
+func finale_way(attack_name: String) -> int:
+	if attack_name != "CROSSING":
+		return 1
+	var charges = ATTACKS.CROSSING.strikes.filter(func(strike): return strike.size() > 2 and strike[2] == CHARGE)
+	var charging = charges[0][1] if not charges.is_empty() else RIGHT  # its charge's sword, as written
+	var room = _charge_room(charging)
+	var other = _charge_room(-charging)
+	if maxf(room, other) < CHARGE_MIN_ROOM:
+		return 0
+	return 1 if room >= other else -1
+
+
+# A chain is over, and its finale is an attack of its own: it comes next, at once.
+func hand_over(attack_name: String):
+	_handed = attack_name
+
+
+func _begin_finale():
+	var finale = find_attack(_handed)
+	_handed = ""
+	if finale == null:
+		return
+	_carry_parries = true
+	_choose_target()
+	_begin_telegraph(finale)
+
+
+# THE BREATH: a hit at his guard (that sword's player's) calls up the next chain.
+func _provoke(blade: int):
+	if is_chains() and state in [State.IDLE, State.RECOVER] and not dev_hold:
+		_provoked = true
+		_provoker = blade
+
+
+# ...at once, its first strike at the attacker.
+func _answer_chain():
+	_provoked = false
+	_choose_target()
+	_answering = true
+	_lead_blade = _provoker
+	_gaze = _provoker
+	_begin_telegraph(pick_attack())
+	_answering = false
+
+
+# THE BREATH: he walks toward the middle of the room (bifrons_moves.gd).
+func _wants_middle() -> bool:
+	return is_chains() and (state == State.RECOVER or (state == State.IDLE and anim_time < _breath_until))
+
+
+# His eye: at the top of him, on the side of the player he's turned to, in their color.
+func _update_pose():
+	super()
+	if _eye == null:
+		return  # (BaseBoss poses him once before he's ready)
+	var ward = ward_of(_gaze)
+	_eye.visible = is_chains() and hp > 0.0 and ward != null
+	if not _eye.visible:
+		return
+	var to = EYE_INSET if blade_side(_gaze) == LEFT else body.size.x - EYE_INSET - EYE_SIZE.x
+	var turn = 1.0 - exp(-EYE_TURN * get_physics_process_delta_time())
+	_eye.position = Vector2(lerpf(_eye.position.x, to, turn), EYE_TOP)
+	_eye.color = ward.player_color
 
 
 func _die():

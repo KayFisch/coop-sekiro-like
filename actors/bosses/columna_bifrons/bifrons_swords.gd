@@ -25,6 +25,7 @@ const SWORD_WIDTH = 12.0
 const SWORD_FOLLOW = 22.0  # how fast a blade eases into its pose (1/s); a drop itself is exact
 const PLATE_WIDTH = 6.0  # the guard, drawn down the flank a blade is guarding
 const PARRY_FLICK_TIME = 0.12  # his own parry: the guarding blade flicked at the attacker
+const BREAK_FLASH_TIME = 0.15  # a motif's end breaking his guard (the chains): all of him flashes white this long
 # A blade counts as back at its flank, guarding, once it's this close to its guard pose.
 const GUARD_NEAR = Vector2(10.0, 0.2)  # px, radians
 # Sword poses, for a sword on his right (on his left they're mirrored): x, y = where the hand
@@ -130,6 +131,8 @@ var _open_shown = {LEFT: true, RIGHT: true}  # the opening has made its sound an
 var _opened_by = {LEFT: null, RIGHT: null}  # the player whose parry broke it
 var _open_used = {LEFT: false, RIGHT: false}  # a sync hit came through it
 var _open_judged = {LEFT: true, RIGHT: true}  # its closing has been seen (_judge_windows())
+var _open_breaks = {LEFT: false, RIGHT: false}  # this window breaks the guard (see break_guard())
+var _break_flash_until = 0.0  # anim_time until which he flashes white: a motif's end broke his guard
 # Sync as life (core/sync_rules.gd): the fight's rules, set once he's ready (columna_bifrons.gd).
 var rules: SyncRules = null
 
@@ -223,20 +226,22 @@ func is_guarding(blade: int) -> bool:
 
 
 # True while that sword's window is open (a parry of the other sword opened it): the other
-# player's hits are sync hits. Its guard is broken meanwhile, unless Moves "bifrons_guard_break"
-# is off: then the window only times the beat, and a hit in it lands (a sync hit) only if that
-# sword can't parry it just then.
+# player's hits are sync hits. Its guard is broken meanwhile, if the window breaks it (Moves
+# "bifrons_guard_break": every parry's, none, or a motif's end in the chains, see break_guard());
+# if not, the window only times the beat, and a hit in it lands (a sync hit) only if that sword
+# can't parry it just then.
 func is_open(blade: int) -> bool:
 	return anim_time >= _open_from[blade] and anim_time < _open_until[blade]
 
 
 # True while that sword's guard is down because the window is open (see is_open()).
 func is_broken(blade: int) -> bool:
-	return guard_breaks() and is_open(blade)
+	return _open_breaks[blade] and is_open(blade)
 
 
+# True if every parry's window breaks the guard ("bifrons_guard_break" on).
 func guard_breaks() -> bool:
-	return Moves.on("bifrons_guard_break")
+	return Moves.value("bifrons_guard_break") == "on"
 
 
 # The sword whose guard is open for `player`'s sync hit (another player's parry broke it), or 0.
@@ -249,19 +254,20 @@ func window_for(player) -> int:
 
 # True from the parry that breaks that sword's guard until it's back: open, or about to be.
 func is_breaking(blade: int) -> bool:
-	return guard_breaks() and anim_time < _open_until[blade]
+	return _open_breaks[blade] and anim_time < _open_until[blade]
 
 
-# A strike of his other sword, parried by `by`: after `delay` this one's guard is gone for
-# `duration`. The parry's energy runs over to the partner meanwhile (SyncWave), arriving as the
-# window opens.
-func break_guard(blade: int, duration: float, delay = 0.0, by = null):
+# A strike of his other sword, parried by `by`: after `delay` this one's window is open for
+# `duration`, and its guard gone if `breaks` (null: as "bifrons_guard_break" says for every parry).
+# The parry's energy runs over to the partner meanwhile (SyncWave), arriving as the window opens.
+func break_guard(blade: int, duration: float, delay = 0.0, by = null, breaks = null):
 	_open_from[blade] = anim_time + delay
 	_open_until[blade] = _open_from[blade] + duration
 	_open_shown[blade] = false
 	_opened_by[blade] = by
 	_open_used[blade] = false
 	_open_judged[blade] = false
+	_open_breaks[blade] = guard_breaks() if breaks == null else breaks
 	if by != null:
 		for p in get_players():
 			if p != by:
@@ -272,9 +278,13 @@ func break_guard(blade: int, duration: float, delay = 0.0, by = null):
 
 func _show_open(blade: int):
 	_open_shown[blade] = true
-	if guard_breaks():
+	if _open_breaks[blade]:
 		Sfx.play("guard_break", -2.0)
 		spawn_sparks(_flank(blade_side(blade), global_position.y), 12, COLOR_PLATE)
+		if not guard_breaks():
+			# Only a motif's end breaks it (the chains): his own sign for it, all of him flashing.
+			_break_flash_until = anim_time + BREAK_FLASH_TIME
+			Sfx.play("on_beat", -2.0)
 	# The beat for the partner's hit: their sword lights up while a hit is on it (as the parry's
 	# SyncWave arrives).
 	for p in get_players():
@@ -456,7 +466,7 @@ func _update_pose():
 		var open = is_open(blade) and not down
 		if open and not _open_shown[blade]:
 			_show_open(blade)  # a window opened with a delay opens only now
-		var broken = open and guard_breaks()
+		var broken = open and _open_breaks[blade]
 		if across and _front != blade:
 			_front = blade  # it reaches across in front of the other sword
 			move_child(_pivots[blade], -1)
@@ -516,6 +526,8 @@ func _update_pose():
 	for side in SIDES:
 		if down:
 			_halves[side].color = Color(1, 1, 1, 0)  # the body's own stagger flash shows
+		elif anim_time < _break_flash_until:
+			_halves[side].color = Color.WHITE  # a motif's end broke his guard: all of him
 		elif flashing[side]:
 			_halves[side].color = COLOR_OPEN if fmod(anim_time, 0.1) < 0.05 else Color.WHITE
 		else:

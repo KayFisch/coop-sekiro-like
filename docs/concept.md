@@ -135,7 +135,8 @@ chains that extend fluidly (Genichiro). Big moves are combos that make sense in 
 A boss doesn't pick from a table of fixed patterns. It builds **chains** from a small grammar:
 **strikes** (the rhythm) and **one finale**. A chain repeats a short **motif** (e.g. R R L)
 until something happens (e.g. his posture is low), then ends with a finale, then a pause. Each
-boss has only a few motifs (2 to 3) and a few finales.
+boss has only a few motifs (2 to 3) and a few finales. (To try the grammar before any boss has
+its own motifs: the try-out boss's chains mode, `docs/boss_columna_bifrons.md`, "chains".)
 
 ### Phrase, then breath
 

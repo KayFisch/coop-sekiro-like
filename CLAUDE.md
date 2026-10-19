@@ -245,7 +245,9 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   swinging can't); his own movement (where he stands: `_place()` / `walk()`; a lunge with every
   strike: `lunge_goal()`; making room: `make_room()`; charging past a player, leaping between
   them, rushing one who's away); a reactive mode in which he strikes back at whoever attacked
-  him (started from his own `_physics_process()`, outside BaseBoss's idle timer); and
+  him (started from his own `_physics_process()`, outside BaseBoss's idle timer); a chains mode,
+  the boss design principles tried out (`attacks/chain.gd`: a motif repeated, a finale, then a
+  pause that's the players', "THE CHAINS"); and
   `stand_in.gd`, which plays one of the players for testing alone, by pressing that player's
   buttons.
 - `levels/`: `GymLevel` (`gym/gym_level.gd`) is the base of the gyms and the platformer levels:

@@ -152,6 +152,8 @@ func _pace() -> float:
 # Where he's headed (see "WHERE HE STANDS"), walls aside; where he is, if he's fine there.
 func _place() -> float:
 	var x = global_position.x
+	if _wants_middle():
+		return _toward_middle()
 	var fought = _fought()
 	if fought.is_empty():
 		return x
@@ -196,6 +198,24 @@ func _place() -> float:
 			return goal
 	# Else his drift: the distance to keep from the nearer one just now.
 	return near.global_position.x - side * lerpf(Tuning.value("bifrons_drift_near"), Tuning.value("bifrons_drift_far"), _drift)
+
+
+# True while he'd rather stand in the middle of the room than by the players (the chains' breath,
+# columna_bifrons.gd).
+func _wants_middle() -> bool:
+	return false
+
+
+# Toward the room's middle, but no nearer than FIT_DISTANCE to a player on the way.
+func _toward_middle() -> float:
+	var x = global_position.x
+	var goal = (ARENA_LEFT + ARENA_RIGHT) / 2.0
+	var way = signf(goal - x)
+	for p in get_players():
+		var stop = p.global_position.x - way * FIT_DISTANCE
+		if (p.global_position.x - x) * way > 0.0 and (goal - stop) * way > 0.0:
+			goal = stop
+	return goal if (goal - x) * way > 0.0 else x
 
 
 # One frame of his drift: gliding to where it's headed, or waiting there for the next.

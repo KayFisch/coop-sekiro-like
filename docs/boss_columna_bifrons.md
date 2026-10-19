@@ -20,7 +20,8 @@ A small boss built to answer questions, not a finished fight:
 They come out of `scribbles.md` (2026-09-30 to 2026-10-02). The name is a working title.
 
 Code: `actors/bosses/columna_bifrons/` (boss, `stand_in.gd`, `attacks/strike_pattern.gd`,
-`attacks/sweep.gd`, `attacks/leap.gd`, `attacks/gate_leap.gd`, `attacks/shove.gd`),
+`attacks/sweep.gd`, `attacks/leap.gd`, `attacks/gate_leap.gd`, `attacks/shove.gd`,
+`attacks/chain.gd`),
 `levels/threshold/`; the players'
 half of the rules is in `actors/player/` ("THE SWORD" in `player_sword.gd`, "DASH-PARRY" in
 `player_body.gd`). Select screen:
@@ -369,12 +370,17 @@ often. Measured with bots that mash attack and stop only to parry the strikes th
 somewhere between 2 and 5 sync hits in 10 strikes, in either window (it varies a lot from run to
 run). A timed press gets all of them. `TASKS.md` has the problem in detail.
 
-**Whether the guard breaks at all ("bifrons_guard_break", on by default).** Off (Nicho,
-2026-10-17), a parry no longer breaks his other sword's guard: the window stays, timed as above
-and cued on the partner's sword, but in it his guard still parries or blocks. A hit in the
+**Whether the guard breaks at all ("bifrons_guard_break": on by default, off, or motif_end).**
+Off (Nicho, 2026-10-17), a parry no longer breaks his other sword's guard: the window stays, timed
+as above and cued on the partner's sword, but in it his guard still parries or blocks. A hit in the
 window is a sync hit only if it lands, so the partner has to find a moment that sword can't
 parry: drawn back for its next strike, coming, or thrown back. Trying in the window counts as
-using it (no sync lost for a missed window).
+using it (no sync lost for a missed window). **motif_end** (2026-10-19, for the chains mode): every
+window is as with off, but for one: the last parry of a motif's repetition all of whose strikes
+were parried breaks the guard (and all of him flashes white, with a sound of its own). So at most
+one real sync hit per repetition (the Warden's "guard opening at a motif's end"). Outside the
+chains there are no motifs: it's the same as off. (Until 2026-10-19 the switch was on / off; a
+saved one keeps what it was.)
 
 ## The sweep (pep only)
 
@@ -392,7 +398,7 @@ strikes); what a parry wins is where his swords end up, by rule 2:
 
 He stands still for it.
 
-## Two modes ("bifrons_mode")
+## Three modes ("bifrons_mode")
 
 ### patterns (default)
 
@@ -450,6 +456,46 @@ So attacking him means being attacked, and that's the opening: you parry his ans
 partner hits. Provoking is how a pair starts an exchange on its own beat. And greed is a trade:
 a swing at him while he draws back the sword that's yours lands (rule 2), but it isn't over when
 that sword comes.
+
+### chains (tried out)
+
+The boss design principles of 2026-10-19 (`docs/concept.md`: "Chains, not patterns", "Phrase,
+then breath", "Readable, not controllable"), tried out before the Warden's own motifs exist
+(2026-10-19, `attacks/chain.gd`, "THE CHAINS" in `columna_bifrons.gd`). The patterns and the
+reactive mode become one: **chains are his initiative, the pauses the players'.**
+
+- **A chain is one motif, repeated, then one finale.** Three placeholder motifs, in ATTACKS:
+  CHAIN_RRL (4 right, 4 right, 3 left), CHAIN_RLRL (4, 3, 3, 3) and CHAIN_RRLL (4, 3, 3, 3), each
+  with weight 1 (F2 → patterns). A chain keeps its way round: the motif is the same each time.
+- **Each motif has a stance**, held 0.45 s before its first strike is drawn: RRL the lead sword
+  held out level at its player, RLRL both swords crossed in front of him, RRLL the lead sword
+  straight up over his head (`Chain.STANCES`). He stands still in it.
+- **He decides only at the end of a repetition** (as its last strike lands). His posture under
+  F2 "bifrons_chain_posture" (his page, tab "chains", 50 %): the finale now. Else the motif again,
+  until the chain has the repetitions it was given (at random from "bifrons_chain_reps_min" to
+  "_max": 2 to 4), then the finale.
+- **Which finale is never chance.** Pressed (his posture low): **the double strike** (BOTH), the
+  players' chance to stagger him. Run its length: **the finale that changes the formation**: in pep
+  the crossing (toward the side with more room for its charge), in ppe the gate leap (the leap if
+  it doesn't fit). One player away, or no room for those: the double strike. The double strike
+  and the crossing are the chain's own last strikes; the leaps come straight after it. The
+  stagger counts every parry of the chain and its finale (e.g. one repetition of RRL and a gate
+  leap, all parried: 0.5 + 9 x 0.2 = 2.3 s).
+- **Then the breath** (F2 "bifrons_breath_min" / "_max", 2.5 to 3.5 s, after his 0.6 s
+  recovery). He doesn't attack. He walks toward the middle of the room (no nearer a player than
+  90 px), and **turns to the other player**: a mark at the top of him, his eye, in the color of
+  the player he looks at, goes over to their side. The next chain starts with them. His posture
+  comes back if they leave him be (2 s after the last hit, as ever).
+- **A hit at his guard in the breath** (he parries or blocks it) is answered at once: the next
+  chain, its first strike at the attacker, landing within 0.8 s (its stance first). Pressing him
+  keeps his posture down, but costs posture on his parries and draws his answer.
+- With "bifrons_guard_break" on **motif_end** (above), a repetition parried all through opens his
+  other side once, at its end; the chain goes on.
+- The dev tools: each chain is in the F5 lab (CHAIN_...), in any mode. While he's held (H), a
+  chain under way still ends with its finale; a new chain, or an answer, doesn't come. Each
+  chain's ending is in the fight log (kind "chain": motif, repetitions, finale, whether his
+  posture was low).
+- In the players' sync mode he fights as in the patterns mode (his sync-mode pattern is open).
 
 ## Sync as life
 
@@ -661,6 +707,11 @@ of the player it fights (`ward_of()`); in the other half a copy of it stands in 
 | Gate leap: the ram's spot (past A), who's under it, its throw | `SPOT_PAST_A`, `RAM_REACH`, `RAM_KNOCKBACK` | 12 px, 60 px, x1 |
 | Gate leap: the rip's throw | `GateLeap.RIP_KNOCKBACK` | x3 (about 180 px; parried 65) |
 | The sword in the floor: the wall | `WALL_WIDTH`, `WALL_HEIGHT` (bifrons_swords.gd) | 14 / 230 px |
+| Chains: repetitions (at random) / the finale sooner, his posture under | F2 "bifrons_chain_reps_min", "_max" / "bifrons_chain_posture" | 2 - 4 / 50 % |
+| Chains: the breath after one | F2 "bifrons_breath_min", "_max" | 2.5 - 3.5 s |
+| Chains: a motif's stance, how long / the poses | `Chain.STANCE_TIME`, `STANCES` | 0.45 s |
+| Chains: his eye (size, how fast it turns) | `EYE_SIZE`, `EYE_TURN` (columna_bifrons.gd) | 10 x 6 px, 6/s |
+| motif_end: his flash | `BREAK_FLASH_TIME` (bifrons_swords.gd) | 0.15 s |
 | A strike's knockback: hit / block (his other strikes; a throw's block with the switch on: as a hit) | `BLADE_KNOCKBACK`, `BLOCKED_KNOCKBACK` | 300 / 150 px/s |
 | Where he stands: steps back from / to; walks up from / to | `CROWD_DISTANCE`, `FIT_DISTANCE`; `BLADE_REACH`, `REACH_MARGIN` | 62 / 90; 215 / 185 px |
 | His drift: distances to the nearer player / speed / pause; off the middle between two | `DRIFT_NEAR`, `DRIFT_FAR`, `DRIFT_SPEED`, `DRIFT_PAUSE`; `PEP_DRIFT` | 80 / 170 px, 0.6 of that per s, 0.5 s; 60 px |
@@ -729,6 +780,12 @@ in, he uses them all the same.
   answer, and does provoking feel like leading the fight?
 - **The sweep:** can the second player read their moment (0.26 s after the first)? Do the four
   outcomes read from where the swords are, without knowing the table?
+- **The chains** (F1 "bifrons_mode" chains): does a motif read as one, from its stance and from
+  being repeated? Do you know *when* he may branch (a repetition's end), and do you feel you
+  caused the finale (pressed: the double strike) without steering him? Is the breath yours: do
+  you press him, or let both sides recover? Does his eye say whom the next chain is for? And with
+  "bifrons_guard_break" motif_end: is one opening per clean repetition enough reward, or too
+  little?
 - **The gate leap** (F5: GATE_LEAP, both players on one side first, ← / →): can you tell it from
   the leap and the crossing as it starts? Does the sword in the floor read as a wall, and the vault
   as his choice of where everyone ends up? Is the finish's rule ("A in his reach as the swords come

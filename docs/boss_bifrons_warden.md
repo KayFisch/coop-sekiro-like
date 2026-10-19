@@ -90,7 +90,9 @@ is in the ground it is a wall.
   or crossing; formation → which finale.
 - **Guard opening at a motif's end** (Nicho's idea): if all strikes of a repetition were
   parried, the last parry briefly opens his other side, so at most one real sync hit per
-  repetition. In the try-out boss this is the switch "bifrons_guard_break" (on: every parry opens
+  repetition. (Tried out since 2026-10-19: the try-out boss's chains mode with
+  "bifrons_guard_break" on motif_end, `docs/boss_columna_bifrons.md`, "chains".)
+  In the try-out boss this is the switch "bifrons_guard_break" (on: every parry opens
   the other side; off: the window stays, but his guard still parries). Nicho plays with it off,
   because sync damage came too fast with it on. Claude's suggestions: "enough" = all strikes of
   that repetition; the sync hit doesn't break the chain; the opening gets its own short tell.

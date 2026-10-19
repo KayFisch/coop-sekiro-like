@@ -90,6 +90,7 @@ var _contacts: Array = []  # when it lands, in seconds from the pattern's start
 var _waits: Array = []  # its wait, in TIME_UNITs
 var _swords: Array = []  # its sword (see ColumnaBifrons.orient())
 var _kinds: Array = []  # CUT, CHARGE, RUSH or PUSH
+var _way = 1  # which way round this run goes: 1 as written, -1 mirrored (ColumnaBifrons.orient())
 var _time = 0.0  # seconds into the pattern
 var _next = 0  # the strike that lands next
 var _parried = {LEFT: false, RIGHT: false}  # how each blade's last strike went...
@@ -137,6 +138,7 @@ func start(boss_node, player_nodes: Array):
 	super(boss_node, player_nodes)
 	var lead = boss.first_wait(_strikes[0][0])
 	var way = boss.orient(_strikes)
+	_way = way
 	_swords = _strikes.map(func(strike): return strike[1] * way)
 	_kinds = _strikes.map(func(strike): return strike[2] if strike.size() > 2 else CUT)
 	_waits = _strikes.map(func(strike): return strike[0])
@@ -250,9 +252,20 @@ func _leave_out_absent():
 		# A pattern's first strike keeps the longer windup of the two.
 		if _next == 0 and _waits.size() > 1:
 			_waits[1] = maxf(_waits[1], _waits[0])
-		for list in [_contacts, _waits, _swords, _kinds]:
+		for list in _lists():
 			list.remove_at(_next)
 		_schedule(_next)
+
+
+# The lists with one entry per strike of this run (a strike that's left out leaves all of them).
+func _lists() -> Array:
+	return [_contacts, _waits, _swords, _kinds]
+
+
+# Whether the parry of strike `index` breaks the other sword's guard, or only opens its window
+# (null: as Moves "bifrons_guard_break" says for every parry; a chain decides for itself).
+func _breaks_guard(_index: int):
+	return null
 
 
 # The landing times of the strikes from `index` on, by their waits.
@@ -301,7 +314,7 @@ func _land(index: int):
 		if not (_parried[LEFT] and _parried[RIGHT]):
 			_room_at = _contacts[index] + boss.BACK_OFF_DELAY  # if the players are on one side
 	elif _parried[sword]:
-		boss.break_guard(-sword, window_time(), window_delay(), judged[sword].parriers[0])
+		boss.break_guard(-sword, window_time(), window_delay(), judged[sword].parriers[0], _breaks_guard(index))
 	if _kinds[index] == CHARGE and sword != BOTH:
 		_charge_at = _contacts[index] + boss.CHARGE_DELAY
 		_charge_sword = sword
