@@ -26,22 +26,7 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 
 ## Jetzt
 
-- [ ] **`player.gd` aufräumen, ein Baukasten daraus** (@Kay, 2026-10-18), Branch
-  `kay/player-kit` (auf `nicho/code-overhaul`). Raus, wie mit Nicho besprochen: Cubus und Sphaera
-  (mit ihren Spieler-Hooks: Griff, Tumble, Klingen-Clash, Sammeln, Seil, Grube), HP und Tränke
-  (mit Bifrons' altem „hp“-Modus und dem alten Sync-Meter), die Wand-Experimente (turn grace,
-  wall reach, Kletter-Log), das alte Relay mit Zielen und der Call-Countdown. Der Wall-Rhythmus
-  läuft auf `Beat` statt auf einem eigenen Metronom (Gefühl testen). Dann gemeinsame Helfer
-  (`core/fx.gd`: Funken, Ringe, Shake), Spieler-Verben für Bosse und Kit, und `player.gd` in
-  Schichten wie Bifrons. Vorher Tests für die Moves, die bleiben. **Fasst `player.gd` und seine
-  Aufrufer an** (Bifrons, Gyms, Kit, `core/`, HUD): bis zum Merge dort bitte nichts ändern.
-  Stand 2026-10-18: Code fertig (Fx, Helfer, Verben, `SWINGS`, Resets, fünf Schichten, Aufrufer
-  auf öffentlichen Namen), Nichos zwei neueste Overhaul-Commits drin, 36 Tests grün. Danach raus
-  (Kays Entscheidung, kein Level nutzte sie): Doppelsprung, Upslash-Hop, Fast Fall, Wand-Klammern,
-  Wand-Refresh; Pogo nur noch an Pogo-Punkten (Laternen) und am Partner. Dann: alle Moves
-  standardmäßig an (kein Raum schaltet mehr etwas ein), und der Dash-Slash ist überall der des
-  Relays (aufladen, auf dem Schlag loslassen), auch im Bosskampf. Offen: Kays Spieltest.
-- [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), Branch `nicho/pep-test`. Testet die
+- [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), jetzt auf `main`. Testet die
   Grundregel aus den Scribbles: Spieler links und rechts vom Boss, zwei Schwerter, er ist auf
   beiden Seiten gedeckt; ein Parry auf einer Seite bricht kurz die Deckung auf der anderen
   (Partner trifft im selben Takt), beide Seiten gleichzeitig pariert = Stagger.
@@ -395,6 +380,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 
 ## Erledigt
 
+- [x] **Kays Branch, Code-Überarbeitung und `player.gd`-Baukasten auf `main`** (2026-10-19):
+  `kay/coop-platformer` → `nicho/kay-to-main` → `nicho/code-overhaul` → `kay/player-kit`, von
+  Nicho lokal getestet und zusammen nach `main` gemergt.
 - [x] `CLAUDE.md`, `TASKS.md`, `scribbles.md` angelegt
 - [x] Godot-Projekt ins Repo-Root, Design-Docs nach `docs/`, `.gitignore` zusammengefasst
 - [x] Branch- und Commit-Konventionen in `CLAUDE.md`

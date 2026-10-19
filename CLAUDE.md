@@ -35,35 +35,6 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
-### For Nicho, from Kay (2026-10-18)
-
-- `kay/player-kit` (on your `nicho/code-overhaul` at d0f2319): the player is cleaned up and in
-  five parts like Bifrons, `player_body.gd` → `_sword` → `_walls` → `_partner` → `player.gd`
-  (still the one everyone preloads). The code map above has the how; the chimney clash sits in
-  the walls part.
-- Out, as we agreed: Cubus, Sphaera and their player hooks, HP and potions (also Bifrons's "hp"
-  mode and the old sync meter), the wall experiments, the old aiming relay and the call. The
-  wall rhythm runs on `Beat`, no metronome of its own.
-- New for everyone: `core/fx.gd` (`Fx.sparks()`, `shake()`, `squash()`; `BaseBoss` and Bifrons
-  use it). On the player: `partner()` (`BaseBoss.partner_of()` is gone), `action()` (was
-  `_action()`), `bounce()`, `rise_speed()`, `now()` and readout queries (`is_dashing()`,
-  `can_dash()`, `swing_name()`...). `take_damage(knockback, chip)` has no amount. Your
-  `core/dev.gd` reads `p.now()`, `p.last_block_press` and `p.is_swinging()` now.
-- Your two newest overhaul commits (F2 like F1) are merged in; the one conflict, a sentence in
-  the code map here, keeps both.
-- Also out now (no level used them): double jump, the upslash's hop, fast fall, wall cling and
-  wall refresh. A downslash bounces only off pogo points now (the group "pogo": the gyms'
-  lanterns) and the partner's upslash, no longer off spikes, targets or switches. The relay
-  and ledge grab stay. Dead code went too (the boss tumble and knock, unused signals).
-- **The dash-slash changed, in your fight too** (Kay's call): it's the relay's one now,
-  everywhere. Hold attack and dash: it charges (the blade flares on every beat); let go on a
-  beat and it runs to meet the next one; let go off the beat and it fumbles. The relay is what
-  the partner makes of it (a parry as it meets them, a throw on 3). A fight with no clock gets
-  one at 150 BPM from the first dash-slash. The launch and the dash-slash through him work as
-  before, on the beat now; the stand-in lets go on the beat. Walls, wall jumps, wall rhythm,
-  ledge grab, chimney clash and the relay are on by default now (rooms no longer switch moves
-  on); F1's version went up, so saved F1 settings reset once.
-
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
