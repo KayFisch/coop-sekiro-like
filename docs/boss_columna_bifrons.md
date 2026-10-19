@@ -52,7 +52,9 @@ for his blades and the players':
 5. **A parried strike breaks the guard of his other sword** for a moment: the plate is gone,
    that half of him flashes, the sword is knocked aside. The other player's hit is a **sync
    hit** (2.5x damage, sync). The roles swap whenever his other sword strikes.
-6. **Both swords parried at once, by both players, stagger him** (2.2 s): no guard at all.
+6. **Both swords parried at once, by both players, stagger him**: no guard at all. How long:
+   0.5 s, and 0.2 s more for every blade parried in that attack, its last one included (see
+   below).
 
 There's nothing else: no cap on hits, no lock against mashing. What used to be extra rules now
 follows from these:
@@ -65,6 +67,33 @@ follows from these:
   your own hits land too. One swing fits, if it's started at once.
 - **Mashing at his guard.** Every swing is parried and costs 0.53 s (0.08 s until it lands,
   0.45 s recoil), with no block meanwhile.
+
+### The blade rules of 2026-10-19
+
+Three of the rules in `docs/concept.md` ("Blade rules: additions"), each on F1 (tab "Fights", on
+by default; off is how it was before), their numbers on F2 (his page, tab "blade rules"); code:
+"THE BLADE RULES" in `columna_bifrons.gd`, tests: `tests/test_blade_rules.gd`.
+
+- **One parry per blade** ("bifrons_blade_parries"). A strike of both swords **on one side of
+  him** (ppe, or both swords on one player who's been left alone) brings two blades down on one
+  place: it's **heavy**, and it takes **both players' parries**, one blade each. A lone parry
+  there only has the effect of a block (as it has for the two bound in the sync mode, anywhere).
+  Both swords **in pep**, one on each player, are **two normal strikes** at once: each player
+  parries their own, a lone parry is a parry, and both parry: a stagger. The leap goes by where
+  the players are as he lands. Off: every strike of both swords is heavy (in pep too), and each
+  player parries their own blade wherever they are (one player with both swords on them: one
+  parry meets both).
+- **A throw by outcome** ("bifrons_throw_by_outcome"). The attacks that throw a player back (the
+  leap, both swords on one player) throw a parry half as far as a hit (F2 "bifrons_parried_throw",
+  0.5; 0: not at all), and a block as far as a hit. His other strikes keep their own knockback: a
+  parry stands, a block goes half as far as a hit (about 8 px against 30). Off: a parry stands
+  (but for the leap's push), a block goes half as far.
+- **The stagger from the attack** ("bifrons_chain_stagger"). A coop parry staggers him 0.5 s
+  (F2 "bifrons_stagger_least") plus 0.2 s ("bifrons_stagger_per_parry") for every blade parried in
+  that attack, its last one included (both swords parried: two): a strike of both swords on its
+  own, the sweep and the leap 0.9 s, the crossing 1.1 s, QUAD 1.5 s, LONG 2.1 s. A lone parry
+  that's only a block doesn't count. Off: the sync rules' one number (F2 "coop_parry_stagger",
+  1 s).
 
 ## Pep and ppe
 
@@ -81,9 +110,10 @@ have its player's color**, whatever color the blade itself turns) and by how the
   leaning out, and it strikes the same way, only **from lower**: laid back over his shoulder,
   it comes on a flatter arc.
 
-A strike of both swords is both of those at once, in green (parry together), and it's the heavy
-one: if it doesn't stagger him he makes room afterwards (a hop back, or the shove: see "How he
-moves").
+A strike of both swords is both of those at once, in green (parry together). In ppe it's the
+heavy one, and it takes both parries ("One parry per blade", above); in pep it's two normal
+strikes, one on each player. If it doesn't stagger him he makes room afterwards (a hop back, or
+the shove: see "How he moves").
 
 Three ways lead from one to the other. Two are his:
 
@@ -113,10 +143,11 @@ He charges toward the side that has room for it (150 px at least).
 He crouches, both swords go up over his middle, points down (green); he jumps to above the spot
 between the players, hangs there, turns red and comes down (0.28 s). **Where he comes down is
 settled as he jumps**: he doesn't follow the players in the air. Each player within 80 px of
-that spot as he lands has to parry the sword that's theirs; both do, and he's staggered. They're
-thrown apart: whoever is under him is pushed out to their side, a player the swords hit is
-knocked back 1.6 times as hard as by a strike, and one who parried is still pushed back a
-little. Walking out from under him works too; players who both leave on the same side are still
+that spot as he lands has to parry the sword that's theirs; both do, and he's staggered (both on
+one side of him as he lands: they parry together, or a lone parry is a block). They're thrown
+apart: whoever is under him is pushed out to their side, a player the swords hit or who blocks
+is knocked back 1.6 times as hard as by a strike, and one who parried half as far ("A throw by
+outcome"; off: a hit 1.6 times, a block half of that, a parry a little push). Walking out from under him works too; players who both leave on the same side are still
 on one side of him afterwards.
 
 In ppe about one attack in four is the leap (weight 2.5 against the series' 6.5). He also leaps
@@ -198,8 +229,10 @@ What he does when one player walks off (to drink, say):
   a lunge.
 - **A sword whose own player has been out of range for 1.5 s turns on the other player.** It
   crosses over to them and takes their color: both swords on one player, as in ppe. Every strike
-  is theirs to parry. A strike of both swords is one **heavy strike**: double damage, one parry
-  meets it, and it doesn't stagger him (rule 6: that takes both players).
+  is theirs to parry. A strike of both swords is one **heavy strike** that throws them back
+  (1.5 times as far): two blades on one place, so their parry alone only has a block's effect
+  ("One parry per blade"; off: one parry meets it), and it never staggers him (rule 6: that takes
+  both players).
 - The player he's fighting can't open him alone: after their own parry the other sword's guard
   is broken, but their own hit through it is a plain hit (one fits, rule 4). A sync hit is
   the partner's.
@@ -312,7 +345,7 @@ strikes); what a parry wins is where his swords end up, by rule 2:
 | nobody | The blade swings back at once (0.3 s). Guarded against both again. |
 | the first player only | Knocked off its course, the blade ends up lying on the far side for 1.4 s: **no sword against the first player**. His other sword still guards. |
 | the second player only | Stopped dead, he has to **prop himself up on his other sword** for 1.4 s, and it guards nothing meanwhile. The swept blade swings back and guards again. |
-| both | Both at once: the blade lies where it was stopped and he leans on the other. No guard at all: **staggered**, 2.2 s. |
+| both | Both at once: the blade lies where it was stopped and he leans on the other. No guard at all: **staggered**, 0.9 s (rule 6). |
 
 He stands still for it.
 
@@ -392,8 +425,10 @@ shares of it. How posture should look in the end is for later.
 **One set of rules for both sides** (Nicho, 2026-10-17: a fair exchange; what tips it is that
 the players can win sync back and he can't, and that he has more of it: 200 to their 100).
 
-Attacks are **normal or heavy**. His heavy ones are those of both swords (green: a strike of both,
-at one player or at two, and the leap); his single-sword strikes are normal, the sweep too. The
+Attacks are **normal or heavy**. His heavy ones bring both swords down on one place: a strike of
+both (green) or the leap, with both players on one side of him or both swords on one player
+("One parry per blade"; off: every strike of both, at one player or at two, and the leap). Both
+swords in pep are two normal strikes; his single-sword strikes are normal, the sweep too. The
 players' attacks are normal; heavy only as the bound pair's strike let go together in their sync
 mode (below).
 
@@ -415,7 +450,8 @@ can break it.
 his and theirs are set apart too.
 Blocked or parried, no sync. The players win sync back: a sync hit (through the guard their
 partner's parry broke) 4 on the beat and 2 after it, a coop parry (both his swords at once, each
-parried by its player) 6, and it staggers him for 1 s. A window nobody used, while someone other
+parried by its player) 6, and it staggers him ("The stagger from the attack": 0.9 s for a strike of
+both on its own; off: 1 s). A window nobody used, while someone other
 than the parrier was in reach, costs them 1. He wins none back.
 
 - **Posture comes back** only once nothing has landed on you (hit, blocked or parried) for 2 s,
@@ -555,7 +591,8 @@ of the player it fights (`ward_of()`); in the other half a copy of it stands in 
 | His blade after a strike: lying / thrown back by a parry | `STICK_TIME`, `RECOIL_TIME` | 0.12 / 0.35 s |
 | Hit window, "beat": delay / length | `BREAK_DELAY`, `BREAK_TIME` | 0 / 0.25 s |
 | Hit window, "after": delay / length | `BREAK_DELAY`, `BREAK_TIME` | 0.18 / 0.3 s |
-| Stagger length | `StrikePattern.BOTH_STAGGER_TIME`, `Sweep.STAGGER_TIME`, `Leap.STAGGER_TIME` | 2.2 s |
+| Stagger length (a coop parry): at least / per blade parried in the attack | F2 "bifrons_stagger_least", "bifrons_stagger_per_parry" (F1 "bifrons_chain_stagger"; off: F2 "coop_parry_stagger", 1 s) | 0.5 / 0.2 s |
+| A throw (leap, both swords on one player), parried: share of it | F2 "bifrons_parried_throw" (F1 "bifrons_throw_by_outcome") | 0.5 |
 | Sweep: until it reaches the first player / on to the second | `Sweep.WINDUP_UNITS`, `TRAVEL_TIME` | 5 (1.0 s) / 0.26 s |
 | Sweep: blade away / propped / swinging back | `Sweep.AWAY_TIME`, `PROP_TIME`, `RETURN_TIME` | 1.4 / 1.4 / 0.3 s |
 | How often each attack comes, and where | the weights in `ColumnaBifrons.ATTACKS` | see the table above |
@@ -565,7 +602,8 @@ of the player it fights (`ward_of()`); in the other half a copy of it stands in 
 | A blade's edge in its player's color | `EDGE_WIDTH` | 4 px of 12 |
 | Leap: until he lands / rising / hanging | `Leap.WINDUP_UNITS`, `RISE_TIME`, `HANG_TIME` | 6 (1.2 s) / 0.22 / 0.2 s |
 | Leap: how close to where he lands a player is hit | `Leap.REACH` | 80 px |
-| Leap: knockback of a hit / push on a parry | `Leap.KNOCKBACK`, `PARRIED_PUSH` | x1.6 / 220 px/s |
+| Leap: knockback of a hit / push on a parry (F1 "bifrons_throw_by_outcome" off) | `Leap.KNOCKBACK`, `PARRIED_PUSH` | x1.6 / 220 px/s |
+| A strike's knockback: hit / block (his other strikes; a throw's block with the switch on: as a hit) | `BLADE_KNOCKBACK`, `BLOCKED_KNOCKBACK` | 300 / 150 px/s |
 | Where he stands: steps back from / to; walks up from / to | `CROWD_DISTANCE`, `FIT_DISTANCE`; `BLADE_REACH`, `REACH_MARGIN` | 62 / 90; 215 / 185 px |
 | His drift: distances to the nearer player / speed / pause; off the middle between two | `DRIFT_NEAR`, `DRIFT_FAR`, `DRIFT_SPEED`, `DRIFT_PAUSE`; `PEP_DRIFT` | 80 / 170 px, 0.6 of that per s, 0.5 s; 60 px |
 | Pushing through: touching / his pace / how long before he shoves | `TOUCH_DISTANCE`, `PUSH_PACE`, `PUSH_PATIENCE` | 50 px / half / 2 s |
@@ -633,6 +671,11 @@ in, he uses them all the same.
   answer, and does provoking feel like leading the fight?
 - **The sweep:** can the second player read their moment (0.26 s after the first)? Do the four
   outcomes read from where the swords are, without knowing the table?
+- **The blade rules of 2026-10-19** (each on F1): in ppe, does "parry together or it's a block"
+  read from the green, and from both blades standing out in your half? Is pep's strike of both
+  too cheap now that it's two normal strikes? Does a parried throw (the leap) feel like a parry,
+  pushed half as far? Is a stagger of 0.9 s for a lone strike of both, and up to 2.1 s after a
+  long series, a reward worth its build-up?
 
 ## Not in here yet (from the scribbles)
 

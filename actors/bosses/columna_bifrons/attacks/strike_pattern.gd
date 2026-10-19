@@ -10,7 +10,8 @@ extends Attack
 ## and both players read it. A parried strike breaks the guard of his *other* sword for a moment
 ## (ColumnaBifrons.break_guard()), and the other player's sword hit is a sync hit (with Moves
 ## "bifrons_guard_break" off it only opens the window: a hit in it that lands is a sync hit). Both
-## swords at once come green, and parried by both players they stagger him.
+## swords at once come green, and parried by both players they stagger him; on one side of him
+## they take both players' parries (ONE PARRY PER BLADE in columna_bifrons.gd).
 ##
 ## How a sword strikes:
 ## - down from over his head, when it's on the flank its hand is on;
@@ -63,9 +64,10 @@ const RECOIL_TIME = 0.35
 # - 0.18 (once "after"): the hitter answers the parry instead of betting on it. That's just longer
 #   than a swing can take to land: no swing begun before or on the parry gets through, however
 #   far away the hitter stands; shorter, and it's partly a bet again for those further away.
-const BOTH_STAGGER_TIME = 2.2  # both swords parried at once, by both players
-# BOTH SWORDS ON ONE PLAYER (the other one is away): one heavy strike. One parry meets it, and
-# doesn't stagger him.
+const BOTH_STAGGER_TIME = 2.2  # both swords parried at once, by both players: the fallback (see ColumnaBifrons.coop_stagger())
+# BOTH SWORDS ON ONE PLAYER (the other one is away): one heavy strike that throws them back. Their
+# parry only has a block's effect (ONE PARRY PER BLADE; off: one parry meets it, and doesn't
+# stagger him).
 const HEAVY_KNOCKBACK = 1.5  # times a strike's knockback
 # Recovering after a series: F2 "bifrons_recover_time".
 const TREMBLE = 0.05  # radians the drawn-back blade shakes by, just before the drop
@@ -271,27 +273,21 @@ func _land(index: int):
 		return
 	var striking = [LEFT, RIGHT] if sword == BOTH else [sword]
 	var on_one = sword == BOTH and boss.ward_of(LEFT) == boss.ward_of(RIGHT)  # both on one player
-	# Who parried, before anything lands: a parry of both blades is the strong kind.
+	# Who parried, before anything lands: a parry of both blades is the strong kind. Which parries
+	# of a strike of both count, and whether it's heavy: the boss's ONE PARRY PER BLADE.
 	var judged = {}
 	for blade in striking:
 		judged[blade] = judged[LEFT] if on_one and blade == RIGHT else boss.judge(blade)
-		_parried[blade] = judged[blade].parried
 		_thrust[blade] = _kinds[index] == CHARGE
-	var both = sword == BOTH and _parried[LEFT] and _parried[RIGHT]
-	if sword == BOTH and not both and boss.is_bound():
-		# The two bound (core/sync_bond.gd): a strike of both swords takes both their parries; a
-		# lone one is only a block.
-		for blade in striking:
-			judged[blade]["blocked"] = judged[blade].parriers
-			judged[blade]["parriers"] = []
-			judged[blade]["parried"] = false
-			_parried[blade] = false
-	# A strike of both swords is a heavy attack for the sync rules, on one player or on two.
+	var both = sword == BOTH and boss.settle_both(judged)
+	for blade in striking:
+		_parried[blade] = judged[blade].parried
+	var heavy = sword == BOTH and boss.both_heavy()
 	for blade in ([LEFT] if on_one else striking):
 		if on_one:
-			boss.land(judged[blade], true, HEAVY_KNOCKBACK, true)
+			boss.land(judged[blade], true, HEAVY_KNOCKBACK, heavy, true)  # it throws them back
 		else:
-			boss.land(judged[blade], both, 1.0, sword == BOTH)
+			boss.land(judged[blade], both, 1.0, heavy)
 		for p in judged[blade].parriers:
 			parry_success.emit(p, "bifrons_strike")
 
@@ -302,7 +298,7 @@ func _land(index: int):
 		finish_with_stagger(boss.coop_stagger(BOTH_STAGGER_TIME))
 		return
 	if sword == BOTH:
-		if not both:
+		if not (_parried[LEFT] and _parried[RIGHT]):
 			_room_at = _contacts[index] + boss.BACK_OFF_DELAY  # if the players are on one side
 	elif _parried[sword]:
 		boss.break_guard(-sword, window_time(), window_delay(), judged[sword].parriers[0])

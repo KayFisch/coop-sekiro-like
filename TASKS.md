@@ -175,7 +175,12 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     „The two screen halves“ (@Nicho). Gebaut (2026-10-19, F1 „mirror_blades“, Standard fade,
     F2 „bifrons_fade_alpha“), headless getestet; **Gefühl testen**, alle drei Werte.
   - [ ] Regeln in der Werkbank: pro Klinge ein Parry, Knockback nach Ausgang, Stagger
-    0,5 + 0,2 s (`docs/concept.md` → „Blade rules: additions“)
+    0,5 + 0,2 s (`docs/concept.md` → „Blade rules: additions“) (@Nicho). Gebaut (2026-10-19,
+    Branch `nicho/blade-rules` auf `nicho/blade-halves`): drei F1-Schalter (Standard an),
+    Zahlen auf F2 (seine Seite, Tab „blade rules“), Test `test_blade_rules`; pep-Doppelhieb zählt
+    jetzt als zwei normale Hiebe, Knockback nach Ausgang nur bei werfenden Angriffen (Leap,
+    beide Schwerter auf einem). `docs/boss_columna_bifrons.md` → „The blade rules of
+    2026-10-19“. **Gefühl testen.**
   - [ ] Schlagphase von Sweep und Crossing-Stich schneller (eigene F2-Zahl)
   - [ ] (optional) Torsprung in der Werkbank (`docs/boss_bifrons_warden.md` → „Gate leap“)
   - [ ] (optional) Ketten-Grammatik und „Phrase, dann Atem“ in der Werkbank (eigener Branch)

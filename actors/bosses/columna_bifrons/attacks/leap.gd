@@ -5,8 +5,10 @@ extends Attack
 ## side of him (ppe), and out of being cornered (see "CORNERED" in columna_bifrons.gd). Where he
 ## comes down is settled as he jumps: between the players as they stand then. Each player near
 ## that spot as he lands has to perfect parry the sword that's theirs; both do, and he's
-## staggered. They're thrown apart: whoever is under him is pushed out to their side, and
-## everyone near is knocked back, parry or not. Walking out from under him is the other answer.
+## staggered (both on one side of him as he lands: they parry together, or a lone parry is a
+## block: ONE PARRY PER BLADE in columna_bifrons.gd). They're thrown apart: whoever is under him
+## is pushed out to their side, and everyone near is knocked back, a parry less far (A THROW BY
+## OUTCOME). Walking out from under him is the other answer.
 
 signal both_parried
 
@@ -23,8 +25,8 @@ const HEIGHT = 200.0  # how high he gets: his feet clear the players' heads
 const AHEAD = 50.0  # both players on one side: he lands at most this far past the nearer one
 const REACH = 80.0  # a player this close to where he lands is under the swords
 const KNOCKBACK = 1.6  # times a sword strike's knockback, for a player it hits (or chips)...
-const PARRIED_PUSH = 220.0  # ...and one who parried it is still pushed back, at this speed (px/s)
-const STAGGER_TIME = 2.2  # parried by both
+const PARRIED_PUSH = 220.0  # ...and one who parried it is still pushed back, at this speed (px/s; with A THROW BY OUTCOME off)
+const STAGGER_TIME = 2.2  # parried by both: the fallback (see ColumnaBifrons.coop_stagger())
 const RECOVER_TIME = 0.6
 const CROUCH = Vector2(1.12, 0.78)  # his body, loaded for the jump
 const TREMBLE = 0.04  # radians the blades shake by as he hangs
@@ -100,11 +102,15 @@ func update(delta: float):
 	var judged = {}
 	for blade in [LEFT, RIGHT]:
 		judged[blade] = boss.judge(blade, REACH)
-	var both = judged[LEFT].parried and judged[RIGHT].parried
+	# Which parries count, and whether it's heavy: the boss's ONE PARRY PER BLADE, by where the
+	# players are as he lands.
+	var both = boss.settle_both(judged)
+	var by_outcome = Moves.on("bifrons_throw_by_outcome")
 	for blade in [LEFT, RIGHT]:
-		boss.land(judged[blade], both, KNOCKBACK, true)  # both swords: heavy, for the sync rules
+		boss.land(judged[blade], both, KNOCKBACK, boss.both_heavy(), true)
 		for p in judged[blade].parriers:
-			p.apply_knockback(Vector2(boss.side_of(p) * PARRIED_PUSH, 0.0))
+			if not by_outcome:
+				p.apply_knockback(Vector2(boss.side_of(p) * PARRIED_PUSH, 0.0))
 			parry_success.emit(p, "bifrons_leap")
 	boss.shake(12.0 if both else 9.0)
 	boss.ghost(0.0)  # he's there: whoever is under him is pushed out to their side

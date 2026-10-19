@@ -194,7 +194,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
 - `core/sync_rules.gd` (`SyncRules`): sync as life, the rules of Bifrons's fight (no health
   anywhere in the game, no potions): a shared sync for the players and one for the boss,
   a posture each, chaos at no sync, sync mode at full. Attacks are normal or heavy (his: both
-  swords; theirs: in sync mode); posture is lost in three sizes, by parrying (both sides),
+  swords on one place, which takes both players' parries, "THE BLADE RULES" in
+  `columna_bifrons.gd`; theirs: in sync mode); posture is lost in three sizes, by parrying (both sides),
   blocking (the blocker only) or being hit, and comes back 2 s after the last attack in or out.
   The boss creates it and hands it to `GameManager.rules`; while that's set,
   `Player.take_damage()` and the boss's hits go through it (`ColumnaBifrons.land()` says whether

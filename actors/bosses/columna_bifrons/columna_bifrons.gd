@@ -19,6 +19,8 @@ extends BifronsMoves
 ## 4. A strike that's perfect parried breaks the guard of his *other* sword for a moment, and
 ##    the other player's hits are sync hits: more damage, and sync.
 ## 5. Both swords parried at once, by both players, stagger him: no guard at all.
+## 6. Both swords on one side of him come down on one place: a heavy strike, parried by both
+##    players together or not at all (see THE BLADE RULES).
 ##
 ## TWO MODES (Moves "bifrons_mode"), one set of attacks. "patterns": he runs one attack after
 ## another, and the players' part is to answer them. "reactive": he leaves a little more room
@@ -99,6 +101,22 @@ const ANSWER_WAIT = 4  # units (time_unit()) until an answer's first strike land
 const BLADE_KNOCKBACK = 300.0
 const BLOCKED_KNOCKBACK = 150.0
 
+# THE BLADE RULES of 2026-10-19 (docs/concept.md, "Blade rules: additions"), each on F1, its
+# numbers on F2 (tab "blade rules"):
+# - ONE PARRY PER BLADE ("bifrons_blade_parries"): a strike of both swords on one side of him (both
+#   players there, or both swords on one player) brings two blades down on one place. That's a
+#   heavy attack, and it takes both players' parries, one per blade: a lone parry only has the
+#   effect of a block. Both swords in pep, one on each player, are two normal strikes at once:
+#   each player parries their own, and a lone parry is a parry. (Off: every strike of both is
+#   heavy, and each player parries their own blade wherever they are.)
+# - A THROW BY OUTCOME ("bifrons_throw_by_outcome"): an attack that throws a player back (the
+#   leap, both swords on one player) throws a parry "bifrons_parried_throw" of the way, a block as
+#   far as a hit. (Off: a parry stands, but for the leap's push; a block goes half as far.) His
+#   other strikes keep their own knockback.
+# - THE STAGGER FROM THE ATTACK ("bifrons_chain_stagger"): a coop parry staggers him
+#   "bifrons_stagger_least", and "bifrons_stagger_per_parry" more for every blade parried in that
+#   attack, its last one included (both swords parried: two). (Off: the sync rules' one number.)
+
 # LEFT ALONE. A strike whose player is out of his range when it's due is left out (see
 # StrikePattern). A sword whose own player has been out of range for TURN_TIME turns on the
 # other one: both swords on one player, and nothing guarding his far side. It turns back once
@@ -117,6 +135,7 @@ var _provocations = 0  # hits parried since his last attack began
 var _patience = 2  # how many of those he lets go before striking back
 var _provoker = RIGHT  # the sword that parried the last one: its player is who he strikes back at
 var _answering = false  # starting his answer (see orient() and first_wait())
+var _attack_parries = 0  # blades parried in his attack so far (THE STAGGER FROM THE ATTACK)
 
 
 # His numbers on F2 (core/tuning.gd collects them): a page of his own, in his room. The pattern
@@ -142,6 +161,11 @@ static func tuning_entries() -> Array:
 		{"key": "bifrons_crowd_patience", "label": "crowded: makes room after (s)", "default": 0.7, "step": 0.1},
 		{"header": "THE SCREEN HALVES (F1: mirror_view, mirror_blades)", "tab": "halves"},
 		{"key": "bifrons_fade_alpha", "label": "fade: a blade at the partner, in your half, this opaque", "default": 0.2, "step": 0.05},
+		{"header": "A THROW BY OUTCOME (F1: bifrons_throw_by_outcome)", "tab": "blade rules"},
+		{"key": "bifrons_parried_throw", "label": "the leap, both swords on you: parried, this share of the throw", "default": 0.5, "step": 0.1},
+		{"header": "THE STAGGER FROM THE ATTACK (F1: bifrons_chain_stagger)", "column": 1},
+		{"key": "bifrons_stagger_least", "label": "a coop parry staggers him (s)", "default": 0.5, "step": 0.1},
+		{"key": "bifrons_stagger_per_parry", "label": "...and longer by this per blade parried in that attack (s)", "default": 0.2, "step": 0.05},
 		{"header": "HOW OFTEN EACH OF HIS ATTACKS COMES", "tab": "patterns"},
 	]
 	for attack_name in ATTACKS:
@@ -155,6 +179,7 @@ static func tuning_entries() -> Array:
 
 func _ready():
 	super()
+	parry_success.connect(func(_player, _kind): _attack_parries += 1)
 	# Testing alone: the stand-in (it does nothing while Moves "bifrons_stand_in" is off). As his
 	# child it runs after him and before the players, who see its presses that same frame.
 	var stand_in = BifronsStandIn.new()
@@ -199,10 +224,19 @@ func _on_both_parried():
 		rules.coop_parried()
 
 
-# How long a parry of both swords by both players staggers him: his own number, or the sync
-# rules' (there a coop parry wins sync, and its stagger is shorter).
+# How long a parry of both swords by both players staggers him: longer the more of the attack was
+# parried (THE STAGGER FROM THE ATTACK); or, with that off, the sync rules' number, else the
+# attack's own.
 func coop_stagger(own: float) -> float:
+	if Moves.on("bifrons_chain_stagger"):
+		return Tuning.value("bifrons_stagger_least") + Tuning.value("bifrons_stagger_per_parry") * _attack_parries
 	return rules.coop_stagger() if rules != null else own
+
+
+# Every attack counts its parried blades from its start.
+func _begin_telegraph(attack: Attack):
+	_attack_parries = 0
+	super(attack)
 
 
 # What he picks from: each attack's weight for the situation he's in (see ATTACKS), as long as
@@ -435,16 +469,21 @@ func judge(blade: int, reach = BLADE_REACH) -> Dictionary:
 
 # The judged strike lands: a parrier parries it (`strong`: the heavier kind of parry), anyone
 # else under it is hit, or chipped behind a block. `knock` scales how far a hit throws them
-# back (a heavy strike, the leap). `heavy`: a heavy attack for the sync rules (one of both swords).
-func land(judged: Dictionary, strong = false, knock = 1.0, heavy = false):
+# back (a heavy strike, the leap). `heavy`: a heavy attack for the sync rules (both_heavy()).
+# `throws`: an attack that throws a player back (see A THROW BY OUTCOME).
+func land(judged: Dictionary, strong = false, knock = 1.0, heavy = false, throws = false):
 	if rules != null:
 		rules.landing_heavy = heavy  # the players' hooks lead to the rules while it lands
+	var by_outcome = throws and Moves.on("bifrons_throw_by_outcome")
 	for p in judged.under:
 		if p in judged.parriers:
 			p.on_perfect_parry(strong)
 			spawn_sparks(p.global_position + Vector2(0.0, -24.0), 10, COLOR_PLAYER_PARRY)
-		elif p.is_blocking() or p in judged.get("blocked", []):  # (a lone parry, bound: a block)
-			p.take_damage(knockback_for(p, BLOCKED_KNOCKBACK * knock), true)
+			var share = Tuning.value("bifrons_parried_throw")
+			if by_outcome and share > 0.0:
+				p.apply_knockback(knockback_for(p, BLADE_KNOCKBACK * knock * share))
+		elif p.is_blocking() or p in judged.get("blocked", []):  # (a lone parry where it takes two: a block)
+			p.take_damage(knockback_for(p, (BLADE_KNOCKBACK if by_outcome else BLOCKED_KNOCKBACK) * knock), true)
 		else:
 			p.take_damage(knockback_for(p, BLADE_KNOCKBACK * knock))
 			shake(5.0)
@@ -452,6 +491,40 @@ func land(judged: Dictionary, strong = false, knock = 1.0, heavy = false):
 		rules.landing_heavy = false
 	if not judged.parried:
 		Sfx.play("thunk", -6.0)  # the blade hitting the floor
+
+
+# --- Both swords at once: a strike of both, the leap (see ONE PARRY PER BLADE) ---
+
+# True while both his blades would come down on one place: both on one side of him.
+func blades_together() -> bool:
+	return Moves.on("bifrons_blade_parries") and is_ppe()
+
+
+# Whether a strike of both swords is a heavy attack for the sync rules: two blades on one place
+# (with ONE PARRY PER BLADE off: any strike of both).
+func both_heavy() -> bool:
+	return blades_together() or not Moves.on("bifrons_blade_parries")
+
+
+# A strike of both swords, judged (each blade's judge(), before it lands): which of its parries
+# count. Where it takes both players' parries (two blades on one place; or the two bound in their
+# sync mode, anywhere), a lone parry has a block's effect. Returns true if both blades were
+# parried: by both players, one blade each (with ONE PARRY PER BLADE off: by whoever).
+func settle_both(judged: Dictionary) -> bool:
+	var parriers = []
+	for blade in judged:
+		for p in judged[blade].parriers:
+			if not p in parriers:
+				parriers.append(p)
+	var both = judged[LEFT].parried and judged[RIGHT].parried
+	if Moves.on("bifrons_blade_parries"):
+		both = parriers.size() >= 2
+	if not both and (blades_together() or is_bound()):
+		for blade in judged:
+			judged[blade]["blocked"] = judged[blade].get("blocked", []) + judged[blade].parriers
+			judged[blade]["parriers"] = []
+			judged[blade]["parried"] = false
+	return both
 
 
 # Sync as life: a window that closed with no sync hit through it, while someone other than the

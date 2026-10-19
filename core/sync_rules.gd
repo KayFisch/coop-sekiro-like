@@ -5,9 +5,10 @@ extends Node
 ## rules hold on both sides: a fair exchange. What tips it is that the players can win sync back
 ## and he can't, and that he has more of it.
 ##
-## Attacks are normal or heavy. His heavy ones are those of both swords (green: a strike of both,
-## the leap); the players' attacks are normal, and heavy only as the bound pair's strike let go
-## together in their sync mode (core/sync_bond.gd, `bond`).
+## Attacks are normal or heavy. His heavy ones bring both swords down on one place (green: a
+## strike of both, the leap, on one side of him: ColumnaBifrons.both_heavy()); the players'
+## attacks are normal, and heavy only as the bound pair's strike let go together in their sync
+## mode (core/sync_bond.gd, `bond`).
 ##
 ## POSTURE comes in three sizes (each side's own: "posture_*" for the players, "boss_posture_*"
 ## for him, as there are two of them to attack him), lost by whoever...
@@ -76,7 +77,7 @@ static func tuning_entries() -> Array:
 		{"key": "boss_parry_chance", "label": "a hit at his guard: chance he parries, not blocks", "default": 0.5, "step": 0.05},
 		{"header": "PLAYERS WIN SYNC BACK (HE DOESN'T)", "tab": "sync"},
 		{"key": "coop_parry_gain", "label": "coop parry (both swords, both of you): sync gained", "default": 6.0, "step": 1.0},
-		{"key": "coop_parry_stagger", "label": "coop parry: his stagger (s)", "default": 1.0, "step": 0.1},
+		{"key": "coop_parry_stagger", "label": "coop parry: his stagger (s; F1 bifrons_chain_stagger off)", "default": 1.0, "step": 0.1},
 		{"header": "THE METERS: HOW MANY POINTS EACH HOLDS", "column": 1},
 		{"key": "team_sync_max", "label": "players' sync", "default": 100.0, "step": 10.0},
 		{"key": "boss_sync_max", "label": "his sync", "default": 200.0, "step": 10.0},
