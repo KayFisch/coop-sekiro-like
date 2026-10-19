@@ -46,8 +46,8 @@ func _ready():
 			"launching": false, "launch_from": 0.0, "launch": 0.0})
 
 	var hint = Label.new()
-	hint.text = "P1: A/D move · W jump · ←/→ dash · Space attack · ↑ + Space upslash · L-Ctrl block · S drop" \
-		+ "\nP2 (pad): stick move · A jump · LB/RB dash · X attack · stick up + X upslash · RT block · stick down drop" \
+	hint.text = "P1: A/D move · W jump · R-Shift dash · Space attack · ↑ + Space upslash · L-Shift block · S drop" \
+		+ "\nP2 (pad): stick move · %s · stick up + attack: upslash · stick down: drop" % Pads.LAYOUTS[Pads.layout].buttons \
 		+ "\nIn the air: down + attack to pogo (off lanterns) · Into a wall: slide down, jump off it · Up or toward on a ledge: climb" \
 		+ "\nDash-slash into your partner's upslash: launch · let go on a beat, into their parry: relay · Wall jumps meeting: chimney clash"
 	hint.add_theme_font_size_override("font_size", 12)

@@ -58,11 +58,11 @@ const SHOVE = preload("attacks/shove.gd")
 const ATTACKS = {
 	"SINGLE": {"weight": 0.0, "repeats": true, "strikes": [[3, LEFT]]},
 	"DOUBLE": {"weight": 0.0, "strikes": [[3, LEFT], [3, RIGHT]]},
-	"TRIPLE": {"weight": 2.0, "repeats": true, "strikes": [[4, RIGHT], [4, RIGHT], [2, LEFT]]},
-	"QUAD": {"weight": 0.0, "strikes": [[4, LEFT], [2, LEFT], [2, RIGHT], [3, BOTH]]},
+	"TRIPLE": {"weight": 1.4, "repeats": true, "strikes": [[4, RIGHT], [4, RIGHT], [2, LEFT]]},
+	"QUAD": {"weight": 0.8, "strikes": [[4, LEFT], [2, LEFT], [2, RIGHT], [3, BOTH]]},
 	"LONG": {"weight": 1.0, "strikes": [
 		[5, RIGHT], [3, RIGHT], [3, LEFT], [4, RIGHT], [3, RIGHT], [3, LEFT], [4, BOTH]]},
-	"BOTH": {"weight": 0.5, "strikes": [[4, BOTH]]},
+	"BOTH": {"weight": 0.0, "strikes": [[4, BOTH]]},
 	# He shoves one player away, goes after them with a thrust and charges past them, so both
 	# are on one side of him, and brings both swords down on them.
 	"CROSSING": {"weight": {"pep": 2.0, "pep_cornered": 6.0}, "strikes": [[3, RIGHT, PUSH], [4, RIGHT, CHARGE], [4, BOTH]]},
@@ -140,6 +140,8 @@ static func tuning_entries() -> Array:
 		{"key": "bifrons_pep_drift", "label": "between two players: off the middle by up to (px)", "default": 60.0, "step": 5.0},
 		{"key": "bifrons_push_patience", "label": "pushing a player along: shoves them after (s)", "default": 2.0, "step": 0.1},
 		{"key": "bifrons_crowd_patience", "label": "crowded: makes room after (s)", "default": 0.7, "step": 0.1},
+		{"header": "THE SCREEN HALVES (F1: mirror_view, mirror_blades)", "tab": "halves"},
+		{"key": "bifrons_fade_alpha", "label": "fade: a blade at the partner, in your half, this opaque", "default": 0.2, "step": 0.05},
 		{"header": "HOW OFTEN EACH OF HIS ATTACKS COMES", "tab": "patterns"},
 	]
 	for attack_name in ATTACKS:

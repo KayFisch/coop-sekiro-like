@@ -89,3 +89,72 @@ func test_swing_timing():
 	hold(p, "attack", false)
 	near(active_from, p.ATTACK_WINDUP_TIME, step * 1.5, "the cut starts after the windup")
 	near(active_to - active_from, p.ATTACK_ACTIVE_TIME, step * 1.5, "...and lasts ATTACK_ACTIVE_TIME")
+
+
+# DASH-PARRY (player_body.gd): a perfect parry mid-dash, or a dash up to PASS_WINDOW after one,
+# carries the player through the boss's body; any other dash stops at it. The parry is the one
+# the boss calls when his blade meets a parrying player (on_perfect_parry()).
+func test_dash_parry():
+	await _setup()
+	var boss = GameManager.boss
+	boss.global_position.x = 600.0  # room on his far side (_setup() puts him near the wall)
+	GameManager.players[1].global_position.x = 100.0
+	var block: Rect2 = boss.body_block()
+	check(block.size != Vector2.ZERO, "his body blocks")
+	var start = block.position.x - 60.0  # a dash's length short of his far side, not of him
+	# A plain dash stops at him.
+	await _dash_at(start)
+	check(p.global_position.x < block.position.x, "a plain dash stops at his body (x %.0f)" % p.global_position.x)
+	# A block press mid-dash doesn't end the dash, and opens the parry window.
+	await _ready_to_dash(start)
+	hold(p, "dash")
+	await frames(2)
+	hold(p, "dash", false)
+	hold(p, "block")
+	await frames(2)
+	check(p.is_dashing() and p.is_perfect_parry(), "a block press mid-dash: still dashing, and parrying")
+	# His blade meets the parry: through him.
+	p.on_perfect_parry(false)
+	hold(p, "block", false)
+	await wait(0.4)
+	check(p.global_position.x > block.end.x, "parried mid-dash: through him (x %.0f)" % p.global_position.x)
+	# Parried first, dashed within PASS_WINDOW: through him too.
+	await _ready_to_dash(start)
+	p.on_perfect_parry(false)
+	await _dash_at(start, false)
+	check(p.global_position.x > block.end.x, "a dash just after a parry: through him (x %.0f)" % p.global_position.x)
+	# Dashed later than that: it stops at him.
+	await _ready_to_dash(start)
+	p.on_perfect_parry(false)
+	await wait(p.PASS_WINDOW + 0.1)
+	await _dash_at(start, false)
+	check(p.global_position.x < block.position.x, "a dash after PASS_WINDOW stops at him (x %.0f)" % p.global_position.x)
+	# Off, nothing goes through.
+	set_move("parry_pass", false)
+	await _ready_to_dash(start)
+	hold(p, "dash")
+	await frames(2)
+	hold(p, "dash", false)
+	await frames(2)
+	p.on_perfect_parry(false)
+	await wait(0.4)
+	check(p.global_position.x < block.position.x, "parry_pass off: parried mid-dash, still no way through (x %.0f)" % p.global_position.x)
+
+
+# The player at x on the floor, facing right, with the dash back.
+func _ready_to_dash(x: float):
+	p.global_position.x = x
+	p.velocity = Vector2.ZERO
+	p.interrupt_movement()
+	await wait(p.DASH_COOLDOWN + 0.05)
+
+
+# A dash to the right from x (placed there first, unless `place` is false), and the time to
+# finish it.
+func _dash_at(x: float, place = true):
+	if place:
+		await _ready_to_dash(x)
+	hold(p, "dash")
+	await frames(2)
+	hold(p, "dash", false)
+	await wait(0.4)

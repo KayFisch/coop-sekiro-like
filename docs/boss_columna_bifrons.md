@@ -523,8 +523,19 @@ into in a half of your own). Everything else is the same fight: one floor, the s
 same distances.
 
 Decided 2026-10-19: the halves are to become two connected sides instead of a pure mirror, each
-showing the blades aimed at its own player (`docs/concept.md`, "The two screen halves"). Not
-built yet.
+showing the blades aimed at its own player (`docs/concept.md`, "The two screen halves"). To try
+the variants, F1 "mirror_blades" (under "mirror_view"): each blade is drawn as it is in the half
+of the player it fights (`ward_of()`); in the other half a copy of it stands in (its echo,
+"THE SCREEN HALVES" in `bifrons_swords.gd`):
+
+- **mirror**: the same as ever (as before 2026-10-19).
+- **hold**: back on guard there, still and silver.
+- **fade** (default): the same, but faint (F2 "bifrons_fade_alpha", tab "halves", 0.2).
+- With either of the last two, a **strike of both swords on one side of him** (ppe, or both on one
+  player) stands out in both halves, from its windup until it lands: two blades in your half
+  means heavy. Both swords in pep (one on each player) don't: each is in its own half.
+- Only the picture: every rule reads the real blade. Bound in the sync mode with
+  "sync_merge_view", the halves merge and he is drawn whole again.
 
 - Switch it in F1 (off by default); it goes on and off at once, mid-fight too.
 - The room is drawn at 0.85 so his leap stays inside a half (`MirrorView.ZOOM`). Colors, the

@@ -106,7 +106,8 @@ Why: today, when he strikes one player, the sword moves in the other half too an
 air there (in ppe as well). That's sword chaos, and it doesn't show what makes a heavy attack
 different.
 
-Open, to be tested: how the foreign blade steps back in your half:
+Open, to be tested (F1 "mirror_blades", `docs/boss_columna_bifrons.md`): how the foreign blade
+steps back in your half:
 - **a. it doesn't move** there;
 - **b. it moves, but with low contrast** against the half's background; a heavy attack makes it
   stand out in both halves ("he manifests his second sword in the wrong layer"). Claude's

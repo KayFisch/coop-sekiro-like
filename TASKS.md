@@ -167,9 +167,13 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Körper? Oder nur Bifrons ist undurchdringlich?
 - [ ] **Code-Aufträge aus dem Design vom 2026-10-19** (offen, niemand; Details in den Docs und
   im Scribble vom 2026-10-19). Fassen den Spieler und Bifrons an, also vorher claimen:
-  - [ ] Dash-Parry: Controller-Belegung bequemer machen (erst Vorschläge, nichts umbelegen)
+  - [x] Dash-Parry: Controller-Belegung bequemer machen (@Nicho). Funktioniert nach Kays Umbau
+    wie beschrieben (Test `test_player.test_dash_parry`). Statt einer neuen festen Belegung jetzt
+    drei zur Wahl im Hauptmenü (P): Standard, Sekiro (R1 Angriff, L1 Block, Viereck Dash),
+    „dash left“ (L1 Dash, R1 Block). **Ausprobieren**, welche sich für den Dash-Parry gut anfühlt.
   - [ ] Bildhälften: Klingen je Hälfte (F1-Schalter mirror / hold / fade), `docs/concept.md` →
-    „The two screen halves“
+    „The two screen halves“ (@Nicho). Gebaut (2026-10-19, F1 „mirror_blades“, Standard fade,
+    F2 „bifrons_fade_alpha“), headless getestet; **Gefühl testen**, alle drei Werte.
   - [ ] Regeln in der Werkbank: pro Klinge ein Parry, Knockback nach Ausgang, Stagger
     0,5 + 0,2 s (`docs/concept.md` → „Blade rules: additions“)
   - [ ] Schlagphase von Sweep und Crossing-Stich schneller (eigene F2-Zahl)

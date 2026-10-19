@@ -175,7 +175,9 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `user://moves.cfg` with a `VERSION`: bump it when defaults change; code asks
   `Moves.on("pogo")`). Every move is on by default, everywhere (no level switches any on); the
   switches are for comparing. `Pads` gives
-  each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device).
+  each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device),
+  with the pad's buttons from one of its `LAYOUTS` (standard, Sekiro, dash left), chosen on the
+  title screen (P) and saved to `user://pads.cfg`.
   `Beat` is the one clock for everything in time (150 BPM; a level starts it, it's never reset
   inside one; signals `beat` / `bar`, `offset_to_downbeat()` etc.; click on M, off at start;
   plays a level's music looped in time with it, `TRACKS`; F1 → Sound: volume, and how far
@@ -267,7 +269,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
 - `ui/mirror_view.gd` (`MirrorView`, in Bifrons's room, Moves "mirror_view"): an alternative
   picture of the fight, the screen split at the floor, P1 above, P2 in the reflection below.
   Two SubViewports on the level's World2D; what each half draws is chosen by visibility layers
-  (`Viewport.canvas_cull_mask`), so the game itself doesn't change.
+  (`Viewport.canvas_cull_mask`), so the game itself doesn't change. Bifrons draws each blade in
+  its player's half and a copy of it in the other (Moves "mirror_blades", `bifrons_swords.gd`).
 
 ## Conventions
 

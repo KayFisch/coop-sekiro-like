@@ -16,6 +16,7 @@ const FIGHTS = [
 
 var _buttons: Array = []
 var _swap: Button
+var _pad: Button
 
 
 func _ready():
@@ -53,6 +54,16 @@ func _ready():
 	column.add_child(_swap)
 	_buttons.append(_swap)
 
+	# The pad's buttons (Pads.LAYOUTS): each press the next layout.
+	_pad = Button.new()
+	_pad.custom_minimum_size = Vector2(420, 32)
+	_pad.add_theme_font_size_override("font_size", 15)
+	_pad.pressed.connect(Pads.next_layout)
+	Pads.changed.connect(_label_pad)
+	_label_pad()
+	column.add_child(_pad)
+	_buttons.append(_pad)
+
 	var hint = Label.new()
 	hint.text = "Up/down + Enter (or pad A), or press the number · Esc returns here from a level"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -81,6 +92,8 @@ func _unhandled_input(event):
 			GameManager.start_fight(FIGHTS[index].scene)
 		elif event.keycode == KEY_C:
 			_toggle_swap()
+		elif event.keycode == KEY_P:
+			Pads.next_layout()
 
 
 func _toggle_swap():
@@ -89,3 +102,7 @@ func _toggle_swap():
 
 func _label_swap():
 	_swap.text = "%s   (C / pad Back to swap)" % Pads.describe()
+
+
+func _label_pad():
+	_pad.text = "Pad: %s   (P to change)" % Pads.describe_layout()

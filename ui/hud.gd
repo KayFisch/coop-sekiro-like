@@ -139,8 +139,7 @@ func _build_controls_hint(root):
 	var hint = Label.new()
 	hint.text = "P1: A/D move · W jump · R-Shift dash · Space attack · ↑ + Space upslash · S + Space (air) downslash" \
 		+ " · L-Shift block/parry · S drop\n" \
-		+ "P2 (pad): stick move · A jump · RB dash · X attack · up + X upslash · down + X (air) downslash" \
-		+ " · RT block/parry\n" \
+		+ "P2 (pad): stick move · %s · up / down + attack: upslash, (air) downslash\n" % Pads.LAYOUTS[Pads.layout].buttons \
 		+ "Dash + attack: dash-slash. Into your partner's upslash: launch · press as the ring closes" \
 		+ " · Downslash onto their upslash: pogo clash      F1: switches · F2: tuning · Esc: boss select"
 	hint.add_theme_font_size_override("font_size", 12)

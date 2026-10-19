@@ -217,6 +217,12 @@ func time_to_strike(player) -> float:
 	return INF
 
 
+# True from the windup of a strike of both swords until it lands (the screen halves show it in
+# both: see "THE SCREEN HALVES" in bifrons_swords.gd).
+func both_swords_next() -> bool:
+	return _next < _swords.size() and _swords[_next] == BOTH
+
+
 # --- The strikes ---
 
 # Strike `_next` is the next one now: is its player there at all?

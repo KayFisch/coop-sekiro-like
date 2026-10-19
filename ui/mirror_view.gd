@@ -3,8 +3,9 @@ extends CanvasLayer
 ## The mirrored screen (Moves "mirror_view", F1): the screen split along the floor. Above it the
 ## fight with P1, in light; below it the fight's reflection, upside down, with P2 in shadow (after
 ## the mirror scene in Gris). Only the picture changes: both players still stand on the one floor
-## by the same rules, and the boss is one boss, mirrored whole: he can't move his light and his
-## shadow apart, the players can. Each half leaves out the other player, so the two never cover
+## by the same rules, and the boss is one boss: he can't move his light and his shadow apart, the
+## players can. Only his blades may differ between the halves (Moves "mirror_blades": each half
+## shows the blades aimed at its player, see bifrons_swords.gd). Each half leaves out the other player, so the two never cover
 ## each other; and they pass through each other (Player.own_half), there's nobody to bump into.
 ##
 ## Each half is a SubViewport on the level's world (the same World2D, a canvas transform of its
@@ -73,6 +74,7 @@ var _marks = {}  # player -> the Callable marking what they add later
 
 
 func _ready():
+	add_to_group("mirror_view")  # a boss that draws each half its own way finds it here
 	layer = 1  # over the world, under the HUD (2) and the F1 panel (100)
 	process_mode = Node.PROCESS_MODE_ALWAYS  # switched in the F1 panel, with the game paused
 	Moves.changed.connect(_refresh)
@@ -188,6 +190,12 @@ func _gradient(top: Color, bottom: Color) -> GradientTexture2D:
 func _process(_delta):
 	if not _halves.is_empty():
 		_layout()
+
+
+# True while the halves are two (on, and not merged): each may draw a boss its own way (Columna
+# Bifrons's blades, Moves "mirror_blades").
+func split() -> bool:
+	return not _halves.is_empty() and _merge <= 0.0
 
 
 # Both halves look at the same band of the room: from the floor up, as wide as the screen, around

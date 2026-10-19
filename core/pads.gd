@@ -7,6 +7,8 @@ extends Node
 ##   two pads:        p1_* = the keyboard and the first pad, p2_* = the second pad
 ## Moves "swap_controls" still trades the two sets between the players (see action() in
 ## player_body.gd); with two pads, that swaps the pads.
+## Which buttons do what is chosen on the title screen from LAYOUTS (saved in user://pads.cfg);
+## the stick stays as the Input Map has it.
 
 signal changed
 
@@ -14,19 +16,78 @@ const KEYBOARD_SET = "p1_"
 const PAD_SET = "p2_"
 const ANY_PAD = -1  # an event's device for "every pad" (how the Input Map's events are saved)
 const NO_PAD = -2
+const SAVE_PATH = "user://pads.cfg"
+# The pad's buttons, one layout for every pad. Each names its buttons (PlayStation names), and
+# gives each action a button, or [axis, value] for a trigger. The first is the Input Map's own.
+const LAYOUTS = [
+	{"name": "standard", "jump": JOY_BUTTON_A, "attack": JOY_BUTTON_X,
+		"dash": JOY_BUTTON_RIGHT_SHOULDER, "block": [JOY_AXIS_TRIGGER_RIGHT, 1.0],
+		"buttons": "Cross jump · Square attack · R1 dash · R2 block"},
+	{"name": "Sekiro", "jump": JOY_BUTTON_A, "attack": JOY_BUTTON_RIGHT_SHOULDER,
+		"dash": JOY_BUTTON_X, "block": JOY_BUTTON_LEFT_SHOULDER,
+		"buttons": "Cross jump · R1 attack · Square dash · L1 block"},
+	{"name": "dash left", "jump": JOY_BUTTON_A, "attack": JOY_BUTTON_X,
+		"dash": JOY_BUTTON_LEFT_SHOULDER, "block": JOY_BUTTON_RIGHT_SHOULDER,
+		"buttons": "Cross jump · Square attack · L1 dash · R1 block"},
+]
 
 var pads: Array = []  # device ids in use: none, [the pad set's], or [the keyboard set's, the pad set's]
 
-var _layout = {}  # action name without its set's prefix -> the Input Map's gamepad events for it
+var layout = 0  # which of LAYOUTS
+var _layout = {}  # action name without its set's prefix -> its gamepad events, in that layout
 
 
 func _ready():
-	for action in InputMap.get_actions():
-		var action_name = String(action)
-		if action_name.begins_with(PAD_SET):
-			_layout[action_name.trim_prefix(PAD_SET)] = InputMap.action_get_events(action).filter(_is_pad_event)
+	var cfg = ConfigFile.new()
+	if cfg.load(SAVE_PATH) == OK:
+		layout = clampi(cfg.get_value("pads", "layout", 0), 0, LAYOUTS.size() - 1)
+	_read_layout()
 	Input.joy_connection_changed.connect(func(_device, _connected): assign(Input.get_connected_joypads()))
 	assign(Input.get_connected_joypads())
+
+
+# The next layout (wrapping round), bound at once and saved.
+func next_layout():
+	set_layout((layout + 1) % LAYOUTS.size())
+
+
+func set_layout(index: int, keep = true):
+	layout = index
+	if keep:
+		var cfg = ConfigFile.new()
+		cfg.set_value("pads", "layout", layout)
+		cfg.save(SAVE_PATH)
+	_read_layout()
+	assign(Input.get_connected_joypads())
+
+
+# The layout's name and buttons, e.g. "Sekiro: Cross jump · R1 attack · ...".
+func describe_layout() -> String:
+	return "%s: %s" % [LAYOUTS[layout].name, LAYOUTS[layout].buttons]
+
+
+# The Input Map's gamepad events (the stick), with the layout's buttons in place of its own.
+func _read_layout():
+	_layout.clear()
+	for action in InputMap.get_actions():
+		var action_name = String(action)
+		if not action_name.begins_with(PAD_SET):
+			continue
+		var button_name = action_name.trim_prefix(PAD_SET)
+		if not LAYOUTS[layout].has(button_name):
+			_layout[button_name] = InputMap.action_get_events(action).filter(_is_pad_event)
+			continue
+		var press = LAYOUTS[layout][button_name]
+		var event: InputEvent
+		if press is Array:
+			event = InputEventJoypadMotion.new()
+			event.axis = press[0]
+			event.axis_value = press[1]
+		else:
+			event = InputEventJoypadButton.new()
+			event.button_index = press
+		event.device = ANY_PAD
+		_layout[button_name] = [event]
 
 
 # Hands out the pads in `devices` (ids, as Input.get_connected_joypads() lists them).

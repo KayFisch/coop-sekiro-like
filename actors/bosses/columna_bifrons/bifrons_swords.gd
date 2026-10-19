@@ -68,11 +68,25 @@ const WARD_TINT = 0.85  # how far a sword's crossguard and edge take its player'
 const HAND_SIZE = 16.0
 const HAND_DARKEN = 0.25
 const CROSSGUARD = Vector2(6.0, 32.0)
+# THE SCREEN HALVES (with the mirrored screen on, ui/mirror_view.gd; Moves "mirror_blades"):
+# each half shows him from its own player's side. A blade is drawn as it is in the half of the
+# player it fights (ward_of()); in the other half its echo stands in for it: "mirror" the same as
+# ever (one boss, mirrored whole), "hold" back at its guard, still, "fade" the same but faint (F2
+# "bifrons_fade_alpha"). A strike of both swords on one place (both on one side of him, see
+# StrikePattern.both_swords_next()) is heavy: from its windup until it lands it stands out in
+# both halves, whatever the switch says. Two blades in your half: you need your partner. Only the
+# picture changes: every rule reads the real blade. Merged in the sync mode, the halves are one
+# again and so is he.
+const HEAVY_SHOW_TIME = 0.12  # s for an echo to become its blade, as a heavy strike's windup begins
 
 var _wards = {LEFT: null, RIGHT: null}  # sword -> its own player (see _assign_wards())
 var _turned = {LEFT: false, RIGHT: false}  # sword -> it has turned on the other sword's player
 var _away_for = {LEFT: 0.0, RIGHT: 0.0}  # sword -> how long its own player has been out of range
 var _pivots = {}  # sword -> Node2D
+var _echoes = {}  # sword -> Node2D: the pivot as drawn in the other half (see THE SCREEN HALVES)
+var _echo_poses = {LEFT: POSE_GUARD, RIGHT: POSE_GUARD}  # where an echo on hold is drawn
+var _echo_crosses = {LEFT: 1.0, RIGHT: 1.0}
+var _heavy_shown = 0.0  # 0..1: the echoes become their blades (a heavy strike, HEAVY_SHOW_TIME)
 var _blades = {}  # sword -> ColorRect
 var _edges = {}  # sword -> ColorRect: its cutting edge
 var _crossguards = {}  # sword -> ColorRect
@@ -296,6 +310,11 @@ func _setup_pose():
 		var hand = _rect(Vector2(HAND_SIZE, HAND_SIZE), COLOR_IDLE.darkened(HAND_DARKEN))
 		hand.position = Vector2(-HAND_SIZE / 2.0, -HAND_SIZE / 2.0)
 		pivot.add_child(hand)
+		# The same sword once more, for the other screen half; hidden until the halves are split.
+		var echo = pivot.duplicate()
+		echo.visible = false
+		add_child(echo)
+		_echoes[blade] = echo
 
 
 func _rect(rect_size: Vector2, color: Color) -> ColorRect:
@@ -364,6 +383,7 @@ func _update_pose():
 		if across and _front != blade:
 			_front = blade  # it reaches across in front of the other sword
 			move_child(_pivots[blade], -1)
+			move_child(_echoes[blade], -1)
 		var pose: Vector3 = _targets[blade]
 		var over: float = _overs[blade]
 		var snap: bool = _snaps[blade]
@@ -394,12 +414,7 @@ func _update_pose():
 		_crosses[blade] = cross if snap else lerpf(_crosses[blade], cross, follow)
 		# Across: the blade passes in front of him, drawn foreshortened.
 		var drawn = _crosses[blade]
-		if absf(drawn) < 0.02:
-			drawn = 0.02
-		var pivot: Node2D = _pivots[blade]
-		pivot.position = Vector2(_poses[blade].x * blade * drawn, _poses[blade].y)
-		pivot.rotation = _poses[blade].z * blade * drawn
-		pivot.scale.x = blade * drawn
+		_place_pivot(_pivots[blade], blade, _poses[blade], drawn)
 		if down:
 			_blades[blade].color = COLOR_SWORD_LIMP
 		elif flicking:
@@ -422,6 +437,65 @@ func _update_pose():
 			_halves[side].color = COLOR_OPEN if fmod(anim_time, 0.1) < 0.05 else Color.WHITE
 		else:
 			_halves[side].color = tints[side]
+	_draw_halves(down, follow)
+
+
+# A sword's pivot at `pose`, `drawn` across (1: at its own hand's flank, -1: across on the other).
+func _place_pivot(pivot: Node2D, blade: int, pose: Vector3, drawn: float):
+	if absf(drawn) < 0.02:
+		drawn = 0.02  # passing in front of him, foreshortened to a sliver
+	pivot.position = Vector2(pose.x * blade * drawn, pose.y)
+	pivot.rotation = pose.z * blade * drawn
+	pivot.scale.x = blade * drawn
+
+
+# THE SCREEN HALVES: each blade into the half of the player it fights, its echo into the other.
+func _draw_halves(down: bool, follow: float):
+	var view = get_tree().get_first_node_in_group("mirror_view")
+	var mode = Moves.value("mirror_blades")
+	var split = view != null and view.split() and mode != "mirror"
+	var heavy = split and not down and current_attack is StrikePattern \
+		and current_attack.both_swords_next() and is_ppe()
+	_heavy_shown = move_toward(_heavy_shown, 1.0 if heavy else 0.0,
+		get_physics_process_delta_time() / HEAVY_SHOW_TIME)
+	for blade in BLADES:
+		var pivot: Node2D = _pivots[blade]
+		var echo: Node2D = _echoes[blade]
+		var ward = ward_of(blade)
+		if not split or ward == null:
+			_set_layer(pivot, MirrorView.WORLD)  # one boss, in both halves
+			echo.visible = false
+			continue
+		var own = MirrorView.LIGHT if ward.player_id == 1 else MirrorView.SHADOW
+		_set_layer(pivot, own)
+		_set_layer(echo, MirrorView.SHADOW if own == MirrorView.LIGHT else MirrorView.LIGHT)
+		echo.visible = pivot.visible
+		var parts = pivot.get_children()
+		var echo_parts = echo.get_children()
+		for i in parts.size():
+			echo_parts[i].color = parts[i].color
+			for j in parts[i].get_child_count():  # the blade's edge
+				echo_parts[i].get_child(j).color = parts[i].get_child(j).color
+		# On hold: eased back to its guard on its player's side, as when it isn't striking, and
+		# silver (a strike's color would say it's coming at you).
+		var shown = 1.0 if mode == "fade" or down else _heavy_shown
+		echo_parts[0].color = COLOR_SWORD.lerp(parts[0].color, shown)
+		var guard = POSE_GUARD + (ACROSS_SHIFT if reaches_across(blade) else Vector3.ZERO)
+		_echo_poses[blade] = _echo_poses[blade].lerp(guard, follow)
+		_echo_crosses[blade] = lerpf(_echo_crosses[blade], blade * blade_side(blade), follow)
+		_place_pivot(echo, blade, _echo_poses[blade].lerp(_poses[blade], shown),
+			lerpf(_echo_crosses[blade], _crosses[blade], shown))
+		var faint = Tuning.value("bifrons_fade_alpha") if mode == "fade" and not down else 1.0
+		echo.modulate.a = lerpf(faint, 1.0, _heavy_shown)
+
+
+# A node and all below it onto a visibility layer (MirrorView's bits): drawn in that half only.
+func _set_layer(node: CanvasItem, bit: int):
+	if node.visibility_layer == bit:
+		return
+	node.visibility_layer = bit
+	for child in node.get_children():
+		_set_layer(child, bit)
 
 
 func spawn_sparks(point: Vector2, count: int, color: Color):
