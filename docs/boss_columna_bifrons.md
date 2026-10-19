@@ -20,7 +20,8 @@ A small boss built to answer questions, not a finished fight:
 They come out of `scribbles.md` (2026-09-30 to 2026-10-02). The name is a working title.
 
 Code: `actors/bosses/columna_bifrons/` (boss, `stand_in.gd`, `attacks/strike_pattern.gd`,
-`attacks/sweep.gd`, `attacks/leap.gd`, `attacks/shove.gd`), `levels/threshold/`; the players'
+`attacks/sweep.gd`, `attacks/leap.gd`, `attacks/gate_leap.gd`, `attacks/shove.gd`),
+`levels/threshold/`; the players'
 half of the rules is in `actors/player/` ("THE SWORD" in `player_sword.gd`, "DASH-PARRY" in
 `player_body.gd`). Select screen:
 entry 1. Everything below that can be switched is on the F1 panel.
@@ -115,7 +116,8 @@ heavy one, and it takes both parries ("One parry per blade", above); in pep it's
 strikes, one on each player. If it doesn't stagger him he makes room afterwards (a hop back, or
 the shove: see "How he moves").
 
-Three ways lead from one to the other. Two are his:
+Four ways lead from one to the other. Three are his (one of them, the gate leap, tried out
+since 2026-10-19):
 
 ### The crossing: pep to ppe
 
@@ -150,8 +152,49 @@ is knocked back 1.6 times as hard as by a strike, and one who parried half as fa
 outcome"; off: a hit 1.6 times, a block half of that, a parry a little push). Walking out from under him works too; players who both leave on the same side are still
 on one side of him afterwards.
 
-In ppe about one attack in four is the leap (weight 2.5 against the series' 6.5). He also leaps
-when he's **cornered**: see "How he moves".
+In ppe the leap's weight is 2.5 against the series' (their sum is how long ppe lasts if the
+players leave it to him; the gate leap, below, comes next to it). He also leaps when he's
+**cornered**: see "How he moves".
+
+### The gate leap: ppe to pep, his way (tried out)
+
+The Warden's gate leap (`docs/boss_bifrons_warden.md`, "Gate leap"), built here to try it out next
+to the leap (`attacks/gate_leap.gd`, 2026-10-19). With the leap the players choose where they end
+up; with the gate leap he sets it. Only in ppe (weight 2.5, cornered 6, as the leap's). **A** is the
+player in front of him, **B** the one behind; A's sword is the one he rams into the floor.
+
+0. **Telegraph:** he crouches, rears back a little and raises A's sword at his shoulder, pointing
+   it forward and down (yellow): different from the leap (both swords up, points down, green) and
+   from the crossing (a white push first).
+1. **The ram** (0.28 s, at 1.0 s): he lunges in and rams it into the floor between A and B,
+   halfway, at least 12 px past A. Whoever is within 60 px of that spot meets it: parry, block or
+   be hit, each for themselves. It throws them a little apart, A back toward him, B away
+   (a strike's knockback; a parry half as far). Then **the sword stands in the floor, a wall**
+   (230 px high: nobody walks, dashes or jumps through it) until he pulls it out.
+2. **The vault** (0.45 s): his hand on the hilt, he swings over A (body no obstacle meanwhile) and
+   comes down 40 px past the sword, which then stands upright at his flank. Whoever is under him as
+   he lands is pushed out to their side.
+3. **As he lands, B's sword strikes B** (drawn back while he's in the air, it comes as he comes
+   down).
+4. **The rip** (0.6 s after landing): he rips A's sword out of the floor, an upward cut at A that
+   throws A back: hit or blocked about 180 px (out of his reach), parried about 65 (in it).
+5. **The heavy finish:** the cut's swing goes on up over his head with the other sword, green, for
+   F2 "bifrons_gate_lift" (his page, tab "gate leap", 0.7 s), then both come down. As they start
+   down he looks where A is: **in his blades' reach** (215 px), on the other side from B: one sword
+   on each, two normal strikes, both parry: staggered. **Not:** both swords on B's side, two blades
+   on one place: heavy, and a lone parry there is a block (one parry per blade; A can still come
+   over and parry it with B).
+
+A parried strike at one of them (3, 4) breaks the other sword's guard as any strike does (the
+partner's sync hit; that sword isn't guarding anyway). Nothing in 1 to 4 changes what he does:
+only the finish goes by what came of it. Everything parried staggers him 1.7 s (six blades: two
+at the ram, B's, the rip, two at the end).
+
+What the lift is for: whether an A who only *blocked* the rip can still make it back. Measured
+(`tests/test_gate_leap.gd`): at 0.7 s a blocking A who dashes back as soon as the throw lets go
+(0.25 s) is in time; at 0.25 s not. But **a block and a hit throw A just as far** ("A throw by
+outcome"), and the throw doesn't stop a dash, so the lift lets a hit A back as well: the doc's
+"only an A who was hit leaves B alone" would need something more (say, a short stun on a hit).
 
 ### The dash-parry: the players' own way
 
@@ -380,6 +423,7 @@ a long windup. Below 3 a strike can't be read any more. `sword` is which of his 
 | RUSH | 5 right (rush) | - | - | 2 |
 | SWEEP | the sweep, above | 1.5 | - | - |
 | LEAP | the leap, above | - (cornered: 6) | 2.5 (cornered: 6) | - |
+| GATE_LEAP | the gate leap, above (tried out) | - | 2.5 (cornered: 6) | - |
 | SHOVE | the shove, above | when he wants room | when he wants room | when he wants room |
 
 Each series is written once and also runs **mirrored**: whichever way keeps the number of
@@ -576,7 +620,9 @@ of the player it fights (`ward_of()`); in the other half a copy of it stands in 
   player) stands out in both halves, from its windup until it lands: two blades in your half
   means heavy. Both swords in pep (one on each player) don't: each is in its own half. On
   "color" both blades then look as without the halves (the strike's colors on the steel, the
-  player's on the edge), so they stand out alike in both halves.
+  player's on the edge), so they stand out alike in both halves. So does a blade aimed at both
+  players: the gate leap's, raised and rammed into the floor, standing there, and its finish on
+  B's side.
 - Only the picture: every rule reads the real blade. Bound in the sync mode with
   "sync_merge_view", the halves merge and he is drawn whole again.
 
@@ -610,6 +656,11 @@ of the player it fights (`ward_of()`); in the other half a copy of it stands in 
 | Leap: until he lands / rising / hanging | `Leap.WINDUP_UNITS`, `RISE_TIME`, `HANG_TIME` | 6 (1.2 s) / 0.22 / 0.2 s |
 | Leap: how close to where he lands a player is hit | `Leap.REACH` | 80 px |
 | Leap: knockback of a hit / push on a parry (F1 "bifrons_throw_by_outcome" off) | `Leap.KNOCKBACK`, `PARRIED_PUSH` | x1.6 / 220 px/s |
+| Gate leap: until the ram lands / the vault / until the rip after landing | `GateLeap.RAM_UNITS`, `VAULT_TIME`, `RIP_UNITS` | 5 (1.0 s) / 0.45 s / 3 (0.6 s) |
+| Gate leap: the heavy strike's lift after the rip | F2 "bifrons_gate_lift" | 0.7 s |
+| Gate leap: the ram's spot (past A), who's under it, its throw | `SPOT_PAST_A`, `RAM_REACH`, `RAM_KNOCKBACK` | 12 px, 60 px, x1 |
+| Gate leap: the rip's throw | `GateLeap.RIP_KNOCKBACK` | x3 (about 180 px; parried 65) |
+| The sword in the floor: the wall | `WALL_WIDTH`, `WALL_HEIGHT` (bifrons_swords.gd) | 14 / 230 px |
 | A strike's knockback: hit / block (his other strikes; a throw's block with the switch on: as a hit) | `BLADE_KNOCKBACK`, `BLOCKED_KNOCKBACK` | 300 / 150 px/s |
 | Where he stands: steps back from / to; walks up from / to | `CROWD_DISTANCE`, `FIT_DISTANCE`; `BLADE_REACH`, `REACH_MARGIN` | 62 / 90; 215 / 185 px |
 | His drift: distances to the nearer player / speed / pause; off the middle between two | `DRIFT_NEAR`, `DRIFT_FAR`, `DRIFT_SPEED`, `DRIFT_PAUSE`; `PEP_DRIFT` | 80 / 170 px, 0.6 of that per s, 0.5 s; 60 px |
@@ -678,6 +729,10 @@ in, he uses them all the same.
   answer, and does provoking feel like leading the fight?
 - **The sweep:** can the second player read their moment (0.26 s after the first)? Do the four
   outcomes read from where the swords are, without knowing the table?
+- **The gate leap** (F5: GATE_LEAP, both players on one side first, ← / →): can you tell it from
+  the leap and the crossing as it starts? Does the sword in the floor read as a wall, and the vault
+  as his choice of where everyone ends up? Is the finish's rule ("A in his reach as the swords come
+  down, or both on B") something you can see coming and play to (F2 "bifrons_gate_lift")?
 - **The blade rules of 2026-10-19** (each on F1): in ppe, does "parry together or it's a block"
   read from the green, and from both blades standing out in your half? Is pep's strike of both
   too cheap now that it's two normal strikes? Does a parried throw (the leap) feel like a parry,

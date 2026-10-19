@@ -219,10 +219,10 @@ func time_to_strike(player) -> float:
 	return INF
 
 
-# True from the windup of a strike of both swords until it lands (the screen halves show it in
-# both: see "THE SCREEN HALVES" in bifrons_swords.gd).
-func both_swords_next() -> bool:
-	return _next < _swords.size() and _swords[_next] == BOTH
+# True from the windup of a strike of both swords on one side of him (heavy) until it lands: the
+# screen halves show both blades in both (see "THE SCREEN HALVES" in bifrons_swords.gd).
+func shows_in_both(_blade: int) -> bool:
+	return _next < _swords.size() and _swords[_next] == BOTH and boss.is_ppe()
 
 
 # --- The strikes ---

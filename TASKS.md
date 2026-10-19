@@ -201,6 +201,12 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     2026-10-19“. **Gefühl testen.**
   - [ ] Schlagphase von Sweep und Crossing-Stich schneller (eigene F2-Zahl)
   - [ ] (optional) Torsprung in der Werkbank (`docs/boss_bifrons_warden.md` → „Gate leap“)
+    (@Nicho). Gebaut (2026-10-19, Branch `nicho/gate-leap` auf `nicho/blade-rules`): Angriff
+    GATE_LEAP neben dem alten Leap (nur ppe, Gewicht wie der Leap: 2,5, in der Ecke 6; F2 →
+    patterns), im F5-Labor startbar; Schwert 1 steckt als Wand im Boden, Ausholen in Schritt 5
+    auf F2 („gate leap“, 0,7 s), Test `test_gate_leap`. `docs/boss_columna_bifrons.md` → „The
+    gate leap“. Befund: Block und Treffer werfen A gleich weit, und der Wurf stoppt keinen Dash;
+    mit langem Ausholen kommt also auch ein getroffener A zurück. **Gefühl testen.**
   - [ ] (optional) Ketten-Grammatik und „Phrase, dann Atem“ in der Werkbank (eigener Branch)
 - [ ] **Spiegel-Bildschirm** (@Nicho), Branch `nicho/pep-test`, Schalter `mirror_view` (F1,
   Standard aus). Nichos Idee aus dem Scribble vom 2026-10-14: Bildschirm an der Bodenlinie

@@ -239,7 +239,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   his tempo, moving and pattern weights are on F2). Each of his two swords fights one player wherever they
   are (`ward_of()`), and turns on the other one while its own is away (`_update_turns()`); all
   his attacks in one table (`ATTACKS`: a weight per situation, and either a list of strikes,
-  run by `StrikePattern`, or a script of its own: `Sweep`, `Leap`, `Shove`); a guard that
+  run by `StrikePattern`, or a script of its own: `Sweep`, `Leap`, `Shove`, and `GateLeap`, the
+  Warden's gate leap tried out here, whose sword stands in the floor as a wall); a guard that
   overrides `take_damage()` (a blade standing at its flank parries, `is_guarding()`; one that's
   swinging can't); his own movement (where he stands: `_place()` / `walk()`; a lunge with every
   strike: `lunge_goal()`; making room: `make_room()`; charging past a player, leaping between

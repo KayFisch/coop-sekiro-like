@@ -53,9 +53,10 @@ const MAX_HP = 1600.0
 #   or BOTH: which of his swords strikes, at its own player. `kind` is CUT (the default),
 #   CHARGE (see "THE CHARGE" below) or RUSH ("LEFT ALONE"). Each series is written once and
 #   also comes mirrored (MIRROR_PATTERNS).
-# "attack": the script of an attack of its own, one of the three here.
+# "attack": the script of an attack of its own, one of the four here.
 const SWEEP = preload("attacks/sweep.gd")
 const LEAP = preload("attacks/leap.gd")
+const GATE_LEAP = preload("attacks/gate_leap.gd")
 const SHOVE = preload("attacks/shove.gd")
 const ATTACKS = {
 	"SINGLE": {"weight": 0.0, "repeats": true, "strikes": [[3, LEFT]]},
@@ -73,10 +74,14 @@ const ATTACKS = {
 	# One sword, from one side of him through to the other.
 	"SWEEP": {"weight": {"pep": 1.5}, "attack": SWEEP},
 	# He jumps and comes down between the players: his way of getting them back on both sides
-	# (theirs is the dash-parry, see player_body.gd), and out of a corner. The series' weights add up
-	# to 6.5, so in ppe about one attack in four is the leap: that's how long ppe lasts if they
-	# leave it to him.
+	# (theirs is the dash-parry, see player_body.gd), and out of a corner. Its weight in ppe against
+	# the series' (and the gate leap's) is how long ppe lasts if they leave it to him.
 	"LEAP": {"weight": {"ppe": 2.5, "pep_cornered": 6.0, "ppe_cornered": 6.0}, "attack": LEAP},
+	# The Warden's gate leap (docs/boss_bifrons_warden.md), tried out here next to the leap: he rams
+	# a sword into the floor between the two, vaults over the one in front on it, strikes each of
+	# them on the way down and out, and comes down on them with both swords. Back to pep too, but
+	# he sets how. Only in ppe.
+	"GATE_LEAP": {"weight": {"ppe": 2.5, "ppe_cornered": 6.0}, "attack": GATE_LEAP},
 	# Both swords thrust at the players, to throw them back. It comes when he wants room (see
 	# "MAKING ROOM"), not by weight; give it one to have it come among the others as well.
 	"SHOVE": {"weight": 0.0, "attack": SHOVE},
@@ -166,6 +171,8 @@ static func tuning_entries() -> Array:
 		{"header": "THE STAGGER FROM THE ATTACK (F1: bifrons_chain_stagger)", "column": 1},
 		{"key": "bifrons_stagger_least", "label": "a coop parry staggers him (s)", "default": 0.5, "step": 0.1},
 		{"key": "bifrons_stagger_per_parry", "label": "...and longer by this per blade parried in that attack (s)", "default": 0.2, "step": 0.05},
+		{"header": "THE GATE LEAP (attacks/gate_leap.gd)", "tab": "gate leap"},
+		{"key": "bifrons_gate_lift", "label": "after the upward cut, the heavy strike's windup (s): A's time to come back", "default": 0.7, "step": 0.05},
 		{"header": "HOW OFTEN EACH OF HIS ATTACKS COMES", "tab": "patterns"},
 	]
 	for attack_name in ATTACKS:
@@ -470,22 +477,26 @@ func judge(blade: int, reach = BLADE_REACH) -> Dictionary:
 # The judged strike lands: a parrier parries it (`strong`: the heavier kind of parry), anyone
 # else under it is hit, or chipped behind a block. `knock` scales how far a hit throws them
 # back (a heavy strike, the leap). `heavy`: a heavy attack for the sync rules (both_heavy()).
-# `throws`: an attack that throws a player back (see A THROW BY OUTCOME).
+# `throws`: an attack that throws a player back (see A THROW BY OUTCOME). It throws them away
+# from him; a judged strike may say which way each one goes instead ("away": player -> side).
 func land(judged: Dictionary, strong = false, knock = 1.0, heavy = false, throws = false):
 	if rules != null:
 		rules.landing_heavy = heavy  # the players' hooks lead to the rules while it lands
 	var by_outcome = throws and Moves.on("bifrons_throw_by_outcome")
+	var away: Dictionary = judged.get("away", {})
+	var thrown = func(p, strength: float) -> Vector2:
+		return Vector2(away[p] * strength, -strength * 0.6) if away.has(p) else knockback_for(p, strength)
 	for p in judged.under:
 		if p in judged.parriers:
 			p.on_perfect_parry(strong)
 			spawn_sparks(p.global_position + Vector2(0.0, -24.0), 10, COLOR_PLAYER_PARRY)
 			var share = Tuning.value("bifrons_parried_throw")
 			if by_outcome and share > 0.0:
-				p.apply_knockback(knockback_for(p, BLADE_KNOCKBACK * knock * share))
+				p.apply_knockback(thrown.call(p, BLADE_KNOCKBACK * knock * share))
 		elif p.is_blocking() or p in judged.get("blocked", []):  # (a lone parry where it takes two: a block)
-			p.take_damage(knockback_for(p, (BLADE_KNOCKBACK if by_outcome else BLOCKED_KNOCKBACK) * knock), true)
+			p.take_damage(thrown.call(p, (BLADE_KNOCKBACK if by_outcome else BLOCKED_KNOCKBACK) * knock), true)
 		else:
-			p.take_damage(knockback_for(p, BLADE_KNOCKBACK * knock))
+			p.take_damage(thrown.call(p, BLADE_KNOCKBACK * knock))
 			shake(5.0)
 	if rules != null:
 		rules.landing_heavy = false

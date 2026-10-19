@@ -115,7 +115,7 @@ func test_color_keeps_each_blade_in_its_players_color():
 	var alike = false
 	for i in 90:
 		await get_tree().physics_frame
-		if boss._heavy_shown >= 1.0:
+		if boss._heavy_shown[LEFT] >= 1.0 and boss._heavy_shown[RIGHT] >= 1.0:
 			alike = [LEFT, RIGHT].all(func(b): return boss._blades[b].color.is_equal_approx(boss._tints[b]) \
 				and boss._echoes[b].get_child(0).color.is_equal_approx(boss._tints[b]))
 			break

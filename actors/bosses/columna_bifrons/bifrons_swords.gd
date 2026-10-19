@@ -76,12 +76,19 @@ const CROSSGUARD = Vector2(6.0, 32.0)
 # its edge silver (the strike's colors go onto the edge): white on the light half's dark ground,
 # black on the shadow half's pale one, so in its own half it stands out and in the other it all but
 # vanishes. A strike of both swords on one place (both on one side of him, see
-# StrikePattern.both_swords_next()) is heavy: from its windup until it lands it stands out in
+# StrikePattern.shows_in_both()) is heavy: from its windup until it lands it stands out in
 # both halves, whatever the switch says ("color": both take the strike's colors, as without the
-# halves, so they stand out alike). Two blades in your half: you need your partner. Only the
-# picture changes: every rule reads the real blade. Merged in the sync mode, the halves are one
-# again and so is he.
+# halves, so they stand out alike). Two blades in your half: you need your partner. So does a
+# blade aimed at both players (an attack's shows_in_both(), e.g. the gate leap's ram), and a sword
+# in the floor. Only the picture changes: every rule reads the real blade. Merged in the sync
+# mode, the halves are one again and so is he.
 const HEAVY_SHOW_TIME = 0.12  # s for an echo to become its blade, as a heavy strike's windup begins
+# A SWORD IN THE FLOOR (the gate leap, attacks/gate_leap.gd): planted, a blade stands with its point
+# in the floor and its hilt leaning over it, wherever he goes (his hand stays on the hilt). It guards
+# nothing, and it's a wall nobody walks, dashes or jumps through (WALL_HEIGHT: higher than a jump),
+# raised as soon as nobody stands where it goes, until he pulls the sword out.
+const WALL_WIDTH = 14.0
+const WALL_HEIGHT = 230.0
 
 var _wards = {LEFT: null, RIGHT: null}  # sword -> its own player (see _assign_wards())
 var _turned = {LEFT: false, RIGHT: false}  # sword -> it has turned on the other sword's player
@@ -90,7 +97,9 @@ var _pivots = {}  # sword -> Node2D
 var _echoes = {}  # sword -> Node2D: the pivot as drawn in the other half (see THE SCREEN HALVES)
 var _echo_poses = {LEFT: POSE_GUARD, RIGHT: POSE_GUARD}  # where an echo on hold is drawn
 var _echo_crosses = {LEFT: 1.0, RIGHT: 1.0}
-var _heavy_shown = 0.0  # 0..1: the echoes become their blades (a heavy strike, HEAVY_SHOW_TIME)
+var _heavy_shown = {LEFT: 0.0, RIGHT: 0.0}  # sword -> 0..1: its echo becomes the blade (a heavy strike, HEAVY_SHOW_TIME)
+var _planted = {}  # sword -> [its point (world), the hilt's lean]: in the floor (A SWORD IN THE FLOOR)
+var _walls = {}  # sword -> StaticBody2D: the wall it makes there, once raised
 var _blades = {}  # sword -> ColorRect
 var _edges = {}  # sword -> ColorRect: its cutting edge
 var _crossguards = {}  # sword -> ColorRect
@@ -369,6 +378,68 @@ func set_stagger_pose(blade: int, pose: Vector3, over = 1.0):
 	_stagger_poses[blade] = [pose, over]
 
 
+# --- A sword in the floor (see A SWORD IN THE FLOOR) ---
+
+# That sword stands with its point at `point` (world, on the floor), its hilt leaning `lean`
+# radians from upright (> 0: over to the right). Called again, it leans anew; the point stays.
+func plant_sword(blade: int, point: Vector2, lean: float):
+	_planted[blade] = [point, lean]
+
+
+func is_planted(blade: int) -> bool:
+	return _planted.has(blade)
+
+
+# Out of the floor: posed as he poses it from now on, starting from where it stood.
+func pull_sword(blade: int):
+	_planted.erase(blade)
+	if _walls.has(blade):
+		_walls[blade].queue_free()
+		_walls.erase(blade)
+
+
+# The hilt of a sword in the floor (world).
+func planted_hilt(blade: int) -> Vector2:
+	var lean: float = _planted[blade][1]
+	return _planted[blade][0] + SWORD_LENGTH * Vector2(sin(lean), -cos(lean))
+
+
+# A sword in the floor as one of the POSE_s, on the side of him its hilt is on (`toward`, ±1), so
+# pose_sword() with that pose and side puts it just where it stands.
+func planted_pose(blade: int) -> Vector3:
+	var hilt = planted_hilt(blade)
+	var toward = planted_side(blade)
+	var down: Vector2 = _planted[blade][0] - hilt
+	var hand = hilt - global_position
+	return Vector3(hand.x * toward, hand.y, (down * toward).angle() * toward)
+
+
+func planted_side(blade: int) -> int:
+	return RIGHT if planted_hilt(blade).x >= global_position.x else LEFT
+
+
+# Each sword in the floor raises its wall as soon as nobody stands where it goes.
+func _raise_walls():
+	for blade in _planted:
+		if _walls.has(blade):
+			continue
+		var point: Vector2 = _planted[blade][0]
+		var rect = Rect2(point.x - WALL_WIDTH / 2.0, point.y - WALL_HEIGHT, WALL_WIDTH, WALL_HEIGHT)
+		if get_players().any(func(p): return rect.intersects(Rect2(p.global_position - p.body.size / 2.0, p.body.size))):
+			continue
+		var wall = StaticBody2D.new()
+		wall.collision_layer = PlayerBody.WORLD_LAYER  # the floor's and the walls': nobody gets through
+		wall.collision_mask = 0
+		wall.top_level = true
+		wall.position = rect.get_center()
+		var shape = CollisionShape2D.new()
+		shape.shape = RectangleShape2D.new()
+		shape.shape.size = rect.size
+		wall.add_child(shape)
+		add_child(wall)
+		_walls[blade] = wall
+
+
 func _update_pose():
 	var down = hp <= 0.0 or state == State.STAGGER
 	var follow = 1.0 - exp(-SWORD_FOLLOW * get_physics_process_delta_time())
@@ -394,6 +465,12 @@ func _update_pose():
 		var over: float = _overs[blade]
 		var snap: bool = _snaps[blade]
 		var home: bool = _homes[blade]
+		if _planted.has(blade):
+			# In the floor: just where it stands, whatever he's doing.
+			pose = planted_pose(blade)
+			over = planted_side(blade) * side
+			snap = true
+			home = false
 		# Guarding means back at its flank: an attack wants it there, and it has arrived.
 		var wants_guard = pose == POSE_GUARD and over == 1.0 and not home and not down and not broken
 		if not wants_guard:
@@ -443,6 +520,7 @@ func _update_pose():
 			_halves[side].color = COLOR_OPEN if fmod(anim_time, 0.1) < 0.05 else Color.WHITE
 		else:
 			_halves[side].color = tints[side]
+	_raise_walls()
 	_draw_halves(down, follow)
 
 
@@ -460,10 +538,10 @@ func _draw_halves(down: bool, follow: float):
 	var view = get_tree().get_first_node_in_group("mirror_view")
 	var mode = Moves.value("mirror_blades")
 	var split = view != null and view.split() and mode != "mirror"
-	var heavy = split and not down and current_attack is StrikePattern \
-		and current_attack.both_swords_next() and is_ppe()
-	_heavy_shown = move_toward(_heavy_shown, 1.0 if heavy else 0.0,
-		get_physics_process_delta_time() / HEAVY_SHOW_TIME)
+	for blade in BLADES:
+		var heavy = split and not down and _shows_in_both(blade)
+		_heavy_shown[blade] = move_toward(_heavy_shown[blade], 1.0 if heavy else 0.0,
+			get_physics_process_delta_time() / HEAVY_SHOW_TIME)
 	for blade in BLADES:
 		var pivot: Node2D = _pivots[blade]
 		var echo: Node2D = _echoes[blade]
@@ -472,7 +550,7 @@ func _draw_halves(down: bool, follow: float):
 		_edges[blade].color = _crossguards[blade].color
 		if split and ward != null and mode == "color":
 			# In its player's color, the strike's colors on its edge; a heavy strike (or down) as ever.
-			var shown_as_ever = 1.0 if down else _heavy_shown
+			var shown_as_ever = 1.0 if down else _heavy_shown[blade]
 			_blades[blade].color = ward.player_color.lerp(_tints[blade], shown_as_ever)
 			_edges[blade].color = _tints[blade].lerp(_crossguards[blade].color, shown_as_ever)
 		if not split or ward == null:
@@ -491,18 +569,26 @@ func _draw_halves(down: bool, follow: float):
 				echo_parts[i].get_child(j).color = parts[i].get_child(j).color
 		# On hold: eased back to its guard on its player's side, as when it isn't striking, and
 		# silver (a strike's color would say it's coming at you).
-		var shown = 1.0 if mode in ["fade", "color"] or down else _heavy_shown
+		var shown = 1.0 if mode in ["fade", "color"] or down else _heavy_shown[blade]
 		echo_parts[0].color = COLOR_SWORD.lerp(parts[0].color, shown)
 		if mode == "color":
 			# Not aimed at this half's player: no strike's colors on its edge.
-			echo_parts[0].get_child(0).color = COLOR_SWORD.lerp(_crossguards[blade].color, 1.0 if down else _heavy_shown)
+			echo_parts[0].get_child(0).color = COLOR_SWORD.lerp(_crossguards[blade].color, 1.0 if down else _heavy_shown[blade])
 		var guard = POSE_GUARD + (ACROSS_SHIFT if reaches_across(blade) else Vector3.ZERO)
 		_echo_poses[blade] = _echo_poses[blade].lerp(guard, follow)
 		_echo_crosses[blade] = lerpf(_echo_crosses[blade], blade * blade_side(blade), follow)
 		_place_pivot(echo, blade, _echo_poses[blade].lerp(_poses[blade], shown),
 			lerpf(_echo_crosses[blade], _crosses[blade], shown))
 		var faint = Tuning.value("bifrons_fade_alpha") if mode == "fade" and not down else 1.0
-		echo.modulate.a = lerpf(faint, 1.0, _heavy_shown)
+		echo.modulate.a = lerpf(faint, 1.0, _heavy_shown[blade])
+
+
+# True while that blade stands out in both screen halves: in the floor, or aimed at both players
+# (the attack's shows_in_both()).
+func _shows_in_both(blade: int) -> bool:
+	if _planted.has(blade):
+		return true
+	return current_attack != null and current_attack.has_method("shows_in_both") and current_attack.shows_in_both(blade)
 
 
 # A node and all below it onto a visibility layer (MirrorView's bits): drawn in that half only.

@@ -60,6 +60,19 @@ Forces ppe into pep (with the old leap, players could pick their formation). A =
 The finish is the gate leap's only reaction; no extra reactions to steps 1, 3 or 4. While sword 1
 is in the ground it is a wall.
 
+**Tried out on the try-out boss** (2026-10-19, F5: GATE_LEAP; `docs/boss_columna_bifrons.md`,
+"The gate leap"). Where the build had to settle what's open here:
+- Sword 1 is **A's sword** (the one that fights A), not "the sword on the side away from the leap's
+  direction": so each screen half still shows the blades aimed at its player, and the sword
+  rammed between them, aimed at both, stands out in both.
+- "Close enough" in step 5 = in his blades' reach (215 px) as the swords **start down**, after the
+  lift (F2). Parried, the rip throws A about 65 px (A stays in reach), blocked or hit about 180
+  (out of it).
+- A parried strike in steps 3 and 4 breaks the other sword's guard (the partner's sync hit), as
+  any strike's parry does; no other reaction.
+- Found: a block and a hit throw A just as far, and the throw doesn't stop a dash. So a lift long
+  enough for a blocking A to come back lets a hit A back too.
+
 ## Where he stands
 
 - **He wants the middle himself** (he doesn't try to keep the players there). The warden stands
@@ -82,7 +95,8 @@ is in the ground it is a wall.
   because sync damage came too fast with it on. Claude's suggestions: "enough" = all strikes of
   that repetition; the sync hit doesn't break the chain; the opening gets its own short tell.
 - **Gate leap, step 5** (proposal): make the windup long enough that an A who only *blocked*
-  step 4 can dash back in time; only an A who was *hit* leaves B alone.
+  step 4 can dash back in time; only an A who was *hit* leaves B alone. (In the try-out a hit and
+  a block throw A equally far: that needs something else that sets a hit A apart, see above.)
 - **Telegraph ideas** (proposal): a stance per motif; "Janus eyes" (a face on each side, the lit
   one shows who the next strike is for).
 - **His sync-mode reaction pattern.**
