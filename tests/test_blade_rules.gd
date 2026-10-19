@@ -205,3 +205,14 @@ func test_stagger_from_the_attack():
 	await _place(-110.0, 110.0)
 	run = await _run("QUAD", [left, right])
 	near(run.stagger, NUMBERS.coop_parry_stagger, 0.02, "switch off: the sync rules' one number")
+
+
+# Chaos (no sync): no blocking, but a parry still parries (Nicho, 2026-10-19: it seemed not to).
+func test_parry_in_chaos():
+	await _setup()
+	await _place(-110.0, 110.0)
+	rules._set_team(0.0)
+	check(rules.team_chaos, "no sync: chaos")
+	var run = await _run("SINGLE", [left, right])
+	check(run.parried.size() == 1, "chaos: a parry still counts")
+	check(not left.is_dead() and not right.is_dead(), "...and nobody is dead")

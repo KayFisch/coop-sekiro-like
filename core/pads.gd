@@ -29,6 +29,9 @@ const LAYOUTS = [
 	{"name": "dash left", "jump": JOY_BUTTON_A, "attack": JOY_BUTTON_X,
 		"dash": JOY_BUTTON_LEFT_SHOULDER, "block": JOY_BUTTON_RIGHT_SHOULDER,
 		"buttons": "Cross jump · Square attack · L1 dash · R1 block"},
+	{"name": "Sekiro swapped", "jump": JOY_BUTTON_A, "attack": JOY_BUTTON_LEFT_SHOULDER,
+		"dash": JOY_BUTTON_X, "block": JOY_BUTTON_RIGHT_SHOULDER,
+		"buttons": "Cross jump · L1 attack · Square dash · R1 block"},
 ]
 
 var pads: Array = []  # device ids in use: none, [the pad set's], or [the keyboard set's, the pad set's]

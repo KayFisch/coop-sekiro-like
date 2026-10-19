@@ -580,7 +580,7 @@ of the player it fights (`ward_of()`); in the other half a copy of it stands in 
 - Only the picture: every rule reads the real blade. Bound in the sync mode with
   "sync_merge_view", the halves merge and he is drawn whole again.
 
-- Switch it in F1 (off by default); it goes on and off at once, mid-fight too.
+- Switch it in F1 (on by default since 2026-10-19, Nicho: the base of the boss fights); it goes on and off at once, mid-fight too.
 - The room is drawn at 0.85 so his leap stays inside a half (`MirrorView.ZOOM`). Colors, the
   pale ground, the outline in the shadow half: constants at the top of `ui/mirror_view.gd`.
 - A body that's nearly white flashes black when hit, instead of white (`FLASH_DARK_ABOVE`).

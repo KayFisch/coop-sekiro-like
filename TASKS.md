@@ -165,6 +165,22 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   `boss_columna_bifrons.md` (Verweise mitziehen).
 - [ ] **Durchgang durch Bosse klären** (offen): nur die Waffen sperren einen Dash, nicht der
   Körper? Oder nur Bifrons ist undurchdringlich?
+- [ ] **Beobachtungen aus Nichos Test vom 2026-10-19** (offen, niemand; nicht sicher, erst
+  nachprüfen):
+  - Der Stand-in (Bot) bleibt manchmal an der Wand stecken. **Nicht nachgestellt** (Claude,
+    2026-10-19: 90 s Kampf mit Stand-in, und siebenmal an die Wand geschoben: nie dort hängen
+    geblieben). Bitte merken, wann es passiert (ppe? Partner an der Wand? nach Shove/Leap?).
+    Verdacht: Steht der Partner an der Wand und der Stand-in will „direkt hinter ihm“
+    (`DISTANCE_BEHIND` in `stand_in.gd`), liegt sein Ziel in der Wand.
+  - Im Chaos-Modus scheint auch Parieren manchmal nicht zu klappen. **Parieren selbst geht**
+    (Test `test_blade_rules.test_parry_in_chaos`). Mögliche Gründe: Im Chaos kommt Haltung kaum
+    zurück (5 %), also bricht sie leicht (z. B. wenn er deinen Hieb pariert) und du bist 0,8 s
+    gestaggert, ohne Parry; Block-Mashen sperrt den Parry (`PARRY_SPAM_LOCK`, 0,3 s); und seit
+    den Klingenregeln ist ein einzelner Parry gegen beide Schwerter auf einer Seite nur ein Block.
+- [x] **`mirror_view` standardmäßig an** (Nicho, 2026-10-19; `Moves.VERSION` 5: gespeicherte
+  F1-Schalter gehen einmal auf Standard zurück).
+- [x] **Vierte Controller-Belegung „Sekiro swapped“:** wie Sekiro, aber L1 Angriff, R1 Block
+  (Nicho, 2026-10-19; `core/pads.gd` → `LAYOUTS`, im Hauptmenü mit P).
 - [ ] **Code-Aufträge aus dem Design vom 2026-10-19** (offen, niemand; Details in den Docs und
   im Scribble vom 2026-10-19). Fassen den Spieler und Bifrons an, also vorher claimen:
   - [x] Dash-Parry: Controller-Belegung bequemer machen (@Nicho). Funktioniert nach Kays Umbau

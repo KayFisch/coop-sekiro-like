@@ -176,7 +176,7 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `Moves.on("pogo")`). Every move is on by default, everywhere (no level switches any on); the
   switches are for comparing. `Pads` gives
   each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device),
-  with the pad's buttons from one of its `LAYOUTS` (standard, Sekiro, dash left), chosen on the
+  with the pad's buttons from one of its `LAYOUTS` (standard, Sekiro, dash left, Sekiro swapped), chosen on the
   title screen (P) and saved to `user://pads.cfg`.
   `Beat` is the one clock for everything in time (150 BPM; a level starts it, it's never reset
   inside one; signals `beat` / `bar`, `offset_to_downbeat()` etc.; click on M, off at start;
