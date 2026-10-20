@@ -167,6 +167,20 @@ func hover_point() -> Vector2:
 	return Vector2(home_position.x, home_position.y - CENTER_HOVER_HEIGHT)
 
 
+# --- Sync as life (core/sync_rules.gd): what the rules ask of him ---
+
+# How many points his posture holds.
+func max_posture() -> float:
+	return Tuning.value("boss_posture_max")
+
+
+# His posture broken: what it does to him. By default the deathblow, as in Sekiro: staggered long,
+# and true, for all his sync gone. A boss for whom it's something else returns false to keep it.
+func on_posture_broken() -> bool:
+	stagger_now(Tuning.value("boss_break_stagger"))
+	return true
+
+
 # Movement between attacks: drifting home while idle and recovering, and the stagger's rocking.
 func _idle_motion(_delta: float):
 	global_position = global_position.lerp(home_position, 0.05)
@@ -417,6 +431,11 @@ func face(x: float):
 	var side = signf(x - global_position.x)
 	if side != 0.0:
 		facing = side
+
+
+# Between his center and a player's, along the floor (the sync mode's reach asks it too).
+func distance_to(player) -> float:
+	return absf(player.global_position.x - global_position.x)
 
 
 # --- Squash and stretch (the Sekiro-style read: a slow, loaded anticipation, then a snap) ---

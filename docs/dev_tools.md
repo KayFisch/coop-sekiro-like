@@ -9,7 +9,7 @@ tests and a performance probe run from the command line.
 | Key | What |
 |---|---|
 | F1 | Switches (`core/moves.gd`), in tabs: Q / E. Tab "Dev": write the fight log to a file. |
-| F2 | Numbers (`core/tuning.gd`), laid out as F1: a page per system (Z / C: sync rules, Bifrons, runner, ring), its tabs (Q / E), its numbers (↑/↓ pick, ←/→ change, Shift: ten steps, Ctrl: a tenth of one; no number has a limit but 0). Opens on the page of the level it's in. |
+| F2 | Numbers (`core/tuning.gd`), laid out as F1: a page per system (Z / C: sync rules, Bifrons, Heavy Hitter, runner, ring), its tabs (Q / E), its numbers (↑/↓ pick, ←/→ change, Shift: ten steps, Ctrl: a tenth of one; no number has a limit but 0). Opens on the page of the level it's in. |
 | F3 | Overlay: frame time, the boss and the players right now, and this fight in numbers. |
 | F4 | Hitboxes: every collision shape, and the boss's body block (red). |
 | F5 | Boss lab: run one of his attacks, again and again, and set things up for it. |
@@ -78,8 +78,9 @@ engine reports any error while it runs. The output ends with "N passed, M failed
 What's there: the sync rules (what each landing costs whom, breaking, regen), the partner's
 window, the sync mode (binding, the strike together, his hold-off, the dash-slash through him),
 the ring's violet shard, the player's feel (speed, jump, dash, parry window, swing timing), the
-dev tools, Bifrons's blade rules, screen halves, gate leap and chains, and that every scene loads
-and runs.
+dev tools, Bifrons's blade rules, screen halves, gate leap and chains, the Heavy Hitter's rules
+(unisono, the crack, his guard, the fields and finales, the stagger, his turn, the stomp leap), and
+that every scene loads and runs.
 
 Writing one: a file `tests/test_<topic>.gd` that `extends "res://tests/test_case.gd"`, with
 methods `test_<what>()`. From `test_case.gd`:
@@ -148,6 +149,12 @@ times a second in the editor (`Clockwork.EDITOR_FPS`).
    and hits are logged by the player. Anything that starts an attack outside `BaseBoss`'s idle
    timer (as Bifrons's shove and his strike back) has to respect `dev_hold`. Report what's his
    own to `Dev.note(kind, data)`.
-4. Tests for his rules (`tests/test_<name>.gd`).
-5. To test alone, a stand-in that presses a player's buttons (Bifrons's `stand_in.gd`).
-6. `docs/boss_<name>.md`, and an entry in `ui/boss_select.gd`.
+4. Sync as life: he creates the rules in his `_ready()` (a `SyncRules`, handed to
+   `GameManager.rules`), and gives his hits to them from his own `take_damage()`; the sync mode needs
+   his `take_pair_strike()`. How much posture he has and what a broken one does to him are
+   `BaseBoss.max_posture()` and `on_posture_broken()` (by default the deathblow). Bifrons and the
+   Heavy Hitter show both ways.
+5. Tests for his rules (`tests/test_<name>.gd`).
+6. To test alone, a stand-in that presses a player's buttons (Bifrons's `stand_in.gd`, the Heavy
+   Hitter's `hitter_stand_in.gd`).
+7. `docs/boss_<name>.md`, and an entry in `ui/boss_select.gd`.

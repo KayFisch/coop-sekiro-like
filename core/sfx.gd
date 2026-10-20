@@ -96,6 +96,7 @@ func _build_sounds():
 	_sounds["big_bell"] = _with_echo(_bell(261.6, 1.6, 2.2), 0.35, 0.4, 1)  # the great bell: done
 	_sounds["call_go"] = _notes([784.0, 1174.7], 0.09, true)
 	_sounds["guard_break"] = _clang(700.0, 0.3)  # Columna Bifrons's guard knocked open
+	_sounds["glass_crack"] = _crack(0.45)  # the Heavy Hitter's blade into the mirror: the floor cracks
 	_sounds["sync_hit"] = _thud(240.0, 80.0, 0.18, 16.0, 0.5)  # a hit through his broken guard
 	# Sync as life (core/sync_rules.gd)
 	_sounds["on_beat"] = _blip(1760.0, 0.05)  # a sync hit right on the beat
@@ -218,6 +219,28 @@ func _explosion(duration: float) -> PackedVector2Array:
 		if t < 0.004:
 			s += randf_range(-1.0, 1.0)
 		out[i] = Vector2.ONE * clampf(s * 0.9, -1.0, 1.0)
+	return out
+
+
+# Glass cracking: a run of sharp ticks, closer together and brightest at first, over a faint high
+# ring.
+func _crack(duration: float) -> PackedVector2Array:
+	var out = _buffer(duration)
+	var next_tick = 0.0
+	var tick_left = 0.0
+	var noise = 0.0
+	for i in out.size():
+		var t = i / MIX_RATE
+		var k = t / duration
+		if t >= next_tick:
+			next_tick = t + randf_range(0.006, 0.025) * (1.0 + 3.0 * k)
+			tick_left = 0.0025
+		var s = (sin(TAU * 3700.0 * t) * 0.14 + sin(TAU * 5900.0 * t) * 0.08) * exp(-t * 14.0)
+		if tick_left > 0.0:
+			noise += 0.9 * (randf_range(-1.0, 1.0) - noise)
+			s += noise * (1.0 - k) * 0.9
+			tick_left -= 1.0 / MIX_RATE
+		out[i] = Vector2.ONE * clampf(s, -1.0, 1.0)
 	return out
 
 

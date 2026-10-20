@@ -238,7 +238,7 @@ rules). What sets the bosses apart is **who controls the formation**:
 - **Columna Bifrons, the Warden of the Threshold:** new, designed from scratch.
   `docs/boss_bifrons_warden.md`.
 - **The Heavy Hitter, the Ettin** (working title; two heads, one weapon): designed (v0,
-  2026-10-19), to be built next. `docs/boss_heavy_hitter.md`.
+  2026-10-19); phase 1 built (2026-10-20, without the rage and the flip). `docs/boss_heavy_hitter.md`.
 - **The Acrobat** (towards Lady Butterfly): later; one of his phases is the beat ring
   (`docs/beat_ring.md`).
 - Cubus Maximus and Sphaera Pendula, the first two, were dropped on 2026-10-18.
@@ -310,7 +310,7 @@ The throughline is the same as combat: **neither player is just watching while t
 
 ## Current prototype scope
 
-- One test boss: **Columna Bifrons**, fought from both sides at once, in his room, the Threshold (`docs/boss_columna_bifrons.md`)
+- One test boss: **Columna Bifrons**, fought from both sides at once, in his room, the Threshold (`docs/boss_columna_bifrons.md`); and the first of the bosses designed from the principles, the **Heavy Hitter**, its phase 1 (`docs/boss_heavy_hitter.md`)
 - Movement gyms (`docs/parkour_gyms.md`), a coop platformer level built with the level kit (Horologium, `docs/level_kit.md`), and two prototypes for between the bosses (`docs/beat_runner.md`, `docs/beat_ring.md`)
 - Two players: keyboard and gamepads (one pad each)
 - Systems in place: parry relay, sync as life (a shared sync, posture, the sync mode), one clock for everything in time with music (`Beat`), screen shake, procedural audio

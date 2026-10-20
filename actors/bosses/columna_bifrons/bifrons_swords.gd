@@ -204,10 +204,6 @@ func _fought() -> Array:
 	return players
 
 
-func distance_to(player) -> float:
-	return absf(player.global_position.x - global_position.x)
-
-
 # A sword's crossguard and cutting edge have the color of the player it fights.
 func _color_swords():
 	for blade in BLADES:

@@ -18,6 +18,7 @@ const SOURCES = [
 	"res://core/sync_rules.gd",  # page "sync": sync as life (tabs damage, sync and posture, sync hit)
 	"res://core/sync_bond.gd",  # page "sync", tab "sync mode"
 	"res://actors/bosses/columna_bifrons/columna_bifrons.gd",  # page "bifrons"
+	"res://actors/bosses/heavy_hitter/heavy_hitter.gd",  # page "hitter"
 	"res://levels/runner/runner.gd",  # page "runner"
 	"res://levels/ring/ring.gd",  # page "ring"
 ]

@@ -168,8 +168,10 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [x] **Heavy Hitter designen** (Nicho, 2026-10-19): v0 in `docs/boss_heavy_hitter.md`.
 - [x] **Gemeinsamer Parry gibt beiden ein Sync-Hit-Fenster**, im Try-out-Boss (Nicho,
   2026-10-20): F1 „bifrons_coop_windows“, `docs/boss_columna_bifrons.md` → „A window each“.
-- [ ] **Heavy Hitter bauen, Schritt 1: Grundgerüst und Phase 1** (offen, niemand; Prompt B2).
-  Eigener Branch.
+- [x] **Heavy Hitter bauen, Schritt 1: Grundgerüst und Phase 1** (Nicho, 2026-10-20; Prompt B2).
+  Branch `nicho/heavy-hitter` (von `nicho/chains`), Auswahl Eintrag 2. Was drin ist und worauf beim
+  Anspielen achten: `docs/boss_heavy_hitter.md` → „Built (phase 1)“. Der Stampfsprung ist auf der
+  Stelle gebaut, mit Drehung in der Luft (Vorschlag, im Spiel prüfen).
 - [ ] **Heavy Hitter bauen, Schritt 2: Wut und Phase 2** (offen, niemand; Prompt B3). Erst nach
   Nichos Test von Schritt 1.
 - [ ] **Name für den Try-out-Boss** (offen). Danach Docs umbenennen: altes

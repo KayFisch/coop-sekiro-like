@@ -4,9 +4,11 @@ extends CanvasLayer
 ## fight with P1, in light; below it the fight's reflection, upside down, with P2 in shadow (after
 ## the mirror scene in Gris). Only the picture changes: both players still stand on the one floor
 ## by the same rules, and the boss is one boss: he can't move his light and his shadow apart, the
-## players can. Only his blades may differ between the halves (Moves "mirror_blades": each half
-## shows the blades aimed at its player, see bifrons_swords.gd). Each half leaves out the other player, so the two never cover
-## each other; and they pass through each other (Player.own_half), there's nobody to bump into.
+## players can. Only his weapons may differ between the halves (Bifrons's blades, Moves
+## "mirror_blades": each half shows the blades aimed at its player, see bifrons_swords.gd; the Heavy
+## Hitter's weapon, a layer of it for each player, see hitter_weapon.gd). Each half leaves out the
+## other player, so the two never cover each other; and they pass through each other
+## (Player.own_half), there's nobody to bump into.
 ##
 ## Each half is a SubViewport on the level's world (the same World2D, a canvas transform of its
 ## own); the bottom one is shown flipped. Which half draws what is set by visibility layers: P1 and
@@ -193,7 +195,7 @@ func _process(_delta):
 
 
 # True while the halves are two (on, and not merged): each may draw a boss its own way (Columna
-# Bifrons's blades, Moves "mirror_blades").
+# Bifrons's blades, Moves "mirror_blades"; the Heavy Hitter's weapon).
 func split() -> bool:
 	return not _halves.is_empty() and _merge <= 0.0
 

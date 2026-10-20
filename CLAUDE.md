@@ -61,6 +61,16 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   default now), the Warden's gate leap and a chains mode to try
   (`docs/boss_columna_bifrons.md`).
 
+### For Kay, from Nicho (2026-10-20)
+
+- The **Heavy Hitter, phase 1**, is built on `nicho/heavy-hitter` (from `nicho/chains`; not in
+  `main` yet): select screen entry 2 (the other entries moved down one; 0 starts the tenth). What's
+  in it and what to look for: `docs/boss_heavy_hitter.md`, "Built (phase 1)".
+- Shared code it touches, all backwards compatible (Bifrons plays as before): `BaseBoss` has
+  `max_posture()`, `on_posture_broken()` (by default the deathblow) and `distance_to()` (moved up
+  from Bifrons); `SyncRules` takes an optional posture factor on his hits, and two more
+  `landing_*` values a boss may set while a strike lands. Nothing in `actors/player/`.
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
@@ -92,7 +102,8 @@ core/                                autoloads: GameManager, Sfx, Moves, Pads, B
 actors/player/                       player.gd (+ scene) and the four parts it extends (player_*.gd),
                                      sync_wave.gd (the parry's energy to the partner)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
-levels/                              threshold/ (Bifrons's room), gym/ (movement test rooms), kit/ (level kit: rooms built in
+levels/                              threshold/ (Bifrons's room), heavy_hitter/ (the Heavy Hitter's),
+                                     gym/ (movement test rooms), kit/ (level kit: rooms built in
                                      the editor), horologium/ (coop platformer level, kit rooms),
                                      runner/ and ring/ (between the bosses, prototypes)
 ui/                                  boss select, HUD, beat display, audio calibration (F1 → Sound),
@@ -202,12 +213,14 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   F5 boss lab (run or loop one attack, stop his attacks or his moving, slow the game, set meters
   and positions; F1 and F2 come first), and
   the fight log (`Dev.defended()`, `Dev.note()`; with F1 → Dev "fight_log" to a file).
-- `core/sync_rules.gd` (`SyncRules`): sync as life, the rules of Bifrons's fight (no health
-  anywhere in the game, no potions): a shared sync for the players and one for the boss,
+- `core/sync_rules.gd` (`SyncRules`): sync as life, the rules of Bifrons's fight and the Heavy
+  Hitter's (no health anywhere in the game, no potions): a shared sync for the players and one for the boss,
   a posture each, chaos at no sync, sync mode at full. Attacks are normal or heavy (his: both
   swords on one place, which takes both players' parries, "THE BLADE RULES" in
   `columna_bifrons.gd`; theirs: in sync mode); posture is lost in three sizes, by parrying (both sides),
   blocking (the blocker only) or being hit, and comes back 2 s after the last attack in or out.
+  How much posture he has and what a broken one does to him are the boss's (`BaseBoss.max_posture()`,
+  `on_posture_broken()`: by default the deathblow).
   The boss creates it and hands it to `GameManager.rules`; while that's set,
   `Player.take_damage()` and the boss's hits go through it (`ColumnaBifrons.land()` says whether
   a strike is heavy: `landing_heavy`), and the HUD shows the two meters. Without it (gyms,
@@ -239,8 +252,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   cleanup` and `finish()` / `finish_with_stagger()`. A boss subclass supplies its attack pool,
   weights, pose and HP. For tools and tests a boss can be held off (`dev_hold`: no attack of his
   own), told his next attack (`dev_next`) and kept from moving between attacks (`dev_still`).
-  The boss so far: `columna_bifrons/` (the first two, Cubus Maximus and Sphaera Pendula, were
-  dropped on 2026-10-18), a test boss for fighting from both sides, and with
+  The bosses so far (the first two, Cubus Maximus and Sphaera Pendula, were dropped on 2026-10-18):
+  `columna_bifrons/`, a test boss for fighting from both sides, and with
   both players on one (`docs/boss_columna_bifrons.md`); since 2026-10-19 the try-out boss, kept
   as a workbench, while his name goes to a boss designed from scratch
   (`docs/boss_bifrons_warden.md`). Built in three parts, each extending the
@@ -261,6 +274,13 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   pause that's the players', "THE CHAINS"); and
   `stand_in.gd`, which plays one of the players for testing alone, by pressing that player's
   buttons.
+  `heavy_hitter/` (`docs/boss_heavy_hitter.md`, phase 1 since 2026-10-20): the Ettin, in two parts:
+  `hitter_weapon.gd` (`HitterWeapon`: one weapon, pointing its own way in each player's layer,
+  `way_of()`, and drawn in that layer's half; his two heads; his guard, only between his chains; the
+  windows, one per player) and `heavy_hitter.gd` (`HeavyHitter`: the fields, `field()`; his chains,
+  `attacks/swings.gd`, the motif by the field and the finale by what he sees; his breath and turn;
+  the blade strike in both layers at once, `land_blade()`, and the crack, `crack.gd`; the rules'
+  hooks; where he stands). His own stand-in: `hitter_stand_in.gd`.
 - `levels/`: `GymLevel` (`gym/gym_level.gd`) is the base of the gyms and the platformer levels:
   it builds rooms from code (`solid()`, `ledge()`, `checkpoint()`, `measure()`, ...), spawns the
   players, respawns them at checkpoints (`checkpoint_needs_all`: only once both are there) and
