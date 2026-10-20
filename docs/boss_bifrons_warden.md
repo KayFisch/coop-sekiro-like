@@ -19,7 +19,8 @@ Players can resist (e.g. by dashing through his crossing thrust).
 - **Links:** a *strike* on R or L (each blade fights its player); a *push* of one player (thrown
   back, has to come back).
 - **Finales:** double strike, crossing, gate leap. **Each one gives a co-op parry chance with a
-  stagger.** All of them work in pep and in ppe.
+  stagger**, and a sync-hit window for each player (`docs/concept.md`, "A co-op parry gives
+  both a sync-hit window"). All of them work in pep and in ppe.
 - A chain starts on his own initiative, or as an answer when the players hit his guard in the
   pause (it then starts on the attacker).
 
@@ -72,6 +73,8 @@ is in the ground it is a wall.
   any strike's parry does; no other reaction.
 - Found: a block and a hit throw A just as far, and the throw doesn't stop a dash. So a lift long
   enough for a blocking A to come back lets a hit A back too.
+  Nicho (2026-10-19): on purpose, because otherwise the distances can't keep A away against his
+  reach. Whether there will be a difference between blocked and hit at all is open.
 
 ## Where he stands
 
@@ -92,13 +95,14 @@ is in the ground it is a wall.
   parried, the last parry briefly opens his other side, so at most one real sync hit per
   repetition. (Tried out since 2026-10-19: the try-out boss's chains mode with
   "bifrons_guard_break" on motif_end, `docs/boss_columna_bifrons.md`, "chains".)
-  In the try-out boss this is the switch "bifrons_guard_break" (on: every parry opens
-  the other side; off: the window stays, but his guard still parries). Nicho plays with it off,
-  because sync damage came too fast with it on. Claude's suggestions: "enough" = all strikes of
-  that repetition; the sync hit doesn't break the chain; the opening gets its own short tell.
+  In the try-out boss the switch "bifrons_guard_break" has three values: on (every parry opens the
+  other side), off (the window stays, but his guard still parries) and motif_end (this idea).
+  Nicho plays with it off, because sync damage came too fast with it on. Claude's suggestions:
+  "enough" = all strikes of that repetition; the sync hit doesn't break the chain; the opening
+  gets its own short tell.
 - **Gate leap, step 5** (proposal): make the windup long enough that an A who only *blocked*
-  step 4 can dash back in time; only an A who was *hit* leaves B alone. (In the try-out a hit and
-  a block throw A equally far: that needs something else that sets a hit A apart, see above.)
+  step 4 can dash back in time; only an A who was *hit* leaves B alone. (Whether a blocked and a
+  hit A should differ at all is open, see above.)
 - **Telegraph ideas** (proposal): a stance per motif; "Janus eyes" (a face on each side, the lit
   one shows who the next strike is for).
 - **His sync-mode reaction pattern.**

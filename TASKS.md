@@ -19,8 +19,8 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [ ] **Woher kommen die Boss-Designs?** (Kay, 2026-10-16) Zweiköpfige Wesen aus Mythen: A aus
   allen Mythologien (ein Boss je Kreatur, evtl. eine Welt je Mythologie), B eine Kreatur für
   alle, C eine Mythologie, D frei. Kay neigt zu A. Details: `scribbles.md`, 2026-10-16.
-  Stand 2026-10-19: geplant sind der Wächter (Columna Bifrons, Janus), der Heavy Hitter (Mythos
-  offen, z. B. Ettin) und der Akrobat.
+  Stand 2026-10-19: geplant sind der Wächter (Columna Bifrons, Janus), der Heavy Hitter
+  (Arbeitsidee: der Ettin, zwei Köpfe, eine Waffe; Name und Mythos offen) und der Akrobat.
 - [ ] _(weitere eintragen)_
 
 ## Entscheidungen
@@ -37,6 +37,12 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   als Nächstes Heavy Hitter; später Akrobat. Leitlinien (Sekiro statt Hollow Knight, Ketten,
   Reaktionen auf Detailebene, Lesbarkeit, pro Klinge ein Parry, Stagger, Knockback):
   `docs/concept.md`.
+- **2026-10-19 – Ein gemeinsamer Parry gibt beiden ein Sync-Hit-Fenster** (allgemeine Regel,
+  `docs/concept.md`). Ein Sync-Hit kostet den Boss so viel wie jeder Treffer; sein Wert ist der
+  Sync-Gewinn.
+- **2026-10-19 – Heavy Hitter = der Ettin** (zwei Köpfe, eine Waffe; die Waffe steht in den beiden
+  Ebenen parallel oder diagonal; Unisono; offen, solange er angreift; Haltung = Wut-Meter).
+  `docs/boss_heavy_hitter.md`.
 
 ## Jetzt
 
@@ -159,7 +165,13 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [ ] **Columna Bifrons (Wächter) fertig designen** (@Nicho). `docs/boss_bifrons_warden.md` →
   „Open“: die drei Motive und ihre Haltungen, Verzweigungsregeln, Deckungsöffnung am Motivende,
   Torsprung Schritt 5, Sync-Modus-Pattern. (Ersetzt „Bifrons' Patterns überarbeiten“.)
-- [ ] **Heavy Hitter designen** (@Nicho). `docs/boss_heavy_hitter.md`.
+- [x] **Heavy Hitter designen** (Nicho, 2026-10-19): v0 in `docs/boss_heavy_hitter.md`.
+- [ ] **Gemeinsamer Parry gibt beiden ein Sync-Hit-Fenster**, im Try-out-Boss (offen, niemand;
+  Prompt B1 der Übergabe vom 2026-10-19, Teil 2).
+- [ ] **Heavy Hitter bauen, Schritt 1: Grundgerüst und Phase 1** (offen, niemand; Prompt B2).
+  Eigener Branch.
+- [ ] **Heavy Hitter bauen, Schritt 2: Wut und Phase 2** (offen, niemand; Prompt B3). Erst nach
+  Nichos Test von Schritt 1.
 - [ ] **Name für den Try-out-Boss** (offen). Danach Docs umbenennen: altes
   `boss_columna_bifrons.md` → `boss_<name>.md`, `boss_bifrons_warden.md` →
   `boss_columna_bifrons.md` (Verweise mitziehen).
@@ -199,14 +211,18 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     jetzt als zwei normale Hiebe, Knockback nach Ausgang nur bei werfenden Angriffen (Leap,
     beide Schwerter auf einem). `docs/boss_columna_bifrons.md` → „The blade rules of
     2026-10-19“. **Gefühl testen.**
-  - [ ] Schlagphase von Sweep und Crossing-Stich schneller (eigene F2-Zahl)
+  - ~~Schlagphase von Sweep und Crossing-Stich schneller (eigene F2-Zahl)~~ Nicht umgesetzt
+    (Nicho, 2026-10-19): Der Sweep gehört zum Heavy Hitter (dort als Kippen); das Crossing ist
+    eher ein Problem fürs Bild als fürs Timing.
   - [ ] (optional) Torsprung in der Werkbank (`docs/boss_bifrons_warden.md` → „Gate leap“)
     (@Nicho). Gebaut (2026-10-19, Branch `nicho/gate-leap` auf `nicho/blade-rules`): Angriff
     GATE_LEAP neben dem alten Leap (nur ppe, Gewicht wie der Leap: 2,5, in der Ecke 6; F2 →
     patterns), im F5-Labor startbar; Schwert 1 steckt als Wand im Boden, Ausholen in Schritt 5
     auf F2 („gate leap“, 0,7 s), Test `test_gate_leap`. `docs/boss_columna_bifrons.md` → „The
     gate leap“. Befund: Block und Treffer werfen A gleich weit, und der Wurf stoppt keinen Dash;
-    mit langem Ausholen kommt also auch ein getroffener A zurück. **Gefühl testen.**
+    mit langem Ausholen kommt also auch ein getroffener A zurück. Nicho: absichtlich, sonst reichen
+    die Distanzen gegen seine Reichweite nicht; ob es den Unterschied überhaupt geben wird, ist
+    offen. **Gefühl testen.**
   - [ ] (optional) Ketten-Grammatik und „Phrase, dann Atem“ in der Werkbank (eigener Branch)
     (@Nicho). Gebaut (2026-10-19, Branch `nicho/chains` auf `nicho/gate-leap`): F1
     `bifrons_mode` „chains“. Drei Platzhalter-Motive (CHAIN_RRL, _RLRL, _RRLL), je mit eigener
@@ -219,8 +235,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     Angreifer. `bifrons_guard_break` hat jetzt drei Werte (on / off / motif_end; ein
     gespeichertes on/off bleibt). Zahlen auf F2 (Tab „chains“), Test `test_chains`.
     `docs/boss_columna_bifrons.md` → „chains“. **Gefühl testen**, vor allem mit motif_end.
-- [ ] **Spiegel-Bildschirm** (@Nicho), Branch `nicho/pep-test`, Schalter `mirror_view` (F1,
-  Standard aus). Nichos Idee aus dem Scribble vom 2026-10-14: Bildschirm an der Bodenlinie
+- [ ] **Spiegel-Bildschirm** (@Nicho), Schalter `mirror_view` (F1, seit 2026-10-19
+  standardmäßig an, `Moves.VERSION` 5); die Klingen je Hälfte über `mirror_blades` (Standard
+  „color“). Nichos Idee aus dem Scribble vom 2026-10-14: Bildschirm an der Bodenlinie
   geteilt, oben P1 als Licht, unten die Spiegelung mit P2 als Schatten (nach Gris), der Boss
   ganz gespiegelt. Nur das Bild ändert sich, Regeln und Welt bleiben; die Spieler gehen dort
   durcheinander durch. Zu klären beim Spielen: Ist kopfüber spielbar? Fehlt der Partner neben

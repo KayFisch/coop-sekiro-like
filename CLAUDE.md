@@ -50,12 +50,23 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
     (each shows the blades aimed at its player). Players may pick mirrored or one-sided view.
   - The **sync mode** is the players' boss phase and ends the fight by default.
   - Your input welcome on anything there, especially the boss myths and the screen halves.
+- Second part of the design session: the **Heavy Hitter** is designed (v0,
+  `docs/boss_heavy_hitter.md`). He's the Ettin: two heads, one weapon that can point differently
+  in the two screen halves; every blade strike has to be parried by both of you at once; he's open
+  while he attacks; his posture is a rage meter. To be built next.
+- New general rule: a co-op parry gives both of you a sync-hit window (`docs/concept.md`).
+- Code since the first note, on `nicho/chains` (stacked on `nicho/gate-leap`, `nicho/blade-rules`
+  and `nicho/blade-halves`; not in `main` yet): the try-out boss has the blade rules of
+  2026-10-19, blades in their player's color in the screen halves (the mirrored screen is on by
+  default now), the Warden's gate leap and a chains mode to try
+  (`docs/boss_columna_bifrons.md`).
 
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
-core idea: players act *through* each other (parry relay: one player's perfect parry passes the
-boss's attack to the partner). Full pitch and current moveset: `docs/concept.md`.
+core idea: players act *through* each other (parry relay: one player's perfect parry passes its
+energy to the partner, whose hit then becomes a sync hit). Full pitch and current moveset:
+`docs/concept.md`.
 
 **Status: prototype, design under review.** Settled: it's a **2D side-scroller**. After the
 first playtest (2026-09-29) other fundamental questions are open (see `TASKS.md` → "Offene

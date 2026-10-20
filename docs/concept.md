@@ -12,7 +12,7 @@ This is currently a **prototype**: one test boss (Columna Bifrons) with placehol
 
 Combat is sword-based. Players attack with their sword, and holding block reduces incoming damage. But the skill expression is in the **perfect parry**: pressing block at the exact moment the boss sword makes contact deals no damage and triggers a relay.
 
-A relay means the boss's attack is redirected to the second player, who now has their own parry window. If the second player also perfect parries, the boss staggers and both players get a free window to deal damage. Nail the chain and you deal significantly more damage. Break it and you both pay for it.
+A relay means the parry's energy runs over to the second player: for a moment, their hit is a **sync hit**, which wins the players sync (see "Blade rules" below). Parrying together opens that window for both, and a finale parried together staggers the boss. Nail the chain and you deal significantly more damage. Break it and you both pay for it.
 
 Not every attack is parriable: each boss has a vocabulary of attacks that ask for different responses (the current one's: `docs/boss_columna_bifrons.md`; the first two bosses, Cubus Maximus and Sphaera Pendula, were dropped on 2026-10-18).
 
@@ -42,7 +42,9 @@ knockback.**
 
 Co-op parrying a finale staggers him for **0.5 s plus 0.2 s for every successful parry in the
 chain, finale included** (starting values). Not tied to his posture: a long stagger on top of
-high posture damage would snowball.
+high posture damage would snowball. Every blade
+parried counts, so a co-op parry adds 0.4 s; a lone parry that only has the effect of a block
+counts nothing.
 
 ### The partner's sync hit: after, not on the beat
 
@@ -51,11 +53,23 @@ The sync hit comes **after** the partner's parry, not at the same moment (in Bif
 late, and what it depends on (a fixed delay, per attack in note values, the boss's tempo), is
 open.
 
+### A co-op parry gives both a sync-hit window
+
+Every parry makes a sync hit available to the partner: the parry's energy runs over to them (the
+sync wave), and a hit of theirs in that window is a **sync hit**. A sync hit costs the boss what
+any hit costs; its worth is the sync the players win. **A co-op parry (both parry at once) opens a
+window for each of them**, so both can land a sync hit at the same moment; a finale's co-op parry
+staggers him as well. (Until 2026-10-19 only the parry of a single blade opened a window.)
+
+Whether a parry also breaks the boss's guard ("a parry opens his other side") is no longer a
+general rule but each boss's own (the try-out boss: F1 "bifrons_guard_break", on, off or
+motif_end). The sync hit doesn't need it.
+
 ---
 
 ## Sync as life
 
-Nobody has health. The two players share one **sync**, the boss has his own, and each of the three has a posture, by the same rules on both sides. Playing together (a hit through the guard the partner's parry opened, parrying both his swords at once) wins the players sync back; the boss can't win his back. At full sync the players are in the sync mode (see "The sync mode" below); at none, in chaos, the next hit ends it. Details: `docs/boss_columna_bifrons.md` ("Sync as life"), `core/sync_rules.gd`.
+Nobody has health. The two players share one **sync**, the boss has his own, and each of the three has a posture, by the same rules on both sides. Playing together (a sync hit in the window the partner's parry opened; parrying together) wins the players sync back; the boss can't win his back. At full sync the players are in the sync mode (see "The sync mode" below); at none, in chaos, the next hit ends it. Details: `docs/boss_columna_bifrons.md` ("Sync as life"), `core/sync_rules.gd`.
 
 ---
 
@@ -98,21 +112,24 @@ platformer). Whether the mirrored view runs through the whole game is open.
 
 **The halves are not a pure mirror but two connected sides** that needn't be identical (the
 players act independently most of the time). **Each half shows the boss from its player's point
-of view:** the blades aimed at that player stand out; a blade not aimed at them keeps its guard,
-as usual. One blade aimed at you: you're on your own. **Two blades in your half: heavy, you need
-your partner.**
+of view:** the blades aimed at that player stand out; a blade not aimed at them steps back
+(how: below). One blade aimed at you: you're on your own. **Two blades in your half: heavy,
+you need your partner.**
 
 Why: today, when he strikes one player, the sword moves in the other half too and slashes the
 air there (in ppe as well). That's sword chaos, and it doesn't show what makes a heavy attack
 different.
 
-Open, to be tested (F1 "mirror_blades", `docs/boss_columna_bifrons.md`): how the foreign blade
-steps back in your half:
-- **a. it doesn't move** there;
-- **b. it moves, but with low contrast** against the half's background; a heavy attack makes it
-  stand out in both halves ("he manifests his second sword in the wrong layer"). Claude's
-  recommendation: b (one body, one motion; you still see the strike on your partner and can
-  time your sync hit; the heavy tell comes for free).
+Built on the try-out boss (2026-10-19, F1 "mirror_blades", `docs/boss_columna_bifrons.md`, "The
+mirrored screen"), four ways the foreign blade can look in your half: **mirror** (as before),
+**hold** (back on guard, still), **fade** (its strike, faint) and **color**, the default (Nicho):
+its strike, opaque, each blade in its player's color with a silver edge, and the ground does the
+contrast (in your half your blade stands out, your partner's all but vanishes). Two blades on one
+place (heavy) stand out in both halves. Still to be felt out in play.
+
+A boss with **one weapon** (the Heavy Hitter) shows **each half its own layer's weapon**: the
+weapon can point one way in the light half and the other way in the shadow half
+(`docs/boss_heavy_hitter.md`).
 
 In the sync mode the halves merge: the lower player flows into the upper one, and the focus
 moves to the shared part (the upper half).
@@ -206,7 +223,9 @@ Switching sides is a basic verb of every fight (pep / ppe and the dash-parry are
 rules). What sets the bosses apart is **who controls the formation**:
 
 - **Columna Bifrons, the Warden:** he *sets* it; the players react (good players can resist).
-- **The Heavy Hitter:** he *forces* it to change; *how* is up to the players.
+- **The Heavy Hitter, the Ettin:** he *forces* it to change, by how his weapon points in the two
+  layers (parallel or diagonal); *how* the players answer (moving, or provoking his pommel side)
+  is up to them.
 - **The Acrobat:** he *moves himself* all the time; the formation shifts because the players
   chase him.
 
@@ -218,7 +237,8 @@ rules). What sets the bosses apart is **who controls the formation**:
   for rules and systems and raw attack ideas. `docs/boss_columna_bifrons.md`.
 - **Columna Bifrons, the Warden of the Threshold:** new, designed from scratch.
   `docs/boss_bifrons_warden.md`.
-- **The Heavy Hitter** (working title): next to be designed. `docs/boss_heavy_hitter.md`.
+- **The Heavy Hitter, the Ettin** (working title; two heads, one weapon): designed (v0,
+  2026-10-19), to be built next. `docs/boss_heavy_hitter.md`.
 - **The Acrobat** (towards Lady Butterfly): later; one of his phases is the beat ring
   (`docs/beat_ring.md`).
 - Cubus Maximus and Sphaera Pendula, the first two, were dropped on 2026-10-18.

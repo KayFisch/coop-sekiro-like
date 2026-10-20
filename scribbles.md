@@ -744,3 +744,57 @@ bzw. seine Waffe springen, und wenn er springt, drunter durch.
 Parry am Motivende, wenn alle Hiebe der Wiederholung pariert wurden (heute spiele ich mit
 `bifrons_guard_break` aus, weil der Sync-Schaden zu schnell kam); die drei Motive des Wächters; seine
 Verzweigungsregeln; alle Sync-Modus-Patterns; was die Schockwelle in der einseitigen Ansicht ist.
+
+## 2026-10-19 (Nicho, mit Claude): Heavy Hitter, der Ettin
+
+Zweiter Teil der Chat-Session ohne Code. Die Entscheidungen stehen jetzt in
+`docs/boss_heavy_hitter.md`, `docs/concept.md` und `TASKS.md`. Hier das Warum und was verworfen
+wurde.
+
+**Seit dem ersten Teil:** B4 (schnellere Schlagphase für Sweep und Crossing-Stich) lasse ich weg:
+Der Sweep gehört zu einem anderen Boss, und das Crossing ist eher ein Problem fürs Bild als fürs
+Timing. Beim Torsprung werfen Block und Treffer A gleich weit, weil die Distanzen gegen seine große
+Reichweite sonst nicht reichen; ob es den Unterschied geblockt/getroffen überhaupt geben wird, ist
+offen.
+
+**Sync-Hit, zur Klarstellung:** Ein Parry macht einen Sync-Hit verfügbar. Der Sync-Hit kostet den
+Boss so viel wie jeder Treffer; sein Wert ist unser Sync-Gewinn. „Ein Parry öffnet seine andere
+Seite“ ist überholt bzw. offen (vielleicht nur noch am Motivende, `motif_end`). **Neu:** Auch ein
+gemeinsamer Parry gibt Sync-Hit-Fenster, und zwar beiden. Bisher gibt es danach nur den Stagger (im
+Code öffnet nur der Parry eines einzelnen Schwerts ein Fenster). Dann können wir gleichzeitig
+Sync-Hits landen.
+
+**Der Heavy Hitter wird der Ettin:** zwei Köpfe, eine Waffe. Er greift an, was vor seiner Nase ist,
+und die Köpfe streiten darum, wer die Klingenseite bekommt. Die Umkehrung vom Wächter: offen,
+solange er angreift (er will nur treffen), gedeckt nur im Atem.
+
+- **Das Problem, an dem das Design hing:** Heftige Schläge mit einer Waffe müssen in ppe gemeinsam
+  pariert werden; eine Schockwelle in der anderen Bildhälfte würde den Partner aber genau
+  wegtreiben. Lösung: Die Waffe kann in den beiden Ebenen **parallel** (gleiche Richtung) oder
+  **diagonal** (entgegengesetzt) stehen. Ausrichtung × Formation ergibt vier Felder: Entweder stehen
+  beide vor der Klinge, oder einer vor der Klinge und einer vor dem Knauf. Er dreht an der
+  Ausrichtung, wir an der Formation, oder wir provozieren über die Knaufseite. Die Tabelle ist die
+  Grundlage für seine Patterns.
+- **Unisono statt Staffel:** Jeder Klingenschlag passiert in beiden Ebenen und braucht beide.
+  Pariert nur einer, hat sein Parry nur die Wirkung eines Blocks. Wo eine Klinge niemanden findet,
+  kracht sie in den Spiegel: Ein Riss (wie Glas) läuft über die Spiegellinie, drüberspringen.
+- **Wut:** Seine Haltung ist sein Wut-Meter. Sie bricht leichter und regelmäßig, weil er kaum
+  pariert; Bruch heißt Wut, nicht Todesstoß. In der Wut kehrt sich die Logik um: Er richtet sich
+  nicht nach uns, sondern schlägt ein festes Muster hin und her, egal wo wir stehen; heftige
+  Schläge sammeln, Risse treiben auseinander. Eine Kette lang. Belohnung nur fürs gute Überstehen:
+  am Ende ein Stagger nach den Parries in der Wut (0,5 s plus 0,2 s je parierter Klinge, ein
+  gemeinsamer Parry also 0,4 s) und deren Sync. Wer gut ist, löst die Wut mit Absicht aus (die
+  Knaufseite kostet ihn viel Haltung); wer weniger zuverlässig ist, wird darin öfter getroffen, als
+  er Sync gewinnt, und lässt es lieber. Zwei Wut-Patterns: Er nimmt das, das für unsere Formation
+  gerade schwer ist, und während seines Telegraphs können wir umstellen und es leicht machen.
+- **Fortschritt** ist Sync-Schaden, nicht Haltung. Durch die vielen gemeinsamen Parries kommen wir
+  oft in den Sync-Modus, und schwere Sync-Modus-Hits auf den Hitter sollen sich richtig gut
+  anfühlen. Ausgeglichen wird der viele Sync-Gewinn durch seine heftigen Schläge: Ein nicht
+  perfekter Parry kostet beide.
+- **Wie viele Angriffe:** keiner pro Feld. Fünf Verben (Klingenschlag, Knaufstoß, Kippen, Drehen,
+  Stampfsprung), daraus zwei Motive, drei Finale und zwei Wut-Patterns; die Vielfalt kommt aus dem
+  Feld. Zwei Motive finde ich etwas knapp, aber erst ausprobieren.
+- **Verworfen oder eingeschränkt:** „Heftige Schläge sammeln, Schockwellen treiben auseinander“ gilt
+  nur noch in der Wut. „Das Griffende deckt die andere Seite“ nur noch im Atem. Glockenschläger und
+  Koloss am Durchgang nur noch als Elemente (langsamer Takt, über die waagerechte Waffe springen).
+  Der Sweep wird zum Kippen. Schutt von oben höchstens als Glassplitter aus den Rissen.
