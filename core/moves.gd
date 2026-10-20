@@ -19,7 +19,7 @@ const LABEL_WIDTH = 50  # characters: the values line up after this
 const SLIDER_CELLS = 15  # characters a slider's bar takes at most
 
 # The panel's tabs, in order. Every entry names one.
-const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Sync", "Runner", "Ring", "Controls", "Sound", "Dev"]
+const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Bifrons", "Sync", "Runner", "Ring", "Controls", "Sound", "Dev"]
 
 # Each switch: key, its tab, what the panel calls it, and its default (a bool, or one of
 # `options`). Labels starting with "  " belong to the switch above them. A `slider` one stops at
@@ -46,16 +46,16 @@ const ENTRIES = [
 	# Fights: rules that only matter against a boss
 	{"key": "boss_body", "tab": "Fights", "label": "Boss body blocks players", "default": true},
 	{"key": "parry_pass", "tab": "Fights", "label": "Dash-parry: a parry mid-dash goes through the boss", "default": true},
-	{"key": "bifrons_mode", "tab": "Fights", "label": "Bifrons: set patterns, reactive (strikes back), or chains (a motif repeated, a finale, a pause)", "default": "patterns", "options": ["patterns", "reactive", "chains"]},
-	{"key": "bifrons_guard_break", "tab": "Fights", "label": "Bifrons: a parry breaks his other guard: every one (on); none, the window stays but only a hit he can't parry lands (off); chains: a motif's last, all of it parried (motif_end)", "default": "on", "options": ["on", "off", "motif_end"]},
-	{"key": "bifrons_coop_windows", "tab": "Fights", "label": "Bifrons: in an attack of both swords every parry that counts opens the partner's sync-hit window (parried together: one each)", "default": true},
-	{"key": "bifrons_blade_parries", "tab": "Fights", "label": "Bifrons: one parry per blade (both swords on one side of him: heavy, parry together, else a lone parry is a block)", "default": true},
-	{"key": "bifrons_throw_by_outcome", "tab": "Fights", "label": "Bifrons: what throws you back (leap, both swords on you) throws a parry part way (F2), a block as far as a hit", "default": true},
-	{"key": "bifrons_chain_stagger", "tab": "Fights", "label": "Bifrons: a coop parry staggers him longer the more of that attack was parried (F2)", "default": true},
+	{"key": "bifrons_mode", "tab": "Bifrons", "label": "Set patterns, reactive (strikes back), or chains (a motif repeated, a finale, a pause)", "default": "patterns", "options": ["patterns", "reactive", "chains"]},
+	{"key": "bifrons_guard_break", "tab": "Bifrons", "label": "A parry breaks his other guard: every one (on); none, the window stays but only a hit he can't parry lands (off); chains: a motif's last, all of it parried (motif_end)", "default": "on", "options": ["on", "off", "motif_end"]},
+	{"key": "bifrons_coop_windows", "tab": "Bifrons", "label": "In an attack of both swords every parry that counts opens the partner's sync-hit window (parried together: one each)", "default": true},
+	{"key": "bifrons_blade_parries", "tab": "Bifrons", "label": "One parry per blade (both swords on one side of him: heavy, parry together, else a lone parry is a block)", "default": true},
+	{"key": "bifrons_throw_by_outcome", "tab": "Bifrons", "label": "What throws you back (leap, both swords on you) throws a parry part way (F2), a block as far as a hit", "default": true},
+	{"key": "bifrons_chain_stagger", "tab": "Bifrons", "label": "A coop parry staggers him longer the more of that attack was parried (F2)", "default": true},
 	{"key": "bifrons_stand_in", "tab": "Fights", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, runner, ring", "default": "off", "options": ["off", "left", "right"]},
-	{"key": "bifrons_face", "tab": "Fights", "label": "Bifrons: players always face him", "default": true},
-	{"key": "mirror_view", "tab": "Fights", "label": "Bifrons: mirrored screen (P1 light above the floor, P2 its shadow below)", "default": true},
-	{"key": "mirror_blades", "tab": "Fights", "label": "  a blade at the partner, in your half: mirror (as theirs), hold (on guard), fade (faint), color (in its player's color)", "default": "color", "options": ["mirror", "hold", "fade", "color"]},
+	{"key": "bifrons_face", "tab": "Bifrons", "label": "Players always face him", "default": true},
+	{"key": "mirror_view", "tab": "Bifrons", "label": "Mirrored screen (P1 light above the floor, P2 its shadow below)", "default": true},
+	{"key": "mirror_blades", "tab": "Bifrons", "label": "  a blade at the partner, in your half: mirror (as theirs), hold (on guard), fade (faint), color (in its player's color)", "default": "color", "options": ["mirror", "hold", "fade", "color"]},
 	# Sync: sync as life and the sync mode (core/sync_rules.gd, core/sync_bond.gd)
 	{"key": "swings_hold_posture", "tab": "Sync", "label": "Your own swings hold your posture regen back too (his attacks never do)", "default": true},
 	{"key": "dash_slash_pass", "tab": "Sync", "label": "Dash-slash goes through the boss: in the sync mode only, always, or never", "default": "sync", "options": ["sync", "always", "off"]},
@@ -245,6 +245,21 @@ func _change(step: int):
 		set_value(e.key, not _values[e.key])
 
 
+# `text` broken at spaces into lines of at most `width` characters (a longer word: a line of its own).
+static func _wrap(text: String, width: int) -> Array:
+	var indent = text.substr(0, text.length() - text.lstrip(" ").length())  # kept on the first line
+	var lines = [""]
+	for word in text.lstrip(" ").split(" "):
+		if lines.back().is_empty():
+			lines[-1] = word
+		elif lines.back().length() + 1 + word.length() <= width - indent.length():
+			lines[-1] += " " + word
+		else:
+			lines.append(word)
+	lines[0] = indent + lines[0]
+	return lines
+
+
 func _build_panel():
 	_layer = CanvasLayer.new()
 	_layer.layer = 100
@@ -283,7 +298,14 @@ func _refresh():
 			var cells = mini(e.options.size() - 1, SLIDER_CELLS)
 			var lit = roundi(n * cells / float(e.options.size() - 1))
 			shown = "%s %s" % ["█".repeat(lit) + "░".repeat(cells - lit), shown]
-		lines.append("%s %s %s" % ["▶" if i == _selected else " ", e.label.rpad(LABEL_WIDTH, " "), shown])
+		# A label longer than LABEL_WIDTH is cut short, but for the one picked: it goes on over the
+		# next lines, the value on its first.
+		var label_lines = _wrap(e.label, LABEL_WIDTH - 2)
+		var first = label_lines[0] + (" …" if label_lines.size() > 1 and i != _selected else "")
+		lines.append("%s %s %s" % ["▶" if i == _selected else " ", first.rpad(LABEL_WIDTH, " "), shown])
+		if i == _selected:
+			for more in label_lines.slice(1):
+				lines.append("     " + more)
 	lines.append("")
 	lines.append("%s %s" % ["▶" if _selected == entries.size() else " ", "Reset all to defaults"])
 	_text.text = "\n".join(lines)

@@ -72,7 +72,7 @@ follows from these:
 
 ### The blade rules of 2026-10-19
 
-Four of the rules in `docs/concept.md` ("Blade rules: additions"), each on F1 (tab "Fights", on
+Four of the rules in `docs/concept.md` ("Blade rules: additions"), each on F1 (tab "Bifrons", on
 by default; off is how it was before), their numbers on F2 (his page, tab "blade rules"); code:
 "THE BLADE RULES" in `columna_bifrons.gd`, tests: `tests/test_blade_rules.gd` and
 `tests/test_coop_windows.gd`.

@@ -28,6 +28,7 @@ const LINE_SPACING = 5  # px between two rows
 const COLUMN_WIDTH = 560.0
 const VALUE_X = 410.0  # where a column's numbers stand, right-aligned
 const VALUE_WIDTH = 120.0
+const NAME_GAP = 16.0  # px kept free between a name and its numbers
 const KEYS = "Z / C: page   Q / E: tab   ↑/↓: pick   ←/→: change (Shift: x10, Ctrl: x0.1)   F2: close"
 
 # An entry (from a tuning_entries()) is a number: key, what the panel calls it, default and step
@@ -292,8 +293,13 @@ func _refresh():
 			continue
 		var v = _values[e.key]
 		var changed = not is_equal_approx(v, e.default)
-		lines[column][0].append(("▶  " if e == selected else "    ") + e.label)
+		# A name too long for the room before the numbers goes on over the next rows.
+		var name_lines = _wrap(e.label, VALUE_X - NAME_GAP - _text_width("    "))
+		lines[column][0].append(("▶  " if e == selected else "    ") + name_lines[0])
 		lines[column][1].append(("(%s)  " % _shown(e, e.default) if changed else "") + _shown(e, v))
+		for more in name_lines.slice(1):
+			lines[column][0].append("       " + more)
+			lines[column][1].append("")
 	lines[1][0].append_array(["", ("▶  " if selected == null else "    ") + "Reset this tab to defaults (Enter)"])
 	lines[1][1].append_array(["", ""])
 	for i in 2:
@@ -316,6 +322,31 @@ func _refresh():
 	for i in 2:
 		_columns[i][0].position = PANEL_MARGIN + Vector2(i * COLUMN_WIDTH * scale, top)
 		_columns[i][1].position = _columns[i][0].position + Vector2(VALUE_X * scale, 0.0)
+
+
+# `text` broken at spaces into lines at most `width` px wide at PANEL_FONT_SIZE (the columns
+# narrow with the font, so it holds at any size).
+func _wrap(text: String, width: float) -> Array:
+	var lines = [""]
+	for word in text.split(" "):
+		if lines.back().is_empty():
+			lines[-1] = word
+		elif _text_width(lines.back() + " " + word) <= width:
+			lines[-1] += " " + word
+		else:
+			lines.append(word)
+	# No word left alone on the last line: the one before it comes down too.
+	if lines.size() > 1 and not " " in lines.back():
+		var before = lines[-2].rsplit(" ", true, 1)
+		if before.size() == 2:
+			lines[-2] = before[0]
+			lines[-1] = before[1] + " " + lines[-1]
+	return lines
+
+
+func _text_width(text: String) -> float:
+	var font = _title.get_theme_font("font")
+	return font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, PANEL_FONT_SIZE).x
 
 
 func _shown(e: Dictionary, v: float) -> String:
