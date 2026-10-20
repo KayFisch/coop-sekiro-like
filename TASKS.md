@@ -172,6 +172,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Branch `nicho/heavy-hitter` (von `nicho/chains`), Auswahl Eintrag 2. Was drin ist und worauf beim
   Anspielen achten: `docs/boss_heavy_hitter.md` → „Built (phase 1)“. Der Stampfsprung ist auf der
   Stelle gebaut, mit Drehung in der Luft (Vorschlag, im Spiel prüfen).
+  Nach Nichos erstem Test (2026-10-21) umgebaut: Hellebarde, diagonal geht jeder Kopf auf seinen
+  Spieler (normale Schläge), Riss bricht in die andere Hälfte, langsamere Stoß-Serie, Enden in der
+  Farbe des Ziels (Scribble vom 2026-10-21; Doc → „First test“). Wartet auf den nächsten Test.
 - [ ] **Heavy Hitter bauen, Schritt 2: Wut und Phase 2** (offen, niemand; Prompt B3). Erst nach
   Nichos Test von Schritt 1.
 - [ ] **Name für den Try-out-Boss** (offen). Danach Docs umbenennen: altes

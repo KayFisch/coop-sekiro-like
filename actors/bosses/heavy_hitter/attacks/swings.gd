@@ -7,15 +7,16 @@ extends Attack
 ## repetitions, the finale, by what he sees. Run with links of its own instead (the F5 lab: a motif
 ## once, a finale, a verb), it lands those and is over.
 ## The verbs, each with one telegraph, the same everywhere (green: parry it together; yellow: yours
-## alone; red: it comes):
-##   BLADE   raised high over him in both layers (green), drawn back, and down (red): a blade
-##           strike, unisono (HeavyHitter.land_blade()).
+## alone; red: it comes). Each head goes for its own player (THE RULES in heavy_hitter.gd): a verb
+## moves the weapon only in the layers it's for (_layers()), the other layer's holds meanwhile.
+##   BLADE   raised high over him (green in both layers: heavy, together; yellow in one: yours
+##           alone), drawn back, and down (red): a blade strike (HeavyHitter.land_blade()).
 ##   POMMEL  pulled back toward the blade's side (yellow), thrust out the other way (red), quick: a
-##           jab at whoever is in front of the pommel, in each layer (HeavyHitter.land_jab()).
+##           jab at the players at the pommel, in their layers (HeavyHitter.land_jab()).
 ##   HAMMER  the great hammer: a blade strike drawn back further, after a long windup.
-##   STOMP   the stomp leap: he crouches, the weapon raised (green), jumps, turns round on the way up,
-##           hangs, and comes down as a blade strike on the side that was behind him. In the air his
-##           body blocks nobody: walk under him.
+##   STOMP   the stomp leap: he crouches, the weapon raised, jumps, turns round on the way up, hangs,
+##           and comes down as a blade strike on the side that was behind him. In the air his body
+##           blocks nobody: walk under him.
 ## A finale parried together staggers him, the longer the more of the chain was parried
 ## (HeavyHitter.chain_stagger()). He walks slowly through his windups, and stands while a blade comes
 ## down and lies.
@@ -53,7 +54,8 @@ var _written: Array  # the links it runs as written ([wait, verb] each), when it
 var _chain = false  # his own attack: the motif by the field, repeated, and the finale
 var _is_finale = false  # (not a chain) its links are a finale: parried together, it staggers him
 # This run's links, one each: {verb, wait (beats), at (s from the start: when it lands), mark (its
-# repetition, 0, 1..., or -1 for the finale), parried (how many parries of it counted)}.
+# repetition, 0, 1..., or -1 for the finale), and once it has landed: layers (the layers it came down
+# in), parried (the layers whose parry of it counted)}.
 var _links: Array = []
 var _time = 0.0  # s into the run
 var _next = 0  # the link that lands next
@@ -109,7 +111,7 @@ func _append(links: Array, mark: int):
 	var at = _links.back().at if not _links.is_empty() else 0.0
 	for link in links:
 		at += link[0] * boss.beat()
-		_links.append({"verb": link[1], "wait": link[0], "at": at, "mark": mark, "parried": 0})
+		_links.append({"verb": link[1], "wait": link[0], "at": at, "mark": mark, "layers": [], "parried": []})
 
 
 # His body keeps its own color: the weapon says what's coming.
@@ -158,13 +160,20 @@ func time_to_strike(player) -> float:
 	if _next >= _links.size():
 		return INF
 	var link = _links[_next]
-	var at_blade = boss.at_blade(player)
-	if link.verb == STOMP and not _jumped:
-		at_blade = not at_blade  # he'll have turned round by then
 	var jab = link.verb == POMMEL
-	if at_blade == jab or boss.distance_to(player) > (boss.POMMEL_REACH if jab else boss.BLADE_REACH):
+	var at_blade = boss.at_blade(player) != (link.verb == STOMP and not _jumped)  # (he'll have turned round by then)
+	if not player.player_id in _layers(link) or at_blade == jab \
+			or boss.distance_to(player) > (boss.POMMEL_REACH if jab else boss.BLADE_REACH):
 		return INF
 	return link.at - _time
+
+
+# The layers a link comes down in, just now: a jab's, the players' at the pommel; a blade's, the
+# players' at the blade (the stomp leap's before its jump: as they'll be once he has turned).
+func _layers(link: Dictionary) -> Array:
+	if link.verb == POMMEL:
+		return boss.pommel_layers()
+	return boss.blade_layers(link.verb == STOMP and not _jumped)
 
 
 func cleanup():
@@ -178,21 +187,22 @@ func cleanup():
 
 func _land(index: int):
 	var link = _links[index]
+	link.layers = _layers(link)
 	var parriers = []
 	match link.verb:
 		POMMEL:
-			parriers = boss.land_jab()
+			parriers = boss.land_jab(link.layers)
 		STOMP:
 			boss.global_position.y = boss.home_position.y
 			boss.airborne = false
 			boss.ghost(0.0)  # he's down: whoever is under him is pushed out to their side
 			boss.pop_body(Vector2(1.25, 0.8), 0.25)
-			parriers = boss.land_blade()
+			parriers = boss.land_blade(link.layers)
 		_:
-			parriers = boss.land_blade(link.verb == HAMMER)
+			parriers = boss.land_blade(link.layers, link.verb == HAMMER)
 	for p in parriers:
 		parry_success.emit(p, "hitter_" + VERBS[link.verb])
-	link.parried = parriers.size()
+		link.parried.append(p.player_id)
 	_blades += parriers.size()
 	if link.mark < 0 and link.verb != POMMEL and parriers.size() >= 2:
 		# A finale parried together: staggered, the longer the more of the chain was parried.
@@ -216,12 +226,13 @@ func _end_repetition():
 # How long a link's weapon stays where it landed: a blade lying, or thrown back up by a parry; a
 # jab held out, or knocked back.
 func _rest(link: Dictionary) -> float:
+	var parried = not link.parried.is_empty()
 	match link.verb:
 		POMMEL:
-			return RECOIL_TIME if link.parried > 0 else JAB_HOLD
+			return RECOIL_TIME if parried else JAB_HOLD
 		STOMP:
-			return maxf(STOMP_REST, RECOIL_TIME if link.parried > 0 else STICK_TIME)
-	return RECOIL_TIME if link.parried > 0 else STICK_TIME
+			return maxf(STOMP_REST, RECOIL_TIME if parried else STICK_TIME)
+	return RECOIL_TIME if parried else STICK_TIME
 
 
 # How long link `index`'s drop takes (its cue): a blade's or a jab's, less if the link before leaves
@@ -236,80 +247,91 @@ func _drop_time(index: int) -> float:
 # --- His weapon and body, as a function of the time into the run ---
 
 func _animate(delta: float):
+	var last = _links[_next - 1] if _next > 0 else null
 	if _next >= _links.size():
-		_pose_after(_links.back() if not _links.is_empty() else null)
+		for layer in boss.LAYERS:
+			_pose_after(layer, last)
 		return
 	var link = _links[_next]
 	var drop = _drop_time(_next)
 	var drop_at = link.at - drop
-	var last = _links[_next - 1] if _next > 0 else null
 	var free_at = minf(last.at + _rest(last) if last != null else 0.0, drop_at - RAISE_ROOM)  # drawn back from here
+	var layers = _layers(link)
 	if link.verb == STOMP:
-		_stomp(link, drop_at, drop, last, free_at)
+		_stomp(link, layers, drop_at, drop, last, free_at)
 		return
 	if _time >= drop_at:
-		# The drop: it comes, red.
-		var fall = pow(clampf((_time - drop_at) / drop, 0.0, 1.0), FALL_POWER)
-		if link.verb == POMMEL:
-			boss.pose_weapon(boss.POSE_JAB_BACK.lerp(boss.POSE_JAB, fall), true)
-		else:
-			var coiled = boss.POSE_HAMMER if link.verb == HAMMER else boss.POSE_COILED
-			boss.pose_weapon(coiled.lerp(boss.POSE_DOWN, fall), true)
-		boss.tint_steel(boss.COLOR_EXECUTE)
 		_sound(link)
-		return
-	if _time < free_at:
-		_pose_after(last)  # still where the last one landed
-		return
-	# Drawn back for it, the further the closer the drop, trembling; walking slowly meanwhile.
-	var tension = clampf((_time - free_at) / maxf(drop_at - free_at, 0.01), 0.0, 1.0)
-	var pose: Vector3
-	var color = COLOR_TOGETHER
-	match link.verb:
-		POMMEL:
-			pose = boss.POSE_LEVEL.lerp(boss.POSE_JAB_BACK, smoothstep(0.0, 0.7, tension))
-			color = COLOR_ALONE
-		HAMMER:
-			pose = boss.POSE_RAISED.lerp(boss.POSE_HAMMER, ease(tension, 2.0))
-		_:
-			pose = boss.POSE_RAISED.lerp(boss.POSE_COILED, ease(tension, 2.0))
-	pose.z += randf_range(-TREMBLE, TREMBLE) * tension * (2.0 if link.verb == HAMMER else 1.0)
-	boss.pose_weapon(pose)
-	boss.tint_steel(boss.COLOR_SWORD.lerp(color, 0.4 + 0.6 * tension))
-	boss.walk(delta, boss.ATTACK_PACE)
+	# Green: both heads at once, parry it together; yellow: one head, yours alone.
+	var color = COLOR_TOGETHER if link.verb != POMMEL and layers.size() >= 2 else COLOR_ALONE
+	var drawing = false
+	for layer in boss.LAYERS:
+		if not layer in layers or (_time < free_at and _time < drop_at):
+			_pose_after(layer, last)  # this head isn't striking (yet): where it was, then level
+			continue
+		if _time >= drop_at:
+			# The drop: it comes, red.
+			var fall = pow(clampf((_time - drop_at) / drop, 0.0, 1.0), FALL_POWER)
+			if link.verb == POMMEL:
+				boss.pose_layer(layer, boss.POSE_JAB_BACK.lerp(boss.POSE_JAB, fall), true)
+			else:
+				var coiled = boss.POSE_HAMMER if link.verb == HAMMER else boss.POSE_COILED
+				boss.pose_layer(layer, coiled.lerp(boss.POSE_DOWN, fall), true)
+			boss.tint_layer(layer, boss.COLOR_EXECUTE, link.verb == POMMEL)
+			continue
+		# Drawn back for it, the further the closer the drop, trembling.
+		drawing = true
+		var tension = clampf((_time - free_at) / maxf(drop_at - free_at, 0.01), 0.0, 1.0)
+		var pose: Vector3
+		match link.verb:
+			POMMEL:
+				pose = boss.POSE_LEVEL.lerp(boss.POSE_JAB_BACK, smoothstep(0.0, 0.6, tension))
+			HAMMER:
+				pose = boss.POSE_RAISED.lerp(boss.POSE_HAMMER, ease(tension, 2.0))
+			_:
+				pose = boss.POSE_RAISED.lerp(boss.POSE_COILED, ease(tension, 2.0))
+		pose.z += randf_range(-TREMBLE, TREMBLE) * tension * (2.0 if link.verb == HAMMER else 1.0)
+		boss.pose_layer(layer, pose)
+		boss.tint_layer(layer, boss.COLOR_SWORD.lerp(color, 0.4 + 0.6 * tension), link.verb == POMMEL)
+	if drawing:
+		boss.walk(delta, boss.ATTACK_PACE)  # slowly, through his windups
 
 
-# The weapon where a link left it: a blade lying (thrown back up, if parried), a jab held out (or
-# knocked back); once that's over, level again.
-func _pose_after(link):
-	if link == null or _time >= link.at + _rest(link):
-		boss.pose_weapon(boss.POSE_LEVEL)
-		boss.tint_steel(boss.COLOR_SWORD)
+# A layer's weapon where a link left it: a blade lying (thrown back up, if its player parried), a
+# jab held out (or knocked back); once that's over, or if the link wasn't in this layer, level.
+func _pose_after(layer: int, link):
+	if link == null or not layer in link.layers or _time >= link.at + _rest(link):
+		boss.pose_layer(layer, boss.POSE_LEVEL)
+		boss.tint_layer(layer, boss.COLOR_SWORD)
 		return
-	var parried = link.parried > 0
+	var parried = layer in link.parried
 	if link.verb == POMMEL:
-		boss.pose_weapon(boss.POSE_JAB_BACK if parried else boss.POSE_JAB)
+		boss.pose_layer(layer, boss.POSE_JAB_BACK if parried else boss.POSE_JAB)
 	else:
-		boss.pose_weapon(boss.POSE_RECOIL if parried else boss.POSE_DOWN)
-	boss.tint_steel(boss.COLOR_SWORD if parried else boss.COLOR_EXECUTE)
+		boss.pose_layer(layer, boss.POSE_RECOIL if parried else boss.POSE_DOWN)
+	boss.tint_layer(layer, boss.COLOR_SWORD if parried else boss.COLOR_EXECUTE, link.verb == POMMEL)
 
 
-# THE STOMP LEAP: crouching, the weapon raised; up, turning round on the way; hanging; and down as
-# a blade strike, on the side that was behind him.
-func _stomp(link: Dictionary, drop_at: float, drop: float, last, free_at: float):
+# THE STOMP LEAP: crouching, the weapon raised (in both layers: it's his whole body); up, turning
+# round on the way; hanging; and down as a blade strike, on the side that was behind him, in the
+# layers it's for (the other layer's weapon comes down level).
+func _stomp(link: Dictionary, layers: Array, drop_at: float, drop: float, last, free_at: float):
 	var jump_at = drop_at - HANG_TIME - RISE_TIME
 	var floor_y = boss.home_position.y
+	var color = COLOR_TOGETHER if layers.size() >= 2 else COLOR_ALONE
 	if _time < jump_at:
-		if _time < minf(free_at, jump_at - RAISE_ROOM):
-			_pose_after(last)
-			return
 		var from = minf(free_at, jump_at - RAISE_ROOM)
+		if _time < from:
+			for layer in boss.LAYERS:
+				_pose_after(layer, last)
+			return
 		var tension = clampf((_time - from) / maxf(jump_at - from, 0.01), 0.0, 1.0)
 		boss.squash_body(Vector2.ONE.lerp(CROUCH, ease(tension, 0.5)))
 		var pose = boss.POSE_LEVEL.lerp(boss.POSE_RAISED, smoothstep(0.0, 0.8, tension))
 		pose.z += randf_range(-TREMBLE, TREMBLE) * tension
 		boss.pose_weapon(pose)
-		boss.tint_steel(boss.COLOR_SWORD.lerp(COLOR_TOGETHER, 0.4 + 0.6 * tension))
+		for layer in boss.LAYERS:
+			boss.tint_layer(layer, boss.COLOR_SWORD.lerp(color, 0.4 + 0.6 * tension) if layer in layers else boss.COLOR_SWORD)
 		return
 	if not _jumped:
 		_jumped = true
@@ -318,16 +340,24 @@ func _stomp(link: Dictionary, drop_at: float, drop: float, last, free_at: float)
 		boss.turn_round(true)  # round in the air: the blade comes down on the side behind him
 		boss.pop_body(Vector2(0.85, 1.2), 0.25)
 		Sfx.play("launch", -4.0)
+		layers = _layers(link)
+		color = COLOR_TOGETHER if layers.size() >= 2 else COLOR_ALONE
 	if _time < drop_at:
 		var rise = clampf((_time - jump_at) / RISE_TIME, 0.0, 1.0)
 		boss.global_position.y = floor_y - STOMP_HEIGHT * (1.0 - (1.0 - rise) * (1.0 - rise))
 		boss.pose_weapon(boss.POSE_COILED)
-		boss.tint_steel(COLOR_TOGETHER)
+		for layer in boss.LAYERS:
+			boss.tint_layer(layer, color if layer in layers else boss.COLOR_SWORD)
 		return
 	var fall = pow(clampf((_time - drop_at) / drop, 0.0, 1.0), FALL_POWER)
 	boss.global_position.y = floor_y - STOMP_HEIGHT * (1.0 - fall)
-	boss.pose_weapon(boss.POSE_COILED.lerp(boss.POSE_DOWN, fall), true)
-	boss.tint_steel(boss.COLOR_EXECUTE)
+	for layer in boss.LAYERS:
+		if layer in layers:
+			boss.pose_layer(layer, boss.POSE_COILED.lerp(boss.POSE_DOWN, fall), true)
+			boss.tint_layer(layer, boss.COLOR_EXECUTE)
+		else:
+			boss.pose_layer(layer, boss.POSE_LEVEL)
+			boss.tint_layer(layer, boss.COLOR_SWORD)
 	_sound(link)
 
 

@@ -275,12 +275,13 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `stand_in.gd`, which plays one of the players for testing alone, by pressing that player's
   buttons.
   `heavy_hitter/` (`docs/boss_heavy_hitter.md`, phase 1 since 2026-10-20): the Ettin, in two parts:
-  `hitter_weapon.gd` (`HitterWeapon`: one weapon, pointing its own way in each player's layer,
+  `hitter_weapon.gd` (`HitterWeapon`: one weapon, a halberd, pointing its own way in each player's layer,
   `way_of()`, and drawn in that layer's half; his two heads; his guard, only between his chains; the
   windows, one per player) and `heavy_hitter.gd` (`HeavyHitter`: the fields, `field()`; his chains,
   `attacks/swings.gd`, the motif by the field and the finale by what he sees; his breath and turn;
-  the blade strike in both layers at once, `land_blade()`, and the crack, `crack.gd`; the rules'
-  hooks; where he stands). His own stand-in: `hitter_stand_in.gd`.
+  each head going for its own player, `blade_layers()` / `land_blade()`, `land_jab()`; the mirror
+  breaking into the other half, `crack.gd`; the rules' hooks; where he stands). His own stand-in:
+  `hitter_stand_in.gd`.
 - `levels/`: `GymLevel` (`gym/gym_level.gd`) is the base of the gyms and the platformer levels:
   it builds rooms from code (`solid()`, `ledge()`, `checkpoint()`, `measure()`, ...), spawns the
   players, respawns them at checkpoints (`checkpoint_needs_all`: only once both are there) and

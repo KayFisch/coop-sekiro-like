@@ -6,16 +6,23 @@ extends HitterWeapon
 ## Built so far: phase 1 (the weapon always parallel), and no rage yet: his posture broken, a long
 ## stagger stands in for it, and his sync stays.
 ##
-## THE RULES (v0):
-## 1. Unisono: every blade strike comes down in both layers at once, and in each the player of that
-##    layer in front of the blade, in its reach, meets it (land_blade()). Both parry: a co-op parry
-##    (a window each, two blades toward the stagger). Only one: their parry has a block's effect.
-## 2. The crack: a blade that comes down where nobody of its layer is in front of it crashes into
-##    the mirror, and a crack runs from there both ways along the floor (crack.gd). It hits that
-##    layer's player on the floor: jump it.
-## 3. The pommel: quick jabs at whoever is in front of it, in each layer (land_jab()). Normal strikes:
-##    a lone parry is a parry, and opens the partner's window. A parried jab, and a hit on his pommel
-##    side, cost him more posture (F2 "hitter_pommel_posture").
+## THE RULES (v0, after Nicho's first test, 2026-10-21):
+## 1. Each head goes for its own player. A blade strike comes down in the layers whose player is at
+##    the blade (blade_layers(), land_blade()), and in each the player of that layer in front of the
+##    blade, in its reach, meets it. Both there: the heads put their strength into one hit, heavy, in
+##    both layers at once. Both parry: a co-op parry (a window each, two blades toward the stagger);
+##    only one: their parry has a block's effect. One there (the other at the pommel): a normal
+##    strike in that layer only, the other layer's weapon holding meanwhile: a lone parry is a
+##    parry, and opens the partner's window. Nobody there: it comes down in both, into nothing.
+## 2. The crack: a blade that nothing stopped goes into the floor, the mirror line, and the mirror
+##    breaks through into the other half, where it came down (crack.gd). As it breaks open
+##    ("hitter_crack_delay") it hits that half's player if they're on the floor near it: jump it.
+##    Stopped is parried, or blocked while the other layer's blade was parried (the parry holds it):
+##    so parried together, or a parry and a block, nothing cracks; a parry and a hit, the hit one's
+##    layer; no parry at all, both.
+## 3. The pommel: jabs at the players at the pommel, in their layers (pommel_layers(), land_jab()).
+##    Normal strikes: a lone parry is a parry, and opens the partner's window. A parried jab, and a
+##    hit on his pommel side, cost him more posture (F2 "hitter_pommel_posture").
 ## 4. Open while he attacks (a chain's first windup to its end, a stagger too): hits land and cost his
 ##    sync. Guarded only in his breath (HIS GUARD in hitter_weapon.gd).
 ## 5. In his breath he turns, to bring the blade in front of the players (THE TURN). Only the turn:
@@ -58,7 +65,7 @@ const STOMP = HitterSwings.STOMP
 const MOTIFS = {
 	"together": [[2, BLADE], [2, BLADE], [3, BLADE]],  # all three parried together
 	"split": [[2, BLADE], [1, POMMEL], [2, BLADE], [1, POMMEL]],  # the seesaw
-	"pommel": [[2, POMMEL], [1, POMMEL], [1, POMMEL]],  # both at the pommel: jabs only
+	"pommel": [[2, POMMEL], [2, POMMEL], [2, POMMEL]],  # both at the pommel: jabs only, a long pull back each
 }
 const FINALES = {
 	"HAMMER": [[4, HAMMER]],  # the great hammer: a long windup
@@ -133,8 +140,8 @@ static func tuning_entries() -> Array:
 		{"key": "hitter_stagger_least", "label": "a finale parried together staggers him (s)", "default": 0.5, "step": 0.1},
 		{"key": "hitter_stagger_per_parry", "label": "...and longer by this per blade parried in the chain (s)", "default": 0.2, "step": 0.05},
 		{"header": "THE CRACK", "tab": "crack"},
-		{"key": "hitter_crack_speed", "label": "it runs along the floor (px/s)", "default": 500.0, "step": 25.0},
-		{"key": "hitter_crack_length", "label": "...this far each way (px)", "default": 520.0, "step": 20.0},
+		{"key": "hitter_crack_delay", "label": "it breaks open this long after the blade lands (s)", "default": 0.3, "step": 0.05},
+		{"key": "hitter_crack_reach", "label": "...and hits that half's player on the floor this near it (px)", "default": 70.0, "step": 5.0},
 		{"key": "hitter_crack_share", "label": "it hits you: this share of his heavy hit's sync (0.33: a normal hit)", "default": 0.33, "step": 0.01},
 		{"header": "THE STAND-IN (F1: bifrons_stand_in)", "tab": "stand-in"},
 		{"key": "hitter_stand_in_parry", "label": "it parries his strikes this often", "default": 0.75, "step": 0.05},
@@ -334,52 +341,89 @@ func take_pair_strike(source):
 
 # --- His strikes landing (used by attacks/swings.gd) ---
 
-# A blade strike comes down, in both layers at once (THE RULES, 1 and 2): in each layer the player in
-# front of the blade, in its reach, meets it. Both parry: a co-op parry, and each opens the other's
-# window. Only one: their parry has a block's effect. Where nobody of a layer is in front of it: a
-# crack. `hammer`: the great hammer, which throws harder. Returns the players whose parries counted
-# (both, or nobody).
-func land_blade(hammer = false) -> Array:
-	var players = get_players()
-	var under = players.filter(func(p): return in_front_of_blade(p))
-	var parriers = under.filter(func(p): return p.is_perfect_parry())
-	var together = parriers.size() >= 2
+# The layers a blade strike comes down in (THE RULES, 1): each head goes for its own player, so the
+# layers whose player is at the blade; nobody there, both. `turned`: as they'll be once he has
+# turned round (the stomp leap, before its jump).
+func blade_layers(turned = false) -> Array:
+	return _layers_at(not turned)
+
+
+# ...and a jab: the layers whose player is at the pommel; nobody there, both.
+func pommel_layers() -> Array:
+	return _layers_at(false)
+
+
+func _layers_at(blade: bool) -> Array:
+	var layers = []
+	for layer in LAYERS:
+		var p = player_of(layer)
+		if p != null and at_blade(p) == blade:
+			layers.append(layer)
+	return layers if not layers.is_empty() else LAYERS.duplicate()
+
+
+# A blade strike comes down in `layers` (THE RULES, 1 and 2): in each, the player of that layer in
+# front of the blade, in its reach, meets it. In both layers it's heavy: parried by both, a co-op
+# parry (each opens the other's window); by one, a block's effect. In one, a normal strike: a lone
+# parry is a parry, and opens the partner's window. Where nothing stopped it, the mirror cracks into
+# the other half. `hammer`: the great hammer, which throws harder. Returns the players whose parries
+# counted.
+func land_blade(layers: Array, hammer = false) -> Array:
+	var heavy = layers.size() >= 2
+	var under = {}  # layer -> its player, in front of the blade in its reach
+	var tried = []  # the layers whose player parried (on a heavy strike, alone: a block's effect)
+	for layer in layers:
+		var p = player_of(layer)
+		if p != null and in_front_of_blade(p):
+			under[layer] = p
+			if p.is_perfect_parry():
+				tried.append(layer)
+	var counted = tried.size() >= 2 or (not heavy and not tried.is_empty())
 	var knock = BLADE_KNOCKBACK * (HAMMER_KNOCKBACK if hammer else 1.0)
-	rules.landing_heavy = true  # the players' hooks lead to the rules while it lands
-	for p in under:
-		if together:
-			p.on_perfect_parry(true)
+	var blocked = []
+	rules.landing_heavy = heavy  # the players' hooks lead to the rules while it lands
+	for layer in under:
+		var p = under[layer]
+		if layer in tried and counted:
+			p.on_perfect_parry(heavy)
 			spawn_sparks(p.global_position + Vector2(0.0, -24.0), 12, COLOR_PLAYER_PARRY)
-		elif p.is_blocking() or p in parriers:  # (a lone parry: a block's effect)
-			p.take_damage(knockback_for(p, knock), true)
+		elif p.is_blocking() or layer in tried:  # (a lone parry where it takes two: a block's effect)
+			p.take_damage(knockback_for(p, knock if heavy else BLOCKED_KNOCKBACK), true)
+			blocked.append(layer)
 		else:
 			p.take_damage(knockback_for(p, knock))
 	rules.landing_heavy = false
+	# Stopped: parried, or blocked while the other layer's was parried (the parry holds it).
 	var cracked = false
-	for layer in LAYERS:
-		var p = player_of(layer)
-		if p != null and not p in under:
+	for layer in layers:
+		if not (layer in tried or (layer in blocked and not tried.is_empty())):
 			_crack(layer)
 			cracked = true
 	if cracked:
 		Sfx.play("glass_crack", -2.0)
-	if together:
-		for p in parriers:
-			open_window(p.partner(), p)
-		Sfx.play("counter_hit", -4.0)
-	shake(12.0 if hammer else 8.0)
+	var parriers = []
+	if counted:
+		for layer in tried:
+			parriers.append(under[layer])
+			open_window(under[layer].partner(), under[layer])
+		if heavy:
+			Sfx.play("counter_hit", -4.0)
+	shake(12.0 if hammer else (8.0 if heavy else 5.0))
 	Sfx.play("thunk", -2.0 if hammer else -5.0)
-	return parriers if together else []
+	return parriers
 
 
-# A pommel jab lands (THE RULES, 3), in each layer at the player in front of the pommel, in its
-# reach: a normal strike, so a lone parry is a parry and opens the partner's window. Parried, it
+# A pommel jab lands in `layers` (THE RULES, 3), in each at the player in front of the pommel, in
+# its reach: a normal strike, so a lone parry is a parry and opens the partner's window. Parried, it
 # costs him more posture. Returns the players who parried it.
-func land_jab() -> Array:
+func land_jab(layers: Array) -> Array:
 	var parriers = []
 	rules.landing_heavy = false
 	rules.landing_posture = Tuning.value("hitter_pommel_posture")
-	for p in get_players().filter(func(q): return in_front_of_pommel(q)):
+	for layer in layers:
+		var p = player_of(layer)
+		if p == null or not in_front_of_pommel(p):
+			continue
 		if p.is_perfect_parry():
 			p.on_perfect_parry(false)
 			spawn_sparks(p.global_position + Vector2(0.0, -24.0), 8, COLOR_PLAYER_PARRY)
@@ -394,8 +438,8 @@ func land_jab() -> Array:
 	return parriers
 
 
-# A crack's front catches its player on the floor: a hit, whatever they hold. It costs
-# "hitter_crack_share" of his heavy hit's sync.
+# The mirror breaking open under a player on the floor (crack.gd): a hit, whatever they hold. It
+# costs "hitter_crack_share" of his heavy hit's sync.
 func crack_hits(p, from_x: float):
 	if rules == null or hp <= 0.0:
 		return
@@ -407,11 +451,12 @@ func crack_hits(p, from_x: float):
 	shake(4.0)
 
 
-# A blade into the mirror, in that layer: a crack runs from where it came down.
+# A blade into the floor, unstopped, in that layer: the mirror breaks through into the other half,
+# where it came down.
 func _crack(layer: int):
 	var crack = HitterCrack.new()
 	crack.boss = self
-	crack.layer = layer
+	crack.from_layer = layer
 	crack.origin = clampf(impact_x(layer), ARENA_LEFT, ARENA_RIGHT)
 	crack.floor_y = ARENA_FLOOR_Y
 	get_parent().add_child(crack)

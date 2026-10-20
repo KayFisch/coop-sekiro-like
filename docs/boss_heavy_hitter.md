@@ -1,7 +1,8 @@
 # The Heavy Hitter, the Ettin (working title)
 
 Status: designed (v0, 2026-10-19); phase 1 built (2026-10-20, branch `nicho/heavy-hitter`: see
-"Built (phase 1)" at the end), the rage and phase 2 next. Name and myth open (Kay's list of two-headed
+"Built (phase 1)" at the end), reworked after Nicho's first test (2026-10-21: "First test"); the rage
+and phase 2 next. Name and myth open (Kay's list of two-headed
 creatures; the working idea is the Ettin, a two-headed giant). General rules: `docs/concept.md`
 ("Boss design principles", "Blade rules"). The why, and what was dropped: `scribbles.md`,
 2026-10-19 ("Heavy Hitter, der Ettin").
@@ -15,8 +16,8 @@ Signature: **he forces movement**; how the formation changes is up to the player
 
 ## The weapon in two layers
 
-One weapon, held level: a **blade** (heavy, slow) at one end, a **pommel** (normal, fast) at the
-other. On the mirrored screen the light half shows P1's layer and the shadow half P2's, and **the
+One weapon, held level, a **halberd** (or a mace: not a plain sword): a **blade** (an axe head; heavy,
+slow) at one end, a **pommel** (an iron butt; normal, fast) at the other. On the mirrored screen the light half shows P1's layer and the shadow half P2's, and **the
 weapon can point differently in the two layers**:
 
 - **parallel:** the blade points the same way in both layers (one head has won it);
@@ -35,27 +36,37 @@ Three fields come out of it:
 
 - **together** (both at the blade): every blade strike is parried together. The rewarding field,
   and the dangerous one.
-- **split** (one at the blade, one at the pommel): the one at the blade can only block (see the
-  rules, 1), the one at the pommel takes fast jabs and jumps cracks, and is safe. **Both ways out
-  are the safe player's:** go over to the partner (over the weapon, or dash-parrying a pommel jab
-  through him), or provoke the pommel side (phase 2).
-- **both at the pommel:** fast jabs at both; he turns round in his next breath.
+- **split** (one at the blade, one at the pommel): each head goes for its own player, by turns: the
+  blade at the one, the pommel at the other, **normal strikes**, each parried alone, and each parry
+  opens the partner's window. The white weapon and the black one do different things: one strikes
+  with the blade while the other holds, then jabs while the first holds. Going over to the partner
+  (over the weapon, or under his stomp leap) makes it together; provoking the pommel side (phase 2)
+  too.
+- **both at the pommel:** jabs at both; he turns round in his next breath.
 
 He turns the alignment (the heads' quarrel), the players turn the formation (moving) or provoke.
 This table is the basis for building his patterns and for reading the fight.
 
 ## The rules (v0)
 
-1. **Unisono:** every blade strike happens **in both layers at once**, and each layer's blade is
-   parried by that layer's player. Both parry: a **co-op parry** (both get a sync-hit window, and
-   it counts twice toward the stagger). Only one parries: the parry only has the **effect of a
-   block** (one parry per blade).
-2. **The crack:** a blade that lands where nobody of its layer stands in front of it crashes into
-   the mirror: a **crack** runs from the impact both ways along the floor line, under him and out
-   toward the wall, like breaking glass. It only hurts that layer's player, on the floor: jump it.
-3. **The pommel:** fast single jabs at whoever stands in front of it, in each layer. Normal
-   strikes: a lone parry is a parry (it opens the partner's window). The pommel side is **open and
-   provokable** (see "Provoking").
+1. **Each head goes for its own player** (Nicho, 2026-10-21). Both at the blade: the heads put
+   their strength into **one hit**, in both layers at once, and each layer's blade is parried by
+   that layer's player. Both parry: a **co-op parry** (both get a sync-hit window, and it counts
+   twice toward the stagger). Only one parries: the parry only has the **effect of a block** (one
+   parry per blade). One at the blade and one at the pommel: the blade at the one, the pommel at the
+   other, by turns, each a **normal strike** in its own layer only: a lone parry is a parry.
+   (Phase 2: once the heads have torn the weapon apart, each can put its blade at its own player.)
+2. **The crack:** a blade that nothing stopped goes into the floor, the mirror line, and the mirror
+   **breaks through into the other half** there, as a phone's screen cracks from the corner it fell
+   on: still, not running anywhere, in the color of the half it comes from (the light half's dark
+   into the pale shadow, the shadow's pale into the dark light). As it breaks open it hurts the
+   other half's player if they're on the floor near it: jump it. **Stopped** is parried, or blocked
+   while the other layer's blade was parried (the parry holds it). So: parried together, or a parry
+   and a block, nothing cracks; a parry and a hit, the hit one's side cracks into the parrier's
+   half; no parry at all (blocked or hit), both sides crack.
+3. **The pommel:** jabs at whoever stands in front of it, in their layer. Normal strikes: a lone
+   parry is a parry (it opens the partner's window). The pommel side is **open and provokable** (see
+   "Provoking").
 4. **Open while he attacks:** from a chain's first windup to its end, hits land. **Guarded only in
    his breath** (the weapon held level guards both sides, as the Warden's swords do).
 5. **Normal mode: he adapts to the players.** In his breath he turns, to bring the blade in front
@@ -74,16 +85,16 @@ This table is the basis for building his patterns and for reading the fight.
 Colors as with the try-out boss ("Reading him"): green = parry together, yellow = yours alone,
 red = it comes.
 
-- **Blade strike:** raised high over him in both layers, then down; green while it's drawn (it
-  takes both), red as it comes. Unisono, heavy.
-- **Pommel jab:** a short pull back, yellow (yours alone), red as it comes; fast.
+- **Blade strike:** raised high over him, then down; red as it comes. In both layers (both at the
+  blade): green while it's drawn, heavy, parry together. In one: yellow, yours alone.
+- **Pommel jab:** a pull back, yellow (yours alone), red as it comes; fast.
 - **Flip (the heads' quarrel):** the heads turn to each other; one grabs the blade, and the weapon
   swings 180° in **one** layer (the old sweep): parallel ↔ diagonal. Parriable where it reaches a
   player as it swings through. As his finale it turns together into split; provoked, it turns
   split into together (see "Provoking"). Phase 2.
 - **Turn:** he turns right round (both layers), so that the blade is in front of the players. Only
   in his breath, never in rage.
-- **Stomp leap:** he crouches, jumps, and lands as a blade strike (unisono, the crack as ever).
+- **Stomp leap:** he crouches, jumps, and lands as a blade strike (as any, the crack too).
   While he's in the air the players can pass under him to switch sides.
 - (Maybe later: a **charge**, the weapon held level across the room; jump over it.)
 
@@ -95,7 +106,7 @@ Tempo: half the Warden's, counted in beats of `Beat` (150 BPM: a beat is 0.4 s).
   parried together: simultaneous sync hits.
 - **split** (one at the blade, one at the pommel): the seesaw, blade (2) – pommel (1) – blade (2)
   – pommel (1).
-- (Both at the pommel: jabs only, then the turn in his next breath.)
+- (Both at the pommel: jabs only, two beats apart, then the turn in his next breath.)
 
 As with the Warden, a chain repeats its motif and decides only at the end of a repetition. If the
 field has changed by then, the next repetition is the new field's motif.
@@ -185,61 +196,65 @@ him when he jumps.
 - The sweep: becomes the flip.
 - Debris from above: at most as glass shards from the cracks.
 
-## Built (phase 1, 2026-10-20)
+## Built (phase 1, 2026-10-20; reworked 2026-10-21)
 
 Branch `nicho/heavy-hitter`. Code: `actors/bosses/heavy_hitter/`: `hitter_weapon.gd` (the weapon in
 two layers, his heads, his guard, the windows), `heavy_hitter.gd` (the boss: the fields, his chains,
-his breath, the sync rules' hooks, where he stands), `attacks/swings.gd` (a chain and its verbs),
-`attacks/turn.gd`, `crack.gd`, `hitter_stand_in.gd`. His room: `levels/heavy_hitter/hitter_room.tscn`
-(the Threshold's geometry), entry 2 on the select screen. Tests: `tests/test_heavy_hitter.gd`. Phase 1
-only: the weapon always parallel, no flip, no provoking flips, no rage (a broken posture: a long
-stagger in its place, and his sync stays).
+his breath, the strikes landing, the sync rules' hooks, where he stands), `attacks/swings.gd` (a chain
+and its verbs), `attacks/turn.gd`, `crack.gd`, `hitter_stand_in.gd`. His room:
+`levels/heavy_hitter/hitter_room.tscn` (the Threshold's geometry), entry 2 on the select screen.
+Tests: `tests/test_heavy_hitter.gd`. Phase 1 only: the weapon always parallel, no flip, no provoking
+flips, no rage (a broken posture: a long stagger in its place, and his sync stays).
 
 What's built, and how; where the design left it open, the choice made:
 
-- **The weapon in two layers.** In each layer the blade points left or right (P1's layer is the light
-  half, P2's the shadow half), and it moves the same in both. Each half shows only its own; one-sided,
-  both are drawn, a little apart, each with its player's color on the edge and crossguard. Two heads
-  sit on top of him; in each layer a band across the head on the blade's side, in that player's
-  color. A hit on his pommel side turns that head red for a moment.
+- **The weapon in two layers: a halberd.** An axe head with a spear point at the blade's end, an iron
+  butt at the pommel's. In each layer it points left or right (P1's layer is the light half, P2's the
+  shadow half), and each layer's weapon has a pose of its own: they move together for a strike of
+  both heads, apart when each goes for its own player. Each half shows only its own; one-sided, both
+  are drawn, a little apart. Two heads sit on top of him; in each layer a band across the head on
+  the blade's side, in that player's color. A hit on his pommel side turns that head red a moment.
+- **Its colors** say whom each end is aimed at, the same in both halves: the axe head in the color of
+  the player at the blade (both there: half in each one's: parry together), the butt in the color of
+  the player at the pommel, steel where nobody is. The telegraph (green, yellow, red) is on the axe's
+  edge and the spear point, and on the butt's face for a jab.
 - **In front of the blade** (or the pommel) is the side a player is on, in their own layer: that
-  decides the field. Whether a strike reaches them is its reach: the blade 200 px from his center,
-  the pommel 140. A player on the blade's side but further off gets the crack.
-- **Unisono, the pommel, open while he attacks:** as in "The rules (v0)". In the split field the one
-  at the blade can only block (a lone parry), so the blade strike there never opens a window; the
-  pommel jab parried does, for the partner.
-- **The crack:** a front running both ways along the floor line from where the blade came down (500
-  px/s, 520 px each way, or to a wall). It hits its layer's player if they're on the floor as it
-  passes, whatever they hold (block doesn't help: jump it), and never the other player. It costs a
-  normal hit (a third of his heavy hit's sync). Glass-white in the halves, the player's color
-  one-sided, with a sound of glass.
+  decides the field, and which layers a strike comes down in. Whether it reaches them is its reach:
+  the blade 200 px from his center, the pommel 140. Someone on the blade's side but further off: the
+  blade goes into the floor.
+- **Each head for its own player, the crack, the pommel, open while he attacks:** as in "The rules
+  (v0)". A blade strike comes down in the layers whose player is at the blade (nobody there: both,
+  into nothing), a jab in those whose player is at the pommel.
+- **The crack:** still, a starburst of cracks from where the blade went in, spreading in the other
+  half over 0.3 s; as it breaks open, the other half's player on the floor within 70 px of it is hit
+  (block doesn't help: jump it). It costs a normal hit (a third of his heavy hit's sync). With a
+  sound of glass.
 - **His guard:** between his chains, once the weapon is level again (the recovery after a chain
   included); not while he turns. It parries or blocks by chance, as Bifrons's (F2 sync page,
   "boss_parry_chance").
 - **The motifs** (beats of 0.4 s): together = blade 2, blade 2, blade 3; split = blade 2, pommel 1,
-  blade 2, pommel 1; both at the pommel = pommel 2, 1, 1. Chosen as a chain starts and as each
+  blade 2, pommel 1; both at the pommel = pommel 2, 2, 2. Chosen as a chain starts and as each
   repetition ends (1 to 3 of them, at random).
 - **The finales:** in the together field the great hammer (a 4-beat windup); in it for 2 of his chains
   in a row, the stomp leap; split or both at the pommel, the stomp leap. Any finale parried together
-  staggers him 0.5 s, and 0.2 s per blade parried in the chain (a co-op parry counts two, a parried
-  jab one, a lone parry with a block's effect nothing).
-- **The stomp leap: on the spot, turning round in the air.** He crouches (the weapon raised, green),
-  jumps (his feet 110 px up, about 0.7 s in the air, his body no obstacle meanwhile), turns round on the
-  way up (the raised blade shows the side it comes down on) and lands where he took off, as a blade
-  strike on the side that was behind him. In the split field the one at his blade can go under him
-  to the partner: together, and parried together, staggered; nobody moving: split again, the roles
-  turned round. From the together field both have to go under him, or both are at his pommel (two
-  cracks). Both at the pommel: he lands facing them. Why: he only says where the blade comes; where
-  they go is the players' (as with Bifrons's leap), and his place stays predictable.
+  staggers him 0.5 s, and 0.2 s per blade parried in the chain (a co-op parry counts two, a lone
+  parry of a normal strike one, a lone parry with a block's effect nothing).
+- **The stomp leap: on the spot, turning round in the air** (Nicho: fine). He crouches (the weapon
+  raised), jumps (his feet 110 px up, about 0.7 s in the air, his body no obstacle meanwhile), turns
+  round on the way up (the raised blade shows the side it comes down on) and lands where he took off,
+  as a blade strike on the side that was behind him. In the split field the one at his blade can go
+  under him to the partner: together, and parried together, staggered; nobody moving: split again,
+  the roles turned round. From the together field both have to go under him, or both are at his
+  pommel. Both at the pommel: he lands facing them.
 - **The breath** (2.5 to 3.5 s, after a 0.8 s recovery): he walks slowly (60 px/s) and, as it begins,
   turns round if that brings more of the players in front of the blade; with one on each side, to
   whoever hit his pommel side last since his last turn, else round anyway. A hit at his guard
   meanwhile is answered at once by the next chain; an attacker at his pommel gets a jab first.
 - **His pommel side:** hits there (landed or guarded) and parried jabs cost him twice the posture.
-- **His posture** is his own number (F2, 200 as Bifrons's). It breaks much more easily anyway, as
-  every blade strike is heavy: a co-op parry costs him 2 x 15, its two sync hits 2 x 15, so a together
-  repetition played cleanly costs him about 180 (one of Bifrons's about 60). Broken: a 3 s stagger for
-  now, his sync stays.
+- **His posture** is his own number (F2, 200 as Bifrons's). It breaks much more easily anyway, as his
+  blade strikes together are heavy: a co-op parry costs him 2 x 15, its two sync hits 2 x 15, so a
+  together repetition played cleanly costs him about 180 (one of Bifrons's about 60). Broken: a 3 s
+  stagger for now, his sync stays.
 - **Where he stands:** a player on each side: in the middle between them. Else he keeps the nearer one
   in his blade's reach (steps back under 70 px, walks up past 200). He starts a chain only while
   someone is within 300 px.
@@ -251,7 +266,8 @@ What's built, and how; where the design left it open, the choice made:
   finale), BLADE, POMMEL (one verb), TURN.
 - **The stand-in** (F1 "bifrons_stand_in": left = P1, right = P2): goes in front of the blade of its
   layer (over him between his chains, under him in a stomp leap), parries (75 %) or blocks (15 %) his
-  strikes at it, jumps the cracks of its layer, strikes in its window, and plays the sync mode along.
+  strikes at it, jumps the mirror breaking open under it, strikes in its window, and plays the sync
+  mode along.
 
 His numbers on F2 (his own page, "Heavy Hitter"; it opens there in his room):
 
@@ -263,23 +279,36 @@ His numbers on F2 (his own page, "Heavy Hitter"; it opens there in his room):
 | The breath | "hitter_breath_min", "_max" | 2.5 - 3.5 s |
 | His posture / his pommel side / broken: staggered | "hitter_posture_max", "hitter_pommel_posture", "hitter_break_stagger" | 200 / x2 / 3 s |
 | A finale parried together: stagger / per blade | "hitter_stagger_least", "_per_parry" | 0.5 / 0.2 s |
-| The crack: speed / length each way / its cost | "hitter_crack_speed", "_length", "_share" | 500 px/s / 520 px / 0.33 of a heavy hit |
+| The crack: breaks open after / hits this near / its cost | "hitter_crack_delay", "_reach", "_share" | 0.3 s / 70 px / 0.33 of a heavy hit |
 | The stand-in: parries / blocks | "hitter_stand_in_parry", "_block" | 0.75 / 0.15 |
 
-In code, as structure: the weapon's size and poses and the reaches (`hitter_weapon.gd`), the stomp
-leap's height and timing (`attacks/swings.gd`), the motifs and finales (`MOTIFS`, `FINALES` in
-`heavy_hitter.gd`). His sync, the windows and what a hit costs are the sync page's, shared with
-Bifrons.
+In code, as structure: the halberd's shape, poses and colors and the reaches (`hitter_weapon.gd`),
+the crack's look (`crack.gd`), the stomp leap's height and timing (`attacks/swings.gd`), the motifs
+and finales (`MOTIFS`, `FINALES` in `heavy_hitter.gd`). His sync, the windows and what a hit costs
+are the sync page's, shared with Bifrons.
 
-To look for in the first playtest:
+### First test (Nicho, 2026-10-21) and what changed
 
-- Do the fields read: does each of you see whether you're at the blade or the pommel, in your own half?
-  And one-sided, with both weapons drawn?
-- Unisono: is "parry together, or it's only a block" clear from the green and the motif?
-- The split field: does the one at the pommel (a jab, then the crack) have enough to do, and is going
-  over to the partner (over him, or under his stomp leap) a choice you make?
-- The crack: does it read as glass breaking, and can you jump it (F2 speed)?
-- The stomp leap: do you see where the blade will come down in time to go under him?
-- His posture breaks about once a chain when you play well: too often, now that the rage will be a
-  whole chain (step 2)?
-- The jab's yellow is very short (a beat after a blade strike): enough to read?
+- Parry together or it's a block: understandable. The stomp leap and the single pommel jab: fine.
+- The weapon was a plain sword: now a halberd (a mace would do too).
+- The crack looked like an electric shock running along the floor: now the mirror breaks through
+  into the other half where the blade went in, still, in the color of the side it comes from; when
+  it does, by the table in the rules, 2.
+- The jab series (both at the pommel) was hard and weird to parry: two beats between the jabs now,
+  so each is pulled back longer.
+- Being at the pommel felt wrong, as the partner at the blade could only ever block: one each side,
+  each head now goes for its own player (normal strikes, by turns), and only both at the blade makes
+  one heavy hit.
+- To see the difference: each end colored by whom it's aimed at (see "Its colors").
+
+To look for in the next test:
+
+- One each side: do the blade at one and the jab at the other read as two normal strikes, the white
+  and the black weapon doing different things? Is the seesaw (blade, jab, blade, jab) good now?
+- Do the colors of the ends (the axe in one color, or in both) tell you at a glance whether you parry
+  alone or together?
+- The crack: does it read as the mirror breaking, and is "your partner's miss cracks into your half"
+  fair? Can you jump it in time (F2 "hitter_crack_delay")?
+- The jab series with more room: better?
+- His posture breaks about once a chain when you play the together field well: too often, now that
+  the rage will be a whole chain (step 2)?

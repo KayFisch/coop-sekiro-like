@@ -798,3 +798,24 @@ solange er angreift (er will nur treffen), gedeckt nur im Atem.
   nur noch in der Wut. „Das Griffende deckt die andere Seite“ nur noch im Atem. Glockenschläger und
   Koloss am Durchgang nur noch als Elemente (langsamer Takt, über die waagerechte Waffe springen).
   Der Sweep wird zum Kippen. Schutt von oben höchstens als Glassplitter aus den Rissen.
+
+## 2026-10-21 (Nicho): erster Test des Heavy Hitters (Phase 1)
+
+- Gemeinsam parieren oder es ist ein Block: verständlich. Stampfsprung und der einzelne Knaufstoß:
+  passen.
+- Die Waffe soll kein einfaches Schwert sein, sondern eine Hellebarde oder ein Streitkolben.
+- Der Riss sah aus wie ein Stromschlag über den Boden. Lieber: ein Sprung im Spiegel, der am
+  Aufschlag in die andere Bildhälfte aufbricht (wie ein Handy, das auf die Ecke fällt), erst mal
+  ohne zu laufen, monochrom: die Farbe der einen Seite bricht in die andere.
+- Wann es reißt: Beide parieren, oder einer pariert und der andere blockt: kein Riss. Einer pariert,
+  der andere wird getroffen: Riss nur aus dessen Seite. Keiner pariert: Risse aus beiden Seiten.
+- Die Stoß-Serie (beide am Knauf) war schwer und komisch zu parieren.
+- Am Knauf zu stehen fühlte sich falsch an: Parieren und Springen gingen, aber der Partner an der
+  Klinge wurde die ganze Zeit bestraft (er konnte immer nur blocken).
+- Idee dazu: Stehen wir diagonal, geht jeder Kopf auf seinen Spieler: der eine mit der Klinge, der
+  andere mit dem Knauf, normale Angriffe; die weiße und die schwarze Waffe machen Verschiedenes.
+  Stehen wir übereinander (para), legen die Köpfe ihre Kraft in einen Schlag. Zum Erkennen: die Enden
+  der Waffe in der Farbe dessen, auf den sie zielen (para: die Klinge in beiden Farben). In Phase 2,
+  wenn die Köpfe die Waffe auseinandergerissen haben, kann jeder seine Klinge zu seinem Spieler
+  drehen.
+- Umgesetzt am selben Tag (Claude): `docs/boss_heavy_hitter.md` → „First test“.

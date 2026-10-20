@@ -4,10 +4,10 @@ extends Node
 ## against the Heavy Hitter, by pressing that player's own buttons, so everything that happens to them
 ## is the game's own. It goes to stand in front of the blade of its layer: from his pommel side over
 ## him (between his chains), or under him in a stomp leap. It meets each of his strikes at it with a
-## parry, a block or nothing (by chance, F2 "hitter_stand_in_parry" / "_block"), jumps the cracks of
-## its layer, and strikes when its partner's parry opens its window (a sync hit). In the players'
-## sync mode it goes to its partner to bind, and bound it draws back when they do and lets go on the
-## big cue (as Bifrons's stand-in does).
+## parry, a block or nothing (by chance, F2 "hitter_stand_in_parry" / "_block"), jumps the mirror
+## breaking open under it (crack.gd), and strikes when its partner's parry opens its window (a sync
+## hit). In the players' sync mode it goes to its partner to bind, and bound it draws back when they
+## do and lets go on the big cue (as Bifrons's stand-in does).
 
 enum Plan { NOTHING, PARRY, BLOCK }
 
@@ -25,7 +25,7 @@ const SLACK = 14.0  # it starts walking once it's this far off, and stops when i
 const JUMP_FROM = 135.0
 const DASH_AT_RISE = 150.0
 const JUMP_HOLD = 0.3  # s it holds jump: a full jump
-const CRACK_LEAD = 0.1  # s before a crack's front reaches it that it jumps
+const CRACK_LEAD = 0.1  # s before the mirror breaks open under it that it jumps
 const DASH_THROUGH_FROM = 70.0  # sync mode, him between it and its partner: it dash-slashes through from this close
 const LET_GO_WITHIN = 0.02  # s from a beat that it lets a dash-slash's charge go (Player._release_charge())
 
@@ -137,7 +137,7 @@ func _strike_bound(player):
 	_hold(player, "attack", hold)
 
 
-# Its jumps: over a crack of its layer coming at it; the dash of a jump over him.
+# Its jumps: off the floor as the mirror breaks open under it; the dash of a jump over him.
 func _jump(player, delta: float):
 	if _dash_for > 0:
 		_dash_for -= 1
@@ -149,7 +149,7 @@ func _jump(player, delta: float):
 	if not player.is_on_floor():
 		return
 	for crack in boss.get_tree().get_nodes_in_group("hitter_cracks"):
-		if crack.time_to_reach(player) <= CRACK_LEAD:
+		if crack.time_to_break(player) <= CRACK_LEAD:
 			_press_jump(player)
 			return
 
