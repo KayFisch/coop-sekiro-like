@@ -19,8 +19,9 @@ extends Attack
 ##      come down, one comes down on each (both parry: staggered); if not, both on B's side: two
 ##      blades on one place, and a lone parry there has only a block's effect (ONE PARRY PER BLADE).
 ## A parried strike at one of them (3, 4) breaks the other sword's guard, as any strike does: the
-## partner's sync hit. Nothing in 1 to 4 changes what he does; only the finish goes by what came of
-## it. Only in ppe: started anywhere else (F5), he does nothing.
+## partner's sync hit; so does every parry of 5 that counts (A WINDOW EACH in columna_bifrons.gd:
+## parried together, one each). Nothing in 1 to 4 changes what he does; only the finish goes by
+## what came of it. Only in ppe: started anywhere else (F5), he does nothing.
 
 signal both_parried
 
@@ -298,6 +299,7 @@ func _decide():
 # 5. The heavy strike lands.
 func _finish():
 	var both = false
+	var parriers = []  # whose parries counted: each opens its partner's window (A WINDOW EACH)
 	if _on_back:
 		# Two blades on one place: everyone on B's side within reach, and it takes both of them.
 		var side = boss.side_of(_b)
@@ -309,6 +311,7 @@ func _finish():
 			judged["parriers"] = []
 			judged["parried"] = false
 		boss.land(judged, both, StrikePattern.HEAVY_KNOCKBACK, true, true)
+		parriers = judged.parriers
 		for p in judged.parriers:
 			parry_success.emit(p, "bifrons_gate_heavy")
 	else:
@@ -319,9 +322,11 @@ func _finish():
 		both = on_a.parried and on_b.parried
 		for judged in [on_a, on_b]:
 			boss.land(judged, both, 1.0, heavy)
+			parriers.append_array(judged.parriers)
 			for p in judged.parriers:
 				parry_success.emit(p, "bifrons_gate_heavy")
 	boss.shake(12.0 if both else 9.0)
+	boss.open_windows(parriers)
 	if both:
 		both_parried.emit()
 		Sfx.play("counter_hit", -2.0)

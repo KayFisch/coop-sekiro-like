@@ -48,6 +48,7 @@ const ENTRIES = [
 	{"key": "parry_pass", "tab": "Fights", "label": "Dash-parry: a parry mid-dash goes through the boss", "default": true},
 	{"key": "bifrons_mode", "tab": "Fights", "label": "Bifrons: set patterns, reactive (strikes back), or chains (a motif repeated, a finale, a pause)", "default": "patterns", "options": ["patterns", "reactive", "chains"]},
 	{"key": "bifrons_guard_break", "tab": "Fights", "label": "Bifrons: a parry breaks his other guard: every one (on); none, the window stays but only a hit he can't parry lands (off); chains: a motif's last, all of it parried (motif_end)", "default": "on", "options": ["on", "off", "motif_end"]},
+	{"key": "bifrons_coop_windows", "tab": "Fights", "label": "Bifrons: in an attack of both swords every parry that counts opens the partner's sync-hit window (parried together: one each)", "default": true},
 	{"key": "bifrons_blade_parries", "tab": "Fights", "label": "Bifrons: one parry per blade (both swords on one side of him: heavy, parry together, else a lone parry is a block)", "default": true},
 	{"key": "bifrons_throw_by_outcome", "tab": "Fights", "label": "Bifrons: what throws you back (leap, both swords on you) throws a parry part way (F2), a block as far as a hit", "default": true},
 	{"key": "bifrons_chain_stagger", "tab": "Fights", "label": "Bifrons: a coop parry staggers him longer the more of that attack was parried (F2)", "default": true},

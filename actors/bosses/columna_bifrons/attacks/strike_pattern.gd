@@ -10,8 +10,9 @@ extends Attack
 ## and both players read it. A parried strike breaks the guard of his *other* sword for a moment
 ## (ColumnaBifrons.break_guard()), and the other player's sword hit is a sync hit (with Moves
 ## "bifrons_guard_break" off it only opens the window: a hit in it that lands is a sync hit). Both
-## swords at once come green, and parried by both players they stagger him; on one side of him
-## they take both players' parries (ONE PARRY PER BLADE in columna_bifrons.gd).
+## swords at once come green, and parried by both players they stagger him, and each parry opens
+## its partner's window (A WINDOW EACH); on one side of him they take both players' parries (ONE
+## PARRY PER BLADE in columna_bifrons.gd).
 ##
 ## How a sword strikes:
 ## - down from over his head, when it's on the flank its hand is on;
@@ -304,6 +305,12 @@ func _land(index: int):
 		for p in judged[blade].parriers:
 			parry_success.emit(p, "bifrons_strike")
 
+	if sword == BOTH:
+		# Every parry that counts opens its partner's window (A WINDOW EACH in columna_bifrons.gd).
+		var parriers = []
+		for blade in ([LEFT] if on_one else striking):
+			parriers.append_array(judged[blade].parriers)
+		boss.open_windows(parriers, _breaks_guard(index))
 	if both and not on_one:
 		both_parried.emit()
 		Sfx.play("counter_hit", -2.0)

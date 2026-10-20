@@ -72,9 +72,10 @@ follows from these:
 
 ### The blade rules of 2026-10-19
 
-Three of the rules in `docs/concept.md` ("Blade rules: additions"), each on F1 (tab "Fights", on
+Four of the rules in `docs/concept.md` ("Blade rules: additions"), each on F1 (tab "Fights", on
 by default; off is how it was before), their numbers on F2 (his page, tab "blade rules"); code:
-"THE BLADE RULES" in `columna_bifrons.gd`, tests: `tests/test_blade_rules.gd`.
+"THE BLADE RULES" in `columna_bifrons.gd`, tests: `tests/test_blade_rules.gd` and
+`tests/test_coop_windows.gd`.
 
 - **One parry per blade** ("bifrons_blade_parries"). A strike of both swords **on one side of
   him** (ppe, or both swords on one player who's been left alone) brings two blades down on one
@@ -96,6 +97,18 @@ by default; off is how it was before), their numbers on F2 (his page, tab "blade
   own, the sweep and the leap 0.9 s, the crossing 1.1 s, QUAD 1.5 s, LONG 2.1 s. A lone parry
   that's only a block doesn't count. Off: the sync rules' one number (F2 "coop_parry_stagger",
   1 s).
+- **A window each** ("bifrons_coop_windows", 2026-10-20). In an attack of both swords (a strike
+  of both, so the double strike and a chain's finale too; the leap; the gate leap's heavy strike;
+  the sweep parried by both) **every parry that counts opens its partner's window**, as a parried
+  strike of one sword does (below, "The partner's hit"). Parried together: **a window each**, the
+  energy running both ways at once, on top of the stagger; a hit in the window while he's
+  staggered is a sync hit (he has no guard then anyway). In pep a lone parry of a strike of both
+  opens its partner's window; a lone parry with only a block's effect (ppe, both swords on one
+  player) opens nothing, and the sweep's lone parries neither (they decide where his swords end
+  up). Each window that closes unused, the partner in reach, costs its sync as ever. So a co-op
+  parry with two sync hits on the beat is worth at most 6 + 4 + 4 = **14 sync** (F2
+  "coop_parry_gain", "sync_hit_gain"; off the beat 6 + 2 + 2 = 10, "sync_hit_late_gain"), where
+  until now it was 6. Off: only a strike of one sword opens a window.
 
 ## Pep and ppe
 
@@ -386,15 +399,16 @@ saved one keeps what it was.)
 
 One blade, held out to its side and drawn back (yellow, 0.9 s), comes down level (red, 0.28 s)
 and sweeps through to the other side: it reaches its own player first and the other one
-0.26 s later. Each has to perfect parry it as it reaches them. A sweep breaks no guard (rule 5 is for
-strikes); what a parry wins is where his swords end up, by rule 2:
+0.26 s later. Each has to perfect parry it as it reaches them. A lone parry of it breaks no guard
+(rule 5 is for strikes); what a parry wins is where his swords end up, by rule 2 (parried by both,
+a window each as well: "A window each" above):
 
 | Parried by | What it leaves him with |
 |---|---|
 | nobody | The blade swings back at once (0.3 s). Guarded against both again. |
 | the first player only | Knocked off its course, the blade ends up lying on the far side for 1.4 s: **no sword against the first player**. His other sword still guards. |
 | the second player only | Stopped dead, he has to **prop himself up on his other sword** for 1.4 s, and it guards nothing meanwhile. The swept blade swings back and guards again. |
-| both | Both at once: the blade lies where it was stopped and he leans on the other. No guard at all: **staggered**, 0.9 s (rule 6). |
+| both | Both at once: the blade lies where it was stopped and he leans on the other. No guard at all: **staggered**, 0.9 s (rule 6), and a window each for the sync hit. |
 
 He stands still for it.
 
@@ -805,7 +819,9 @@ in, he uses them all the same.
   read from the green, and from both blades standing out in your half? Is pep's strike of both
   too cheap now that it's two normal strikes? Does a parried throw (the leap) feel like a parry,
   pushed half as far? Is a stagger of 0.9 s for a lone strike of both, and up to 2.1 s after a
-  long series, a reward worth its build-up?
+  long series, a reward worth its build-up? **A window each:** parried together, do you both
+  hit at once on the cue, or does the stagger make the beat not matter? Is 14 sync for a co-op
+  parry with two sync hits too much (F2 "coop_parry_gain")?
 
 ## Not in here yet (from the scribbles)
 

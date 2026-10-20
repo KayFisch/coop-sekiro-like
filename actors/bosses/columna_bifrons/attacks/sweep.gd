@@ -12,7 +12,8 @@ extends Attack
 ##   second only   stopped dead, he has to prop himself up on his other sword, which guards
 ##                 nothing meanwhile; the swept blade swings back to its own player.
 ##   both          both of those: the blade lies where it was stopped and he leans on the other.
-##                 No guard at all: staggered.
+##                 No guard at all: staggered, and each parry opens its partner's window (A
+##                 WINDOW EACH in columna_bifrons.gd), both at once.
 ## It's for a player on each side (pep); with both on one side it doesn't come.
 
 signal both_parried
@@ -40,6 +41,7 @@ var _second_at = 0.0  # ...and the second
 var _landed = 0  # how many of the two it has reached
 var _first_parried = false
 var _second_parried = false
+var _parriers = []  # whose parries those were
 var _after_since = 0.0
 var _after_for = 0.0
 var _sounded = false
@@ -68,6 +70,7 @@ func start(boss_node, player_nodes: Array):
 	_landed = 0
 	_first_parried = false
 	_second_parried = false
+	_parriers = []
 	_sounded = false
 
 
@@ -127,12 +130,14 @@ func _reach(blade: int) -> bool:
 	boss.land(judged)
 	for p in judged.parriers:
 		parry_success.emit(p, "bifrons_sweep")
+	_parriers.append_array(judged.parriers)
 	return judged.parried
 
 
 # The sweep is over: what it leaves him with (see the top of this file).
 func _settle():
 	if _first_parried and _second_parried:
+		boss.open_windows(_parriers)  # a window each (A WINDOW EACH in columna_bifrons.gd)
 		both_parried.emit()
 		boss.set_stagger_pose(_first, boss.POSE_LIMP, -1.0)  # lying where it was stopped
 		boss.set_stagger_pose(-_first, boss.POSE_PROP)

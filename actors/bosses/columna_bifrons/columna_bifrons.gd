@@ -158,6 +158,12 @@ const BLOCKED_KNOCKBACK = 150.0
 # - THE STAGGER FROM THE ATTACK ("bifrons_chain_stagger"): a coop parry staggers him
 #   "bifrons_stagger_least", and "bifrons_stagger_per_parry" more for every blade parried in that
 #   attack, its last one included (both swords parried: two). (Off: the sync rules' one number.)
+# - A WINDOW EACH ("bifrons_coop_windows"): in an attack of both swords (a strike of both, the
+#   leap, the gate leap's heavy strike, a sweep parried by both) every parry that counts opens its
+#   partner's window, as a parried strike of one sword does (open_windows()): parried together, a
+#   window each, the energy running both ways at once, and the stagger as well. A lone parry that
+#   only has a block's effect opens nothing; the sweep's lone parries neither. (Off: only a
+#   strike of one sword opens a window.)
 
 # LEFT ALONE. A strike whose player is out of his range when it's due is left out (see
 # StrikePattern). A sword whose own player has been out of range for TURN_TIME turns on the
@@ -302,6 +308,17 @@ func coop_stagger(own: float) -> float:
 	if Moves.on("bifrons_chain_stagger"):
 		return Tuning.value("bifrons_stagger_least") + Tuning.value("bifrons_stagger_per_parry") * _attack_parries
 	return rules.coop_stagger() if rules != null else own
+
+
+# A WINDOW EACH: the parries that counted in an attack of both swords, each opening its partner's
+# window (the guard of the sword that fights the partner; `breaks` as for break_guard()).
+func open_windows(parriers: Array, breaks = null):
+	if not Moves.on("bifrons_coop_windows"):
+		return
+	for p in parriers:
+		var own = BLADES.filter(func(blade): return ward_of(blade) == p)
+		if not own.is_empty():
+			break_guard(-own[0], StrikePattern.window_time(), StrikePattern.window_delay(), p, breaks)
 
 
 # Every attack counts its parried blades from its start; a chain's finale of its own counts on from

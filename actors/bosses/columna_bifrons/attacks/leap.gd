@@ -106,14 +106,18 @@ func update(delta: float):
 	# players are as he lands.
 	var both = boss.settle_both(judged)
 	var by_outcome = Moves.on("bifrons_throw_by_outcome")
+	var parriers = []  # whose parries counted: each opens its partner's window (A WINDOW EACH)
 	for blade in [LEFT, RIGHT]:
 		boss.land(judged[blade], both, KNOCKBACK, boss.both_heavy(), true)
 		for p in judged[blade].parriers:
+			if not p in parriers:
+				parriers.append(p)
 			if not by_outcome:
 				p.apply_knockback(Vector2(boss.side_of(p) * PARRIED_PUSH, 0.0))
 			parry_success.emit(p, "bifrons_leap")
 	boss.shake(12.0 if both else 9.0)
 	boss.ghost(0.0)  # he's there: whoever is under him is pushed out to their side
+	boss.open_windows(parriers)
 	if both:
 		both_parried.emit()
 		Sfx.play("counter_hit", -2.0)
