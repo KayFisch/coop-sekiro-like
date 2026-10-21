@@ -4,6 +4,7 @@ extends Control
 
 const FIGHTS = [
 	{"name": "Columna Bifrons", "arena": "The Threshold (test)", "scene": "res://levels/threshold/threshold.tscn"},
+	{"name": "Kultist", "arena": "The Threshold, mirrored", "scene": "res://levels/kultist/kultist_room.tscn"},
 	{"name": "Movement Gym", "arena": "1 player", "scene": "res://levels/gym/movement_gym.tscn"},
 	{"name": "Duo Gym", "arena": "2 players", "scene": "res://levels/gym/coop_gym.tscn"},
 	{"name": "Relay Gym", "arena": "1 player + bot", "scene": "res://levels/gym/relay_gym.tscn"},
@@ -35,7 +36,7 @@ func _ready():
 	for i in FIGHTS.size():
 		var fight = FIGHTS[i]
 		var button = Button.new()
-		button.text = "%d   %s  —  %s" % [i + 1, fight.name, fight.arena]
+		button.text = "%d   %s  —  %s" % [(i + 1) % 10, fight.name, fight.arena]
 		button.custom_minimum_size = Vector2(420, 38)
 		button.add_theme_font_size_override("font_size", 18)
 		button.pressed.connect(GameManager.start_fight.bind(fight.scene))
@@ -76,7 +77,7 @@ func _unhandled_input(event):
 			_buttons[0].grab_focus()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		var index = event.keycode - KEY_1
+		var index = 9 if event.keycode == KEY_0 else event.keycode - KEY_1  # 0: the tenth
 		if index >= 0 and index < FIGHTS.size():
 			GameManager.start_fight(FIGHTS[index].scene)
 		elif event.keycode == KEY_C:
