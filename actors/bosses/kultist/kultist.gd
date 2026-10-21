@@ -94,8 +94,9 @@ const RANGE_RECHECK = 0.2  # an attack that needs someone in reach, and nobody i
 @export var bolt_tell_time = 0.9
 ## ...then flashes red, the cue, and strikes as that ends (s). Lightning is fast.
 @export var bolt_cue_time = 0.18
-## The bolt is this wide, round his middle (px): whoever stands in it has to parry it.
-@export var bolt_width = 120.0
+## The bolt is this wide, round his middle (px): whoever stands in it has to parry it. As wide as
+## the safe place, it strikes whoever is there.
+@export var bolt_width = 180.0
 ## The bolt is a heavy attack for the sync rules, on whoever doesn't parry it.
 @export var bolt_heavy = false
 ## A parry of the bolt: the player's blade holds its energy this long (s).
@@ -163,7 +164,7 @@ func get_display_name() -> String:
 
 
 func get_attack_pool() -> Array:
-	return [KultistStaffStrikes.new(), KultistFlight.new()]
+	return [KultistStaffStrikes.new(), KultistFireAndLightning.new(), KultistFlight.new()]
 
 
 # The next attack in attack_order that can come just now; the lab's pick (dev_next) first.
