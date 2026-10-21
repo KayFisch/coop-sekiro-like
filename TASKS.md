@@ -160,6 +160,15 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   „Open“: die drei Motive und ihre Haltungen, Verzweigungsregeln, Deckungsöffnung am Motivende,
   Torsprung Schritt 5, Sync-Modus-Pattern. (Ersetzt „Bifrons' Patterns überarbeiten“.)
 - [ ] **Heavy Hitter designen** (@Nicho). `docs/boss_heavy_hitter.md`.
+- [ ] **Neuer Boss „Kultist“** (@Kay), Branch `kay/kultist`. Feuer, Blitz, dämonische Magie;
+  Bifrons' Raum (die Bühne wird dafür eine eigene Szene, `levels/threshold/threshold_stage.tscn`)
+  und Spiegel-Bildschirm. Ein Stab pro Bildhälfte, der dem Spieler seiner Farbe zugewandt ist,
+  zuschlägt und pariert; Flug mit Energiestrahl zum Spiegelbild. Elemente als Regel: Blitz
+  parieren, Feuer ausweichen, Dämonisch befreien (noch ohne Verhalten). Attacke 1: Feuerwelle
+  und Blitz zwischen seinen Spiegelbildern (beide parieren: zurückgeworfen). Attacke 2: Stab
+  gegen A, Blitz-Zauber gegen B, die über die Achse A treffen. Alle Zahlen als `@export`.
+  Design und offene Fragen: `docs/boss_kultist.md`. Fasst außerhalb seines Ordners an:
+  `levels/threshold/threshold.tscn` (Bühne als Instanz, sonst gleich), `ui/boss_select.gd`.
 - [ ] **Name für den Try-out-Boss** (offen). Danach Docs umbenennen: altes
   `boss_columna_bifrons.md` → `boss_<name>.md`, `boss_bifrons_warden.md` →
   `boss_columna_bifrons.md` (Verweise mitziehen).

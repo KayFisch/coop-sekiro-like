@@ -35,22 +35,6 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
-### For Kay, from Nicho (2026-10-19)
-
-- Design session with Claude (no code), decisions in `docs/concept.md` (new sections: boss
-  design principles, blade rules, the two screen halves, the sync mode, bosses), two new boss
-  docs and `scribbles.md` (2026-10-19). The short version:
-  - Today's Bifrons stays as it is as the **try-out boss** (needs a new name). **Columna
-    Bifrons** is redesigned from scratch (the Warden, `docs/boss_bifrons_warden.md`); next comes
-    a **Heavy Hitter** (`docs/boss_heavy_hitter.md`), later an **Acrobat** who may use the beat
-    ring as one of his phases.
-  - Bosses should feel like **Sekiro, not Hollow Knight**: chains of strikes with a finale, then
-    a pause in which he moves; few reactions, on details only.
-  - The **mirrored screen** is our base for boss fights; the halves become two connected sides
-    (each shows the blades aimed at its player). Players may pick mirrored or one-sided view.
-  - The **sync mode** is the players' boss phase and ends the fight by default.
-  - Your input welcome on anything there, especially the boss myths and the screen halves.
-
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
