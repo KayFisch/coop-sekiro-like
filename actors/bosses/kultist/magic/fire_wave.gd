@@ -51,6 +51,12 @@ func _ready():
 	top_level = true
 	global_position = Vector2.ZERO
 	z_index = 5
+	add_to_group("kultist_fire")
+
+
+# Glowing or burning still, not put out: a place to keep out of.
+func is_burning() -> bool:
+	return _out_at < 0.0 and _age < lifetime()
 
 
 # When the eruption reaches the edges of the safe place (s from its lighting).

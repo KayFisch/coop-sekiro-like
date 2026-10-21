@@ -77,6 +77,24 @@ func _ready():
 		_parts[key] = part
 
 
+# Seconds until it meets `player`: B as it reaches them, A as it rises under them (if A may meet
+# it at all); INF otherwise.
+func time_to_strike(player) -> float:
+	if player == caster_target:
+		match _stage:
+			Stage.FLYING:
+				return tell_time - _age + cue_time
+			Stage.CUE:
+				return cue_time - _age
+	elif player == victim and victim_defends:
+		match _stage:
+			Stage.CROSSING:
+				return cross_time - _age + rise_time
+			Stage.RISING:
+				return rise_time - _age
+	return INF
+
+
 # His attack was cut short: it's gone, harmless.
 func fizzle():
 	if _stage != Stage.DONE:

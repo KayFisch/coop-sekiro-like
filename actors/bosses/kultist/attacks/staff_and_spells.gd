@@ -104,6 +104,16 @@ func update(delta: float):
 	super(delta)
 
 
+# Seconds until a blow of his meets that player: his staff (A), or a spell (B as it reaches them,
+# A as it rises under them); INF if none is coming at them.
+func time_to_strike(player) -> float:
+	var soonest = super(player)
+	for spell in _spells:
+		if is_instance_valid(spell):
+			soonest = minf(soonest, spell.time_to_strike(player))
+	return soonest
+
+
 # Over once the strikes are, and every spell has come to something.
 func _done() -> bool:
 	return super() and _cast_next >= _casts.size() \

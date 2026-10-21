@@ -22,6 +22,10 @@ func needs_reach() -> bool:
 	return false
 
 
+func time_to_strike(_player) -> float:
+	return INF
+
+
 func start(boss_node, player_nodes: Array):
 	super(boss_node, player_nodes)
 	boss.fly_to(Vector2(boss.global_position.x, boss.home_position.y - boss.flight_height), boss.rise_time)

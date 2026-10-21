@@ -95,6 +95,14 @@ func update(delta: float):
 	_animate(delta)
 
 
+# Seconds until its next strike lands on that player; INF if the next one isn't theirs (the
+# stand-in times its defence by it).
+func time_to_strike(player) -> float:
+	if _next >= _contacts.size() or _next >= _targets.size() or _targets[_next] != player:
+		return INF
+	return _contacts[_next] - _time
+
+
 # --- What the attacks built on this one make their own ---
 
 # When each strike lands (s from the attack's start).

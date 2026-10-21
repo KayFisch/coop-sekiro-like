@@ -149,11 +149,25 @@ const RANGE_RECHECK = 0.2  # an attack that needs someone in reach, and nobody i
 ## FLIGHT, the lab's: he hovers this long before coming down (s).
 @export var flight_hover_time = 1.5
 
+@export_group("Stand-in (testing alone)")
+## The stand-in (F1 → Fights → "Stand-in", stand_in.gd) meets a blow of his with a perfect parry
+## this often...
+@export_range(0.0, 1.0, 0.05) var stand_in_parry_chance = 0.75
+## ...with a block this often, and the rest not at all.
+@export_range(0.0, 1.0, 0.05) var stand_in_block_chance = 0.15
+## It stands this far from him (px, center to center), on its side of him.
+@export var stand_in_distance = 120.0
+
 var _order_at = 0  # the next attack in attack_order
 
 
 func _ready():
 	super()
+	# Testing alone: the stand-in (it does nothing while Moves "bifrons_stand_in" is off). As his
+	# child it runs after him and before the players, who see its presses that same frame.
+	var stand_in = KultistStandIn.new()
+	stand_in.boss = self
+	add_child(stand_in)
 	rules = SyncRules.new()
 	rules.boss = self
 	add_child(rules)
@@ -228,6 +242,34 @@ func _die():
 	_aloft = false
 	global_position.y = home_position.y  # not left hanging in the air
 	super()
+
+
+# --- For the stand-in (stand_in.gd) ---
+
+# The player Moves "bifrons_stand_in" has the stand-in play: "left" the one starting on his left
+# (P1), "right" P2; or null.
+func stand_in_player():
+	match Moves.value("bifrons_stand_in"):
+		"left":
+			return player_of(1)
+		"right":
+			return player_of(2)
+	return null
+
+
+# Seconds until a blow of his meets that player, one they can parry or block (his staff, the
+# bolt, a spell); INF if none is coming at them.
+func time_to_strike(player) -> float:
+	if current_attack == null or not state in [State.TELEGRAPH, State.ATTACKING]:
+		return INF
+	return current_attack.time_to_strike(player)
+
+
+# True while a fire of his is coming (FIRE_AND_LIGHTNING, until he comes down) or burning.
+func fire_coming() -> bool:
+	if current_attack is KultistFireAndLightning and current_attack.fire_coming():
+		return true
+	return get_tree().get_nodes_in_group("kultist_fire").any(func(fire): return fire.is_burning())
 
 
 # --- Where he stands ---

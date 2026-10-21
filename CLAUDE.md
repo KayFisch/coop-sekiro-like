@@ -46,6 +46,9 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   they could instance it too.
 - `ui/boss_select.gd`: key 0 picks the tenth entry, the same lines as on your
   `nicho/heavy-hitter`; merging, the list of fights will clash (both add an entry 2).
+- The stand-in switch (`core/moves.gd`, "bifrons_stand_in") plays in his fight too, with a
+  defensive stand-in of his own; its label now names the Kultist, yours names the Hitter: one
+  more small clash when merging.
 
 ## The project
 
@@ -248,7 +251,9 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   order, where he stands, the sync rules' hooks: `land_on()` judges a blow by its element). The
   elements (staff, lightning, fire, demonic) and what answers each are one table,
   `kultist_element.gd`; the fire, the bolt and the spells draw themselves (`magic/`). His
-  numbers are exports in the inspector of `kultist.tscn`, not on F2.
+  numbers are exports in the inspector of `kultist.tscn`, not on F2. `stand_in.gd`: a defensive
+  stand-in for testing alone (Moves "bifrons_stand_in", as Bifrons's), timed by
+  `Kultist.time_to_strike()`.
 - `levels/`: `GymLevel` (`gym/gym_level.gd`) is the base of the gyms and the platformer levels:
   it builds rooms from code (`solid()`, `ledge()`, `checkpoint()`, `measure()`, ...), spawns the
   players, respawns them at checkpoints (`checkpoint_needs_all`: only once both are there) and

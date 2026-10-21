@@ -127,6 +127,19 @@ func update(delta: float):
 				finish(boss.fire_recover)
 
 
+# Seconds until the lightning strikes (on whoever is in it then); INF before the fire is lit and
+# after it has struck.
+func time_to_strike(_player) -> float:
+	if phase in [Phase.EMBERS, Phase.BOLT] and _time < _bolt_at:
+		return _bolt_at - _time
+	return INF
+
+
+# Until he's on his way down: a fire is coming or burning, the safe place is the one to be in.
+func fire_coming() -> bool:
+	return phase != Phase.DESCENDING
+
+
 # The lightning strikes: on everyone within its width round him. Parried by every player, it
 # goes back into him.
 func _strike():

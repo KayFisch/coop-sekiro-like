@@ -26,6 +26,7 @@ class Stub:
 
 
 func _setup():
+	set_move("bifrons_stand_in", "off")
 	await load_scene(ROOM)
 	rules = GameManager.rules
 	boss = GameManager.boss
@@ -205,6 +206,39 @@ func test_spells_stopped_by_b_or_striking_a():
 	await wait(0.8)
 	attack = await _run("STAFF_AND_SPELLS")
 	check(attack.through == boss.spells_count and attack.stopped == 0, "B did nothing: each spell runs through the axis to A (through %d)" % attack.through)
+
+
+func test_stand_in_defends():
+	await _setup()
+	set_move("bifrons_stand_in", "right")  # it plays P2
+	boss.stand_in_parry_chance = 1.0
+	boss.stand_in_block_chance = 0.0
+	for p in [p1, p2]:
+		p.invincible = true
+	# His staff, at P2 only (P1 out of his reach): every strike parried.
+	_place(boss.global_position.x - 450.0, boss.global_position.x + 110.0)
+	await wait(0.3)
+	await _run("STAFF")
+	var stats = Dev._stats_of(p2)
+	check(stats.parry == boss.staff_strikes and stats.hit == 0, "it parries each strike (parried %d, hit %d)" % [stats.parry, stats.hit])
+	# Fire and lightning: from the wall into the middle, unburnt, and the bolt parried by both.
+	boss.fire_tell_time = 1.4  # as in the fight: time to get there
+	_place(KultistFireAndLightning.middle(), BaseBoss.ARENA_LEFT + 80.0)
+	var sync = rules.boss_sync
+	var pressed = [false]
+	var attack = await _run("FIRE_AND_LIGHTNING", func(a):
+		if a.phase == KultistFireAndLightning.Phase.BOLT and not pressed[0] and a._bolt_at - a._time <= 0.07:
+			pressed[0] = true
+			hold(p1, "block"))
+	hold(p1, "block", false)
+	check(Dev._stats_of(p2).hit == 0, "it got out of the fire")
+	check(attack.reflected and rules.boss_sync < sync, "it parried the bolt with P1: back into him")
+	# Staff and spells, it as B: every spell stopped.
+	boss.spells_victim = boss.Victim.P1
+	_place(boss.global_position.x - 150.0, boss.global_position.x + 150.0)
+	await wait(0.5)
+	attack = await _run("STAFF_AND_SPELLS")
+	check(attack.stopped == boss.spells_count, "as B it stops each spell (stopped %d)" % attack.stopped)
 
 
 func test_his_order():

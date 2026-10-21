@@ -129,11 +129,18 @@ Bifrons's fight. New:
 ## Trying him out
 
 - **Start**: select screen entry 2, or open `levels/kultist/kultist_room.tscn` and F6.
+- **Alone**: F1 → Fights → "Stand-in": left plays P1, right plays P2 (off by default; the same
+  switch as Bifrons's). The stand-in (`stand_in.gd`) only defends, by pressing that player's
+  buttons: each blow at it (his staff, the bolt, a spell) it parries, blocks or lets through by
+  chance (`stand_in_parry_chance` 0.75, `stand_in_block_chance` 0.15, in the inspector: parry at
+  1 to try the bolt sent back every time); with a fire coming it goes into the safe place; else
+  it keeps `stand_in_distance` from him. It never attacks, and doesn't bind in the sync mode.
 - **One attack at a time**: the boss lab (F5) lists his attacks, FLIGHT too (the flight alone):
   Q / E pick, Z run, X loop, H his own attacks off, M his moving off, T slower, I invincible
   (`docs/dev_tools.md`).
 - **Numbers**: the inspector of `actors/bosses/kultist/kultist.tscn`, in groups (Guard, Flight,
-  Order, Moving, Blows, Staff strikes, Fire and lightning, Staff and spells). **Not on F2**, as
+  Order, Moving, Blows, Staff strikes, Fire and lightning, Staff and spells, Flight (lab),
+  Stand-in). **Not on F2**, as
   every other fight's numbers are (**open**): the brief asked for exports; F2 would change them
   while playing. What a hit costs is the sync rules' (F2), normal or heavy per blow
   (`..._heavy`): an amount of their own per blow would need the sync rules to take one.
@@ -147,5 +154,5 @@ All of the above marked **open**, and:
   on either side; no drift, no making room as Bifrons has.
 - A parry of his strike opens no window for the partner (Bifrons's rule 4).
 - Nothing of his own for the players' sync mode (bound, they strike as against Bifrons).
-- No stand-in to try him alone (`docs/dev_tools.md`, "A new boss", 5).
+- The stand-in only defends: no hits of its own, no binding in the sync mode.
 - His body blocks as Bifrons's does (TASKS.md: "Durchgang durch Bosse klären").
