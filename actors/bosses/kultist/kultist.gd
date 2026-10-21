@@ -164,7 +164,7 @@ func get_display_name() -> String:
 
 
 func get_attack_pool() -> Array:
-	return [KultistStaffStrikes.new(), KultistFireAndLightning.new(), KultistFlight.new()]
+	return [KultistStaffStrikes.new(), KultistFireAndLightning.new(), KultistStaffAndSpells.new(), KultistFlight.new()]
 
 
 # The next attack in attack_order that can come just now; the lab's pick (dev_next) first.
@@ -294,12 +294,12 @@ func _flank(side: int, y: float) -> Vector2:
 # A blow of `element` (KultistElement) reaches player `p` and comes to what that element's rule
 # says: parried, blocked or hit. `heavy`: a heavy attack for the sync rules. `knockback`: how a hit
 # throws them (null: away from him, hit_knockback; a block, block_knockback). `strong`: the
-# heavier kind of parry, as a blow that wants both players' parries. Returns what came of it
-# (KultistElement.PARRIED, BLOCKED or HIT).
-func land_on(p, element: int, heavy = false, knockback = null, strong = false) -> String:
+# heavier kind of parry, as a blow that wants both players' parries. `answerable` false: it hits,
+# whatever the rule. Returns what came of it (KultistElement.PARRIED, BLOCKED or HIT).
+func land_on(p, element: int, heavy = false, knockback = null, strong = false, answerable = true) -> String:
 	if rules != null:
 		rules.landing_heavy = heavy  # the players' hooks lead to the rules while it lands
-	var outcome = KultistElement.judge(element, p)
+	var outcome = KultistElement.judge(element, p) if answerable else KultistElement.HIT
 	match outcome:
 		KultistElement.PARRIED:
 			p.on_perfect_parry(strong)
@@ -313,6 +313,16 @@ func land_on(p, element: int, heavy = false, knockback = null, strong = false) -
 			shake(5.0)
 	if rules != null:
 		rules.landing_heavy = false
+	return outcome
+
+
+# A blow of `element` that isn't meant for `p` meets them on its way (a spell at B, for A): a
+# parry or a block of theirs stops it, as land_on() has it; else it passes them by, harmless.
+# Returns what they did (KultistElement.PARRIED, BLOCKED, or HIT: nothing).
+func meets(p, element: int, heavy = false) -> String:
+	var outcome = KultistElement.judge(element, p)
+	if outcome != KultistElement.HIT:
+		land_on(p, element, heavy)
 	return outcome
 
 

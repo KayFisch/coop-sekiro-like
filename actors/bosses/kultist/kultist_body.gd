@@ -292,6 +292,11 @@ func flick_staff(layer: int):
 	_flick_until[layer] = anim_time + PARRY_FLICK_TIME
 
 
+# Where that staff's head is (world coordinates): where his spells come from.
+func staff_head(layer: int) -> Vector2:
+	return _pivots[layer].to_global(Vector2(STAFF_LENGTH - STAFF_BUTT, 0.0))
+
+
 # --- His guard ---
 
 # True while his staff in that player's half guards against them: resting at his side, back for

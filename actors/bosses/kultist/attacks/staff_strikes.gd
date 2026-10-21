@@ -9,6 +9,8 @@ extends Attack
 ## (kultist_element.gd). As it drops he lunges at its player. A parried staff is thrown back
 ## (staff_recoil_time), a landed one lies where it fell (staff_rest_time); while a staff is up,
 ## coming or down, its player's hits land (KultistBody.is_guarding()).
+## STAFF_AND_SPELLS (staff_and_spells.gd) strikes the same way, through the hooks below
+## (_schedule(), _first_target(), _pick_next(), _approach(), _done(), ...).
 
 enum Phase { NONE, STRIKING }
 
@@ -48,10 +50,8 @@ func start(boss_node, player_nodes: Array):
 	_drawn_from = 0.0
 	_lunge = null
 	_landed = {}
-	_contacts = []
-	for i in maxi(boss.staff_strikes, 1):
-		_contacts.append(boss.staff_windup + i * boss.staff_gap)
-	_targets = [boss.nearest_player()]
+	_contacts = _schedule()
+	_targets = [_first_target()]
 
 
 # His body keeps its color: the staff tells.
@@ -86,12 +86,42 @@ func update(delta: float):
 		_drawn_from = _time
 		if _next < _contacts.size():
 			_targets.append(_pick_next())
-	if _next >= _contacts.size():
-		var last = _landed.values().reduce(func(a, b): return a if a.at > b.at else b) if not _landed.is_empty() else null
-		if last == null or _time >= last.at + _rest_time(last):
-			finish(boss.staff_recover)
-			return
+	if _done():
+		finish(_recover_time())
+		return
 	_animate(delta)
+
+
+# --- What the attacks built on this one make their own ---
+
+# When each strike lands (s from the attack's start).
+func _schedule() -> Array:
+	var contacts = []
+	for i in maxi(boss.staff_strikes, 1):
+		contacts.append(boss.staff_windup + i * boss.staff_gap)
+	return contacts
+
+
+# The first strike's player: the nearer one.
+func _first_target():
+	return boss.nearest_player()
+
+
+# Every strike is in, and the last staff is done lying where it landed.
+func _done() -> bool:
+	if _next < _contacts.size():
+		return false
+	var last = _landed.values().reduce(func(a, b): return a if a.at > b.at else b) if not _landed.is_empty() else null
+	return last == null or _time >= last.at + _rest_time(last)
+
+
+func _recover_time() -> float:
+	return boss.staff_recover
+
+
+# Between two drops: he stands (the lunge takes him to its player).
+func _approach(_player, _delta: float):
+	pass
 
 
 # The next strike's player: the other one, if they're in reach too; else the one struck last, if
@@ -135,22 +165,23 @@ func _rest_time(landed: Dictionary) -> float:
 
 # --- His feet and his staves, as a function of the time into the attack ---
 
-func _animate(_delta: float):
+func _animate(delta: float):
 	if _next < _contacts.size():
-		_move()
+		_move(delta)
 	for layer in boss.LAYERS:
 		_pose(layer)
 
 
 # As the staff drops he lunges at its player: to strike_distance from them, staying on his side
-# of them, by staff_lunge at most.
-func _move():
+# of them, by staff_lunge at most. Before that, _approach().
+func _move(delta: float):
 	var p = _targets[_next]
 	if p == null or not is_instance_valid(p):
 		return
 	var fall = _fall_time(_next)
 	var since = _time - (_contacts[_next] - fall)
 	if since < 0.0:
+		_approach(p, delta)
 		return
 	if _lunge == null:
 		var from = boss.global_position.x
