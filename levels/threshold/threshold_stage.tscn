@@ -1,0 +1,90 @@
+[gd_scene format=3]
+
+[sub_resource type="Shader" id="Shader_bg_gradient"]
+code = "shader_type canvas_item;
+
+uniform vec4 top_color : source_color = vec4(0.02, 0.02, 0.035, 1.0);
+uniform vec4 bottom_color : source_color = vec4(0.12, 0.12, 0.14, 1.0);
+
+void fragment() {
+	COLOR = mix(top_color, bottom_color, UV.y);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="Material_bg_gradient"]
+shader = SubResource("Shader_bg_gradient")
+shader_parameter/top_color = Color(0.02, 0.02, 0.035, 1)
+shader_parameter/bottom_color = Color(0.12, 0.12, 0.14, 1)
+
+[sub_resource type="RectangleShape2D" id="Shape_floor"]
+size = Vector2(1152, 48)
+
+[sub_resource type="RectangleShape2D" id="Shape_wall"]
+size = Vector2(24, 648)
+
+[sub_resource type="RectangleShape2D" id="Shape_ceiling"]
+size = Vector2(1152, 16)
+
+[node name="Stage" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+material = SubResource("Material_bg_gradient")
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(576, 624)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="ColorRect" type="ColorRect" parent="Floor"]
+offset_left = -576.0
+offset_top = -24.0
+offset_right = 576.0
+offset_bottom = 24.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="LeftWall" type="StaticBody2D" parent="."]
+position = Vector2(12, 324)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall"]
+shape = SubResource("Shape_wall")
+
+[node name="ColorRect" type="ColorRect" parent="LeftWall"]
+offset_left = -12.0
+offset_top = -324.0
+offset_right = 12.0
+offset_bottom = 324.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="RightWall" type="StaticBody2D" parent="."]
+position = Vector2(1140, 324)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall"]
+shape = SubResource("Shape_wall")
+
+[node name="ColorRect" type="ColorRect" parent="RightWall"]
+offset_left = -12.0
+offset_top = -324.0
+offset_right = 12.0
+offset_bottom = 324.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
+
+[node name="Ceiling" type="StaticBody2D" parent="."]
+position = Vector2(576, 8)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ceiling"]
+shape = SubResource("Shape_ceiling")
+
+[node name="ColorRect" type="ColorRect" parent="Ceiling"]
+offset_left = -576.0
+offset_top = -8.0
+offset_right = 576.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(0.19, 0.19, 0.21, 1)
