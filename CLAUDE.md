@@ -71,6 +71,18 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   from Bifrons); `SyncRules` takes an optional posture factor on his hits, and two more
   `landing_*` values a boss may set while a strike lands. Nothing in `actors/player/`.
 
+### For Kay, from Nicho (2026-10-21)
+
+- **Yours: step 2 of the Heavy Hitter (rage and phase 2), and only that.** Everything you need:
+  `uebergabe_2026-10-21_b3.md` in the repo root (read it first; delete it in the commit that
+  finishes B3). Branch `kay/hitter-rage` from `nicho/heavy-hitter`; nothing into `main`.
+- Phase 1 changed after my first test (each head goes for its own player, the crack breaks into
+  the other half): the rage text in `docs/boss_heavy_hitter.md` predates that, so the handover
+  says how the rage reads now. Show me the plan if anything there doesn't fit.
+- **After B3, stop.** Then the two of us test the Hitter properly together and decide what fits
+  and what to change. The Warden (the new Columna Bifrons, for now the try-out boss's chains mode,
+  gate leap and blade rules: `docs/boss_bifrons_warden.md`) we test together too.
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The

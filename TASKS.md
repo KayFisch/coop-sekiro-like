@@ -175,8 +175,18 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Nach Nichos erstem Test (2026-10-21) umgebaut: Hellebarde, diagonal geht jeder Kopf auf seinen
   Spieler (normale Schläge), Riss bricht in die andere Hälfte, langsamere Stoß-Serie, Enden in der
   Farbe des Ziels (Scribble vom 2026-10-21; Doc → „First test“). Wartet auf den nächsten Test.
-- [ ] **Heavy Hitter bauen, Schritt 2: Wut und Phase 2** (offen, niemand; Prompt B3). Erst nach
-  Nichos Test von Schritt 1.
+- [ ] **Heavy Hitter bauen, Schritt 2: Wut und Phase 2** (@Kay; Prompt B3). Alles in
+  `uebergabe_2026-10-21_b3.md` (Repo-Wurzel), Branch `kay/hitter-rage` von `nicho/heavy-hitter`.
+  **Nur B3**, danach Stopp bis zum gemeinsamen Test. Die Wut ist an den Umbau vom 2026-10-21
+  angepasst (in der Wut jeder Klingenschlag heftig in beiden Ebenen; Tabelle in der Übergabe).
+- [ ] **Heavy Hitter gemeinsam ausgiebig testen** (Nicho und Kay, nach B3): was passt, was
+  geändert werden soll. Offene Punkte dazu: `docs/boss_heavy_hitter.md` → „First test“ (Liste
+  „To look for in the next test“), „Open“, und wie oft die Wut kommt (Haltung bricht etwa einmal
+  pro Kette).
+- [ ] **Wächter (neuer Columna Bifrons) gemeinsam testen** (Nicho und Kay). Noch kein eigener
+  Boss: im Try-out-Boss F1 `bifrons_mode` „chains“ (mit `bifrons_guard_break` motif_end),
+  Torsprung (F5: GATE_LEAP), Klingenregeln, gemeinsame Fenster (`bifrons_coop_windows`).
+  Danach `docs/boss_bifrons_warden.md` → „Open“ weiter klären.
 - [ ] **Name für den Try-out-Boss** (offen). Danach Docs umbenennen: altes
   `boss_columna_bifrons.md` → `boss_<name>.md`, `boss_bifrons_warden.md` →
   `boss_columna_bifrons.md` (Verweise mitziehen).
