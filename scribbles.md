@@ -819,3 +819,9 @@ solange er angreift (er will nur treffen), gedeckt nur im Atem.
   wenn die Köpfe die Waffe auseinandergerissen haben, kann jeder seine Klinge zu seinem Spieler
   drehen.
 - Umgesetzt am selben Tag (Claude): `docs/boss_heavy_hitter.md` → „First test“.
+
+## 2026-10-21 (Nicho): Angriffe für den Hitter
+
+- Ein Angriff für die Wut oder als Ketten-Finale: wildes Hin- und Herschlagen, zu schnell zum
+  Parieren, mit Schockwellen, denen man durch Springen oder Dashen ausweicht.
+- Das einfache Umdrehen könnte noch den alten Sweep bekommen.
