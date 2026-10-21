@@ -49,7 +49,8 @@ const HAND_SIZE = 14.0
 const STAFF_FOLLOW = 20.0  # how fast a staff eases into its pose (1/s); a drop itself is exact
 const SIDE_SWAP_TIME = 0.15  # a staff whose player passes him swings round to them in this long (s)
 const PARRY_FLICK_TIME = 0.12  # his own parry: the staff flicked at the attacker
-const PLATE_WIDTH = 5.0  # his guard: a strip down the flank whose staff guards
+const PLATE_WIDTH = 4.0  # his guard: a strip down his robe on the side whose staff guards...
+const PLATE_INSET = 5.0  # ...this far in from its edge
 # Staff poses, for a staff on his right (on his left they're mirrored): x, y = where the hand is,
 # from his center; z = the staff's angle in radians (0 points outward, level; negative is up).
 const POSE_REST = Vector3(40.0, 12.0, -1.45)  # upright at his side, its butt on the floor: guarding
@@ -59,7 +60,7 @@ const POSE_COILED = Vector3(22.0, -58.0, -2.65)  # drawn all the way back: the d
 const POSE_DOWN = Vector3(44.0, 18.0, 0.32)  # landed: out at its player, the head at the floor
 const POSE_RECOIL = Vector3(40.0, -8.0, -1.9)  # thrown back up by a parry
 const POSE_CAST = Vector3(34.0, -42.0, -1.0)  # held up and out at its player: casting
-const POSE_CHANNEL = Vector3(18.0, -70.0, -1.57)  # held straight up over him: channeling
+const POSE_CHANNEL = Vector3(-36.0, -88.0, 0.0)  # held up level over his head, its head out at its player: channeling
 const POSE_LIMP = Vector3(40.0, 40.0, 0.25)  # staggered or dead: dropped
 
 # --- The wings: only a look. Bat-like, from his shoulders, open while he's off the floor ---
@@ -88,9 +89,9 @@ const COLOR_BLOCK = Color(0.62, 0.64, 0.7)  # sparks off his block
 @export var staff_return_time = 0.25
 
 @export_group("Flight")
-## How high he flies: his feet this far over the floor (px). Up to about 200 his image stays
-## inside its half of the mirrored screen.
-@export var flight_height = 170.0
+## How high he flies: his feet this far over the floor (px). Up to about 130 the light half shows
+## all of him under the HUD's meters; up to about 200 he stays inside his half at all.
+@export var flight_height = 120.0
 ## Rising from the floor to that height (s)...
 @export var rise_time = 0.8
 ## ...and coming back down (s).
@@ -422,15 +423,19 @@ func _update_pose():
 			steel = own.lerp(MID_GREY, 0.5)
 		elif flicking:
 			steel = Color.WHITE
-		_shafts[layer].color = steel
-		_heads[layer].color = steel
 		var lit: Color = _lit[layer]
-		_glows[layer].color = Color(lit, lit.a * (0.75 + 0.25 * sin(anim_time * 30.0))) if not down else Color(lit, 0.0)
-		# His guard: a strip down the flank whose staff guards.
+		if down:
+			lit.a = 0.0
+		_shafts[layer].color = steel
+		_heads[layer].color = steel.lerp(Color(lit, 1.0), lit.a)  # a lit head takes its glow's color
+		_glows[layer].color = Color(lit, lit.a * 0.5 * (0.75 + 0.25 * sin(anim_time * 30.0)))
+		# His guard: a strip down his robe on the side whose staff guards, in the other half's color
+		# (it shows on his robe), a little in from its edge (on the edge it would melt into the ground).
 		var plate: ColorRect = _plates[layer]
 		plate.visible = is_guarding(p)
-		plate.color = own
-		plate.position = Vector2(-body.size.x / 2.0 - PLATE_WIDTH - 2.0 if side < 0 else body.size.x / 2.0 + 2.0, -body.size.y / 2.0)
+		plate.color = other
+		var inset = body.size.x / 2.0 - PLATE_INSET
+		plate.position = Vector2(-inset if side < 0 else inset - PLATE_WIDTH, -body.size.y / 2.0)
 		# Wings and beam, while he's off the floor.
 		var flap = sin(anim_time * TAU * WING_FLAP_HZ) * WING_FLAP
 		var wing_color = Color(robe.lerp(other, WING_SHADE), 0.9)

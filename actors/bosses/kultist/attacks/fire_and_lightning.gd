@@ -18,7 +18,7 @@ extends Attack
 
 enum Phase { NONE, EMBERS, BOLT, AFTER, DESCENDING }
 
-const GLOW_ALPHA = 0.35  # his glow, channeling
+const GLOW_ALPHA = 0.22  # his glow, channeling
 
 var reflected = false  # this run's bolt went back into him (the tests read it)
 var _time = 0.0  # s since the attack proper began (execute())

@@ -2,8 +2,8 @@ class_name KultistFlight
 extends Attack
 ## FLIGHT: the Kultist's flight alone, to try it in the lab (F5); not in his attack order (it can
 ## be put there). He rises where he stands to flight_height in rise_time (the telegraph), hovers
-## flight_hover_time and comes down in descend_time (kultist_body.gd, "THE FLIGHT"). Up there he
-## has no guard.
+## flight_hover_time and comes down in descend_time (kultist_body.gd, "THE FLIGHT"), his staves
+## held up level over his head. Up there he has no guard.
 
 enum Phase { NONE, HOVERING, LANDING }
 
@@ -35,6 +35,10 @@ func get_telegraph_duration() -> float:
 	return boss.rise_time
 
 
+func update_telegraph(_progress: float):
+	_hold_up()
+
+
 func execute():
 	phase = Phase.HOVERING
 	timer = boss.flight_hover_time
@@ -42,7 +46,13 @@ func execute():
 	boss.set_glow(boss.COLOR_EXECUTE, 0.0)
 
 
+func _hold_up():
+	for layer in boss.LAYERS:
+		boss.pose_staff(layer, boss.POSE_CHANNEL)
+
+
 func update(delta: float):
+	_hold_up()
 	timer -= delta
 	match phase:
 		Phase.HOVERING:

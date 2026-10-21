@@ -213,7 +213,8 @@ func _pose(layer: int):
 			var pose = boss.POSE_RAISED.lerp(boss.POSE_COILED, ease(tension, 2.0))
 			pose.z += randf_range(-TREMBLE, TREMBLE) * tension
 			boss.pose_staff(layer, pose)
-			boss.tint_staff(layer, boss.half_color(layer).lerp(KultistElement.tell(KultistElement.STAFF), 0.4 + 0.6 * tension))
+			# Yellow from the start, even on the shadow half's dark staff, and fuller as it nears.
+			boss.tint_staff(layer, boss.half_color(layer).lerp(KultistElement.tell(KultistElement.STAFF), 0.7 + 0.3 * tension))
 			return
 	if landed != null and _time < rest_end:
 		# Just landed: lying where it came down, red; or thrown back by the parry.
