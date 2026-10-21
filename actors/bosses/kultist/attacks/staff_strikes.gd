@@ -11,6 +11,9 @@ extends Attack
 ## coming or down, its player's hits land (KultistBody.is_guarding()).
 ## STAFF_AND_SPELLS (staff_and_spells.gd) strikes the same way, through the hooks below
 ## (_schedule(), _first_target(), _pick_next(), _approach(), _done(), ...).
+## TODO(design): the whole staff turns yellow, then red, as Bifrons's blades do; Kay's scribble
+## of 2026-10-02 ("Wer und Was getrennt") would keep it in its player's color (whose) with an
+## aura round it (what to do), as his spells have.
 
 enum Phase { NONE, STRIKING }
 

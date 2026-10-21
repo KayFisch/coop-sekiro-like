@@ -35,6 +35,18 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
+### For Nicho, from Kay (2026-10-21)
+
+- New boss **Kultist** (`docs/boss_kultist.md`, select screen entry 2), built for the mirrored
+  screen: a staff per half facing its player, a flight with a beam between his two images, fire
+  to dodge and lightning to parry, spells that cross the axis. A first version to play.
+- **Bifrons's room is a scene of its own now**: `levels/threshold/threshold_stage.tscn`
+  (backdrop, floor, walls, ceiling), instanced in `threshold.tscn` and in the Kultist's room;
+  the threshold is node for node what it was. The ring and your Hitter room still have copies:
+  they could instance it too.
+- `ui/boss_select.gd`: key 0 picks the tenth entry, the same lines as on your
+  `nicho/heavy-hitter`; merging, the list of fights will clash (both add an entry 2).
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
@@ -55,7 +67,7 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
 docs/                                design docs: concept.md, boss_*.md (one per boss:
                                      columna_bifrons = the try-out boss, bifrons_warden,
-                                     heavy_hitter), attack_pool.md (attacks no boss has yet),
+                                     heavy_hitter, kultist), attack_pool.md (attacks no boss has yet),
                                      level_*.md (one per level), parkour_gyms.md, art_brief.md
                                      (sizes, colors, poses: for generating sprites),
                                      beat_runner.md, beat_ring.md,
@@ -65,7 +77,9 @@ core/                                autoloads: GameManager, Sfx, Moves, Pads, B
 actors/player/                       player.gd (+ scene) and the four parts it extends (player_*.gd),
                                      sync_wave.gd (the parry's energy to the partner)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
-levels/                              threshold/ (Bifrons's room), gym/ (movement test rooms), kit/ (level kit: rooms built in
+levels/                              threshold/ (Bifrons's room; the room itself, threshold_stage.tscn,
+                                     is a scene of its own), kultist/ (the Kultist's: the same stage),
+                                     gym/ (movement test rooms), kit/ (level kit: rooms built in
                                      the editor), horologium/ (coop platformer level, kit rooms),
                                      runner/ and ring/ (between the bosses, prototypes)
 ui/                                  boss select, HUD, beat display, audio calibration (F1 → Sound),
@@ -228,6 +242,13 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   him (started from his own `_physics_process()`, outside BaseBoss's idle timer); and
   `stand_in.gd`, which plays one of the players for testing alone, by pressing that player's
   buttons.
+  `kultist/` (since 2026-10-21, Kay, `docs/boss_kultist.md`): a boss for the mirrored screen,
+  in two parts: `kultist_body.gd` (an image of him in each half, a staff per half that faces its
+  player and guards against them, the flight: `fly_to()`, `land()`) and `kultist.gd` (his attack
+  order, where he stands, the sync rules' hooks: `land_on()` judges a blow by its element). The
+  elements (staff, lightning, fire, demonic) and what answers each are one table,
+  `kultist_element.gd`; the fire, the bolt and the spells draw themselves (`magic/`). His
+  numbers are exports in the inspector of `kultist.tscn`, not on F2.
 - `levels/`: `GymLevel` (`gym/gym_level.gd`) is the base of the gyms and the platformer levels:
   it builds rooms from code (`solid()`, `ledge()`, `checkpoint()`, `measure()`, ...), spawns the
   players, respawns them at checkpoints (`checkpoint_needs_all`: only once both are there) and
@@ -262,6 +283,7 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   ("0 -> SPEED in ~0.06 s"), grouped under `# --- Feature ---` headers. A number someone may
   want to tune while playing goes on F2 instead: in its system's `tuning_entries()`, read with
   `Tuning.value()` (`docs/dev_tools.md`). A new boss: the checklist in `docs/dev_tools.md`.
+  (The Kultist's numbers are `@export`s instead, as Kay asked: tuned in the editor.)
 - New movement abilities get a `Moves` switch so they can be A/B tested.
 - Attacks telegraph by color; each color means one player response (`docs/concept.md`,
   "Telegraphs"; Kay's scribble of 2026-10-02 on colors, "Wer und Was getrennt").

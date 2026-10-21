@@ -15,6 +15,10 @@ extends Attack
 ##    (bolt_heavy), or chipped behind a block.
 ## 4. He stays up a moment (bolt_after_time), comes down (descend_time) and recovers (fire_recover).
 ## Up there he has no guard: whoever reaches him hits him.
+## TODO(design): the lightning comes while the fire still burns, so both are held in the middle.
+## "Cross Parry" is read as both parrying it at once (as the coop parry of Bifrons's two swords).
+## Sent back, it's a hit on him and no more: no stagger, no sync for the players (Bifrons's coop
+## parry wins them "coop_parry_gain").
 
 enum Phase { NONE, EMBERS, BOLT, AFTER, DESCENDING }
 

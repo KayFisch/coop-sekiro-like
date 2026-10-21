@@ -6,6 +6,8 @@ extends Node2D
 ## each place burns `burn_time` from the moment it's reached; nothing burns in the safe place.
 ## A player standing in a burning place is hit, once, and thrown toward the middle (the FIRE rule,
 ## kultist_element.gd: no parry, no block: get out of it). It frees itself once burnt out.
+## TODO(design): once per fire, however long they stay in it (a hit's 0.6 s untouchable would
+## otherwise make it a hit every 0.6 s); thrown toward the safe place, not away from him.
 
 const FLAME_HEIGHT = 64.0  # px: how high the flames lick (drawn)...
 const FLAME_REACH = 48.0  # ...and how high they hit: a player whose feet are above this is over them

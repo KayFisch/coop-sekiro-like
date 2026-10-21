@@ -22,14 +22,18 @@ const HIT = "hit"
 # colors: "tell" while it's coming, "cue" for the moment to answer (a parry: just before it lands).
 # The colors follow the telegraph rule (docs/concept.md, "Telegraphs"): yellow then red is a
 # parry, as in Bifrons's fight.
+# TODO(design): his staff in melee is an element of its own here (STAFF), so every blow of his
+# goes by the one table.
 const RULES = {
 	STAFF: {"name": "staff", "answer": Answer.PARRY, "parries": true, "blocks": true,
 		"tell": Color(1.0, 1.0, 0.0), "cue": Color(1.0, 0.0, 0.0)},
+	# TODO(design): a block takes lightning as it takes any blow (a chip, posture); or is lightning
+	# parry or nothing? It has the staff's colors: the same answer, the same colors.
 	LIGHTNING: {"name": "lightning", "answer": Answer.PARRY, "parries": true, "blocks": true,
 		"tell": Color(1.0, 0.93, 0.35), "cue": Color(1.0, 0.0, 0.0)},
 	# TODO(design): orange is new, the color of "get out of the way". It's close to P2's orange
 	# (one-sided view only; mirrored, P2 is a shadow), to the red cue, Bifrons's parry sparks and
-	# the HUD's low posture.
+	# the HUD's low posture. Fire can't be blocked either (only "not parriable" was asked for).
 	FIRE: {"name": "fire", "answer": Answer.DODGE, "parries": false, "blocks": false,
 		"tell": Color(0.55, 0.16, 0.04), "cue": Color(1.0, 0.5, 0.1)},
 	# TODO(design): there's no grab and no breaking free in the game since Cubus Maximus went

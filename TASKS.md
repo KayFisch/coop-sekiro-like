@@ -169,6 +169,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   gegen A, Blitz-Zauber gegen B, die über die Achse A treffen. Alle Zahlen als `@export`.
   Design und offene Fragen: `docs/boss_kultist.md`. Fasst außerhalb seines Ordners an:
   `levels/threshold/threshold.tscn` (Bühne als Instanz, sonst gleich), `ui/boss_select.gd`.
+  **Stand 2026-10-21:** erste spielbare Fassung (Platzhalter-Grafik, headless getestet,
+  Gefühl ungetestet). Offen: alle `TODO(design)` (Liste in der Doku, „Open“), dazu ein
+  Playtest zu zweit.
 - [ ] **Name für den Try-out-Boss** (offen). Danach Docs umbenennen: altes
   `boss_columna_bifrons.md` → `boss_<name>.md`, `boss_bifrons_warden.md` →
   `boss_columna_bifrons.md` (Verweise mitziehen).

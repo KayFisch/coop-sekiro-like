@@ -19,6 +19,10 @@ extends BaseBoss
 ## THE FLIGHT, which any attack can use (fly_to(), land()): he leaves the floor, demonic wings
 ## open (only a look), and a beam of energy runs straight down from his feet to the floor. His
 ## reflection's beam meets it there, so on screen it joins his two images through the axis.
+## TODO(design): "colors mirrored at the axis" read as: each half's image of him in that half's
+## player's colors. Flying counts as "busy" for his guard (as casting does). The one-sided view
+## isn't designed for: there both halves' looks are drawn, one over the other (his room has the
+## mirrored screen always on).
 
 const LAYERS = [1, 2]  # the halves, by the player_id whose they are: 1 P1's (light), 2 P2's (shadow)
 const LEFT = -1
@@ -83,6 +87,7 @@ const COLOR_BLOCK = Color(0.62, 0.64, 0.7)  # sparks off his block
 @export_group("Guard")
 ## A player's sword hit on a resting staff: the chance he parries it (their blade is knocked back,
 ## both lose posture), else he blocks it (he loses posture). Bifrons's is F2 "boss_parry_chance".
+## TODO(design): half and half, as Bifrons's; "he can parry" might mean always (1).
 @export_range(0.0, 1.0, 0.05) var staff_parry_chance = 0.5
 ## A staff that has done anything (struck, cast, flown) guards only once it has been back at his
 ## side this long (s).

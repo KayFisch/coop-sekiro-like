@@ -10,6 +10,8 @@ extends Node2D
 ## axis at B's feet and runs along it to A (cross_time; on the line, so both halves see it), rises
 ## under A flashing red (rise_time), and strikes A from below: A may parry or block it as any
 ## lightning (Kultist.spell_victim_defends), else it lands.
+## TODO(design): B isn't hurt by a spell they let through, and their parry of it is only a parry
+## (no energy held, as with the bolt).
 
 signal resolved(what)  # STOPPED by B; on A: KultistElement.PARRIED, BLOCKED or HIT; or MISSED, FIZZLED
 

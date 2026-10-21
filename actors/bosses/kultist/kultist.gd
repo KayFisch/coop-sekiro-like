@@ -14,8 +14,11 @@ extends KultistBody
 ## - STAFF_AND_SPELLS: in one half his staff fights player A, in the other he casts lightning at
 ##   player B; what B doesn't stop runs through the axis and strikes A from below.
 ## - FLIGHT: the flight alone, for the lab (F5).
-## They come in a set order (attack_order), round and round: a placeholder. A boss's attacks are
-## to come in chains, with a finale and a breath (docs/concept.md, "Boss design principles").
+## TODO(design): they come in a set order (attack_order), round and round: a placeholder. A boss's
+## attacks are to come in chains, with a finale and a breath (docs/concept.md, "Boss design
+## principles"). He has nothing of his own for the players' sync mode (he fights on as ever), and
+## a parry of his strike opens no window for the partner, as one of Bifrons's does: the players
+## land their hits while he strikes, casts or flies, and with the bolt sent back.
 ##
 ## His numbers (times, distances, how hard a blow is) are exports, set in the inspector of
 ## kultist.tscn. TODO(design): not on F2, as every other fight's are (core/tuning.gd): F2 changes
@@ -46,6 +49,9 @@ const RANGE_RECHECK = 0.2  # an attack that needs someone in reach, and nobody i
 @export var wall_room = 60.0
 
 @export_group("Blows")
+# What a blow costs is the sync rules' (F2, core/sync_rules.gd): a normal or a heavy hit, each
+# blow's "..._heavy" below. TODO(design): an amount per blow would need the sync rules to take
+# one (Nicho's branch nicho/heavy-hitter has a start: "landing_share").
 ## A blow of his that lands throws its player back this hard (px/s; and 0.6 of that up)...
 @export var hit_knockback = 300.0
 ## ...a blocked one, this hard.
@@ -200,6 +206,7 @@ func holds_facing() -> bool:
 
 
 # His whole body blocks, as Bifrons's does (Moves "boss_body"), up in the air too.
+# TODO(design): as Bifrons's (TASKS.md: "Durchgang durch Bosse klären").
 func body_block() -> Rect2:
 	if not Moves.on("boss_body") or hp <= 0.0:
 		return Rect2()

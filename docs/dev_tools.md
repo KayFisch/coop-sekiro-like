@@ -78,7 +78,8 @@ engine reports any error while it runs. The output ends with "N passed, M failed
 What's there: the sync rules (what each landing costs whom, breaking, regen), the partner's
 window, the sync mode (binding, the strike together, his hold-off, the dash-slash through him),
 the ring's violet shard, the player's feel (speed, jump, dash, parry window, swing timing), the
-dev tools, and that every scene loads and runs.
+dev tools, the Kultist (his elements, halves, guard, flight and attacks), and that every scene
+loads and runs.
 
 Writing one: a file `tests/test_<topic>.gd` that `extends "res://tests/test_case.gd"`, with
 methods `test_<what>()`. From `test_case.gd`:
