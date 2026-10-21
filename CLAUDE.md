@@ -35,53 +35,23 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
-### For Kay, from Nicho (2026-10-19)
+### For Nicho, from Kay (2026-10-21)
 
-- Design session with Claude (no code), decisions in `docs/concept.md` (new sections: boss
-  design principles, blade rules, the two screen halves, the sync mode, bosses), two new boss
-  docs and `scribbles.md` (2026-10-19). The short version:
-  - Today's Bifrons stays as it is as the **try-out boss** (needs a new name). **Columna
-    Bifrons** is redesigned from scratch (the Warden, `docs/boss_bifrons_warden.md`); next comes
-    a **Heavy Hitter** (`docs/boss_heavy_hitter.md`), later an **Acrobat** who may use the beat
-    ring as one of his phases.
-  - Bosses should feel like **Sekiro, not Hollow Knight**: chains of strikes with a finale, then
-    a pause in which he moves; few reactions, on details only.
-  - The **mirrored screen** is our base for boss fights; the halves become two connected sides
-    (each shows the blades aimed at its player). Players may pick mirrored or one-sided view.
-  - The **sync mode** is the players' boss phase and ends the fight by default.
-  - Your input welcome on anything there, especially the boss myths and the screen halves.
-- Second part of the design session: the **Heavy Hitter** is designed (v0,
-  `docs/boss_heavy_hitter.md`). He's the Ettin: two heads, one weapon that can point differently
-  in the two screen halves; every blade strike has to be parried by both of you at once; he's open
-  while he attacks; his posture is a rage meter. To be built next.
-- New general rule: a co-op parry gives both of you a sync-hit window (`docs/concept.md`).
-- Code since the first note, on `nicho/chains` (stacked on `nicho/gate-leap`, `nicho/blade-rules`
-  and `nicho/blade-halves`; not in `main` yet): the try-out boss has the blade rules of
-  2026-10-19, blades in their player's color in the screen halves (the mirrored screen is on by
-  default now), the Warden's gate leap and a chains mode to try
-  (`docs/boss_columna_bifrons.md`).
-
-### For Kay, from Nicho (2026-10-20)
-
-- The **Heavy Hitter, phase 1**, is built on `nicho/heavy-hitter` (from `nicho/chains`; not in
-  `main` yet): select screen entry 2 (the other entries moved down one; 0 starts the tenth). What's
-  in it and what to look for: `docs/boss_heavy_hitter.md`, "Built (phase 1)".
-- Shared code it touches, all backwards compatible (Bifrons plays as before): `BaseBoss` has
-  `max_posture()`, `on_posture_broken()` (by default the deathblow) and `distance_to()` (moved up
-  from Bifrons); `SyncRules` takes an optional posture factor on his hits, and two more
-  `landing_*` values a boss may set while a strike lands. Nothing in `actors/player/`.
-
-### For Kay, from Nicho (2026-10-21)
-
-- **Yours: step 2 of the Heavy Hitter (rage and phase 2), and only that.** Everything you need:
-  `uebergabe_2026-10-21_b3.md` in the repo root (read it first; delete it in the commit that
-  finishes B3). Branch `kay/hitter-rage` from `nicho/heavy-hitter`; nothing into `main`.
-- Phase 1 changed after my first test (each head goes for its own player, the crack breaks into
-  the other half): the rage text in `docs/boss_heavy_hitter.md` predates that, so the handover
-  says how the rage reads now. Show me the plan if anything there doesn't fit.
-- **After B3, stop.** Then the two of us test the Hitter properly together and decide what fits
-  and what to change. The Warden (the new Columna Bifrons, for now the try-out boss's chains mode,
-  gate leap and blade rules: `docs/boss_bifrons_warden.md`) we test together too.
+- **B3 is built: the Heavy Hitter's rage and phase 2**, straight on `nicho/heavy-hitter` (my call,
+  not on `kay/hitter-rage`; pull before you go on there). What's in it, the choices where the
+  design left it open, and what to look for when we test it together: `docs/boss_heavy_hitter.md`,
+  "Built (rage and phase 2)". Then I stopped, as asked.
+- The choices in short: when one layer has to turn (the rage's alignment, the flip as his finale),
+  it's the layer of the player nearer to him; his posture holds through the rage and its exhaustion
+  (else the co-op parries in it break it again at once), so it's full after; only a hit that lands
+  provokes (not one his guard meets); with F5 holding his attacks, no rage.
+- How often the rage comes (measured with two stand-ins, as you asked; the doc has the details):
+  about every chain when they parry 90 % (every ~19 s), every one or two chains at 75 % (~27 s),
+  nearly always in the together field before its finale. A rage lasts ~9 s, so with good players
+  about half the fight is rage. Not decided: for the joint test.
+- Shared code, backwards compatible: `BaseBoss.holds_posture()` (false by default), asked by
+  `SyncRules` before a boss loses posture. F1 has a tab "Hitter" (start in phase 2; the last rage,
+  off). The handover file is gone.
 
 ## The project
 
@@ -286,14 +256,16 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   pause that's the players', "THE CHAINS"); and
   `stand_in.gd`, which plays one of the players for testing alone, by pressing that player's
   buttons.
-  `heavy_hitter/` (`docs/boss_heavy_hitter.md`, phase 1 since 2026-10-20): the Ettin, in two parts:
+  `heavy_hitter/` (`docs/boss_heavy_hitter.md`, phase 1 since 2026-10-20, the rage and phase 2 since
+  2026-10-21): the Ettin, in two parts:
   `hitter_weapon.gd` (`HitterWeapon`: one weapon, a halberd, pointing its own way in each player's layer,
   `way_of()`, and drawn in that layer's half; his two heads; his guard, only between his chains; the
   windows, one per player) and `heavy_hitter.gd` (`HeavyHitter`: the fields, `field()`; his chains,
   `attacks/swings.gd`, the motif by the field and the finale by what he sees; his breath and turn;
   each head going for its own player, `blade_layers()` / `land_blade()`, `land_jab()`; the mirror
-  breaking into the other half, `crack.gd`; the rules' hooks; where he stands). His own stand-in:
-  `hitter_stand_in.gd`.
+  breaking into the other half, `crack.gd`; the rules' hooks; where he stands; his rage,
+  `attacks/rage.gd`, when his posture breaks, and phase 2 after it: the flip, one layer swept through
+  him, as his finale and when provoked). His own stand-in: `hitter_stand_in.gd`.
 - `levels/`: `GymLevel` (`gym/gym_level.gd`) is the base of the gyms and the platformer levels:
   it builds rooms from code (`solid()`, `ledge()`, `checkpoint()`, `measure()`, ...), spawns the
   players, respawns them at checkpoints (`checkpoint_needs_all`: only once both are there) and

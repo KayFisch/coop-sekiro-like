@@ -79,7 +79,8 @@ What's there: the sync rules (what each landing costs whom, breaking, regen), th
 window, the sync mode (binding, the strike together, his hold-off, the dash-slash through him),
 the ring's violet shard, the player's feel (speed, jump, dash, parry window, swing timing), the
 dev tools, Bifrons's blade rules, screen halves, gate leap and chains, the Heavy Hitter's rules
-(unisono, the crack, his guard, the fields and finales, the stagger, his turn, the stomp leap), and
+(unisono, the crack, his guard, the fields and finales, the stagger, his turn, the stomp leap, the
+rage, phase 2: the flip and provoking), and
 that every scene loads and runs.
 
 Writing one: a file `tests/test_<topic>.gd` that `extends "res://tests/test_case.gd"`, with

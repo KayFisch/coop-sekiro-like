@@ -175,14 +175,15 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Nach Nichos erstem Test (2026-10-21) umgebaut: Hellebarde, diagonal geht jeder Kopf auf seinen
   Spieler (normale Schläge), Riss bricht in die andere Hälfte, langsamere Stoß-Serie, Enden in der
   Farbe des Ziels (Scribble vom 2026-10-21; Doc → „First test“). Wartet auf den nächsten Test.
-- [ ] **Heavy Hitter bauen, Schritt 2: Wut und Phase 2** (@Kay; Prompt B3). Alles in
-  `uebergabe_2026-10-21_b3.md` (Repo-Wurzel), Branch `kay/hitter-rage` von `nicho/heavy-hitter`.
-  **Nur B3**, danach Stopp bis zum gemeinsamen Test. Die Wut ist an den Umbau vom 2026-10-21
-  angepasst (in der Wut jeder Klingenschlag heftig in beiden Ebenen; Tabelle in der Übergabe).
+- [x] **Heavy Hitter bauen, Schritt 2: Wut und Phase 2** (Kay, 2026-10-21; Prompt B3). Direkt auf
+  `nicho/heavy-hitter` gebaut (Kays Entscheidung, statt `kay/hitter-rage`). Was drin ist und was
+  dort entschieden wurde, wo das Design offen war (welche Ebene kippt: die des näheren Spielers;
+  Haltung hält in der Wut; nur ein landender Treffer provoziert): `docs/boss_heavy_hitter.md` →
+  „Built (rage and phase 2)“, dort auch gemessen, wie oft die Wut kommt.
 - [ ] **Heavy Hitter gemeinsam ausgiebig testen** (Nicho und Kay, nach B3): was passt, was
   geändert werden soll. Offene Punkte dazu: `docs/boss_heavy_hitter.md` → „First test“ (Liste
-  „To look for in the next test“), „Open“, und wie oft die Wut kommt (Haltung bricht etwa einmal
-  pro Kette).
+  „To look for in the next test“), „Built (rage and phase 2)“ (Liste „To look for in the joint
+  test“), „Open“, und wie oft die Wut kommt.
 - [ ] **Wächter (neuer Columna Bifrons) gemeinsam testen** (Nicho und Kay). Noch kein eigener
   Boss: im Try-out-Boss F1 `bifrons_mode` „chains“ (mit `bifrons_guard_break` motif_end),
   Torsprung (F5: GATE_LEAP), Klingenregeln, gemeinsame Fenster (`bifrons_coop_windows`).
