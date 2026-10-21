@@ -3,8 +3,8 @@ extends HitterWeapon
 ## The Heavy Hitter, the Ettin (working title; docs/boss_heavy_hitter.md): two heads, one weapon held
 ## level, which can point differently in the two players' layers (hitter_weapon.gd). He attacks
 ## whatever is in front of his nose, and he's open while he attacks, guarded only in his breath.
-## Built so far: phase 1 (the weapon always parallel), and no rage yet: his posture broken, a long
-## stagger stands in for it, and his sync stays.
+## His posture is his rage meter: broken, he rages (THE RAGE), and the first rage starts phase 2, in
+## which his heads quarrel over the blade (THE FLIP, PROVOKING).
 ##
 ## THE RULES (v0, after Nicho's first test, 2026-10-21):
 ## 1. Each head goes for its own player. A blade strike comes down in the layers whose player is at
@@ -26,8 +26,9 @@ extends HitterWeapon
 ## 4. Open while he attacks (a chain's first windup to its end, a stagger too): hits land and cost his
 ##    sync. Guarded only in his breath (HIS GUARD in hitter_weapon.gd).
 ## 5. In his breath he turns, to bring the blade in front of the players (THE TURN). Only the turn:
-##    the alignment stays.
-## 6. Posture is his rage meter (step 2). For now, broken: a long stagger, and his sync stays.
+##    the alignment changes only in a flip and in the rage.
+## 6. Posture is his rage meter: broken, the rage, and his sync stays (THE RAGE).
+## 7. The first rage starts phase 2 (or F1 "hitter_phase2"): the flip as his finale, and provoking.
 ##
 ## THE FIELDS: where the players are against the weapon (field()). "together": both in front of the
 ## blade, each in their own layer; "split": one at the blade, one at the pommel; "pommel": both at
@@ -38,11 +39,25 @@ extends HitterWeapon
 ## the field has changed, the new one's), until the chain has the repetitions it was given (at
 ## random, F2 "hitter_reps_min" to "_max"); then the finale, by what he sees (chain_finale()):
 ## - the together field: the great hammer;
-## - the together field for "hitter_together_stale" of his chains in a row: the stomp leap;
+## - the together field for "hitter_together_stale" of his chains in a row: the stomp leap (phase 2:
+##   the flip, then a blade strike after a windup long enough for one to go over, "hitter_flip_windup");
 ## - split, or both at the pommel: the stomp leap.
 ## A finale parried together staggers him "hitter_stagger_least", and "hitter_stagger_per_parry" more
-## for each blade parried in the chain (a co-op parry: two; a parried jab: one; a lone parry with a
-## block's effect: none).
+## for each blade parried in the chain (a co-op parry: two; a parried jab or flip: one; a lone parry
+## with a block's effect: none).
+## THE FLIP (phase 2; attacks/swings.gd): the heads quarrel and one of them grabs the blade: it sweeps
+## flat through him in one layer, and the alignment changes. It meets that layer's player wherever it
+## passes them: a normal strike (land_sweep()). As his finale it flips the layer of the player nearer
+## to him (nearer_layer()): together turns split, and that one has to go over to the partner.
+## PROVOKING (phase 2): a hit that lands on his pommel side angers that head at once and keeps it red;
+## at the next end of a repetition his chain flips that layer toward the hitter (split turns together)
+## before he decides what comes next (provoked_layers()). Not if the blade points at them by then.
+## THE RAGE (attacks/rage.gd): his posture broken (on_posture_broken()), at once, whatever he's doing,
+## he roars and strikes the pattern that's hard for their formation (rage_pattern(): apart, the
+## pendulum; together, the cross), every strike heavy in both layers; then he's exhausted. Through it
+## all his posture holds (holds_posture()): full when it's over. Not while the dev tools hold him
+## (dev_hold): then a broken posture is only full again. THE LAST RAGE (F1 "hitter_last_rage"): once,
+## instead of his next chain, when his sync has fallen below "hitter_last_rage_at".
 ## THE BREATH: after each chain a pause (F2 "hitter_breath_min" / "_max", after his recovery). He
 ## doesn't attack, he walks slowly, and as it begins he turns round if that puts more of the players
 ## in front of the blade; with as many either way, to whoever hit his pommel side last since he last
@@ -60,8 +75,10 @@ const BLADE = HitterSwings.BLADE
 const POMMEL = HitterSwings.POMMEL
 const HAMMER = HitterSwings.HAMMER
 const STOMP = HitterSwings.STOMP
+const FLIP = HitterSwings.FLIP
 # THE MOTIFS, one per field, each [wait, verb]: `wait` is the beats (F2 "hitter_beat") until it lands,
-# from the strike before (the first: from the chain's start, or the repetition before).
+# from the strike before (the first: from the chain's start, or the repetition before), or an F2
+# number of them.
 const MOTIFS = {
 	"together": [[2, BLADE], [2, BLADE], [3, BLADE]],  # all three parried together
 	"split": [[2, BLADE], [1, POMMEL], [2, BLADE], [1, POMMEL]],  # the seesaw
@@ -70,10 +87,13 @@ const MOTIFS = {
 const FINALES = {
 	"HAMMER": [[4, HAMMER]],  # the great hammer: a long windup
 	"STOMP": [[3, STOMP]],  # the stomp leap
+	"FLIP": [[3, FLIP], ["hitter_flip_windup", BLADE]],  # (phase 2) together turns split, then time to go over
 }
-# HIS ATTACKS, in the F5 lab's order. Only the chain comes by itself; the rest are its parts, one at a
-# time, for the lab: a motif once, a finale, a verb, the turn.
+const PROVOKED_FLIP = [2, FLIP]  # a provoked head's flip, as a repetition ends
+# HIS ATTACKS, in the F5 lab's order. The chain comes by itself, and the rage when his posture breaks;
+# the rest are their parts, one at a time, for the lab: a motif once, a finale, a verb, the turn.
 const SWINGS = preload("attacks/swings.gd")
+const RAGE = preload("attacks/rage.gd")
 const TURN = preload("attacks/turn.gd")
 const ATTACKS = {
 	"CHAIN": {"chain": true},
@@ -82,9 +102,14 @@ const ATTACKS = {
 	"JABS": {"motif": "pommel"},
 	"HAMMER": {"finale": "HAMMER"},
 	"STOMP": {"finale": "STOMP"},
+	"FLIP_FINALE": {"finale": "FLIP"},
 	"BLADE": {"links": [[2, BLADE]]},
 	"POMMEL": {"links": [[2, POMMEL]]},
+	"FLIP": {"links": [[2, FLIP]]},
 	"TURN": {"turn": true},
+	"RAGE_PENDULUM": {"rage": "pendulum"},
+	"RAGE_CROSS": {"rage": "cross"},
+	"LAST_RAGE": {"rage": "last"},
 }
 const ANSWER_BEATS = 2  # his answer to a hit at his guard: its first strike lands this many beats on
 
@@ -107,7 +132,12 @@ const BLOCKED_KNOCKBACK = 150.0  # a jab blocked
 const HAMMER_KNOCKBACK = 1.5  # times that, the great hammer
 const CRACK_KNOCKBACK = Vector2(160.0, -320.0)  # a crack: popped up, away from where it started
 
+var phase = 1  # 2 from his first rage on (F1 "hitter_phase2": from the start)
+var rage = ""  # "raging" (THE RAGE), "exhausted" (its stagger after), or ""
+var rage_cross = false  # the rage under way strikes the cross (diagonal), else the pendulum
 var finale_reason = ""  # why the last chain's finale was what it was (the log, the tests)
+var _provoked = {}  # layer -> {by: the player who provoked that head, side: its side} (PROVOKING)
+var _last_rage_done = false
 var _together_for = 0  # his chains in a row whose finale came in the together field
 var _pommel_hitter = null  # who hit his pommel side last since he last turned (THE TURN)
 var _provoked_by = null  # a hit at his guard in his breath: whom he answers
@@ -132,13 +162,20 @@ static func tuning_entries() -> Array:
 		{"key": "hitter_together_stale", "label": "chains in a row in the together field: then the stomp leap", "default": 2.0, "step": 1.0},
 		{"key": "hitter_breath_min", "label": "the breath after a chain, from (s)", "default": 2.5, "step": 0.1},
 		{"key": "hitter_breath_max", "label": "...to (s)", "default": 3.5, "step": 0.1},
-		{"header": "HIS POSTURE: HIS RAGE METER (THE RAGE: STEP 2)", "tab": "posture"},
+		{"header": "HIS POSTURE: HIS RAGE METER", "tab": "rage"},
 		{"key": "hitter_posture_max", "label": "his posture (points)", "default": 200.0, "step": 10.0},
 		{"key": "hitter_pommel_posture", "label": "his pommel side (hits there, jabs parried): times the posture", "default": 2.0, "step": 0.25},
-		{"key": "hitter_break_stagger", "label": "broken: staggered (s; for now, in the rage's place: his sync stays)", "default": 3.0, "step": 0.1},
-		{"header": "THE STAGGER AFTER A FINALE", "column": 1},
-		{"key": "hitter_stagger_least", "label": "a finale parried together staggers him (s)", "default": 0.5, "step": 0.1},
-		{"key": "hitter_stagger_per_parry", "label": "...and longer by this per blade parried in the chain (s)", "default": 0.2, "step": 0.05},
+		{"header": "THE RAGE (HIS POSTURE BROKEN)"},
+		{"key": "hitter_roar_time", "label": "the roar: time to re-form (s)", "default": 1.6, "step": 0.1},
+		{"key": "hitter_rage_strikes", "label": "then strikes, from side to side", "default": 6.0, "step": 1.0},
+		{"key": "hitter_rage_beats", "label": "...each this many beats after the one before", "default": 3.0, "step": 1.0},
+		{"key": "hitter_last_rage_at", "label": "the last rage (F1): once his sync is below (share)", "default": 0.25, "step": 0.05},
+		{"header": "THE STAGGER: A FINALE PARRIED TOGETHER, AFTER THE RAGE", "column": 1},
+		{"key": "hitter_stagger_least", "label": "staggered (s)", "default": 0.5, "step": 0.1},
+		{"key": "hitter_stagger_per_parry", "label": "...and longer by this per blade parried in it (s)", "default": 0.2, "step": 0.05},
+		{"header": "PHASE 2: THE FLIP"},
+		{"key": "hitter_flip_time", "label": "its sweep through him: its cue (s)", "default": 0.3, "step": 0.01},
+		{"key": "hitter_flip_windup", "label": "as his finale: the blade strike after it, in beats", "default": 5.0, "step": 1.0},
 		{"header": "THE CRACK", "tab": "crack"},
 		{"key": "hitter_crack_delay", "label": "it breaks open this long after the blade lands (s)", "default": 0.3, "step": 0.05},
 		{"key": "hitter_crack_reach", "label": "...and hits that half's player on the floor this near it (px)", "default": 70.0, "step": 5.0},
@@ -146,11 +183,13 @@ static func tuning_entries() -> Array:
 		{"header": "THE STAND-IN (F1: bifrons_stand_in)", "tab": "stand-in"},
 		{"key": "hitter_stand_in_parry", "label": "it parries his strikes this often", "default": 0.75, "step": 0.05},
 		{"key": "hitter_stand_in_block", "label": "...only blocks them this often (the rest hit it)", "default": 0.15, "step": 0.05},
+		{"key": "hitter_stand_in_reform", "label": "it goes over to the other side when that helps (the rage's roar, a flip)", "default": 0.7, "step": 0.05},
 	]
 
 
 func _ready():
 	super()
+	phase = 2 if Moves.on("hitter_phase2") else 1
 	rules = SyncRules.new()
 	rules.boss = self
 	add_child(rules)
@@ -183,6 +222,9 @@ func get_attack_pool() -> Array:
 		if entry.get("turn", false):
 			pool.append(TURN.new(attack_name))
 			continue
+		if entry.has("rage"):
+			pool.append(RAGE.new(attack_name, entry.rage))
+			continue
 		var links = entry.get("links", [])
 		if entry.has("motif"):
 			links = MOTIFS[entry.motif]
@@ -199,6 +241,19 @@ func get_attack_weights() -> Dictionary:
 
 func get_repeatable_attacks() -> Array:
 	return ["CHAIN"]
+
+
+# THE LAST RAGE (F1 "hitter_last_rage"), once, in place of his next chain when his sync is low.
+func pick_attack() -> Attack:
+	if dev_next == "" and _last_rage_due():
+		_last_rage_done = true
+		return find_attack("LAST_RAGE")
+	return super()
+
+
+func _last_rage_due() -> bool:
+	return Moves.on("hitter_last_rage") and not _last_rage_done and rules != null \
+		and rules.boss_share() < Tuning.value("hitter_last_rage_at")
 
 
 # THE BREATH, after his recovery: he turns, if he will (THE TURN), and doesn't attack for a while.
@@ -233,6 +288,8 @@ func _physics_process(delta):
 		if timer <= delta and _held_off < Tuning.value("sync_hold_off"):
 			timer = RECHECK
 	super(delta)
+	if rage == "exhausted" and state != State.STAGGER:
+		rage = ""  # back on his feet: his posture counts again, full
 	if hp <= 0.0:
 		return
 	update_windows()
@@ -246,10 +303,62 @@ func max_posture() -> float:
 	return Tuning.value("hitter_posture_max")
 
 
-# Posture is his rage meter (the rage: step 2). Broken, for now: staggered long, and his sync stays.
+# Posture is his rage meter (THE RAGE): broken, he rages, and his sync stays. While the dev tools hold
+# him (dev_hold), it's only full again.
 func on_posture_broken() -> bool:
-	stagger_now(Tuning.value("hitter_break_stagger"))
+	if rage == "" and not dev_hold:
+		_rage_now()
 	return false
+
+
+# Through the rage and the stagger after it, nothing costs him posture: it broke as it began, and it's
+# full when it's over.
+func holds_posture() -> bool:
+	return rage != ""
+
+
+# THE RAGE, at once, whatever he's doing: the pattern that's hard for their formation. (Called as a
+# strike of his lands or one of theirs does: whatever is left of that landing goes on as he starts.)
+func _rage_now():
+	var attack = current_attack
+	current_attack = null
+	if attack:
+		attack.interrupt()
+	body.position = body_rest
+	body.rotation = 0.0
+	_reset_body_shape()
+	_begin_telegraph(find_attack("RAGE_CROSS" if rage_pattern() == "cross" else "RAGE_PENDULUM"))
+
+
+# The rage that's hard for their formation (THE RAGE): apart (pep), the pendulum; together (ppe), the
+# cross.
+func rage_pattern() -> String:
+	var sides = get_players().map(func(p): return side_of(p))
+	return "pendulum" if sides.has(LEFT) and sides.has(RIGHT) else "cross"
+
+
+# The rage begins (attacks/rage.gd): both heads red, the roar, phase 2 from now on, and any provoked
+# head forgotten. `cross`: it strikes the cross, else the pendulum.
+func begin_rage(cross: bool):
+	rage = "raging"
+	rage_cross = cross
+	phase = 2
+	_provoked = {}
+	Sfx.play("roar")
+	shake(6.0)
+	Dev.note("rage", {"pattern": "cross" if cross else "pendulum", "field": field()})
+
+
+# ...and it's over: exhausted.
+func end_rage():
+	rage = "exhausted"
+
+
+# The heads: both red in the rage, a provoked one until its flip.
+func _head_angry(side: int) -> bool:
+	if rage == "raging" or super(side):
+		return true
+	return _provoked.values().any(func(e): return e.side == side)
 
 
 # The players' sync mode (core/sync_rules.gd): slower, the together motif only.
@@ -269,8 +378,8 @@ func beat() -> float:
 
 # source: the player whose sword hit landed. His guard (in his breath) parries it by chance, else
 # blocks it; otherwise it lands: in a window their partner's parry opened, a sync hit. On his pommel
-# side (in their layer) it costs him more posture, and angers that head. What each costs is the sync
-# rules'.
+# side (in their layer) it costs him more posture, and angers that head; in phase 2 one that lands
+# provokes it (PROVOKING). What each costs is the sync rules'.
 func take_damage(amount: float, source = null):
 	if rules != null and source != null and hp > 0.0:
 		_struck_by_rules(source)
@@ -298,6 +407,8 @@ func _struck_by_rules(source):
 			rules.boss_blocked(false, times)
 		_provoke(source)
 		return
+	if phase >= 2 and rage == "" and not at_blade(source):
+		_provoked[source.player_id] = {"by": source, "side": side}
 	if window != null:
 		var on_beat = anim_time - window.from <= Tuning.value("sync_beat_time")
 		rules.sync_hit(on_beat)
@@ -438,6 +549,35 @@ func land_jab(layers: Array) -> Array:
 	return parriers
 
 
+# THE FLIP's sweep passes that layer's player (attacks/swings.gd): a normal strike in that layer, so a
+# lone parry is a parry and opens the partner's window. Returns the player if they parried it.
+func land_sweep(layer: int):
+	var p = player_of(layer)
+	if p == null:
+		return null
+	rules.landing_heavy = false
+	var parried = p.is_perfect_parry()
+	if parried:
+		p.on_perfect_parry(false)
+		spawn_sparks(p.global_position + Vector2(0.0, -24.0), 8, COLOR_PLAYER_PARRY)
+	elif p.is_blocking():
+		p.take_damage(knockback_for(p, BLOCKED_KNOCKBACK), true)
+	else:
+		p.take_damage(knockback_for(p, BLADE_KNOCKBACK))
+	shake(4.0)
+	if not parried:
+		return null
+	open_window(p.partner(), p)
+	return p
+
+
+# ...and it's through: the blade points the other way in that layer, and a head provoked there has
+# had its way.
+func end_flip(layer: int):
+	end_sweep(layer)
+	_provoked.erase(layer)
+
+
 # The mirror breaking open under a player on the floor (crack.gd): a hit, whatever they hold. It
 # costs "hitter_crack_share" of his heavy hit's sync.
 func crack_hits(p, from_x: float):
@@ -499,9 +639,32 @@ func chain_finale() -> String:
 	if _together_for >= int(Tuning.value("hitter_together_stale")):
 		_together_for = 0
 		finale_reason = "together too long"
-		return "STOMP"
+		return "FLIP" if phase >= 2 else "STOMP"
 	finale_reason = "together"
 	return "HAMMER"
+
+
+# The layers a provoked head flips toward its provoker now, as a repetition ends (PROVOKING): those
+# whose blade doesn't point at them yet. The rest are forgotten.
+func provoked_layers() -> Array:
+	var layers = []
+	for layer in _provoked.keys():
+		var by = _provoked[layer].by
+		if is_instance_valid(by) and not at_blade(by):
+			layers.append(layer)
+		else:
+			_provoked.erase(layer)
+	return layers
+
+
+# The layer of the player nearer to him: the one that turns when one layer must (the flip as his
+# finale, the rage's alignment).
+func nearer_layer() -> int:
+	var players = get_players().filter(func(p): return not p.is_dead())
+	if players.is_empty():
+		return LAYERS[0]
+	players.sort_custom(func(a, b): return distance_to(a) < distance_to(b))
+	return players[0].player_id
 
 
 # How long a finale parried together staggers him: longer the more blades of the chain were parried.

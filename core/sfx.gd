@@ -97,6 +97,7 @@ func _build_sounds():
 	_sounds["call_go"] = _notes([784.0, 1174.7], 0.09, true)
 	_sounds["guard_break"] = _clang(700.0, 0.3)  # Columna Bifrons's guard knocked open
 	_sounds["glass_crack"] = _crack(0.45)  # the Heavy Hitter's blade into the mirror: the floor cracks
+	_sounds["roar"] = _roar(1.3)  # the Heavy Hitter's rage: both heads at once
 	_sounds["sync_hit"] = _thud(240.0, 80.0, 0.18, 16.0, 0.5)  # a hit through his broken guard
 	# Sync as life (core/sync_rules.gd)
 	_sounds["on_beat"] = _blip(1760.0, 0.05)  # a sync hit right on the beat
@@ -241,6 +242,29 @@ func _crack(duration: float) -> PackedVector2Array:
 			s += noise * (1.0 - k) * 0.9
 			tick_left -= 1.0 / MIX_RATE
 		out[i] = Vector2.ONE * clampf(s, -1.0, 1.0)
+	return out
+
+
+# A roar from two throats: two low buzzing voices a little apart, wavering, over a breathy rasp;
+# it swells, holds and sinks at the end.
+func _roar(duration: float) -> PackedVector2Array:
+	var out = _buffer(duration)
+	var phases = [0.0, 0.0]
+	var noise = 0.0
+	var rasp = 0.0
+	for i in out.size():
+		var t = i / MIX_RATE
+		var k = t / duration
+		var s = 0.0
+		for v in 2:
+			var pitch = (82.0 if v == 0 else 97.0) * (1.0 + 0.06 * sin(TAU * (5.0 + v) * t)) * lerpf(1.0, 0.8, k)
+			phases[v] = fmod(phases[v] + pitch / MIX_RATE, 1.0)
+			s += (phases[v] * 2.0 - 1.0) * 0.3  # a sawtooth: buzzing
+		noise += 0.25 * (randf_range(-1.0, 1.0) - noise)
+		rasp += 0.08 * (noise - rasp)
+		s = s * (0.7 + 0.3 * sin(TAU * 23.0 * t)) + (noise - rasp) * 0.6
+		s *= minf(t / 0.15, 1.0) * minf((duration - t) / 0.4, 1.0)
+		out[i] = Vector2.ONE * clampf(s * 0.8, -1.0, 1.0)
 	return out
 
 

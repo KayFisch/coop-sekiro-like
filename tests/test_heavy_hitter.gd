@@ -3,16 +3,20 @@ extends "res://tests/test_case.gd"
 ## going for its own player (both at the blade: one heavy strike, parried together or a lone parry is
 ## a block; one each side: a normal blade strike and a jab), when the mirror cracks and what the crack
 ## does (in the other half, on the floor, not in a jump), open while he attacks and guarded in his
-## breath, the motif by the field, the stagger after a finale, a broken posture keeping his sync, his
-## pommel side, the turn in his breath, the stomp leap, the weapon's colors and the screen halves. The
-## players can't lose; a player parries a strike by having pressed block just before it lands.
+## breath, the motif by the field, the stagger after a finale, his pommel side, the turn in his breath,
+## the stomp leap, the weapon's colors and the screen halves; and the rage (its pattern by the
+## formation, every strike heavy in both layers, the exhaustion, the alignment it leaves, his sync and
+## posture), phase 2 (unlocked by the rage, the flip in one layer, the flip as his finale, provoking).
+## The players can't lose; a player parries a strike by having pressed block just before it lands.
 
 const LEFT = -1
 const RIGHT = 1
 const NUMBERS = {
 	"hitter_beat": 0.3, "hitter_reps_min": 1.0, "hitter_reps_max": 1.0,
 	"hitter_stagger_least": 0.5, "hitter_stagger_per_parry": 0.2,
-	"hitter_posture_max": 200.0, "hitter_pommel_posture": 2.0, "hitter_break_stagger": 3.0,
+	"hitter_posture_max": 200.0, "hitter_pommel_posture": 2.0,
+	"hitter_roar_time": 1.0, "hitter_rage_strikes": 2.0, "hitter_rage_beats": 3.0,
+	"hitter_flip_time": 0.3, "hitter_flip_windup": 5.0, "hitter_together_stale": 2.0,
 	"hitter_crack_delay": 0.3, "hitter_crack_reach": 70.0,
 	"boss_posture_small": 5.0, "boss_posture_medium": 15.0,
 	"sync_window_delay": 0.2, "sync_beat_time": 0.1, "sync_window_late": 0.2, "sync_hit_gain": 4.0,
@@ -55,9 +59,13 @@ func _place(p1_x: float, p2_x: float, way = RIGHT):
 	for layer in [1, 2]:
 		boss._ways[layer] = way
 		boss._poses[layer] = boss.POSE_LEVEL
+	boss.stop_sweeps()
 	boss._turned_at = -100.0
 	boss._windows = {}
 	boss._pommel_hitter = null
+	boss._provoked = {}
+	boss.rage = ""
+	boss.phase = 1
 	for p in [p1, p2]:
 		p.velocity = Vector2.ZERO
 		p._invuln_timer = 0.0
@@ -315,20 +323,172 @@ func test_the_stagger():
 	near(run.stagger, 0.0, 0.001, "the hammer, one of them parrying: a block's effect, no stagger")
 
 
-# Posture is his rage meter (step 2): broken, for now a long stagger, and his sync stays.
-func test_a_broken_posture_keeps_his_sync():
-	await _setup()
-	await _place(100.0, 130.0)
+# Breaks his posture with a hit from P1 in a chain's windup, the dev tools letting him rage
+# (`rages`) or not. Returns his sync just before.
+func _break_posture(rages = true) -> float:
 	_start("TOGETHER")
 	while boss.state != BaseBoss.State.TELEGRAPH:
 		await get_tree().physics_frame
 	rules._posture[boss] = 1.0
 	var before = rules.boss_sync
+	boss.dev_hold = not rages
 	boss.take_damage(10.0, p1)
-	check(boss.state == BaseBoss.State.STAGGER, "a hit breaks his posture: staggered")
-	near(boss.timer, NUMBERS.hitter_break_stagger, 0.05, "...long (F2 hitter_break_stagger)")
-	near(before - rules.boss_sync, NUMBERS.their_heavy_damage * NUMBERS.their_normal_share, 0.01, "...and his sync stays, but for the hit's own cost")
-	near(rules.posture_of(boss), rules.posture_max(boss), 0.01, "...his posture back full")
+	boss.dev_hold = true
+	return before
+
+
+# THE RAGE: posture broken, he rages at once: the pattern that's hard for their formation (apart: the
+# pendulum, parallel; together: the cross, diagonal), shown by the weapon from the roar's start. His
+# sync stays, his posture holds, and phase 2 begins. Not while the dev tools hold him.
+func test_the_rage_by_the_formation():
+	await _setup()
+	await _place(-100.0, 110.0)
+	check(boss.phase == 1, "phase 1 at first")
+	var before = await _break_posture()
+	check(boss.current_attack != null and boss.current_attack.get_attack_name() == "RAGE_PENDULUM",
+		"apart, his posture broken: the pendulum (%s)" % (boss.current_attack.get_attack_name() if boss.current_attack else "nothing"))
+	check(boss.rage == "raging" and boss.state == BaseBoss.State.TELEGRAPH, "...at once, the roar first")
+	near(before - rules.boss_sync, NUMBERS.their_heavy_damage * NUMBERS.their_normal_share, 0.01, "...his sync stays, but for the hit's own cost")
+	check(boss.phase == 2, "...and phase 2 begins")
+	await frames(2)
+	check(not boss.is_diagonal(), "...the weapon parallel, the same in both halves")
+	boss.take_damage(10.0, p2)
+	near(rules.posture_of(boss), rules.posture_max(boss), 0.01, "...and nothing costs his posture meanwhile")
+	await _place(100.0, 130.0)
+	await _break_posture()
+	check(boss.current_attack.get_attack_name() == "RAGE_CROSS", "together: the cross (%s)" % boss.current_attack.get_attack_name())
+	await frames(2)
+	check(boss.is_diagonal() and boss.way_in(1) == LEFT, "...the weapon diagonal: the nearer one's layer turned")
+	await _place(100.0, 130.0)
+	await _break_posture(false)
+	check(boss.rage == "" and boss.current_attack.get_attack_name() == "TOGETHER", "the dev tools holding him: no rage")
+	near(rules.posture_of(boss), rules.posture_max(boss), 0.01, "...his posture only full again")
+
+
+# THE RAGE: every strike in both layers, so heavy (a lone parry has a block's effect), from side to
+# side; where nothing stopped a blade the mirror cracks. Apart, the pendulum: the one at the blade
+# parries alone and the partner's blade breaks through under them. He's exhausted after it.
+func test_the_pendulum_apart():
+	await _setup()
+	await _place(-100.0, 110.0)
+	var blocks = [_count(p1, "block"), _count(p2, "block")]
+	var run = await _run("RAGE_PENDULUM", [p1, p2])
+	var links = run.attack._links
+	check(links.size() == 2 and links.all(func(l): return l.layers == [1, 2]), "both strikes in both layers (%s)" % [links.map(func(l): return l.layers)])
+	check(_count(p2, "block") == blocks[1] + 1 and _count(p1, "block") == blocks[0] + 1,
+		"each one's lone parry, P2's of the first and P1's of the second: a block's effect")
+	check(run.cracks == [1, 2], "the first cracks from P1's layer (under P2), the second from P2's (under P1) (%s)" % [run.cracks])
+	check(not boss.is_diagonal() and boss.way_in(1) == LEFT, "...from side to side, and still parallel after it")
+	near(run.stagger, NUMBERS.hitter_stagger_least, 0.05, "exhausted after it; no blade parried that counted")
+
+
+# THE RAGE: apart, the cross is the easy one: parried together, then both blades into nothing, each
+# breaking through under the partner. The exhaustion: longer by each blade parried; the alignment
+# stays diagonal, his posture full.
+func test_the_cross_apart():
+	await _setup()
+	await _place(-100.0, 110.0)
+	var run = await _run("RAGE_CROSS", [p1, p2])
+	check(run.windows.size() == 2, "the first parried together: a window each (%s)" % [run.windows])
+	run.cracks.sort()
+	check(run.cracks == [1, 2], "the second into nothing in both layers (%s)" % [run.cracks])
+	near(run.stagger, NUMBERS.hitter_stagger_least + NUMBERS.hitter_stagger_per_parry * 2, 0.05, "exhausted: one co-op parry, two blades")
+	check(boss.is_diagonal(), "the alignment stays as the cross left it: diagonal")
+	near(rules.posture_of(boss), rules.posture_max(boss), 0.01, "his posture full after it")
+	while boss.state == BaseBoss.State.STAGGER:
+		await get_tree().physics_frame
+	check(boss.rage == "", "back on his feet: the rage is over")
+
+
+# PHASE 2 begins with his first rage (or F1 hitter_phase2): the together field too long ends in the
+# flip, not the stomp leap.
+func test_phase_2():
+	await _setup()
+	await _place(100.0, 130.0)
+	boss._together_for = int(NUMBERS.hitter_together_stale) - 1
+	check(boss.chain_finale() == "STOMP", "phase 1: the together field too long, the stomp leap")
+	boss.phase = 2
+	boss._together_for = int(NUMBERS.hitter_together_stale) - 1
+	check(boss.chain_finale() == "FLIP", "phase 2: the flip")
+	set_move("hitter_phase2", true)
+	await _setup()
+	check(boss.phase == 2, "F1 hitter_phase2: phase 2 from the start")
+	set_move("hitter_phase2", false)
+
+
+# THE FLIP: in one layer only (the nearer player's), a sweep flat through him that meets that player as
+# it passes them: a normal strike, a lone parry is a parry and opens the partner's window; no crack.
+func test_the_flip():
+	await _setup()
+	await _place(100.0, 130.0)
+	var parries = _count(p1, "parry")
+	var hits = _count(p2, "hit")
+	var run = await _run("FLIP", [p1])
+	check(boss.way_in(1) == LEFT and boss.way_in(2) == RIGHT, "the nearer one's layer flipped, the other's not")
+	check(boss.field() == "split", "...together turned split (%s)" % boss.field())
+	check(_count(p1, "parry") == parries + 1 and _count(p2, "hit") == hits, "it met P1, who parried it; not P2")
+	check(run.windows == [[p2, p1]], "...a lone parry, P2's window (%s)" % [run.windows])
+	check(run.cracks.is_empty(), "...and no crack (%s)" % [run.cracks])
+	await _place(250.0, 130.0)
+	hits = _count(p1, "hit")
+	run = await _run("FLIP", [])
+	check(boss.way_in(2) == LEFT and _count(p1, "hit") == hits, "P2 nearer now: P2's layer; P1 out of reach, not met")
+
+
+# THE FLIP as his finale: together turns split, then a blade strike after a long windup. Whoever has to
+# goes over, and the two parry it together: staggered, as after the great hammer.
+func test_the_flip_finale():
+	await _setup()
+	await _place(100.0, 130.0)
+	_start("FLIP_FINALE")
+	var stagger = 0.0
+	var moved = false
+	for i in 1200:
+		await get_tree().physics_frame
+		if boss.state in [BaseBoss.State.TELEGRAPH, BaseBoss.State.ATTACKING]:
+			_parry([p1, p2])
+			if not moved and boss.way_in(1) == LEFT:
+				moved = true
+				check(boss.field() == "split", "the flip: together turned split")
+				p1.global_position.x = middle - 100.0  # over to the other side
+		elif moved:
+			if boss.state == BaseBoss.State.STAGGER:
+				stagger = boss.timer
+			break
+	check(moved, "P1's layer flipped")
+	near(stagger, 0.5 + 0.2 * 3, 0.05, "re-formed and parried together: staggered (the flip, and a co-op parry)")
+
+
+# PROVOKING (phase 2): a hit that lands on his pommel side angers that head at once; the layer flips
+# toward the hitter only as the repetition ends, before he decides: split turns together, and the next
+# repetition is the together field's. In phase 1 it doesn't.
+func test_provoking():
+	await _setup()
+	set_number("hitter_reps_min", 2.0)
+	set_number("hitter_reps_max", 2.0)
+	for phase in [1, 2]:
+		await _place(-100.0, 110.0)  # P1 at his pommel, P2 at his blade
+		boss.phase = phase
+		var chain = boss.find_attack("CHAIN")
+		_start("CHAIN")
+		while boss.state != BaseBoss.State.ATTACKING:
+			await get_tree().physics_frame
+		boss.take_damage(10.0, p1)
+		if phase == 1:
+			check(boss._provoked.is_empty(), "phase 1: a hit on his pommel side provokes nothing")
+		else:
+			check(boss._provoked.has(1) and boss._head_angry(LEFT), "phase 2: it provokes that head, red at once")
+			await wait(1.0)
+			check(boss.way_in(1) == RIGHT and boss._head_angry(LEFT), "...still red, no flip mid-repetition")
+		while chain._motifs.size() < 2 and boss.state in [BaseBoss.State.TELEGRAPH, BaseBoss.State.ATTACKING]:
+			_parry([p1, p2])
+			await get_tree().physics_frame
+		var want = ["split", "split"] if phase == 1 else ["split", "together"]
+		check(chain._motifs == want, "phase %d: the motifs %s (%s)" % [phase, want, chain._motifs])
+		if phase == 2:
+			check(boss.way_in(1) == LEFT and boss._provoked.is_empty(), "...P1's layer flipped toward P1 as it ended; the provocation spent")
+		while boss.state in [BaseBoss.State.TELEGRAPH, BaseBoss.State.ATTACKING]:
+			await get_tree().physics_frame
 
 
 # Hits on his pommel side cost him twice the posture (F2 hitter_pommel_posture), and anger that

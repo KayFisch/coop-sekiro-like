@@ -181,6 +181,12 @@ func on_posture_broken() -> bool:
 	return true
 
 
+# True while nothing costs him posture (the Heavy Hitter's rage: it's broken already, and full again
+# when it's over).
+func holds_posture() -> bool:
+	return false
+
+
 # Movement between attacks: drifting home while idle and recovering, and the stagger's rocking.
 func _idle_motion(_delta: float):
 	global_position = global_position.lerp(home_position, 0.05)

@@ -334,6 +334,8 @@ func _regen(actor, delta: float):
 func _lose_posture(actor, size: int, can_break: bool, times = 1.0):
 	if not _posture.has(actor):
 		_meet(actor)
+	if actor == boss and boss.holds_posture():
+		return
 	var sizes = BOSS_POSTURE_SIZES if actor == boss else POSTURE_SIZES
 	var left = minf(_posture[actor], posture_max(actor)) - Tuning.value(sizes[size]) * times
 	if left <= 0.0 and can_break:

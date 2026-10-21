@@ -6,8 +6,10 @@ extends Node
 ## him (between his chains), or under him in a stomp leap. It meets each of his strikes at it with a
 ## parry, a block or nothing (by chance, F2 "hitter_stand_in_parry" / "_block"), jumps the mirror
 ## breaking open under it (crack.gd), and strikes when its partner's parry opens its window (a sync
-## hit). In the players' sync mode it goes to its partner to bind, and bound it draws back when they
-## do and lets go on the big cue (as Bifrons's stand-in does).
+## hit). It re-forms when that helps (F2 "hitter_stand_in_reform": how often), going over him to his
+## other side: in the rage's roar, if its pattern is the hard one for their formation, and after a
+## flip that leaves it at his pommel. In the players' sync mode it goes to its partner to bind, and
+## bound it draws back when they do and lets go on the big cue (as Bifrons's stand-in does).
 
 enum Plan { NOTHING, PARRY, BLOCK }
 
@@ -44,6 +46,9 @@ var _dash_for = 0  # frames it still holds dash
 var _dashed = false  # this jump over him has had its dash
 var _let_go = false  # bound: it has let go while its partner still draws back
 var _dash_wait = 0.0  # s until it may dash-slash through him again
+var _over_to = 0  # re-forming: the side of him it's going over to (0: not)
+var _rage_seen = false  # the rage under way has had its decision
+var _ways_seen = []  # the blade's way in its layer and its partner's, last frame (a flip: its own alone changes)
 
 
 func _physics_process(delta):
@@ -61,11 +66,15 @@ func _physics_process(delta):
 		_strike_in = -1.0
 		_jump_for = 0.0
 		_dash_for = 0
+		_over_to = 0
+		_rage_seen = false
+		_ways_seen = []
 	if player == null:
 		return
 	_defend(player)
 	_strike(player, delta)
 	_jump(player, delta)
+	_reform(player)
 	_move(player, delta)
 
 
@@ -160,8 +169,32 @@ func _press_jump(player):
 	_hold(player, "jump", true)
 
 
+# Re-forming, when it helps (by chance): in the rage's roar, if the pattern is the hard one for their
+# formation (the pendulum apart, the cross together), and when a flip has left it at his pommel. Either
+# way: over him to his other side.
+func _reform(player):
+	var partner = player.partner()
+	var side = boss.side_of(player)
+	if boss.rage == "raging":
+		if not _rage_seen and boss.state == BaseBoss.State.TELEGRAPH:
+			_rage_seen = true
+			var apart = partner != null and boss.side_of(partner) != side
+			if boss.rage_cross != apart and randf() < Tuning.value("hitter_stand_in_reform"):
+				_over_to = -side
+	else:
+		_rage_seen = false
+	var ways = [boss.way_of(player), boss.way_of(partner) if partner != null else 0]
+	var flipped = _ways_seen.size() == 2 and ways[0] != _ways_seen[0] and ways[1] == _ways_seen[1]
+	_ways_seen = ways
+	if flipped and boss.rage == "" and not boss.at_blade(player) and randf() < Tuning.value("hitter_stand_in_reform"):
+		_over_to = -side
+	if _over_to == side or not boss.state in [BaseBoss.State.TELEGRAPH, BaseBoss.State.ATTACKING]:
+		_over_to = 0  # there, or it's over
+
+
 # Its feet: in front of his blade, at its distance; from his pommel side over him (or under him in a
-# stomp leap). In his chains it stays where it is meanwhile. In sync mode: to its partner.
+# stomp leap), and when re-forming. In his chains it stays where it is meanwhile. In sync mode: to its
+# partner.
 func _move(player, delta: float):
 	var away = boss.side_of(player)
 	var distance = boss.distance_to(player)
@@ -177,8 +210,8 @@ func _move(player, delta: float):
 			_hold(player, "attack", true)
 			_dash_for = 2
 			_hold(player, "dash", true)
-	elif not boss.at_blade(player) and (boss.airborne or boss.state in [BaseBoss.State.IDLE, BaseBoss.State.RECOVER]):
-		# At his pommel: over to the blade's side, at him and on.
+	elif _over_to != 0 or (not boss.at_blade(player) and (boss.airborne or boss.state in [BaseBoss.State.IDLE, BaseBoss.State.RECOVER])):
+		# At his pommel, or re-forming: over to his other side, at him and on.
 		_walk = -away
 		if not boss.airborne and player.is_on_floor() and _jump_for <= 0.0 and distance <= JUMP_FROM:
 			_press_jump(player)

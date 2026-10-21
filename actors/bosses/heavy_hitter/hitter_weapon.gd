@@ -8,7 +8,9 @@ extends BaseBoss
 ## point) at one end, the pommel (an iron butt) at the other. Each player has a layer of it, by
 ## player_id: P1's is the light half of the mirrored screen, P2's the shadow half
 ## (ui/mirror_view.gd). In each layer the blade points left or right (its way), and the two may differ
-## (parallel: the same way; diagonal: one each way; phase 1 is always parallel). Each layer's weapon
+## (parallel: the same way; diagonal: one each way). Turning round turns both layers (the alignment
+## stays); one layer alone turns in the rage (turn_layer()) and in the flip, the heads' quarrel, where
+## it sweeps flat through him to the other side (sweep_layer(), end_sweep()). Each layer's weapon
 ## has a pose of its own: they move together for a strike of both heads (pose_weapon()), and apart
 ## when each head goes for its own player (pose_layer(): one strikes with the blade, the other jabs).
 ## Each half shows only its own layer's weapon; one-sided, both are drawn, a little apart.
@@ -18,7 +20,8 @@ extends BaseBoss
 ## red) is on the axe's cutting edge and the spear point, and on the butt's face for a jab.
 ## HIS HEADS sit on top of him, one each side. In each layer the head on the blade's side has the
 ## blade there: a band across it in that layer's player's color. A head whose side he's hit on, his
-## pommel side, turns red for a moment (anger_head(); phase 1: only the picture).
+## pommel side, turns red for a moment (anger_head()), or longer (_head_angry(): the rage, a
+## provoked head). Before a flip they lean toward each other (lean_heads()).
 ## HIS GUARD (the rules, 4): only between his chains, the weapon held level: then it guards both
 ## sides, in both layers. Otherwise (his windups, strikes, staggers) he's open: hits land.
 ## THE PARTNER'S HIT: a parry of his strike that counts opens the window for the partner's sync hit
@@ -68,6 +71,7 @@ const POSE_RECOIL = Vector3(20.0, -40.0, -1.0)  # thrown back up by a parry
 const POSE_JAB_BACK = Vector3(40.0, -5.0, 0.0)  # a jab's windup: pulled back toward the blade's side...
 const POSE_JAB = Vector3(-40.0, -5.0, 0.0)  # ...and thrust out, the pommel first
 const POSE_UP = Vector3(0.0, -70.0, -1.571)  # straight up over him (turning round)
+const POSE_SWEEP = Vector3(14.0, -14.0, 0.0)  # the flip: held out level at chest height, swept flat through him
 const POSE_LIMP = Vector3(30.0, 20.0, 0.21)  # staggered or dead: down on the floor
 const GUARD_NEAR = Vector2(8.0, 0.15)  # px, radians: back at his guard this close to POSE_LEVEL
 const PARRY_FLICK_TIME = 0.12  # his guard parrying a hit
@@ -83,6 +87,8 @@ const COLOR_ANGRY = Color(0.85, 0.15, 0.1)
 const ANGRY_TIME = 0.4
 const MARK_SIZE = Vector2(16.0, 5.0)  # the band across the blade's head, in a layer
 const MARK_Y = 8.0  # px down from the head's top
+const HEAD_LEAN = 6.0  # px the heads move toward each other before a flip...
+const HEAD_TILT = 0.35  # ...and radians they tilt by
 
 # --- Turning round (his breath; the stomp leap's air) ---
 const TURN_TIME = 0.45
@@ -105,6 +111,7 @@ var _ways = {1: RIGHT, 2: RIGHT}  # layer -> the way its blade points
 var _poses = {1: POSE_LEVEL, 2: POSE_LEVEL}  # layer -> where its weapon is drawn just now
 var _targets = {1: POSE_LEVEL, 2: POSE_LEVEL}  # layer -> where it's headed (pose_layer())...
 var _snaps = {1: false, 2: false}  # ...there this frame: a drop has to land on time
+var _sweeps = {1: 1.0, 2: 1.0}  # layer -> its weapon turned in depth: 1 its way, -1 the other (the flip's sweep)
 var _tells = {1: [COLOR_SWORD, COLOR_SWORD], 2: [COLOR_SWORD, COLOR_SWORD]}  # layer -> its telegraph's colors just now, at the blade and the butt (tint_layer())
 var _at_guard = true  # the weapon is back at its guard (see is_guarding())
 var _weapons = {}  # layer -> Node2D: its weapon, on its pivot
@@ -112,6 +119,7 @@ var _parts = {}  # layer -> {name: CanvasItem}: its parts (_setup_pose())
 var _heads = {}  # side -> ColorRect
 var _marks = {}  # layer -> ColorRect: across the blade's head, in that layer
 var _angry_until = {LEFT: 0.0, RIGHT: 0.0}  # side -> anim_time its head is red until
+var _lean = 0.0  # the heads leaning toward each other, 0..1 (lean_heads())
 var _turned_at = -100.0  # anim_time he last turned round (turn_round())
 var _turn_posed = true  # ...and that turn poses the weapon itself (not the stomp leap's: its attack does)
 var _flick_until = 0.0  # anim_time until which his guard is parrying
@@ -123,9 +131,14 @@ var _windows = {}
 
 # --- Layers and sides ---
 
-# The way the blade points in that player's layer.
+# The way the blade points in that player's layer...
 func way_of(player) -> int:
 	return _ways.get(player.player_id, RIGHT)
+
+
+# ...in that layer.
+func way_in(layer: int) -> int:
+	return _ways[layer]
 
 
 func side_of(player) -> int:
@@ -145,6 +158,11 @@ func in_front_of_blade(player) -> bool:
 # On the pommel's side, in reach of a jab.
 func in_front_of_pommel(player) -> bool:
 	return not at_blade(player) and distance_to(player) <= POMMEL_REACH
+
+
+# The blade points one way in one layer and the other way in the other.
+func is_diagonal() -> bool:
+	return _ways[LAYERS[0]] != _ways[LAYERS[1]]
 
 
 # The other layer: the other half of the mirrored screen.
@@ -197,12 +215,47 @@ func is_turning() -> bool:
 	return anim_time < _turned_at + TURN_TIME
 
 
+# One layer's blade over to the other side, up over him, as the attack posing it goes on: the
+# alignment changes (the rage).
+func turn_layer(layer: int):
+	_flip(layer)
+
+
 # That layer's blade the other way, drawn just where it was: its pose taken over into the new way,
 # so it eases on from there, up over him.
 func _flip(layer: int):
 	_ways[layer] = -_ways[layer]
 	var pose: Vector3 = _poses[layer]
 	_poses[layer] = Vector3(-pose.x, pose.y, -(pose.z + PI))
+
+
+# --- The flip's sweep ---
+
+# That layer's weapon `share` (0..1) of the way through its flat sweep to the other side: drawn
+# turning in depth, shorter as it comes through him, its pose held level (POSE_SWEEP).
+func sweep_layer(layer: int, share: float):
+	_sweeps[layer] = cos(PI * clampf(share, 0.0, 1.0))
+
+
+# ...and through: the blade points the other way in that layer (the alignment changes).
+func end_sweep(layer: int):
+	_ways[layer] = -_ways[layer]
+	_sweeps[layer] = 1.0
+
+
+# A sweep cut short: the weapon back as it was.
+func stop_sweeps():
+	for layer in LAYERS:
+		_sweeps[layer] = 1.0
+
+
+# The share of that layer's sweep at which the blade passes that player (it starts at its full reach
+# on the blade's side and ends at it on the other); INF if they're beyond its reach.
+func sweep_share(player, layer: int) -> float:
+	var x = (player.global_position.x - global_position.x) * _ways[layer] / BLADE_REACH
+	if absf(x) > 1.0:
+		return INF
+	return acos(x) / PI
 
 
 # --- The guard ---
@@ -232,6 +285,16 @@ func guard_block(player):
 # A hit on his pommel side (in the hitter's layer): the head on that side turns red a moment.
 func anger_head(side: int):
 	_angry_until[side] = anim_time + ANGRY_TIME
+
+
+# True while that side's head is red (heavy_hitter.gd adds the rage and a provoked head).
+func _head_angry(side: int) -> bool:
+	return anim_time < _angry_until[side]
+
+
+# The heads leaning toward each other, 0 (not) to 1: the flip coming. The attack sets it every frame.
+func lean_heads(share: float):
+	_lean = share
 
 
 # A point on that side's flank, at height y (world coordinates).
@@ -305,6 +368,7 @@ func _setup_pose():
 	for side in SIDES:
 		var head = _rect(HEAD_SIZE, COLOR_IDLE.lightened(HEAD_LIGHTEN))
 		head.position = Vector2(body.size.x / 2.0 + side * HEAD_X - HEAD_SIZE.x / 2.0, -HEAD_SIZE.y)
+		head.pivot_offset = Vector2(HEAD_SIZE.x / 2.0, HEAD_SIZE.y)  # it leans on its neck
 		body.add_child(head)
 		_heads[side] = head
 	for layer in LAYERS:
@@ -370,6 +434,8 @@ func _line(parent: Node, points: Array, color: Color, width: float) -> Line2D:
 func reset_pose():
 	pose_weapon(POSE_LEVEL)
 	tint_steel(COLOR_SWORD)
+	stop_sweeps()
+	_lean = 0.0
 
 
 # Where the weapon should be, in both layers (a strike of both heads): one of the POSE_s, or between
@@ -433,15 +499,19 @@ func _near_level(pose: Vector3) -> bool:
 	return Vector2(off.x, off.y).length() <= GUARD_NEAR.x and absf(off.z) <= GUARD_NEAR.y
 
 
-# That layer's weapon where its pose and way say; one-sided, a little off the other's.
+# That layer's weapon where its pose and way say (in a sweep, turned in depth); one-sided, a little
+# off the other's.
 func _place_weapon(layer: int, split: bool):
 	var pose: Vector3 = _poses[layer]
 	var way = _ways[layer]
+	var depth: float = _sweeps[layer]
+	if absf(depth) < 0.02:
+		depth = 0.02 if depth >= 0.0 else -0.02  # edge on: never quite flat, a scale of 0 can't be drawn
 	var apart = 0.0 if split else ONE_SIDED_APART * (layer - 1.5)
 	var weapon: Node2D = _weapons[layer]
-	weapon.position = Vector2(pose.x * way, pose.y + apart)
+	weapon.position = Vector2(pose.x * way * depth, pose.y + apart)
 	weapon.rotation = pose.z * way
-	weapon.scale.x = way
+	weapon.scale.x = way * depth
 	_set_layer(weapon, layer_bit(layer) if split else MirrorView.WORLD)
 
 
@@ -476,10 +546,14 @@ func _paint(layer: int, tell: Array, aims: Array):
 		hand.color = body.color.darkened(HAND_DARKEN)
 
 
-# The heads: red a moment when angered; and in each layer, the band across the blade's one.
+# The heads: red when angered, leaning toward each other before a flip; and in each layer, the band
+# across the blade's one.
 func _update_heads(split: bool):
 	for side in SIDES:
-		_heads[side].color = COLOR_ANGRY if anim_time < _angry_until[side] else COLOR_IDLE.lightened(HEAD_LIGHTEN)
+		var head: ColorRect = _heads[side]
+		head.color = COLOR_ANGRY if _head_angry(side) else COLOR_IDLE.lightened(HEAD_LIGHTEN)
+		head.position.x = body.size.x / 2.0 + side * (HEAD_X - HEAD_LEAN * _lean) - HEAD_SIZE.x / 2.0
+		head.rotation = -side * HEAD_TILT * _lean
 	for layer in LAYERS:
 		var mark: ColorRect = _marks[layer]
 		var p = player_of(layer)

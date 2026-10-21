@@ -19,7 +19,7 @@ const LABEL_WIDTH = 50  # characters: the values line up after this
 const SLIDER_CELLS = 15  # characters a slider's bar takes at most
 
 # The panel's tabs, in order. Every entry names one.
-const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Bifrons", "Sync", "Runner", "Ring", "Controls", "Sound", "Dev"]
+const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Bifrons", "Hitter", "Sync", "Runner", "Ring", "Controls", "Sound", "Dev"]
 
 # Each switch: key, its tab, what the panel calls it, and its default (a bool, or one of
 # `options`). Labels starting with "  " belong to the switch above them. A `slider` one stops at
@@ -56,6 +56,8 @@ const ENTRIES = [
 	{"key": "bifrons_face", "tab": "Bifrons", "label": "Players always face him", "default": true},
 	{"key": "mirror_view", "tab": "Bifrons", "label": "Mirrored screen (P1 light above the floor, P2 its shadow below)", "default": true},
 	{"key": "mirror_blades", "tab": "Bifrons", "label": "  a blade at the partner, in your half: mirror (as theirs), hold (on guard), fade (faint), color (in its player's color)", "default": "color", "options": ["mirror", "hold", "fade", "color"]},
+	{"key": "hitter_phase2", "tab": "Hitter", "label": "Start in phase 2 (the flip, provoking his pommel side; else from his first rage)", "default": false},
+	{"key": "hitter_last_rage", "tab": "Hitter", "label": "A last rage once his sync is low (F2): pendulum, cross, the great hammer", "default": false},
 	# Sync: sync as life and the sync mode (core/sync_rules.gd, core/sync_bond.gd)
 	{"key": "swings_hold_posture", "tab": "Sync", "label": "Your own swings hold your posture regen back too (his attacks never do)", "default": true},
 	{"key": "dash_slash_pass", "tab": "Sync", "label": "Dash-slash goes through the boss: in the sync mode only, always, or never", "default": "sync", "options": ["sync", "always", "off"]},
