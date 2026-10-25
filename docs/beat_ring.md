@@ -6,8 +6,9 @@ of its own: `levels/ring/` (`ring.gd`, `ring.tscn`), entry 7 on the select scree
 `nicho/beat-runner`. Since round 4 it's **Columna Bifrons's fight without him**: his patterns,
 his tempo, his sides, his partner's hit.
 
-2026-10-19: one of the planned bosses, the Acrobat, may use the ring as one of his phases (he is
-out of reach and his attacks come as projectiles). See `docs/concept.md`, "Bosses".
+2026-10-25: the Acrobat doesn't take the ring over as one of his phases. What he takes is its
+idea, a parried projectile going to the partner, who can strike it back (`docs/boss_acrobat.md`).
+What becomes of the ring itself is open.
 
 ## What it is
 

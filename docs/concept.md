@@ -115,6 +115,7 @@ players act independently most of the time). **Each half shows the boss from its
 of view:** the blades aimed at that player stand out; a blade not aimed at them steps back
 (how: below). One blade aimed at you: you're on your own. **Two blades in your half: heavy,
 you need your partner.**
+What the halves may show differently, and what they may not: "The mirror rule" (below).
 
 Why: today, when he strikes one player, the sword moves in the other half too and slashes the
 air there (in ppe as well). That's sword chaos, and it doesn't show what makes a heavy attack
@@ -133,6 +134,33 @@ weapon can point one way in the light half and the other way in the shadow half
 
 In the sync mode the halves merge: the lower player flows into the upper one, and the focus
 moves to the shared part (the upper half).
+
+---
+
+## The mirror rule
+
+Decided 2026-10-25 (Nicho). **The boss is one body in one world.** What he does happens in both
+layers **at once, in the same place, in the same motion**. The halves may differ only in **whom**
+something is for (contrast, color: "The two screen halves"), never in **what** happens. The
+players are two and can part; he can't.
+
+- **The players** act on their own from the start; their sync is their power-up.
+- **The bosses** are in sync from the start and can't act apart from themselves. The more bosses
+  the players beat, the more the bosses defy the mirror. That's the game's founding idea
+  (`scribbles.md`, 2026-09-30 and 2026-10-14), now the arc of the whole game.
+- **Every break of the rule is an event:** announced, visible, at a phase change or as a finale,
+  never in passing. So the rule stays readable, and breaking it feels like something.
+
+| Stage | What may differ between the layers | Who |
+|---|---|---|
+| 0 | nothing (only whom it's for) | the Warden; the Heavy Hitter's phase 1 |
+| 1 | the **weapon** (where it points, its state) | the Heavy Hitter's phase 2 (parallel or diagonal); the Kultist (a staff in each half) |
+| 2 | the **body** (its place or its time); the rhythm stays shared | the Acrobat's phase 2 (point-mirrored) |
+| 3 | **everything**: two beings, each with its own sync | a last boss's phase 3 |
+
+The Warden keeps the rule: the threshold he guards can be the mirror line itself. The order of the
+bosses roughly follows the stages, the Warden first; where the Kultist stands (stage 1 from the
+start) is still to be settled (`TASKS.md`).
 
 ---
 
@@ -179,6 +207,9 @@ which sides were parried. But:
   next or how far someone is thrown changes. A single player action (e.g. a co-op parry at the
   start of a combo) never cancels the rest of it.
 - At most 2 to 3 outcomes per finale.
+- **No finale starves, none takes over** (2026-10-25): the same finale comes at most twice in a
+  row; if his rules would pick it a third time, the next one that fits comes instead. (The Acrobat
+  has it from the start; the Heavy Hitter and the try-out boss's chains don't yet: `TASKS.md`.)
 - A consequence is **a chain start with a given first link** (e.g. "the next chain starts on
   the player who missed"), so reactions reuse the same building blocks instead of needing an
   animation each.
@@ -194,6 +225,9 @@ steer him.
 
 1. **One motif per chain**, visibly repeated. Within a chain you learn the motif; over the fight
    you learn his 2 to 3 motifs.
+   A boss may instead have **longer motifs** (phrases of 5 to 6 links, played once or twice); then
+   a chain may string different ones together, as long as each can be told **by its first link**
+   and he decides only at a motif's end (the Acrobat, `docs/boss_acrobat.md`).
 2. **Decisions only at fixed points:** the end of a motif repetition. Players know *when* a
    branch can come, not *which*.
 3. **Every decision hangs on something visible:** his posture, distance, formation, the outcome
@@ -201,6 +235,12 @@ steer him.
 4. **Same situation, (mostly) same reaction.** Randomness only in which motif and how many
    repetitions, never in reactions to what the players did.
 5. **Every finale has its own clear telegraph.**
+6. **A feint shows itself in the windup** (2026-10-25). A strike that hesitates or deceives has
+   its own tell, always the same, **while he winds up**, before anyone would parry: a tell at the
+   moment of the strike comes when the players are already pressing. The cue for "it comes" (red)
+   never lies; it comes with the real strike. A feint has a **fixed place** in its motif. Since the
+   sync hit comes after the parry, a swallowed feint costs both: the parrier misses, the partner
+   gets no window.
 
 ### Telegraphs
 
@@ -226,8 +266,11 @@ rules). What sets the bosses apart is **who controls the formation**:
 - **The Heavy Hitter, the Ettin:** he *forces* it to change, by how his weapon points in the two
   layers (parallel or diagonal); *how* the players answer (moving, or provoking his pommel side)
   is up to them.
-- **The Acrobat:** he *moves himself* all the time; the formation shifts because the players
-  chase him.
+- **The Acrobat:** he *moves himself* all the time (dashes, salti, up the walls, through the
+  mirror line); the formation shifts because the players chase him. A ring he throws that one
+  player parries can be struck back only by the partner, where it passes them: one more reason to
+  follow him. In his phase 2 his two bodies stand mirrored through the room's middle, so where he
+  goes decides whether the players can stay together.
 
 ---
 
@@ -240,8 +283,14 @@ rules). What sets the bosses apart is **who controls the formation**:
 - **The Heavy Hitter, the Ettin** (working title; two heads, one weapon): designed (v0,
   2026-10-19); phase 1 built (2026-10-20), the rage and phase 2 with the flip (2026-10-21).
   `docs/boss_heavy_hitter.md`.
-- **The Acrobat** (towards Lady Butterfly): later; one of his phases is the beat ring
-  (`docs/beat_ring.md`).
+- **The Acrobat** (working title; towards Lady Butterfly; a juggler with four rings): designed
+  (v1, 2026-10-25), to be built next. `docs/boss_acrobat.md`. The beat ring isn't one of his phases
+  as it is; its idea, a parried projectile going to the partner, who can strike it back, is his
+  signature.
+- **A last boss** (notes only, not to be built yet): he can part as the players can. Phase 1 a
+  normal boss; phase 2 his own break of the mirror rule (a time offset that grows, swapping the
+  players' color cues); phase 3: his sync brought to nothing, he doesn't die but splits into his two
+  colors, which act apart, and it's a race to the sync mode. `scribbles.md`, 2026-10-25.
 - Cubus Maximus and Sphaera Pendula, the first two, were dropped on 2026-10-18.
 
 Open: **passing through a boss.** Idea: only weapons stop a dash, not the body (the Warden's

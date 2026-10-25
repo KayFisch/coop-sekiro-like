@@ -825,3 +825,75 @@ solange er angreift (er will nur treffen), gedeckt nur im Atem.
 - Ein Angriff für die Wut oder als Ketten-Finale: wildes Hin- und Herschlagen, zu schnell zum
   Parieren, mit Schockwellen, denen man durch Springen oder Dashen ausweicht.
 - Das einfache Umdrehen könnte noch den alten Sweep bekommen.
+
+## 2026-10-25 (Nicho, mit Claude): Spiegelregel, Akrobat, der letzte Boss
+
+Chat-Session ohne Code (2026-10-23 und 25). Die Entscheidungen stehen jetzt in `docs/concept.md`
+(„The mirror rule“, „Boss design principles“), `docs/boss_acrobat.md` und `TASKS.md`. Hier das
+Warum, was verworfen wurde, und die Notizen zum letzten Boss.
+
+**Die Spiegelregel.** Die coolen Boss-Ideen brechen immer mehr die Regel der Spiegelung; dafür muss
+die Regel vorher klar sein, und es braucht einen Boss, der sich klar daran hält (der Wächter). Die
+Spieler handeln von Haus aus unabhängig, ihr Sync ist das Power-up; die Bosse sind von Haus aus in
+Sync, und je mehr man besiegt, desto stärker widersetzen sie sich der Spiegelung. Das ist eigentlich
+die Gründungsidee (Scribbles vom 2026-09-30 und 2026-10-14), jetzt als Bogen des ganzen Spiels.
+Claude: Jeder Bruch ist ein Ereignis (Phasenwechsel oder Finale), und die Bosse brechen die Regel
+Stufe um Stufe: an der Waffe (Hitter, Kultist), am Körper (Akrobat), ganz (letzter Boss).
+Story-Idee, nicht entschieden: Der Spiegel nimmt mit jedem Boss mehr Schaden (der Hitter reißt ihn,
+der Akrobat springt hindurch und schneidet sich daran entzwei, der letzte Boss zerbricht ihn).
+
+**Der Akrobat** war als Ideensammlung zu viel für einen Boss (fünf neue Regeln: Ballwechsel, Finte,
+Farbtausch, Körper je Ebene, Sprung durch die Ebene). Aufgeteilt: Der Akrobat ist der Ort, der
+letzte Boss die Zeit und die Lüge. Der Beat-Ring wird nicht 1:1 seine Phase; er übernimmt nur die
+Idee, dass parierte Projektile zum Partner gehen und zurückgeschlagen werden können.
+
+Wie der Entwurf entstanden ist (erster Entwurf von Claude, dann zwei Runden Kritik von Nicho):
+- **Finte:** Claudes erster Cue (den Ring wirbeln) kam genau im Moment des Schlags, also dann, wenn
+  man schon pariert: wertlos. Jetzt (Nicho): Er dreht den Ring beim Ausholen einmal um seine Achse;
+  zur Zeit des normalen Hiebs zuckt er nur, der echte Hieb kommt kurz danach. Daraus die allgemeine
+  Regel: Eine Finte zeigt sich beim Ausholen.
+- **Der Bogen** (Nicho): Jeder Ring fliegt im Bogen zu ihm zurück, und er fängt ihn wie ein
+  Jongleur. Geblockt oder getroffen fliegt er in der eigenen Ebene zurück; pariert geht er durch die
+  Spiegellinie und fliegt in der Ebene des Partners, der ihn dort schlagen kann: dann direkt zum
+  Akrobaten. Claude wollte den Bogen immer am Partner vorbeiführen (wie den violetten Splitter im
+  Ring); Nicho nimmt denselben Bogen, damit der Partner rüber muss: ein Grund mehr, ihm nachzusetzen.
+- **Der Salto** (Nicho): greift an (Tritt mit einer Fußklinge, oder Wurf) und ist die Weiche; wo er
+  landet, sagt, was kommt (Wand: Ballwechsel oder Sturzflug; Spiegellinie: Tauchgang; Boden: weiter).
+  Welcher Salto kommt, hängt nicht am Motiv, sondern daran, was als Nächstes kommt.
+- **Das Hagel-Motiv** (Wurf, Wurf, Doppelwurf von der Wand) ist raus; dafür Nichos Wurfkette:
+  Abstand, Wurf, Fang im Sprung mit Sprunghieb, zwei schnelle Hiebe.
+- **Längere Motive** (Nicho): Der Akrobat verträgt längere Phrasen, die sich nicht oft wiederholen.
+  Damit es lesbar bleibt (Claude): am ersten Glied erkennbar, feste Folge, entschieden nur am Salto.
+- **Zwei Ringe je Hand** (Nicho): Jonglieren, und jede Hand kämpft weiter, während ein Ring fliegt.
+- **„Oben außer Reichweite“** ist raus: Er ist klein, springt nicht zu hoch, und die HUD sitzt in der
+  Mitte; er hängt an der Wand in Sprunghöhe. Werfen aus dem Spiegel heraus: verworfen (schwer
+  vorstellbar).
+- **Rückschuss:** trifft ihn immer, staggert ihn aber nur am Ende eines Finales (Ballwechsel,
+  Sturzflug).
+- **Sturzflug** (Nicho): Gemeinsam pariert, steht er kurz auf euren Klingen und springt im Salto
+  rückwärts ab, mit einem Wurf; dessen Rückschuss staggert ihn. Nicht gemeinsam pariert, dasht er
+  weg. In Phase 2 ist er schlauer: kein Wurf, er taucht ab, und der Tauchgang folgt.
+- **Der Dash** ist seine Grundbewegung (Nicho).
+- **Tauchen:** Telegraph (Nicho): Er wirft einen Ring auf die Linie und schneidet sie auf; falls das
+  nicht funktioniert: die Klinge vor sich, kopfüber hinein.
+- **Abwechslung** (Nicho, gilt für alle Bosse): Der Boss reagiert auf die Spieler, aber kein Finale
+  soll nie oder ständig kommen: keins mehr als zweimal hintereinander.
+- **Phase 2** (punktgespiegelt): Nicho hatte sich vorgestellt, dass die Spieler zusammen stehen, weil
+  sie von entgegengesetzten Seiten angegriffen werden. Stimmt, solange er in der Mitte ist; an der
+  Wand steht sein anderer Körper an der anderen Wand, und wer seinem folgt, läuft vom Partner weg.
+  Seine Position ist so der Hebel für den Sync-Modus.
+
+**Der letzte Boss (Notizen, wird noch nicht umgesetzt).** Nicho: Er kann sich wie die Spieler
+aufteilen, ohne daran zugrunde zu gehen. Phase 1: ein normaler Boss. Phase 2: zeigt seine eigene
+Regelwidersetzung. Phase 3: Die Spieler bringen seinen Sync auf 0, aber statt zu sterben splitten
+beide Farben auseinander und handeln getrennt (wichtig ist dann nur noch, den Rhythmus zu halten);
+dann ist es ein Wettkampf, wer zuerst den Sync-Modus erreicht.
+Ihm zugeteilt: Kays Farbcue-Tausch (Scribble vom 2026-10-02; die Lüge braucht ein Vokabular, das man
+das ganze Spiel über gelernt hat) und der Zeitversatz in Phase 2 (ein Kanon: eine Hälfte folgt der
+anderen um einen Schlag, der Versatz wächst bis zum Split).
+Claude: Farbtausch und Kontrastverlust sind dieselbe Regel (wer in der falschen Ebene ist, verliert
+Kontrast), und „Sync als Leben“ hat schon dieselben Regeln für beide Seiten. Offen: Was passiert,
+wenn er den Wettlauf gewinnt (sein eigener Sync-Modus? zurück in Phase 2? Niederlage?); wie er Sync
+aufbaut (vielleicht nach den Regeln der Spieler: seine Hälften geben sich Sync-Hit-Fenster); wo das
+Koop bleibt, wenn er zwei ist (sonst zwei Duelle nebeneinander; Ideen: seine Hälften spielen das
+Relay miteinander, oder Treffer zählen in Phase 3 nur als Sync-Hit); wer dann wo steht.

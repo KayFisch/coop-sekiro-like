@@ -35,23 +35,23 @@ explain well (a moved folder, a changed convention, a decision), leave a handove
 
 Notes from one person to the other, under `### For <name>, from <name> (<date>)`.
 
-### For Nicho, from Kay (2026-10-21)
+### For Kay, from Nicho (2026-10-25)
 
-- **B3 is built: the Heavy Hitter's rage and phase 2**, straight on `nicho/heavy-hitter` (my call,
-  not on `kay/hitter-rage`; pull before you go on there). What's in it, the choices where the
-  design left it open, and what to look for when we test it together: `docs/boss_heavy_hitter.md`,
-  "Built (rage and phase 2)". Then I stopped, as asked.
-- The choices in short: when one layer has to turn (the rage's alignment, the flip as his finale),
-  it's the layer of the player nearer to him; his posture holds through the rage and its exhaustion
-  (else the co-op parries in it break it again at once), so it's full after; only a hit that lands
-  provokes (not one his guard meets); with F5 holding his attacks, no rage.
-- How often the rage comes (measured with two stand-ins, as you asked; the doc has the details):
-  about every chain when they parry 90 % (every ~19 s), every one or two chains at 75 % (~27 s),
-  nearly always in the together field before its finale. A rage lasts ~9 s, so with good players
-  about half the fight is rage. Not decided: for the joint test.
-- Shared code, backwards compatible: `BaseBoss.holds_posture()` (false by default), asked by
-  `SyncRules` before a boss loses posture. F1 has a tab "Hitter" (start in phase 2; the last rage,
-  off). The handover file is gone.
+- Design session with Claude (no code). **The mirror rule** (`docs/concept.md`): the boss is one
+  body in one world; the two halves may differ only in whom something is for, never in what
+  happens. The players can part, the bosses can't, and boss by boss they break the rule a stage
+  further: the Warden keeps it, the Hitter's phase 2 and your **Kultist** break it at the weapon,
+  the Acrobat at the body, a last boss altogether. Your Kultist has stage 1 from the start (a
+  staff per half): does he come after the Hitter, or are his staves mirrored in a phase 1? Your
+  call (`TASKS.md`).
+- **The Acrobat** is designed (v1, `docs/boss_acrobat.md`), to be built after our joint test: a
+  juggler with four rings; a parried ring flies back to him through the mirror, and the partner
+  can strike it back at him; phase 2 point-mirrored. His rings touch your Kultist's spells (both
+  go through the axis to the partner): a proposed line between them is in his doc ("Open"). What
+  do you think?
+- Two new general rules: a feint shows itself in the windup; no finale more than twice in a row.
+- A last boss, notes only (`scribbles.md`, 2026-10-25), with your idea of swapping the players'
+  color cues.
 
 ## The project
 
@@ -74,7 +74,7 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
 docs/                                design docs: concept.md, boss_*.md (one per boss:
                                      columna_bifrons = the try-out boss, bifrons_warden,
-                                     heavy_hitter), attack_pool.md (attacks no boss has yet),
+                                     heavy_hitter, acrobat), attack_pool.md (attacks no boss has yet),
                                      level_*.md (one per level), parkour_gyms.md, art_brief.md
                                      (sizes, colors, poses: for generating sprites),
                                      beat_runner.md, beat_ring.md,

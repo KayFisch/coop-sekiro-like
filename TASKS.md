@@ -14,13 +14,15 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Stand nach dem Durchsprechen (Scribble vom 2026-10-02, „Was ist der Rest des Spiels?“):
   lineare Story und Roguelike mit Mobs fallen wohl raus; im Rennen sind Fokus auf Bosse, eine
   Aufwärmphase als Auto-Runner/Beat-Saber, Platformer und der Berg mit Fortschrittsverlust.
-  Neu (2026-10-19): Der Beat-Ring könnte eine Phase des Akrobaten werden, statt zwischen den
-  Bossen zu stehen.
+  Stand 2026-10-25: Der Akrobat übernimmt nicht den Ring als Phase, nur seine Idee (parierte
+  Projektile gehen zum Partner, der sie zurückschlagen kann). Was aus dem Ring selbst wird, ist offen.
 - [ ] **Woher kommen die Boss-Designs?** (Kay, 2026-10-16) Zweiköpfige Wesen aus Mythen: A aus
   allen Mythologien (ein Boss je Kreatur, evtl. eine Welt je Mythologie), B eine Kreatur für
   alle, C eine Mythologie, D frei. Kay neigt zu A. Details: `scribbles.md`, 2026-10-16.
   Stand 2026-10-19: geplant sind der Wächter (Columna Bifrons, Janus), der Heavy Hitter
   (Arbeitsidee: der Ettin, zwei Köpfe, eine Waffe; Name und Mythos offen) und der Akrobat.
+  Stand 2026-10-25: der Akrobat entworfen (Mythos offen, Kandidaten: Gandabherunda, Amphisbaena),
+  dazu ein letzter Boss (nur Notizen). Die Reihenfolge folgt grob der Spiegelregel (Wächter zuerst).
 - [ ] _(weitere eintragen)_
 
 ## Entscheidungen
@@ -43,6 +45,16 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - **2026-10-19 – Heavy Hitter = der Ettin** (zwei Köpfe, eine Waffe; die Waffe steht in den beiden
   Ebenen parallel oder diagonal; Unisono; offen, solange er angreift; Haltung = Wut-Meter).
   `docs/boss_heavy_hitter.md`.
+- **2026-10-25 – Die Spiegelregel** (`docs/concept.md`, „The mirror rule“): Der Boss ist ein Körper
+  in einer Welt; die Hälften unterscheiden sich nur darin, wem etwas gilt. Jeder Bruch ist ein
+  Ereignis, und die Bosse brechen sie Stufe um Stufe: Wächter 0, Hitter (Phase 2) und Kultist 1,
+  Akrobat 2, ein letzter Boss 3.
+- **2026-10-25 – Finten zeigen sich beim Ausholen** (eigenes, immer gleiches Zeichen; rot lügt nie;
+  fester Platz im Motiv).
+- **2026-10-25 – Kein Finale öfter als zweimal hintereinander** (alle Bosse).
+- **2026-10-25 – Akrobat (v1) und letzter Boss getrennt.** Akrobat = der Ort
+  (`docs/boss_acrobat.md`); letzter Boss = Zeit und Lüge, nur Notizen (`scribbles.md`,
+  2026-10-25). Der Beat-Ring wird nicht 1:1 eine Phase des Akrobaten.
 
 ## Jetzt
 
@@ -184,6 +196,17 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   geändert werden soll. Offene Punkte dazu: `docs/boss_heavy_hitter.md` → „First test“ (Liste
   „To look for in the next test“), „Built (rage and phase 2)“ (Liste „To look for in the joint
   test“), „Open“, und wie oft die Wut kommt.
+- [x] **Akrobat designen** (Nicho, 2026-10-25): v1 in `docs/boss_acrobat.md`.
+- [ ] **Akrobat bauen, Schritt 1: Grundgerüst und Phase 1** (offen, niemand; Prompt B1 der Übergabe
+  vom 2026-10-25). Erst nach dem gemeinsamen Test von Hitter und Kultist. Eigener Branch.
+- [ ] **Akrobat bauen, Schritt 2: Phase 2** (offen; Prompt nach Nichos Test von Schritt 1).
+- [ ] **Kultist in die Spiegelregel einordnen, Abgrenzung zum Akrobaten** (offen, Frage an Kay;
+  Notiz in `CLAUDE.md`). Der Kultist hat Stufe 1 von Anfang an (ein Stab je Hälfte): Kommt er nach
+  dem Hitter, oder sind seine Stäbe in einer Phase 1 gespiegelt? Und seine Zauber gehen wie die
+  Ringe des Akrobaten durch die Achse: Vorschlag zur Abgrenzung in `docs/boss_acrobat.md` → „Open“.
+- [ ] **Abwechslung der Finale beim Hitter und in den Ketten des Try-out-Bosses** (offen, niemand;
+  klein): keins mehr als zweimal hintereinander (`docs/concept.md`, „The boss reacts to what
+  happens“).
 - [ ] **Wächter (neuer Columna Bifrons) gemeinsam testen** (Nicho und Kay). Noch kein eigener
   Boss: im Try-out-Boss F1 `bifrons_mode` „chains“ (mit `bifrons_guard_break` motif_end),
   Torsprung (F5: GATE_LEAP), Klingenregeln, gemeinsame Fenster (`bifrons_coop_windows`).

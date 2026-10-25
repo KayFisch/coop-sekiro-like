@@ -15,6 +15,9 @@ he attacks **whatever is in front of his nose**, and his two heads **quarrel ove
 blade**. The reverse of the Warden: **open while he attacks**, guarded only in his breath.
 Signature: **he forces movement**; how the formation changes is up to the players.
 
+In the mirror rule's terms (`docs/concept.md`): phase 1 keeps it (stage 0), phase 2 breaks it at
+the weapon (stage 1: parallel or diagonal).
+
 ## The weapon in two layers
 
 One weapon, held level, a **halberd** (or a mace: not a plain sword): a **blade** (an axe head; heavy,

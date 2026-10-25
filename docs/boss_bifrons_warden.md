@@ -10,6 +10,10 @@ Janus ("Bifrons", two-faced), god of doors and passages, guards the threshold. A
 **two long, vertical swords**. Signature: **he sets the formation** (who stands on which side).
 Players can resist (e.g. by dashing through his crossing thrust).
 
+In the mirror rule's terms (`docs/concept.md`) he is the boss who keeps it (stage 0): one body,
+one motion, in both layers; the threshold he guards can be the mirror line itself. By the stages
+he comes first.
+
 ## How he fights
 
 - **Chains, not patterns:** a motif of strikes, repeated, then one finale, then a pause in which
