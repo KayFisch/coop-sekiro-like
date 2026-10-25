@@ -74,9 +74,9 @@ The repo root *is* the Godot project (`project.godot` sits here; `res://` = repo
 CLAUDE.md  TASKS.md  scribbles.md    shared working files (see below)
 docs/                                design docs: concept.md, boss_*.md (one per boss:
                                      columna_bifrons = the try-out boss, bifrons_warden,
-                                     heavy_hitter, acrobat), attack_pool.md (attacks no boss has yet),
-                                     level_*.md (one per level), parkour_gyms.md, art_brief.md
-                                     (sizes, colors, poses: for generating sprites),
+                                     heavy_hitter, kultist, acrobat), attack_pool.md (attacks no
+                                     boss has yet), level_*.md (one per level), parkour_gyms.md,
+                                     art_brief.md (sizes, colors, poses: for generating sprites),
                                      beat_runner.md, beat_ring.md,
                                      dev_tools.md (F3-F5, tests, F2 numbers, measuring, a new boss)
 core/                                autoloads: GameManager, Sfx, Moves, Pads, Beat, Tuning, Dev;
@@ -84,7 +84,9 @@ core/                                autoloads: GameManager, Sfx, Moves, Pads, B
 actors/player/                       player.gd (+ scene) and the four parts it extends (player_*.gd),
                                      sync_wave.gd (the parry's energy to the partner)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
-levels/                              threshold/ (Bifrons's room), heavy_hitter/ (the Heavy Hitter's),
+levels/                              threshold/ (Bifrons's room; the room itself, threshold_stage.tscn,
+                                     is a scene of its own), heavy_hitter/ (the Heavy Hitter's),
+                                     kultist/ (the Kultist's: the same stage),
                                      gym/ (movement test rooms), kit/ (level kit: rooms built in
                                      the editor), horologium/ (coop platformer level, kit rooms),
                                      runner/ and ring/ (between the bosses, prototypes)
@@ -266,6 +268,15 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   breaking into the other half, `crack.gd`; the rules' hooks; where he stands; his rage,
   `attacks/rage.gd`, when his posture breaks, and phase 2 after it: the flip, one layer swept through
   him, as his finale and when provoked). His own stand-in: `hitter_stand_in.gd`.
+  `kultist/` (since 2026-10-21, Kay, `docs/boss_kultist.md`): a boss for the mirrored screen,
+  in two parts: `kultist_body.gd` (an image of him in each half, a staff per half that faces its
+  player and guards against them, the flight: `fly_to()`, `land()`) and `kultist.gd` (his attack
+  order, where he stands, the sync rules' hooks: `land_on()` judges a blow by its element). The
+  elements (staff, lightning, fire, demonic) and what answers each are one table,
+  `kultist_element.gd`; the fire, the bolt and the spells draw themselves (`magic/`). His
+  numbers are exports in the inspector of `kultist.tscn`, not on F2. `stand_in.gd`: a defensive
+  stand-in for testing alone (Moves "bifrons_stand_in", as Bifrons's), timed by
+  `Kultist.time_to_strike()`.
 - `levels/`: `GymLevel` (`gym/gym_level.gd`) is the base of the gyms and the platformer levels:
   it builds rooms from code (`solid()`, `ledge()`, `checkpoint()`, `measure()`, ...), spawns the
   players, respawns them at checkpoints (`checkpoint_needs_all`: only once both are there) and
@@ -301,6 +312,7 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   ("0 -> SPEED in ~0.06 s"), grouped under `# --- Feature ---` headers. A number someone may
   want to tune while playing goes on F2 instead: in its system's `tuning_entries()`, read with
   `Tuning.value()` (`docs/dev_tools.md`). A new boss: the checklist in `docs/dev_tools.md`.
+  (The Kultist's numbers are `@export`s instead, as Kay asked: tuned in the editor.)
 - New movement abilities get a `Moves` switch so they can be A/B tested.
 - Attacks telegraph by color; each color means one player response (`docs/concept.md`,
   "Telegraphs"; Kay's scribble of 2026-10-02 on colors, "Wer und Was getrennt").

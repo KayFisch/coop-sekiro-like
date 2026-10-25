@@ -5,6 +5,7 @@ extends Control
 const FIGHTS = [
 	{"name": "Columna Bifrons", "arena": "The Threshold (test)", "scene": "res://levels/threshold/threshold.tscn"},
 	{"name": "Heavy Hitter", "arena": "the Ettin (phase 1)", "scene": "res://levels/heavy_hitter/hitter_room.tscn"},
+	{"name": "Kultist", "arena": "The Threshold, mirrored", "scene": "res://levels/kultist/kultist_room.tscn"},
 	{"name": "Movement Gym", "arena": "1 player", "scene": "res://levels/gym/movement_gym.tscn"},
 	{"name": "Duo Gym", "arena": "2 players", "scene": "res://levels/gym/coop_gym.tscn"},
 	{"name": "Relay Gym", "arena": "1 player + bot", "scene": "res://levels/gym/relay_gym.tscn"},

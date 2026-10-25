@@ -52,7 +52,7 @@ const ENTRIES = [
 	{"key": "bifrons_blade_parries", "tab": "Bifrons", "label": "One parry per blade (both swords on one side of him: heavy, parry together, else a lone parry is a block)", "default": true},
 	{"key": "bifrons_throw_by_outcome", "tab": "Bifrons", "label": "What throws you back (leap, both swords on you) throws a parry part way (F2), a block as far as a hit", "default": true},
 	{"key": "bifrons_chain_stagger", "tab": "Bifrons", "label": "A coop parry staggers him longer the more of that attack was parried (F2)", "default": true},
-	{"key": "bifrons_stand_in", "tab": "Fights", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, Hitter, runner, ring", "default": "off", "options": ["off", "left", "right"]},
+	{"key": "bifrons_stand_in", "tab": "Fights", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, Hitter, Kultist, runner, ring", "default": "off", "options": ["off", "left", "right"]},
 	{"key": "bifrons_face", "tab": "Bifrons", "label": "Players always face him", "default": true},
 	{"key": "mirror_view", "tab": "Bifrons", "label": "Mirrored screen (P1 light above the floor, P2 its shadow below)", "default": true},
 	{"key": "mirror_blades", "tab": "Bifrons", "label": "  a blade at the partner, in your half: mirror (as theirs), hold (on guard), fade (faint), color (in its player's color)", "default": "color", "options": ["mirror", "hold", "fade", "color"]},
