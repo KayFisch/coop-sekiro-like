@@ -284,7 +284,7 @@ rules). What sets the bosses apart is **who controls the formation**:
   2026-10-19); phase 1 built (2026-10-20), the rage and phase 2 with the flip (2026-10-21).
   `docs/boss_heavy_hitter.md`.
 - **The Acrobat** (working title; towards Lady Butterfly; a juggler with four rings): designed
-  (v1, 2026-10-25), to be built next. `docs/boss_acrobat.md`. The beat ring isn't one of his phases
+  (v1, 2026-10-25); phase 1 built (2026-10-26, branch `nicho/acrobat`). `docs/boss_acrobat.md`. The beat ring isn't one of his phases
   as it is; its idea, a parried projectile going to the partner, who can strike it back, is his
   signature.
 - **A last boss** (notes only, not to be built yet): he can part as the players can. Phase 1 a

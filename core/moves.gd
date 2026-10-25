@@ -19,7 +19,7 @@ const LABEL_WIDTH = 50  # characters: the values line up after this
 const SLIDER_CELLS = 15  # characters a slider's bar takes at most
 
 # The panel's tabs, in order. Every entry names one.
-const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Bifrons", "Hitter", "Sync", "Runner", "Ring", "Controls", "Sound", "Dev"]
+const TABS = ["Basics", "Walls", "Pogo", "Partner", "Fights", "Bifrons", "Hitter", "Acrobat", "Sync", "Runner", "Ring", "Controls", "Sound", "Dev"]
 
 # Each switch: key, its tab, what the panel calls it, and its default (a bool, or one of
 # `options`). Labels starting with "  " belong to the switch above them. A `slider` one stops at
@@ -52,12 +52,13 @@ const ENTRIES = [
 	{"key": "bifrons_blade_parries", "tab": "Bifrons", "label": "One parry per blade (both swords on one side of him: heavy, parry together, else a lone parry is a block)", "default": true},
 	{"key": "bifrons_throw_by_outcome", "tab": "Bifrons", "label": "What throws you back (leap, both swords on you) throws a parry part way (F2), a block as far as a hit", "default": true},
 	{"key": "bifrons_chain_stagger", "tab": "Bifrons", "label": "A coop parry staggers him longer the more of that attack was parried (F2)", "default": true},
-	{"key": "bifrons_stand_in", "tab": "Fights", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, Hitter, Kultist, runner, ring", "default": "off", "options": ["off", "left", "right"]},
+	{"key": "bifrons_stand_in", "tab": "Fights", "label": "Stand-in (alone): plays the player starting left (P1) or right (P2); Bifrons, Hitter, Kultist, Acrobat, runner, ring", "default": "off", "options": ["off", "left", "right"]},
 	{"key": "bifrons_face", "tab": "Bifrons", "label": "Players always face him", "default": true},
 	{"key": "mirror_view", "tab": "Bifrons", "label": "Mirrored screen (P1 light above the floor, P2 its shadow below)", "default": true},
 	{"key": "mirror_blades", "tab": "Bifrons", "label": "  a blade at the partner, in your half: mirror (as theirs), hold (on guard), fade (faint), color (in its player's color)", "default": "color", "options": ["mirror", "hold", "fade", "color"]},
 	{"key": "hitter_phase2", "tab": "Hitter", "label": "Start in phase 2 (the flip, provoking his pommel side; else from his first rage)", "default": false},
 	{"key": "hitter_last_rage", "tab": "Hitter", "label": "A last rage once his sync is low (F2): pendulum, cross, the great hammer", "default": false},
+	{"key": "acrobat_dive_tell", "tab": "Acrobat", "label": "The dive's tell: a ring thrown at the line cuts it open (cut), or his blades held out in front (blade)", "default": "cut", "options": ["cut", "blade"]},
 	# Sync: sync as life and the sync mode (core/sync_rules.gd, core/sync_bond.gd)
 	{"key": "swings_hold_posture", "tab": "Sync", "label": "Your own swings hold your posture regen back too (his attacks never do)", "default": true},
 	{"key": "dash_slash_pass", "tab": "Sync", "label": "Dash-slash goes through the boss: in the sync mode only, always, or never", "default": "sync", "options": ["sync", "always", "off"]},

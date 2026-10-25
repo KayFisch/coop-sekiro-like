@@ -19,6 +19,7 @@ const SOURCES = [
 	"res://core/sync_bond.gd",  # page "sync", tab "sync mode"
 	"res://actors/bosses/columna_bifrons/columna_bifrons.gd",  # page "bifrons"
 	"res://actors/bosses/heavy_hitter/heavy_hitter.gd",  # page "hitter"
+	"res://actors/bosses/acrobat/acrobat.gd",  # page "acrobat"
 	"res://levels/runner/runner.gd",  # page "runner"
 	"res://levels/ring/ring.gd",  # page "ring"
 ]

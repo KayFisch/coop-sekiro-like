@@ -197,8 +197,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   „To look for in the next test“), „Built (rage and phase 2)“ (Liste „To look for in the joint
   test“), „Open“, und wie oft die Wut kommt.
 - [x] **Akrobat designen** (Nicho, 2026-10-25): v1 in `docs/boss_acrobat.md`.
-- [ ] **Akrobat bauen, Schritt 1: Grundgerüst und Phase 1** (offen, niemand; Prompt B1 der Übergabe
-  vom 2026-10-25). Erst nach dem gemeinsamen Test von Hitter und Kultist. Eigener Branch.
+- [x] **Akrobat bauen, Schritt 1: Grundgerüst und Phase 1** (Nicho, 2026-10-26; Prompt B1 der
+  Übergabe vom 2026-10-25). Vor dem gemeinsamen Test gebaut (Nichos Entscheidung), auf Branch
+  `nicho/acrobat` (von `nicho/heavy-hitter`, mit `kay/kultist` hineingemergt), Auswahl Eintrag 4.
+  Was drin ist, was offen entschieden wurde und worauf beim ersten Test achten:
+  `docs/boss_acrobat.md` → „Built (phase 1)“. Wartet auf Nichos Test.
 - [ ] **Akrobat bauen, Schritt 2: Phase 2** (offen; Prompt nach Nichos Test von Schritt 1).
 - [ ] **Kultist in die Spiegelregel einordnen, Abgrenzung zum Akrobaten** (offen, Frage an Kay;
   Notiz in `CLAUDE.md`). Der Kultist hat Stufe 1 von Anfang an (ein Stab je Hälfte): Kommt er nach

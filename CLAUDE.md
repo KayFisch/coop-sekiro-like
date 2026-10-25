@@ -50,6 +50,11 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   go through the axis to the partner): a proposed line between them is in his doc ("Open"). What
   do you think?
 - Two new general rules: a feint shows itself in the windup; no finale more than twice in a row.
+- 2026-10-26: **phase 1 of the Acrobat is built** on `nicho/acrobat`, before our joint test (my
+  call). The branch has your `kay/kultist` merged in, for your stage scene; the clashes (the select
+  list, the stand-in label, CLAUDE.md, TASKS.md, dev_tools.md) are resolved there, so merging your
+  branch into `main` later may show them again. Your note to me of 2026-10-21 (the Kultist) I've
+  read; it's gone on this branch.
 - A last boss, notes only (`scribbles.md`, 2026-10-25), with your idea of swapping the players'
   color cues.
 
@@ -86,7 +91,7 @@ actors/player/                       player.gd (+ scene) and the four parts it e
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              threshold/ (Bifrons's room; the room itself, threshold_stage.tscn,
                                      is a scene of its own), heavy_hitter/ (the Heavy Hitter's),
-                                     kultist/ (the Kultist's: the same stage),
+                                     kultist/ and acrobat/ (theirs: the same stage),
                                      gym/ (movement test rooms), kit/ (level kit: rooms built in
                                      the editor), horologium/ (coop platformer level, kit rooms),
                                      runner/ and ring/ (between the bosses, prototypes)
@@ -277,6 +282,15 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   numbers are exports in the inspector of `kultist.tscn`, not on F2. `stand_in.gd`: a defensive
   stand-in for testing alone (Moves "bifrons_stand_in", as Bifrons's), timed by
   `Kultist.time_to_strike()`.
+  `acrobat/` (`docs/boss_acrobat.md`, phase 1 since 2026-10-26, branch `nicho/acrobat`): the juggler,
+  in two parts: `acrobat_body.gd` (`AcrobatBody`: his body and how it moves, `move_to()` and `Place`:
+  floor, air, wall, the mirror line; a hand per player with a pair of rings, `pose_hand()`,
+  `pair_count()`; the windows, as the Hitter's) and `acrobat.gd` (`Acrobat`: his strikes landing,
+  `land_strike()`, `land_both()`; his rule, a thrown ring met, `ring_arrived()`, and struck back,
+  `ring_struck_back()`; the motifs, the salto and the finales as lists of steps, `motif_steps()`,
+  `salto_steps()`, `finale_steps()`, `chain_finale()`; his breath and evading; the rules' hooks). His
+  attack is `attacks/phrase.gd` (`AcrobatPhrase`: the steps one after the other, each a verb), a thrown
+  ring `ring.gd` (`AcrobatRing`), his stand-in `acrobat_stand_in.gd`.
 - `levels/`: `GymLevel` (`gym/gym_level.gd`) is the base of the gyms and the platformer levels:
   it builds rooms from code (`solid()`, `ledge()`, `checkpoint()`, `measure()`, ...), spawns the
   players, respawns them at checkpoints (`checkpoint_needs_all`: only once both are there) and

@@ -9,7 +9,7 @@ tests and a performance probe run from the command line.
 | Key | What |
 |---|---|
 | F1 | Switches (`core/moves.gd`), in tabs: Q / E. Tab "Dev": write the fight log to a file. |
-| F2 | Numbers (`core/tuning.gd`), laid out as F1: a page per system (Z / C: sync rules, Bifrons, Heavy Hitter, runner, ring), its tabs (Q / E), its numbers (↑/↓ pick, ←/→ change, Shift: ten steps, Ctrl: a tenth of one; no number has a limit but 0). Opens on the page of the level it's in. |
+| F2 | Numbers (`core/tuning.gd`), laid out as F1: a page per system (Z / C: sync rules, Bifrons, Heavy Hitter, Acrobat, runner, ring), its tabs (Q / E), its numbers (↑/↓ pick, ←/→ change, Shift: ten steps, Ctrl: a tenth of one; no number has a limit but 0). Opens on the page of the level it's in. |
 | F3 | Overlay: frame time, the boss and the players right now, and this fight in numbers. |
 | F4 | Hitboxes: every collision shape, and the boss's body block (red). |
 | F5 | Boss lab: run one of his attacks, again and again, and set things up for it. |
@@ -81,7 +81,8 @@ the ring's violet shard, the player's feel (speed, jump, dash, parry window, swi
 dev tools, Bifrons's blade rules, screen halves, gate leap and chains, the Heavy Hitter's rules
 (unisono, the crack, his guard, the fields and finales, the stagger, his turn, the stomp leap, the
 rage, phase 2: the flip and provoking), the Kultist (his elements, halves, guard, flight and
-attacks), and that every scene loads and runs.
+attacks), the Acrobat (the arc and the strike back, the feint, the salto, the finales, his breath),
+and that every scene loads and runs.
 
 Writing one: a file `tests/test_<topic>.gd` that `extends "res://tests/test_case.gd"`, with
 methods `test_<what>()`. From `test_case.gd`:
@@ -157,5 +158,5 @@ times a second in the editor (`Clockwork.EDITOR_FPS`).
    Heavy Hitter show both ways.
 5. Tests for his rules (`tests/test_<name>.gd`).
 6. To test alone, a stand-in that presses a player's buttons (Bifrons's `stand_in.gd`, the Heavy
-   Hitter's `hitter_stand_in.gd`).
+   Hitter's `hitter_stand_in.gd`, the Acrobat's `acrobat_stand_in.gd`).
 7. `docs/boss_<name>.md`, and an entry in `ui/boss_select.gd`.
