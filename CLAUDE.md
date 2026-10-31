@@ -76,6 +76,11 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   - **Dev mode:** F1 to F5 only after typing "kek" (B5).
   - **A tutorial:** a guided fight against a dummy (B4).
 - Changed F1 defaults bump `Moves.VERSION`: your saved switches go back to their defaults once.
+- Built so far (branch `nicho/playtest`): **B1, the sync mode** (`docs/concept.md`, "The sync
+  mode" and "The two screen halves", each "Built"). In your code, three lines: the Kultist's
+  `layer_bit()`, `spell.gd` and `lightning_bolt.gd` now ask `MirrorView.half_bit()` instead of the
+  player's visibility layer, so merged both his images are drawn one over the other, as on the
+  one-sided screen.
 
 ## The project
 
@@ -237,14 +242,17 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   together bind (`Player.bond`, sabres via `set_sabre()`), hold attack to draw back
   (`Player._process_draw()`), let go together on the big cue for a heavy strike
   (`ColumnaBifrons.take_pair_strike()`); he slows down and strikes with both swords
-  (`in_sync_mode()`, `time_unit()`).
+  (`in_sync_mode()`, `time_unit()`). Binding is one movement, `flow()` (the carried one to the
+  other's side, the halves merging); bound, one steers the pair ("ONE STEERS", Moves "sync_steer",
+  `steerer()`), carrying the other (`Player.carry()`, `carried_by`).
 - `actors/player/`: the player in five parts, each extending the one before (as Bifrons's):
   `player_body.gd` (`PlayerBody`: each player's buttons, `action()`, running, jumping, the dash,
   falling, knockback, being carried or bounced, `bounce()`, the boss's block, `partner()`),
   `player_sword.gd` (THE SWORD: the swings from one table, `SWINGS`; the dash-slash, block and
   parry, the pogo), `player_walls.gd` (walls, the wall rhythm on `Beat`, ledges, the chimney
   clash), `player_partner.gd` (launch, pogo clash, the relay, the tell) and `player.gd` (what a
-  boss does to a player, the pair's strike, the look, the frame; the script everyone else uses).
+  boss does to a player, the pair's strike and carrying, the look, the frame; the script everyone
+  else uses).
   The body calls hooks the parts above override (`_face()`, `_cling()`, `_speed_scale()`...),
   and each part adds its share to `_ready()`, `_tick_timers()`, `interrupt_movement()` and
   `movement_state()` through super. Tuning constants sit with their feature at the top of its
@@ -335,6 +343,10 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   Two SubViewports on the level's World2D; what each half draws is chosen by visibility layers
   (`Viewport.canvas_cull_mask`), so the game itself doesn't change. Bifrons draws each blade in
   its player's half and a copy of it in the other (Moves "mirror_blades", `bifrons_swords.gd`).
+  **One rule for every boss** (`MirrorView.half_bit()`, `is_split()`): what is aimed at a player
+  goes in that player's half while the halves are two, in both otherwise; no boss asks its own
+  way. In the sync mode, bound, the halves merge ("MERGED", Moves "sync_merge_view"): the line
+  sinks to a strip, P2 flows up into the light half (a third view, `_flow`), nobody twice.
 
 ## Conventions
 

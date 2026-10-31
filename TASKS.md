@@ -70,7 +70,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [ ] **Playtest mit zwei Freunden vorbereiten** (@Nicho; Übergabe vom 2026-10-31). Vier Bosse
   (Wächter, Hitter, Kultist, Akrobat) und ein Tutorial. In dieser Reihenfolge:
   - [x] Alle Branches nach `main` (2026-10-31).
-  - [ ] **B1 Sync-Modus:** Bug nachstellen und beheben; Verschmelzen neu; verbunden steuert einer.
+  - [x] **B1 Sync-Modus:** Bug nachstellen und beheben; Verschmelzen neu; verbunden steuert einer.
+    Gebaut (2026-10-31, `nicho/playtest`): `docs/concept.md` → „The sync mode“ und „The two screen
+    halves“, je „Built“. **Anspielen.**
   - [ ] **B2 Farben:** Grün im Blitz des Kultisten; alle Bosse aufs Vokabular geprüft.
   - [ ] **B3 Wächter-Raum und Auswahl:** eigener Raum für den Wächter; Try-out-Boss und Test-Räume
     per F1 ausgeblendet.
@@ -180,6 +182,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Stand 2026-10-31: Verbunden steuert erstmal nur einer; Verschmelzen neu (der Bildschirm wandert
   mit, unten bleibt ein Streifen). Beides B1 der Übergabe vom 2026-10-31. Sync-Modus-Patterns:
   weiter offen, nicht jetzt.
+  Gebaut (B1, 2026-10-31, `nicho/playtest`): F1 „sync_steer“ (oben / unten / jeder selbst),
+  „sync_merge_view“ jetzt Standard (`Moves.VERSION` 6), F2 „sync_merge_time“ und
+  „sync_merge_strip“; eine Regel für alle Bosse (`MirrorView.half_bit()`). Der Bug: mit
+  „sync_merge_view“ war P2 oben und unten zu sehen. Verbunden löst sich die Verbindung jetzt nur
+  noch mit dem Ende des Sync-Modus.
 - [ ] **Prototyp Beat-Runner** (@Nicho): die andere Antwort auf „Was ist zwischen den
   Bossen?“, etwas zwischen Beat Saber und Geometry Dash (Auto-Runner, Dinge fliegen im Rhythmus
   auf die Spieler zu, parieren und schlagen; vielleicht zwei Lanes für pep/ppe). Siehe Scribble

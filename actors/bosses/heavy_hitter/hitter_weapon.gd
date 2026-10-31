@@ -184,16 +184,9 @@ func impact_x(layer: int) -> float:
 
 
 # The visibility layer things of that layer are drawn on: its half of the mirrored screen, or, with
-# the halves not split, both.
+# the halves not split, both (MirrorView's one rule).
 func layer_bit(layer: int) -> int:
-	if not _split():
-		return MirrorView.WORLD
-	return MirrorView.LIGHT if layer == 1 else MirrorView.SHADOW
-
-
-func _split() -> bool:
-	var view = get_tree().get_first_node_in_group("mirror_view")
-	return view != null and view.split()
+	return MirrorView.half_bit(layer)
 
 
 # --- Turning round ---
@@ -472,7 +465,7 @@ func _update_pose():
 		_at_guard = false
 	elif not _at_guard:
 		_at_guard = LAYERS.all(func(layer): return _near_level(_poses[layer]))
-	var split = _split()
+	var split = MirrorView.is_split()
 	var aims = _aim_colors()
 	for layer in LAYERS:
 		var target: Vector3 = _targets[layer]

@@ -14,6 +14,18 @@ extends CanvasLayer
 ## own); the bottom one is shown flipped. Which half draws what is set by visibility layers: P1 and
 ## everything of theirs on LIGHT, P2's on SHADOW, the level's backdrop on SCENERY, which neither
 ## half draws (each has a background of its own). Switched off, everything is as it was.
+##
+## THE ONE RULE for the bosses (half_bit()): what is aimed at a player (a blade, a layer of a
+## weapon, a hand, an image, a spell) is drawn in that player's half while the halves are two; with
+## them one (merged) or the view off, in both, as on the one-sided screen. Every boss asks this, none
+## its own way.
+##
+## MERGED (the sync mode, bound, Moves "sync_merge_view"): the halves become one, in one movement
+## with the pair's (SyncBond.flow(): same start, length and curve). The mirror line sinks from the
+## middle to a strip along the bottom (Tuning "sync_merge_strip"), the light half taking the rest at
+## the same scale; P2 flows up through the line, their reflection draining into it as they fill
+## the light half from the feet up. Merged, P2 is in the light half only; the strip shows the
+## world's reflection, dimmed, and no player. Nobody is shown twice.
 
 # Visibility layers (bits of CanvasItem.visibility_layer and Viewport.canvas_cull_mask).
 const WORLD = 1  # everything else: the boss, walls, sparks between blades
@@ -37,12 +49,11 @@ const LINE_WIDTH = 2.0
 # read on the pale ground.
 const OUTLINE_COLOR = Color(0.1, 0.1, 0.12)
 const OUTLINE_WIDTH = 1.5  # px on screen
-# The sync mode, bound (core/sync_bond.gd, Moves "sync_merge_view"): the two halves become one. The
-# shadow joins the light half (with a pale outline there, to read on the dark), and the shadow half
-# dims out of focus.
-const MERGE_TIME = 0.5  # s
+# MERGED (see above; how long it takes: Tuning "sync_merge_time", core/sync_bond.gd): P2 in the
+# light half with a pale outline, to read on the dark; the strip dimmed out of focus.
 const MERGE_OUTLINE = Color(0.85, 0.83, 0.78)
-const MERGE_DIM = Color(0.3, 0.3, 0.33)  # the shadow half, merged: its colors times this
+const MERGE_DIM = Color(0.3, 0.3, 0.33)  # the strip, merged: its colors times this
+const FLOW_HEIGHT = 110.0  # px above P2's feet the flow fills (or drains) over the merge: body and sabre
 
 const OUTLINE_SHADER = """
 shader_type canvas_item;
@@ -66,13 +77,40 @@ void fragment() {
 @export var scenery: NodePath  # the level's backdrop, left out of both halves
 @export var always_on = false  # whatever the switch says (the beat-runner is built for it)
 
-var _halves = []  # top, bottom: {"viewport": SubViewport, "picture": TextureRect, "ground": TextureRect}
+var _halves = []  # top, bottom: {"frame": Control, "viewport": SubViewport, "picture": TextureRect, "ground": TextureRect}
 var _line: ColorRect
 var _outline: ShaderMaterial
-var _outline_light: ShaderMaterial  # the light half's, merged
-var _merge = 0.0  # 0: two halves, 1: one (see MERGE_TIME)
+var _outline_light: ShaderMaterial  # P2's in the light half, merged
+var _merge = 0.0  # 0: two halves, 1: one (eased: SyncBond.flow())
+# P2 flowing up through the line, merging: a view of the SHADOW layer alone, shown twice, each
+# clipped to a band along the line: rising in the light half, draining in the strip.
+var _flow: SubViewport
+var _rise: Control  # the band in the light half, and its picture
+var _drain: Control  # the band in the strip, and its picture
 var _colors = {}  # player -> [body, sword] from before the mirror
 var _marks = {}  # player -> the Callable marking what they add later
+
+
+# Its numbers on F2 (core/tuning.gd collects them): the sync rules' page, tab "sync mode".
+static func tuning_entries() -> Array:
+	return [
+		{"page": "sync", "title": "Sync Rules", "scenes": ["levels/threshold/"], "header": "SYNC MODE: MERGED (MIRRORED SCREEN)", "tab": "sync mode"},
+		{"key": "sync_merge_strip", "label": "merged: the shadow half a strip this high (px)", "default": 40.0, "step": 5.0},
+	]
+
+
+# THE ONE RULE (see above): the visibility layer for what is aimed at that player (1 or 2).
+static func half_bit(player_id: int) -> int:
+	if not is_split():
+		return WORLD
+	return LIGHT if player_id == 1 else SHADOW
+
+
+# True while the halves are two: on, and not merged (the view in this scene's tree, if any).
+static func is_split() -> bool:
+	var tree = Engine.get_main_loop() as SceneTree
+	var view = tree.get_first_node_in_group("mirror_view") if tree else null
+	return view != null and view.split()
 
 
 func _ready():
@@ -141,28 +179,29 @@ func _build():
 	_outline_light.set_shader_parameter("outline_color", MERGE_OUTLINE)
 	for i in 2:
 		var shadow = i == 1
-		var ground = TextureRect.new()
+		var frame = _band()  # the half: what's drawn in it is clipped to it
+		var ground = _rect()
 		ground.texture = _gradient(SHADOW_FLOOR, SHADOW_BOTTOM) if shadow else _gradient(LIGHT_TOP, LIGHT_FLOOR)
-		var viewport = SubViewport.new()
-		viewport.world_2d = get_viewport().world_2d
-		viewport.transparent_bg = true
-		viewport.disable_3d = true
-		viewport.gui_disable_input = true
-		viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-		viewport.canvas_cull_mask = WORLD | (SHADOW if shadow else LIGHT)
-		var picture = TextureRect.new()
-		picture.texture = viewport.get_texture()
-		picture.flip_v = shadow
+		var viewport = _view(WORLD | (SHADOW if shadow else LIGHT))
+		var picture = _rect(viewport, shadow)
 		if shadow:
 			picture.material = _outline
-		for rect in [ground, picture]:
-			rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			rect.stretch_mode = TextureRect.STRETCH_SCALE
-			rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(ground)
+		frame.add_child(ground)
+		frame.add_child(picture)
 		add_child(viewport)
-		add_child(picture)
-		_halves.append({"viewport": viewport, "picture": picture, "ground": ground})
+		add_child(frame)
+		_halves.append({"frame": frame, "viewport": viewport, "picture": picture, "ground": ground})
+		if not shadow:
+			_flow = _view(SHADOW)
+			add_child(_flow)
+			_rise = _band()
+			_rise.add_child(_rect(_flow, false))
+			_rise.get_child(0).material = _outline_light
+			add_child(_rise)  # over the light half
+	_drain = _band()
+	_drain.add_child(_rect(_flow, true))
+	_drain.get_child(0).material = _outline
+	add_child(_drain)  # over the strip
 	_line = ColorRect.new()
 	_line.color = LINE_COLOR
 	_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -170,12 +209,45 @@ func _build():
 	_layout()
 
 
+# A view of the level's world drawing the visibility layers in `mask`.
+func _view(mask: int) -> SubViewport:
+	var viewport = SubViewport.new()
+	viewport.world_2d = get_viewport().world_2d
+	viewport.transparent_bg = true
+	viewport.disable_3d = true
+	viewport.gui_disable_input = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.canvas_cull_mask = mask
+	return viewport
+
+
+# A band of the screen; what's in it is cut off at its edges.
+func _band() -> Control:
+	var band = Control.new()
+	band.clip_contents = true
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return band
+
+
+# A picture (of `viewport`, upside down if `flipped`; else for a gradient).
+func _rect(viewport: SubViewport = null, flipped = false) -> TextureRect:
+	var rect = TextureRect.new()
+	if viewport:
+		rect.texture = viewport.get_texture()
+	rect.flip_v = flipped
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_SCALE
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return rect
+
+
 func _tear_down():
 	for half in _halves:
-		for node in half.values():
-			node.queue_free()
+		half.frame.queue_free()
+		half.viewport.queue_free()
 	_halves.clear()
-	_line.queue_free()
+	for node in [_flow, _rise, _drain, _line]:
+		node.queue_free()
 
 
 # A vertical gradient, top color to bottom color.
@@ -202,43 +274,85 @@ func split() -> bool:
 
 # Both halves look at the same band of the room: from the floor up, as wide as the screen, around
 # where the camera looks (and shaking with it). The bottom one is shown upside down, so the floor
-# is the line between them.
+# is the line between them. Merging, the line sinks; the scale stays.
 func _layout():
 	var screen = get_viewport().get_visible_rect().size  # in canvas units (1152 x 648)
 	var pixels = Vector2(get_tree().root.size)
 	var scale = pixels.y / screen.y  # canvas units to the window's pixels: a half is drawn sharp
+	_merge = _merged()
+	var strip = clampf(Tuning.value("sync_merge_strip"), 0.0, screen.y / 2.0)
+	var line = lerpf(screen.y / 2.0, screen.y - strip, _merge)  # the mirror line, from the top
+	# The light half's view (and P2's flow) as tall as that half gets, the shadow half's half the
+	# screen: neither changes size as they merge.
+	var tall = Vector2(screen.x, screen.y - strip)
 	var half = Vector2(screen.x, screen.y / 2.0)
-	var size = Vector2i((half * scale).round())
 	var camera = get_viewport().get_camera_2d()
 	var center_x = camera.global_position.x if camera else screen.x / 2.0
 	var shake = camera.offset if camera else Vector2.ZERO
 	var focus = Vector2(center_x, BaseBoss.ARENA_FLOOR_Y) + shake
-	var k = ZOOM * scale
-	var view = Transform2D(0.0, Vector2(k, k), 0.0, Vector2(size.x / 2.0, size.y) - focus * k)
 	for i in _halves.size():
 		var h = _halves[i]
-		if h.viewport.size != size:
-			h.viewport.size = size
-		h.viewport.canvas_transform = view
-		for rect in [h.ground, h.picture]:
-			rect.position = Vector2(0.0, half.y * i)
-			rect.size = half
+		var size = tall if i == 0 else half
+		_aim(h.viewport, size, scale, focus)
+		var height = line if i == 0 else screen.y - line
+		h.frame.position = Vector2(0.0, 0.0 if i == 0 else line)
+		h.frame.size = Vector2(screen.x, height)
+		h.ground.size = h.frame.size
+		h.picture.size = size
+		h.picture.position = Vector2(0.0, height - size.y if i == 0 else 0.0)  # the floor at the line
+	_aim(_flow, tall, scale, focus)
 	_outline.set_shader_parameter("width", OUTLINE_WIDTH * scale)
 	_outline_light.set_shader_parameter("width", OUTLINE_WIDTH * scale)
-	_merge_halves()
-	_line.position = Vector2(0.0, half.y - LINE_WIDTH / 2.0)
+	_merge_halves(line, screen)
+	_line.position = Vector2(0.0, line - LINE_WIDTH / 2.0)
 	_line.size = Vector2(screen.x, LINE_WIDTH)
 
 
-# Bound in the sync mode (with Moves "sync_merge_view"): the shadow comes up into the light half,
-# and the shadow half dims away.
-func _merge_halves():
+# A view of `size` (canvas units) at the window's pixels, with the floor at its bottom edge.
+func _aim(viewport: SubViewport, size: Vector2, scale: float, focus: Vector2):
+	var pixels = Vector2i((size * scale).round())
+	if viewport.size != pixels:
+		viewport.size = pixels
+	var k = ZOOM * scale
+	viewport.canvas_transform = Transform2D(0.0, Vector2(k, k), 0.0, Vector2(pixels.x / 2.0, pixels.y) - focus * k)
+
+
+# How merged the halves are, 0 to 1: the pair's own movement (SyncBond.flow()), with Moves
+# "sync_merge_view" on.
+func _merged() -> float:
 	var rules = GameManager.rules
-	var bound = Moves.on("sync_merge_view") and rules != null and rules.bond != null and rules.bond.bound
-	_merge = move_toward(_merge, 1.0 if bound else 0.0, get_process_delta_time() / MERGE_TIME)
+	if not Moves.on("sync_merge_view") or rules == null or rules.bond == null:
+		return 0.0
+	return rules.bond.flow()
+
+
+# MERGED (see above). Merging (or back), P2 isn't in either half's view: the flow shows them, in a
+# band rising from the line into the light half and one draining into it in the strip.
+func _merge_halves(line: float, screen: Vector2):
 	var top = _halves[0]
-	top.viewport.canvas_cull_mask = WORLD | LIGHT | (SHADOW if _merge > 0.0 else 0)
-	top.picture.material = _outline_light if _merge > 0.0 else null
+	var bottom = _halves[1]
+	var flowing = _merge > 0.0
+	top.viewport.canvas_cull_mask = WORLD | LIGHT
+	bottom.viewport.canvas_cull_mask = WORLD | (0 if flowing else SHADOW)
+	_flow.render_target_update_mode = SubViewport.UPDATE_ALWAYS if flowing else SubViewport.UPDATE_DISABLED
 	var dim = Color.WHITE.lerp(MERGE_DIM, _merge)
-	_halves[1].picture.modulate = dim
-	_halves[1].ground.modulate = dim
+	bottom.frame.modulate = dim
+	_drain.modulate = dim
+	# From P2's feet (in the air, from there) up by FLOW_HEIGHT: the light half filling, the
+	# reflection draining. Merged all the way, P2 shows in all of the light half.
+	var feet = 0.0
+	for p in get_tree().get_nodes_in_group("players"):
+		if p.player_id == 2:
+			feet = maxf(BaseBoss.ARENA_FLOOR_Y - (p.global_position.y + p.body.size.y / 2.0), 0.0)
+	var rise = line if _merge >= 1.0 else minf((feet + _merge * FLOW_HEIGHT) * ZOOM, line)
+	var drain = minf((feet + (1.0 - _merge) * FLOW_HEIGHT) * ZOOM, screen.y - line)
+	_rise.visible = flowing
+	_rise.position = Vector2(0.0, line - rise)
+	_rise.size = Vector2(screen.x, rise)
+	_rise.get_child(0).size = top.picture.size
+	_rise.get_child(0).position = Vector2(0.0, rise - top.picture.size.y)
+	_drain.visible = flowing and _merge < 1.0
+	_drain.position = Vector2(0.0, line)
+	_drain.size = Vector2(screen.x, drain)
+	_drain.get_child(0).size = top.picture.size
+	_drain.get_child(0).position = Vector2.ZERO

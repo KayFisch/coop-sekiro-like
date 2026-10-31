@@ -142,7 +142,10 @@ func _move(player, delta: float):
 	if away == 0.0:
 		away = 1.0
 	var distance = boss.distance_to(player)
-	if boss.in_sync_mode() and player.partner() != null:
+	# Bound, one steering the pair (SyncBond, ONE STEERS): if it's this one, it moves as ever, its
+	# partner at its side; carried, its feet do nothing anyway.
+	var steering = boss.rules != null and boss.rules.bond != null and boss.rules.bond.steerer() != null
+	if boss.in_sync_mode() and player.partner() != null and not steering:
 		var gap = player.partner().global_position.x - player.global_position.x
 		_walk = signf(gap) if absf(gap) > Tuning.value("sync_connect_distance") * 0.5 else 0.0
 		# He's between them: up to him, then a dash-slash through him.
@@ -157,7 +160,7 @@ func _move(player, delta: float):
 	else:
 		var want = DISTANCE
 		var partner = player.partner()
-		if partner != null and boss.side_of(partner) == boss.side_of(player):
+		if partner != null and boss.side_of(partner) == boss.side_of(player) and not steering:
 			var theirs = boss.distance_to(partner)
 			want = DISTANCE_IN_FRONT if theirs > distance else maxf(theirs + DISTANCE_BEHIND, DISTANCE)
 		if absf(distance - want) > SLACK:

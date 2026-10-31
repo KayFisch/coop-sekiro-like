@@ -35,6 +35,11 @@ const SABRE_WIDTH = 11.0  # ...this broad at the hilt (px)...
 const SABRE_CURVE = 12.0  # ...its point curving back by this much (px)
 const SABRE_LIGHT = Color(0.95, 0.94, 0.9)
 const SABRE_DARK = Color(0.07, 0.07, 0.09)
+# ONE STEERS (sync mode, core/sync_bond.gd): bound, one moves the pair and carries the other at
+# their side (`carrying` / `carried_by`), the two narrow halves side by side as one square: one
+# body against walls and his block, thrown as one. The carried one's stick, jump and dash do
+# nothing; their block, parry and drawing back are their own.
+const CARRY_GAP = BODY_SIZE.x  # px from the steering one's middle to the carried one's: touching
 
 var is_clashing = false  # blades locked with a boss's or an obstacle's, held in place
 var invincible = false  # testing: hits still land (flash, knockback) but cost nothing (see SyncRules)
@@ -52,6 +57,11 @@ var bond = null  # core/sync_bond.gd while the two are bound in sync mode (THE P
 var _drawing = false  # attack held, the sword drawing back
 var _draw_time = 0.0
 var _sabre: Node2D  # the sword's look while bound (set_sabre())
+var carrying = null  # ONE STEERS: the partner this one carries...
+var carried_by = null  # ...or the one carrying this one
+var _carry_side = 1.0  # which side of this one the carried one is on
+var _carry_from = CARRY_GAP  # px they stood apart as the carrying began (easing to CARRY_GAP)
+var _own_shape: Shape2D  # the collision shape before carrying (the pair's is wider)
 
 
 # --- Setup and the frame -------------------------------------------------------------
@@ -77,6 +87,8 @@ func _physics_process(delta):
 	_tick_timers(delta)
 	if is_clashing:
 		velocity = Vector2.ZERO  # braced, holding the other blade back
+	elif carried_by != null:
+		_process_carried(delta)
 	elif is_held():
 		_process_hold(delta)
 	elif _ledge:
@@ -95,7 +107,8 @@ func _physics_process(delta):
 		move_and_slide()
 		if not _check_clashes():
 			_check_chimney()
-	_keep_out_of_boss(delta)
+	if carried_by == null:
+		_keep_out_of_boss(delta)  # (carried: the one carrying keeps the pair out)
 	_process_attack()
 	_update_visuals()
 
@@ -154,13 +167,15 @@ func take_damage(knockback = Vector2.ZERO, chip = false):
 	_invuln_timer = CHIP_INVULN_TIME if chip else HIT_INVULN_TIME
 	interrupt_movement()
 	_hurt_flash = HURT_FLASH_TIME
-	velocity = knockback
+	if knockback != Vector2.ZERO:
+		apply_knockback(knockback)  # (bound and carried, the pair's: ONE STEERS)
+	elif carried_by == null:
+		velocity = Vector2.ZERO
 	if chip:
 		Sfx.play("chip")
 	else:
 		Sfx.play("hurt")
 	if knockback != Vector2.ZERO:
-		_knockback_timer = KNOCKBACK_TIME
 		if not chip:
 			Sfx.play_delayed("knockback", 0.06, -4.0)  # thrown back, just behind the impact
 	if not chip:
@@ -429,6 +444,88 @@ func set_sabre(on: bool):
 	_sword_tip.visible = not on
 	if not on:
 		_drawing = false
+
+
+# --- Carrying (see ONE STEERS) ---
+
+# Starts carrying `other` at this one's side, or with null stops: the pair one body (a collision
+# shape as wide as both), the carried one run after this one each frame.
+func carry(other):
+	if carrying != null and is_instance_valid(carrying):
+		carrying.carried_by = null
+		carrying.process_physics_priority = 0
+		carrying._update_player_collision()
+	carrying = other
+	var shape: CollisionShape2D = $CollisionShape2D
+	if other == null:
+		if _own_shape != null:
+			shape.shape = _own_shape
+		shape.position.x = 0.0
+		_update_player_collision()
+		return
+	var gap = other.global_position.x - global_position.x
+	_carry_side = signf(gap) if gap != 0.0 else -facing
+	_carry_from = absf(gap)
+	other.carried_by = self
+	other.process_physics_priority = 1  # after this one: carried along in the same frame
+	other.interrupt_movement()
+	other.velocity = Vector2.ZERO
+	other._update_player_collision()
+	if _own_shape == null:
+		_own_shape = shape.shape
+	var pair = RectangleShape2D.new()
+	pair.size = Vector2(BODY_SIZE.x * 2.0, BODY_SIZE.y)
+	shape.shape = pair
+	shape.position.x = _carry_side * BODY_SIZE.x / 2.0
+	_update_player_collision()
+
+
+# Where the carried one stands, from this one's middle (px, signed): easing in to their side as
+# the two bind (SyncBond.flow()).
+func carry_offset() -> float:
+	var flow = bond.flow() if bond != null else 1.0
+	return _carry_side * lerpf(_carry_from, CARRY_GAP, flow)
+
+
+# Carried: beside the one steering, wherever they go (walls still stop this body), facing as they
+# do. Only block, parry and drawing back are this one's own.
+func _process_carried(delta):
+	var goal = carried_by.global_position + Vector2(carried_by.carry_offset(), 0.0)
+	velocity = (goal - global_position) / delta
+	move_and_slide()
+	velocity = carried_by.velocity
+	_face(carried_by.facing)
+	if not is_staggered():
+		_process_other_buttons()
+
+
+func _body_rect() -> Rect2:
+	var me = super()
+	if carrying != null:
+		me = me.merge(Rect2(me.position + Vector2(carry_offset(), 0.0), me.size))
+	return me
+
+
+func _in_pair() -> bool:
+	return carrying != null or carried_by != null
+
+
+# A blow that throws either of a pair throws both: the carried one's goes to the one carrying, and
+# of two at once the harder counts.
+func apply_knockback(push: Vector2):
+	if carried_by != null:
+		carried_by.interrupt_movement()
+		carried_by.apply_knockback(push)
+		return
+	if carrying != null and _knockback_timer > 0.0 and push.length() < velocity.length():
+		return
+	super(push)
+
+
+func movement_state() -> String:
+	if carried_by != null:
+		return "carried"
+	return super()
 
 
 func _setup_hands():

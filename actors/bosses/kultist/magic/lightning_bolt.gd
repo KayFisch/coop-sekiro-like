@@ -93,7 +93,7 @@ func _process(delta):
 			absorb.part.queue_free()
 			_absorbs.erase(absorb)
 		else:
-			absorb.part.visibility_layer = absorb.player.visibility_layer
+			absorb.part.visibility_layer = MirrorView.half_bit(absorb.player.player_id)
 			absorb.part.queue_redraw()
 	if (_mode == Mode.STRUCK and _since >= STRIKE_TIME and _absorbs.is_empty()) or not is_instance_valid(boss):
 		queue_free()

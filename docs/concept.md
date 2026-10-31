@@ -117,6 +117,16 @@ parrying and striking together is enough sync), steps on the beat / a quicktime 
 sense of control), free movement with an elastic tether, switching roles after every pair strike
 (chaotic). When roles switch is open.
 
+Built (2026-10-31, `core/sync_bond.gd` → "ONE STEERS", `actors/player/player.gd` → carrying): F1
+"sync_steer", **upper** (P1, the default), **lower** (P2) or **each** (both move themselves, as
+before). Binding is one movement (F2 "sync_merge_time", 0.5 s): the carried one comes to the
+other's side, the two narrow halves (20 x 40) side by side as one square, and the halves merge
+with it. The carried one's stick, jump and dash do nothing. Against walls and his body the pair is
+one body; a blow that throws either throws both (of two at once, the harder). One steering, they
+can't come apart, so the bond lasts until the sync mode ends ("sync_break_distance" counts only
+with "each"). The dash-slash and the dash-parry are the steering one's, the carried one going
+through him too. The stand-ins: steering, they move as ever, their partner at their side.
+
 ---
 
 ## The two screen halves
@@ -153,6 +163,24 @@ one, the picture makes the same movement. The focus slides over to the upper hal
 whole moves up, the light half takes nearly all of it, and the shadow half stays only as a strip
 along the bottom. Nobody is shown twice. Unbound, it all flows back. **Every boss shows himself the
 same way in the merged picture:** one rule for all, not one per boss.
+
+Built (2026-10-31, `ui/mirror_view.gd` → "MERGED", F1 "sync_merge_view", on by default now):
+- In one movement with the pair's (same start, length and curve): the line sinks from the middle
+  to a strip (F2 "sync_merge_strip", 40 px), the light half taking the rest **at the same scale**
+  (more of the room above; the rooms are 600 px high, so above the ceiling stays a dark band, as
+  beside the walls). P2 flows up through the line: their reflection drains into it while they
+  fill the light half from the feet up (with a pale outline there).
+- Merged, P2 is in the light half only. **The strip** shows the world's reflection, dimmed: the
+  floor, his lower body and weapons, sparks; no player.
+- **The one rule** (`MirrorView.half_bit()`): what is aimed at a player is drawn in that player's
+  half while the halves are two; merged (or on the one-sided screen), in both. So merged, every
+  boss looks as on the one-sided screen: Bifrons whole, the Hitter's weapon in both its ways (two
+  halberds while they point apart), the Acrobat's hands both, the Kultist's two images one over the
+  other, his spells and bolt in both.
+- The bug before it (Nicho: "the players exist together and apart at once"): with
+  "sync_merge_view" the light half took P2 in while the shadow half was only dimmed, so P2 stood
+  next to P1 above and alone below; without it nothing merged, and the bound pair still moved and
+  showed apart.
 
 ---
 

@@ -4,9 +4,16 @@ extends Node
 ## their sync is full, each gets a sign at their feet that they can join. Standing together
 ## (within Tuning "sync_connect_distance", both on the floor) they're bound: each takes on some
 ## of the other's color from the feet up (white into black, black into white: across the floor
-## line on the mirrored screen), and their swords become sabres. Moving apart (past
-## "sync_break_distance") or the sync mode ending unbinds them. How they move bound is still
-## open: for now each moves as ever.
+## line on the mirrored screen), and their swords become sabres. The sync mode ending unbinds
+## them. Binding is one movement (flow(), over "sync_merge_time"): the carried one comes to the
+## other's side, and on the mirrored screen the halves merge with it (ui/mirror_view.gd).
+##
+## ONE STEERS (Moves "sync_steer"): bound, one of the two moves the pair (walking, jumping,
+## dashing) and carries the other at their side, the two narrow halves side by side as one square;
+## the carried one's stick, jump and dash do nothing (Player.carried_by). Both still parry, block
+## and draw back for themselves. Against walls and his body the pair is one body; a blow that
+## throws either throws both. "each": both move themselves, as before, and moving apart (past
+## "sync_break_distance") unbinds them too.
 ##
 ## THE PAIR'S STRIKE: each holds attack to draw their sabre back (Player._process_draw()); fully
 ## drawn, a small cue. Once both are, "sync_cue_delay" after the later one, the big cue: both let
@@ -33,6 +40,8 @@ var bound = false
 var cue_at = -1.0  # now() of the big cue; -1: not both drawn yet
 var _time = 0.0
 var _bound_at = -100.0
+var _flow = 0.0  # 0: apart, 1: bound all the way (flow(): eased)
+var _steerer = null  # the one moving the pair (ONE STEERS); null: each moves themselves
 var _full_at = {}  # player -> when their sabre was fully drawn
 var _in_time = {}  # player -> they let go on the big cue
 var _spoiled = false  # one let go out of sync: no big cue for the other this time
@@ -51,7 +60,8 @@ static func tuning_entries() -> Array:
 	return [
 		{"page": "sync", "title": "Sync Rules", "scenes": ["levels/threshold/"], "header": "SYNC MODE: BINDING", "tab": "sync mode"},
 		{"key": "sync_connect_distance", "label": "bound once you stand this close (px apart)", "default": 30.0, "step": 2.0},
-		{"key": "sync_break_distance", "label": "...and apart again past this (px)", "default": 90.0, "step": 5.0},
+		{"key": "sync_break_distance", "label": "...and apart again past this (px; each steering themselves only)", "default": 90.0, "step": 5.0},
+		{"key": "sync_merge_time", "label": "binding: to their side and the halves merged in (s)", "default": 0.5, "step": 0.05},
 		{"header": "THE PAIR'S STRIKE"},
 		{"key": "sync_charge_time", "label": "attack held: sabre fully drawn back after (s)", "default": 0.45, "step": 0.05},
 		{"key": "sync_cue_delay", "label": "both drawn: the big cue this long after the later (s)", "default": 0.15, "step": 0.01},
@@ -113,6 +123,7 @@ func _process(delta):
 	_flash_left = maxf(_flash_left - delta, 0.0)
 	_flash.color.a = maxf(FLASH_ALPHA * _flash_left / 0.2, SLOW_TINT * (1.0 - Engine.time_scale) * 2.0)
 	_rings = _rings.filter(func(r): return _time - r[3] < CUE_TIME)
+	_flow = move_toward(_flow, 1.0 if bound else 0.0, delta / maxf(Tuning.value("sync_merge_time"), 0.01))
 	if players.size() < 2:
 		_unbind()
 		return
@@ -121,14 +132,45 @@ func _process(delta):
 		if rules.sync_mode and gap <= Tuning.value("sync_connect_distance") \
 				and players.all(func(p): return p.is_on_floor() and not p.is_staggered()):
 			_bind(players)
-	elif not rules.sync_mode or gap > Tuning.value("sync_break_distance"):
+	elif not rules.sync_mode or (_steerer == null and gap > Tuning.value("sync_break_distance")):
 		_unbind()
 	if bound:
+		_steer(players)
 		_follow_charges(players)
 
 
 func _players() -> Array:
 	return GameManager.players.filter(func(p): return is_instance_valid(p) and not p.is_dead())
+
+
+# Binding as one movement, 0 (apart) to 1 (bound), eased: the carried one to the other's side,
+# the halves merging (ui/mirror_view.gd). Back to 0 as they come apart.
+func flow() -> float:
+	return smoothstep(0.0, 1.0, _flow)
+
+
+# The one moving the pair (ONE STEERS), or null: not bound, or each moves themselves.
+func steerer():
+	return _steerer if bound else null
+
+
+# ONE STEERS: the steering one as Moves "sync_steer" says (it may change while bound), carrying
+# the other.
+func _steer(players: Array):
+	var want = null
+	var steer = Moves.value("sync_steer")
+	if steer != "each":
+		var id = 1 if steer == "upper" else 2
+		for p in players:
+			if p.player_id == id:
+				want = p
+	if want == _steerer:
+		return
+	if _steerer != null and is_instance_valid(_steerer):
+		_steerer.carry(null)
+	_steerer = want
+	if want != null:
+		want.carry(_partner_of(want))
 
 
 func _bind(players: Array):
@@ -151,6 +193,9 @@ func _unbind():
 		return
 	bound = false
 	_reset_strike()
+	if _steerer != null and is_instance_valid(_steerer):
+		_steerer.carry(null)
+	_steerer = null
 	for p in GameManager.players:
 		if is_instance_valid(p):
 			p.bond = null

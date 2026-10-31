@@ -638,11 +638,12 @@ Nicho, 2026-10-17 (`core/sync_bond.gd`; numbers on F2, tab "sync mode"). With th
 - **Time** (F2 "sync_slow_speed", 1 by default: off): set lower (0.5: half), time runs slow while
   one of the bound draws back, the screen faintly pink. It slows everything, the players' own
   movement too, so it's there to compare with the defensive boss.
-- **The mirrored screen** (F1 "sync_merge_view", off by default): bound, the two halves become one:
-  the shadow comes up into the light half (outlined pale, to read on the dark) and the shadow
-  half dims out of focus, almost as the screen was before the split.
+- **The mirrored screen** (F1 "sync_merge_view", on by default since 2026-10-31): bound, the two
+  halves become one, and one of the two steers the pair (F1 "sync_steer"): `docs/concept.md`, "The
+  sync mode" and "The two screen halves".
 - **The stand-in** plays it perfectly: it goes to its partner to bind, parries every strike, draws
   back when its partner does and lets go right on the big cue (or when the partner lets go early).
+  Steering the pair, it moves as out of the sync mode, its partner at its side.
 - Separate swings outside the bond are normal attacks in the sync mode too (before 2026-10-17 the
   sync mode made every hit heavy).
 

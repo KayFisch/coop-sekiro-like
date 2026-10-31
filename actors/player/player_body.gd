@@ -121,7 +121,7 @@ func _ready():
 
 
 func _update_player_collision():
-	set_collision_mask_value(PLAYER_LAYER, Moves.on("players_collide") and not own_half)
+	set_collision_mask_value(PLAYER_LAYER, Moves.on("players_collide") and not own_half and not _in_pair())
 
 
 # --- Buttons, time, the partner -------------------------------------------------
@@ -428,29 +428,28 @@ func _keep_out_of_boss(delta):
 	if block.size == Vector2.ZERO:
 		_block_sliding = false
 		return
-	var me = Rect2(global_position - body.size / 2.0, body.size)
+	var me = _body_rect()
 	if _passing:
 		if _dash_timer > 0.0:
 			return  # a dash-parry: through him
 		# The dash is over. Still inside him: out the side you got closer to.
 		_passing = false
 		if me.intersects(block):
-			_block_side = 1.0 if global_position.x >= block.get_center().x else -1.0
+			_block_side = 1.0 if me.get_center().x >= block.get_center().x else -1.0
 			_block_sliding = true
 			_block_above = false
 	if not me.intersects(block):
 		_block_sliding = false
 		_block_above = me.end.y <= block.position.y
 		# Beside or under him: that's your side. Over him, keep the side you came from.
-		var side = signf(global_position.x - block.get_center().x)
+		var side = signf(me.get_center().x - block.get_center().x)
 		if not _block_above and side != 0.0:
 			_block_side = side
 		return
 	if _block_above:
 		_block_sliding = true  # came down on top of him
 		_block_above = false
-	var out_x = block.position.x - body.size.x / 2.0 if _block_side < 0.0 else block.end.x + body.size.x / 2.0
-	var push = out_x - global_position.x
+	var push = block.position.x - me.end.x if _block_side < 0.0 else block.end.x - me.position.x
 	if _block_sliding:
 		push = clampf(push, -BOSS_SLIDE_SPEED * delta, BOSS_SLIDE_SPEED * delta)
 	var hit = move_and_collide(Vector2(push, 0.0))
@@ -484,6 +483,16 @@ func _boss_in_the_way(x: float) -> bool:
 
 
 # --- Hooks: what the parts above add to the body -----------------------------------
+
+# The body as his block sees it (_keep_out_of_boss()): this player's, or a pair carried as one.
+func _body_rect() -> Rect2:
+	return Rect2(global_position - body.size / 2.0, body.size)
+
+
+# True while bound to the partner as one body (ONE STEERS, player.gd): the two don't bump.
+func _in_pair() -> bool:
+	return false
+
 
 # Before moving each frame, with the stick's `direction` (the walls note what they touch).
 func _before_move(_direction: float):

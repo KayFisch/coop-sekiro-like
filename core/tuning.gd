@@ -17,6 +17,7 @@ const VERSION = 2  # bumped when a default changes: an older save is dropped onc
 const SOURCES = [
 	"res://core/sync_rules.gd",  # page "sync": sync as life (tabs damage, sync and posture, sync hit)
 	"res://core/sync_bond.gd",  # page "sync", tab "sync mode"
+	"res://ui/mirror_view.gd",  # page "sync", tab "sync mode": merged
 	"res://actors/bosses/columna_bifrons/columna_bifrons.gd",  # page "bifrons"
 	"res://actors/bosses/heavy_hitter/heavy_hitter.gd",  # page "hitter"
 	"res://actors/bosses/acrobat/acrobat.gd",  # page "acrobat"

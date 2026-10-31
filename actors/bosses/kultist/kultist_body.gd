@@ -153,13 +153,10 @@ func other_layer(layer: int) -> int:
 	return LAYERS[1] if layer == LAYERS[0] else LAYERS[0]
 
 
-# The visibility layer that half's things are drawn on (MirrorView's bits): its player's. With the
-# screen not split both halves' looks are drawn, one over the other.
+# The visibility layer that half's things are drawn on (MirrorView's one rule): its player's half.
+# With the screen not split (or merged) both halves' looks are drawn, one over the other.
 func layer_bit(layer: int) -> int:
-	var p = player_of(layer)
-	if p != null:
-		return p.visibility_layer
-	return MirrorView.LIGHT if layer == LAYERS[0] else MirrorView.SHADOW
+	return MirrorView.half_bit(layer)
 
 
 # That half's player's color (light or shadow on the mirrored screen).

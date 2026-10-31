@@ -1,7 +1,8 @@
 extends "res://tests/test_case.gd"
-## The sync mode (core/sync_bond.gd): binding, the pair's strike together on the big cue and out
-## of sync, his hold-off while they draw back, and the dash-slash through him. P2 is the stand-in
-## (it follows P1 perfectly in the sync mode); P1 is pressed from here.
+## The sync mode (core/sync_bond.gd): binding, one steering the pair (ONE STEERS), the pair's
+## strike together on the big cue and out of sync, his hold-off while they draw back, and the
+## dash-slash through him. P2 is the stand-in (it follows P1 perfectly in the sync mode); P1 is
+## pressed from here.
 
 var rules
 var bond
@@ -38,6 +39,7 @@ func _setup(stand_in = "right"):
 
 func test_binding():
 	await _setup("off")
+	set_move("sync_steer", "each")  # both move themselves: apart, they come unbound
 	boss.set_physics_process(false)  # held where he is: his drift can push them apart
 	check(rules.sync_mode, "full sync: the sync mode")
 	p1.global_position.x = boss.global_position.x - 120.0
@@ -49,9 +51,76 @@ func test_binding():
 	await wait(0.4)
 	check(bond.bound, "together: bound")
 	check(p1.sabre_on() and p2.sabre_on(), "...with sabres")
+	check(bond.steerer() == null and p2.carried_by == null, "each: nobody carried")
 	p1.global_position.x = boss.global_position.x - 300.0
 	await wait(0.2)
 	check(not bond.bound, "far apart again: unbound")
+
+
+# Bound with one steering (the default, P1): side by side, the pair moved by the steering one's
+# stick, the other's moving nothing; switched, the other way round.
+func _bind_here():
+	p1.global_position.x = boss.global_position.x - 140.0
+	p2.global_position.x = boss.global_position.x - 115.0
+	await wait(0.4 + Tuning.value("sync_merge_time"))
+
+
+func test_one_steers():
+	await _setup("off")
+	boss.set_physics_process(false)
+	await _bind_here()
+	check(bond.bound and bond.steerer() == p1 and p2.carried_by == p1, "bound: the upper one (P1) steers, carrying P2")
+	near(p2.global_position.x - p1.global_position.x, p1.CARRY_GAP, 0.5, "...at their side, the two halves one square")
+	var x = p1.global_position.x
+	hold(p2, "left")
+	hold(p2, "dash")
+	await wait(0.4)
+	hold(p2, "left", false)
+	hold(p2, "dash", false)
+	near(p1.global_position.x, x, 1.0, "the carried one's stick and dash move nothing")
+	near(p2.global_position.x - p1.global_position.x, p1.CARRY_GAP, 0.5, "...and they stay at their side")
+	hold(p1, "left")
+	await wait(0.4)
+	hold(p1, "left", false)
+	check(p1.global_position.x < x - 40.0, "the steering one walks...")
+	near(p2.global_position.x - p1.global_position.x, p1.CARRY_GAP, 0.5, "...carrying the other along")
+	hold(p2, "block")
+	await frames(3)
+	check(p2.is_blocking(), "carried, they still block for themselves")
+	hold(p2, "block", false)
+	set_move("sync_steer", "lower")
+	await wait(0.1)
+	check(bond.steerer() == p2 and p1.carried_by == p2 and p2.carried_by == null, "switched: the lower one (P2) steers")
+	x = p2.global_position.x
+	hold(p1, "right")
+	await wait(0.3)
+	hold(p1, "right", false)
+	near(p2.global_position.x, x, 1.0, "...and P1's stick moves nothing")
+	hold(p2, "right")
+	await wait(0.3)
+	hold(p2, "right", false)
+	check(p2.global_position.x > x + 30.0, "...P2's moves the pair")
+	near(p1.global_position.x - p2.global_position.x, -p1.CARRY_GAP, 0.5, "...P1 at their side")
+
+
+func test_bound_until_the_sync_mode_ends():
+	await _setup("off")
+	boss.set_physics_process(false)
+	await _bind_here()
+	p1.global_position.x = boss.global_position.x - 400.0  # as far off as a throw could take them
+	await wait(0.2)
+	check(bond.bound, "one steering: they can't come apart, so the bond holds")
+	near(p2.global_position.x - p1.global_position.x, p1.CARRY_GAP, 0.5, "...the carried one along")
+	var x = p1.global_position.x
+	p2.take_damage(Vector2(-400.0, 0.0))
+	await wait(0.3)
+	check(p1.global_position.x < x - 30.0, "a blow throwing the carried one throws the pair")
+	near(p2.global_position.x - p1.global_position.x, p1.CARRY_GAP, 0.5, "...as one")
+	rules._set_team(rules.team_max() * 0.5)
+	await wait(0.2)
+	check(not bond.bound and p2.carried_by == null and p1.carrying == null, "the sync mode over: unbound, nobody carried")
+	var shape = p1.get_node("CollisionShape2D")
+	check(shape.shape.size == p1.BODY_SIZE and shape.position.x == 0.0, "...and the steering one's body their own again")
 
 
 func test_strike_together_and_out_of_sync():

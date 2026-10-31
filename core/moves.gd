@@ -10,7 +10,7 @@ signal changed
 const SAVE_PATH = "user://moves.cfg"
 # Bumped whenever the defaults change: a save from an older version is dropped once, so the new
 # defaults reach it (see _ready()).
-const VERSION = 5
+const VERSION = 6
 # The panel's text: shrunk as far as it takes for the whole tab to fit on screen.
 const PANEL_MARGIN = Vector2(80, 16)
 const PANEL_FONT_SIZE = 17
@@ -62,7 +62,8 @@ const ENTRIES = [
 	# Sync: sync as life and the sync mode (core/sync_rules.gd, core/sync_bond.gd)
 	{"key": "swings_hold_posture", "tab": "Sync", "label": "Your own swings hold your posture regen back too (his attacks never do)", "default": true},
 	{"key": "dash_slash_pass", "tab": "Sync", "label": "Dash-slash goes through the boss: in the sync mode only, always, or never", "default": "sync", "options": ["sync", "always", "off"]},
-	{"key": "sync_merge_view", "tab": "Sync", "label": "Sync mode, mirrored screen: bound, the two halves become one (the shadow joins the light)", "default": false},
+	{"key": "sync_merge_view", "tab": "Sync", "label": "Sync mode, mirrored screen: bound, the two halves become one (the shadow flows up into the light)", "default": true},
+	{"key": "sync_steer", "tab": "Sync", "label": "Sync mode, bound: who steers the pair, carrying the other (upper: P1, lower: P2), or each themselves", "default": "upper", "options": ["upper", "lower", "each"]},
 	# Runner: the beat-runner (levels/runner/)
 	{"key": "runner_patterns", "tab": "Runner", "label": "Bifrons's patterns only, or mixed with shards and blocks", "default": "mixed", "options": ["mixed", "bifrons"]},
 	{"key": "runner_relay", "tab": "Runner", "label": "A parried orb goes on to the partner as a shard to hit", "default": true},

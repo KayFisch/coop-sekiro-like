@@ -118,16 +118,10 @@ func together() -> bool:
 	return players.size() < 2 or side_of(players[0]) == side_of(players[1])
 
 
-# The visibility layer things of that player's are drawn on: their half, or both if not split.
+# The visibility layer things of that player's are drawn on: their half, or both if not split
+# (MirrorView's one rule).
 func half_of(hand: int) -> int:
-	if not _split():
-		return MirrorView.WORLD
-	return MirrorView.LIGHT if hand == 1 else MirrorView.SHADOW
-
-
-func _split() -> bool:
-	var view = get_tree().get_first_node_in_group("mirror_view")
-	return view != null and view.split()
+	return MirrorView.half_bit(hand)
 
 
 # --- How he moves ---

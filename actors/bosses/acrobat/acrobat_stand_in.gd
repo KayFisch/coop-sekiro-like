@@ -154,7 +154,10 @@ func _strike_bound(player):
 func _move(player, ring):
 	var x = player.global_position.x
 	var goal = x
-	if boss.in_sync_mode() and player.partner() != null:
+	# Bound, one steering the pair (SyncBond, ONE STEERS): if it's this one, it moves as ever, its
+	# partner at its side; carried, its feet do nothing anyway.
+	var steering = boss.rules != null and boss.rules.bond != null and boss.rules.bond.steerer() != null
+	if boss.in_sync_mode() and player.partner() != null and not steering:
 		goal = player.partner().global_position.x
 		if absf(goal - x) < Tuning.value("sync_connect_distance") * 0.5:
 			goal = x

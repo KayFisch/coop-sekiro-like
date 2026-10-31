@@ -140,8 +140,8 @@ func _physics_process(delta):
 			if _age >= FADE_TIME:
 				queue_free()
 				return
-	_parts["b"].visibility_layer = caster_target.visibility_layer if is_instance_valid(caster_target) else MirrorView.WORLD
-	_parts["a"].visibility_layer = victim.visibility_layer if is_instance_valid(victim) else MirrorView.WORLD
+	_parts["b"].visibility_layer = MirrorView.half_bit(caster_target.player_id) if is_instance_valid(caster_target) else MirrorView.WORLD
+	_parts["a"].visibility_layer = MirrorView.half_bit(victim.player_id) if is_instance_valid(victim) else MirrorView.WORLD
 	for part in _parts.values():
 		part.queue_redraw()
 

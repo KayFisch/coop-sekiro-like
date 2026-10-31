@@ -543,9 +543,8 @@ func _place_pivot(pivot: Node2D, blade: int, pose: Vector3, drawn: float):
 
 # THE SCREEN HALVES: each blade into the half of the player it fights, its echo into the other.
 func _draw_halves(down: bool, follow: float):
-	var view = get_tree().get_first_node_in_group("mirror_view")
 	var mode = Moves.value("mirror_blades")
-	var split = view != null and view.split() and mode != "mirror"
+	var split = MirrorView.is_split() and mode != "mirror"  # (MirrorView's one rule)
 	for blade in BLADES:
 		var heavy = split and not down and _shows_in_both(blade)
 		_heavy_shown[blade] = move_toward(_heavy_shown[blade], 1.0 if heavy else 0.0,
