@@ -110,16 +110,16 @@ its turn whenever both players are there (**open**: what sets it off).
 
 ## Colors
 
-The existing telegraphs (`docs/concept.md`, "Telegraphs"): yellow then red is a parry, as in
+The existing telegraphs (`docs/concept.md`, "The colors"): yellow then red is a parry, as in
 Bifrons's fight. New:
 
 - **Orange** (fire, "get out of the way"). Collides with P2's orange (one-sided view only;
   mirrored, P2 is a shadow), the red cue, Bifrons's parry sparks and the HUD's low posture.
 - **Purple** (demonic, unused). Collides with Kay's choice for "parry together" (scribble of
   2026-10-02), the beat-ring's violet shard and the pink of the sync energy.
-- The lightning bolt wants both players' parries but is **yellow**, not Bifrons's green for
-  "together": the element says what to do; that it's for both is seen by it running through both
-  halves.
+- The lightning bolt wants both players' parries. It stays a **yellow** crackle (it's lightning;
+  its look will be reworked anyway), but like every attack for both it shows **green** somewhere
+  (Nicho, 2026-10-31; `docs/concept.md`, "The colors"). Where: not built yet.
 - **The spells** follow "Wer und Was getrennt" (Kay's scribble of 2026-10-02): a yellow crackle
   (*what*: parry), round a core in **A's color** (*whom*: it's for A), ringed in B's (to read on
   either ground).

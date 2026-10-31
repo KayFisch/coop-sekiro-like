@@ -18,6 +18,18 @@ Not every attack is parriable: each boss has a vocabulary of attacks that ask fo
 
 Each attack is telegraphed by color so players can read what's coming and coordinate their response without needing to talk.
 
+**The colors** (2026-10-31, Nicho): one vocabulary for every boss, the one the tutorial teaches.
+
+- **Yellow, then red:** yellow, it's for you (the tell, as he winds up); red, it comes now (the
+  cue).
+- **Green: together.** An attack that needs both players' parries shows green somewhere, whatever
+  else it looks like (the Kultist's bolt stays a yellow crackle, being lightning, with green in it).
+- **Orange: get out of the way** (the Kultist's fire).
+- **Pink: the sync energy** (a parry's energy running to the partner; the sync mode).
+
+The players' own colors (light and shadow on the mirrored screen) say **whom** something is for,
+never **what** to do (Kay's "who and what apart", `scribbles.md`, 2026-10-02).
+
 ---
 
 ## Blade rules: additions (2026-10-19)
@@ -85,6 +97,8 @@ fighting, and **not a quicktime event**. It asks for the same kind of sync actio
 - Short: **half a minute to a minute**, depending on the boss's remaining sync.
 - The boss answers with **his own sync-mode reaction pattern** (one or two per boss), made for
   the sync mode (giving enough time); per boss with parrying, striking, maybe more.
+  Not built yet, and not for now (2026-10-31): until then each boss keeps his placeholder (slower,
+  fewer motifs; the Kultist fights on as ever).
 - **How the players land their hits is up to them.**
 - It ends when **his sync is empty** (finisher: deathblow animation) or **the players' sync
   falls below the sync-mode threshold** (back to the normal fight).
@@ -94,12 +108,14 @@ fighting, and **not a quicktime event**. It asks for the same kind of sync actio
 - Per boss: the windows for pair strikes, and how the bound pair moves.
 - No deliberate unbinding for now.
 
-**Moving while bound** (candidates, chosen per boss): one moves the pair and the other starts
-the cue, both strike on the cue's end; or the verbs are split (one walks, the other jumps /
-dashes). Ruled out: steering together (frustrating and unresponsive; parrying and striking
-together is enough sync), steps on the beat / a quicktime event (dull, no sense of control),
-free movement with an elastic tether, switching roles after every pair strike (chaotic). When
-roles switch is open.
+**Moving while bound** (2026-10-31, for now): **one of the two steers** (walking, jumping,
+dashing) and carries the other along at their side; both still parry, block and draw back for
+themselves, and the pair's strike stays as it is (both let go on the big cue). Candidates for
+later, per boss: one moves the pair and the other starts the cue; or the verbs are split (one
+walks, the other jumps / dashes). Ruled out: steering together (frustrating and unresponsive;
+parrying and striking together is enough sync), steps on the beat / a quicktime event (dull, no
+sense of control), free movement with an elastic tether, switching roles after every pair strike
+(chaotic). When roles switch is open.
 
 ---
 
@@ -132,8 +148,11 @@ A boss with **one weapon** (the Heavy Hitter) shows **each half its own layer's 
 weapon can point one way in the light half and the other way in the shadow half
 (`docs/boss_heavy_hitter.md`).
 
-In the sync mode the halves merge: the lower player flows into the upper one, and the focus
-moves to the shared part (the upper half).
+**In the sync mode the halves merge** (2026-10-31): as the lower player flows up into the upper
+one, the picture makes the same movement. The focus slides over to the upper half: the screen as a
+whole moves up, the light half takes nearly all of it, and the shadow half stays only as a strip
+along the bottom. Nobody is shown twice. Unbound, it all flows back. **Every boss shows himself the
+same way in the merged picture:** one rule for all, not one per boss.
 
 ---
 

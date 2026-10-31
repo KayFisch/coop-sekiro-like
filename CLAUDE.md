@@ -58,6 +58,25 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
 - A last boss, notes only (`scribbles.md`, 2026-10-25), with your idea of swapping the players'
   color cues.
 
+### For Kay, from Nicho (2026-10-31)
+
+- **Everything is on `main` now** (`nicho/acrobat`, with your `kay/kultist` in it). The merged
+  branches aren't deleted yet: tell me if you still have one of them checked out.
+- **We're preparing a playtest with two friends:** four bosses and a tutorial. After that we tune
+  the numbers together, so it at least plays right. What's coming (the handover of 2026-10-31,
+  listed in `TASKS.md`):
+  - **One color vocabulary** for every boss (`docs/concept.md`, "The colors"): yellow then red,
+    green together, orange dodge, pink sync energy. Your **Kultist**: the bolt for both stays a
+    yellow crackle but gets green somewhere (B2).
+  - **The sync mode:** bound, only one steers for now; merging, the screen moves up with the player
+    flowing in, the lower half only a strip; every boss shows himself the same way in the merged
+    picture, so your Kultist's two images change there too (B1).
+  - **The Warden gets his own room;** the try-out boss and the unfinished and test rooms are hidden
+    by default (F1). Your Horologium: tell me whether it should show.
+  - **Dev mode:** F1 to F5 only after typing "kek" (B5).
+  - **A tutorial:** a guided fight against a dummy (B4).
+- Changed F1 defaults bump `Moves.VERSION`: your saved switches go back to their defaults once.
+
 ## The project
 
 A 2D local co-op boss-fight game in Godot 4 (GDScript), inspired by Sekiro and Cuphead. The
@@ -282,7 +301,7 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   numbers are exports in the inspector of `kultist.tscn`, not on F2. `stand_in.gd`: a defensive
   stand-in for testing alone (Moves "bifrons_stand_in", as Bifrons's), timed by
   `Kultist.time_to_strike()`.
-  `acrobat/` (`docs/boss_acrobat.md`, phase 1 since 2026-10-26, branch `nicho/acrobat`): the juggler,
+  `acrobat/` (`docs/boss_acrobat.md`, phase 1 since 2026-10-26): the juggler,
   in two parts: `acrobat_body.gd` (`AcrobatBody`: his body and how it moves, `move_to()` and `Place`:
   floor, air, wall, the mirror line; a hand per player with a pair of rings, `pose_hand()`,
   `pair_count()`; the windows, as the Hitter's) and `acrobat.gd` (`Acrobat`: his strikes landing,
@@ -328,8 +347,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `Tuning.value()` (`docs/dev_tools.md`). A new boss: the checklist in `docs/dev_tools.md`.
   (The Kultist's numbers are `@export`s instead, as Kay asked: tuned in the editor.)
 - New movement abilities get a `Moves` switch so they can be A/B tested.
-- Attacks telegraph by color; each color means one player response (`docs/concept.md`,
-  "Telegraphs"; Kay's scribble of 2026-10-02 on colors, "Wer und Was getrennt").
+- Attacks telegraph by color; each color means one player response, the same for every boss
+  (`docs/concept.md`, "The colors"; Kay's scribble of 2026-10-02 on colors, "Wer und Was getrennt").
 - Input: two sets of actions, `p1_*` (keyboard) and `p2_*` (gamepad); the player reads
   `_action("jump")`. One pad: P1 keyboard, P2 pad. Two pads: one each (P1 keeps the keyboard too).
 - Code, comments, docs and commit messages in English; `TASKS.md` / `scribbles.md` in any language.

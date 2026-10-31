@@ -897,3 +897,32 @@ wenn er den Wettlauf gewinnt (sein eigener Sync-Modus? zurück in Phase 2? Niede
 aufbaut (vielleicht nach den Regeln der Spieler: seine Hälften geben sich Sync-Hit-Fenster); wo das
 Koop bleibt, wenn er zwei ist (sonst zwei Duelle nebeneinander; Ideen: seine Hälften spielen das
 Relay miteinander, oder Treffer zählen in Phase 3 nur als Sync-Hit); wer dann wo steht.
+
+## 2026-10-31 (Nicho, mit Claude): Playtest-Vorbereitung
+
+Chat-Session ohne Code. Anlass: Zwei Freunde testen das Spiel (vier Bosse und ein Tutorial). Die
+Entscheidungen stehen jetzt in `docs/concept.md` („The colors“, „The sync mode“, „The two screen
+halves“) und `TASKS.md`, die Aufträge in der Übergabe vom 2026-10-31. Hier das Warum.
+
+- **Der Sync-Modus muss wieder laufen.** Der Bug: Die Spieler existieren gleichzeitig zusammen und
+  einzeln. Claude hat im Code eine mögliche Ursache gefunden (beim Verschmelzen wird die untere
+  Hälfte nur gedimmt, P2 steht dann oben neben P1 und unten allein); das kann sein, muss aber nicht.
+- **Verschmelzen neu:** Während der untere Spieler in den oberen einfließt, macht die Ebene dieselbe
+  Bewegung: Der Fokus wandert fließend auf die obere Hälfte, der Bildschirm wandert im Ganzen nach
+  oben, die untere Hälfte bleibt nur als Streifen angedeutet.
+- **Verbunden steuert erstmal nur einer.** Von den Kandidaten vom 2026-10-19 der einfachste.
+- **Die Bosse sollen sich im verschmolzenen Bild einheitlich zeigen.** Heute fragt jeder Boss
+  selbst, ob die Hälften getrennt sind, der Kultist gar nicht.
+- **Sync-Modus-Patterns:** bleiben auf der Liste, aber nicht jetzt. Die Platzhalter bleiben.
+- **Farben einheitlich:** Der Blitz des Kultisten ist nur gelb, weil er ein Blitz ist; das Gelb kann
+  bleiben (das Bild wird eh überarbeitet), aber er verlangt beide, also muss Grün irgendwo im
+  Angriff zu sehen sein. Orange für Ausweichen bleibt.
+- **Tutorial:** ein geführter Kampf gegen einen Dummy, Schritt für Schritt: parieren und blocken,
+  Gelb und Rot, die Hälften, der Sync-Hit, Grün zusammen parieren, der Sync-Modus. Nicht alles so
+  genau erklären; die Regeln einzelner Bosse gar nicht (keine Karten vor den Kämpfen).
+  Erklärseiten statt eines Tutorials: nein.
+- **Der Wächter bekommt einen eigenen Raum.** Der Try-out-Boss wird über F1 ausgeblendet (Standard:
+  aus), genauso alle unfertigen und Test-Räume, die für den Playtest nicht zählen.
+- **Dev-Modus:** F1 bis F5 erst, wenn man „kek“ tippt.
+- **Vorher alle Branches nach `main`.** Danach tunen Kay und ich die Stats, damit es sich wenigstens
+  richtig spielen lässt.

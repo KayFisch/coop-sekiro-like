@@ -55,8 +55,31 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - **2026-10-25 – Akrobat (v1) und letzter Boss getrennt.** Akrobat = der Ort
   (`docs/boss_acrobat.md`); letzter Boss = Zeit und Lüge, nur Notizen (`scribbles.md`,
   2026-10-25). Der Beat-Ring wird nicht 1:1 eine Phase des Akrobaten.
+- **2026-10-31 – Ein Farbvokabular für alle Bosse** (`docs/concept.md`, „The colors“): Gelb, dann
+  Rot (deins, jetzt); Grün = zusammen, in jedem Angriff für beide irgendwo zu sehen (auch im gelben
+  Blitz des Kultisten); Orange = ausweichen; Pink = Sync-Energie.
+- **2026-10-31 – Sync-Modus: Verbunden steuert erstmal nur einer**, der andere wird mitgetragen.
+- **2026-10-31 – Verschmelzen:** Der Bildschirm wandert mit dem einfließenden Spieler nach oben, die
+  untere Hälfte bleibt als Streifen; jeder Boss zeigt sich dabei gleich.
+- **2026-10-31 – Der Wächter bekommt einen eigenen Raum;** der Try-out-Boss und alle unfertigen und
+  Test-Räume sind per F1 ausgeblendet (Standard: aus).
+- **2026-10-31 – Dev-Modus (F1 bis F5) erst nach Eingabe von „kek“.**
 
 ## Jetzt
+
+- [ ] **Playtest mit zwei Freunden vorbereiten** (@Nicho; Übergabe vom 2026-10-31). Vier Bosse
+  (Wächter, Hitter, Kultist, Akrobat) und ein Tutorial. In dieser Reihenfolge:
+  - [x] Alle Branches nach `main` (2026-10-31).
+  - [ ] **B1 Sync-Modus:** Bug nachstellen und beheben; Verschmelzen neu; verbunden steuert einer.
+  - [ ] **B2 Farben:** Grün im Blitz des Kultisten; alle Bosse aufs Vokabular geprüft.
+  - [ ] **B3 Wächter-Raum und Auswahl:** eigener Raum für den Wächter; Try-out-Boss und Test-Räume
+    per F1 ausgeblendet.
+  - [ ] **B4 Tutorial:** geführter Kampf gegen einen Dummy.
+  - [ ] **B5 Dev-Modus:** F1 bis F5 erst nach „kek“.
+  - [ ] **Stats tunen** (Nicho und Kay, nach B1 bis B5), damit es sich wenigstens richtig spielen
+    lässt. Für Hitter, Kultist und Akrobat ist das zugleich der erste gemeinsame Test (ihre
+    Einträge unten).
+  - [ ] **Playtest** mit den beiden.
 
 - [ ] **pep-Test-Boss „Columna Bifrons“** (@Nicho), jetzt auf `main`. **Seit 2026-10-19 der
   Try-out-Boss:** bleibt, wie er ist, als Werkbank für Regeln und rohe Ideen (braucht einen
@@ -154,6 +177,9 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   die Bewegung steht. **Offen:** Bewegung im verbundenen Zustand (im Rennen: einer bewegt, der
   andere startet den Cue; oder Verben aufgeteilt), Rollenwechsel, die Sync-Modus-Patterns der
   Bosse.
+  Stand 2026-10-31: Verbunden steuert erstmal nur einer; Verschmelzen neu (der Bildschirm wandert
+  mit, unten bleibt ein Streifen). Beides B1 der Übergabe vom 2026-10-31. Sync-Modus-Patterns:
+  weiter offen, nicht jetzt.
 - [ ] **Prototyp Beat-Runner** (@Nicho): die andere Antwort auf „Was ist zwischen den
   Bossen?“, etwas zwischen Beat Saber und Geometry Dash (Auto-Runner, Dinge fliegen im Rhythmus
   auf die Spieler zu, parieren und schlagen; vielleicht zwei Lanes für pep/ppe). Siehe Scribble
@@ -181,14 +207,15 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [x] **Gemeinsamer Parry gibt beiden ein Sync-Hit-Fenster**, im Try-out-Boss (Nicho,
   2026-10-20): F1 „bifrons_coop_windows“, `docs/boss_columna_bifrons.md` → „A window each“.
 - [x] **Heavy Hitter bauen, Schritt 1: Grundgerüst und Phase 1** (Nicho, 2026-10-20; Prompt B2).
-  Branch `nicho/heavy-hitter` (von `nicho/chains`), Auswahl Eintrag 2. Was drin ist und worauf beim
-  Anspielen achten: `docs/boss_heavy_hitter.md` → „Built (phase 1)“. Der Stampfsprung ist auf der
+  Branch `nicho/heavy-hitter` (von `nicho/chains`; seit 2026-10-31 auf `main`), Auswahl Eintrag 2.
+  Was drin ist und worauf beim Anspielen achten: `docs/boss_heavy_hitter.md` → „Built (phase 1)“. Der Stampfsprung ist auf der
   Stelle gebaut, mit Drehung in der Luft (Vorschlag, im Spiel prüfen).
   Nach Nichos erstem Test (2026-10-21) umgebaut: Hellebarde, diagonal geht jeder Kopf auf seinen
   Spieler (normale Schläge), Riss bricht in die andere Hälfte, langsamere Stoß-Serie, Enden in der
   Farbe des Ziels (Scribble vom 2026-10-21; Doc → „First test“). Wartet auf den nächsten Test.
 - [x] **Heavy Hitter bauen, Schritt 2: Wut und Phase 2** (Kay, 2026-10-21; Prompt B3). Direkt auf
-  `nicho/heavy-hitter` gebaut (Kays Entscheidung, statt `kay/hitter-rage`). Was drin ist und was
+  `nicho/heavy-hitter` gebaut (Kays Entscheidung, statt `kay/hitter-rage`; seit 2026-10-31 auf
+  `main`). Was drin ist und was
   dort entschieden wurde, wo das Design offen war (welche Ebene kippt: die des näheren Spielers;
   Haltung hält in der Wut; nur ein landender Treffer provoziert): `docs/boss_heavy_hitter.md` →
   „Built (rage and phase 2)“, dort auch gemessen, wie oft die Wut kommt.
@@ -199,7 +226,8 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [x] **Akrobat designen** (Nicho, 2026-10-25): v1 in `docs/boss_acrobat.md`.
 - [x] **Akrobat bauen, Schritt 1: Grundgerüst und Phase 1** (Nicho, 2026-10-26; Prompt B1 der
   Übergabe vom 2026-10-25). Vor dem gemeinsamen Test gebaut (Nichos Entscheidung), auf Branch
-  `nicho/acrobat` (von `nicho/heavy-hitter`, mit `kay/kultist` hineingemergt), Auswahl Eintrag 4.
+  `nicho/acrobat` (von `nicho/heavy-hitter`, mit `kay/kultist` hineingemergt; seit 2026-10-31 auf
+  `main`), Auswahl Eintrag 4.
   Was drin ist, was offen entschieden wurde und worauf beim ersten Test achten:
   `docs/boss_acrobat.md` → „Built (phase 1)“. Wartet auf Nichos Test.
 - [ ] **Akrobat bauen, Schritt 2: Phase 2** (offen; Prompt nach Nichos Test von Schritt 1).
@@ -214,9 +242,10 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Boss: im Try-out-Boss F1 `bifrons_mode` „chains“ (mit `bifrons_guard_break` motif_end),
   Torsprung (F5: GATE_LEAP), Klingenregeln, gemeinsame Fenster (`bifrons_coop_windows`).
   Danach `docs/boss_bifrons_warden.md` → „Open“ weiter klären.
-- [ ] **Neuer Boss „Kultist“** (@Kay), Branch `kay/kultist`. Feuer, Blitz, dämonische Magie;
-  Bifrons' Raum (die Bühne wird dafür eine eigene Szene, `levels/threshold/threshold_stage.tscn`)
-  und Spiegel-Bildschirm. Ein Stab pro Bildhälfte, der dem Spieler seiner Farbe zugewandt ist,
+  Stand 2026-10-31: bekommt einen eigenen Raum (B3 der Übergabe vom 2026-10-31).
+- [ ] **Neuer Boss „Kultist“** (@Kay), Branch `kay/kultist` (seit 2026-10-31 auf `main`). Feuer,
+  Blitz, dämonische Magie; Bifrons' Raum (die Bühne wird dafür eine eigene Szene,
+  `levels/threshold/threshold_stage.tscn`) und Spiegel-Bildschirm. Ein Stab pro Bildhälfte, der dem Spieler seiner Farbe zugewandt ist,
   zuschlägt und pariert; Flug mit Energiestrahl zum Spiegelbild. Elemente als Regel: Blitz
   parieren, Feuer ausweichen, Dämonisch befreien (noch ohne Verhalten). Attacke 1: Feuerwelle
   und Blitz zwischen seinen Spiegelbildern (beide parieren: zurückgeworfen). Attacke 2: Stab
@@ -249,7 +278,8 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
 - [x] **Vierte Controller-Belegung „Sekiro swapped“:** wie Sekiro, aber L1 Angriff, R1 Block
   (Nicho, 2026-10-19; `core/pads.gd` → `LAYOUTS`, im Hauptmenü mit P).
 - [ ] **Code-Aufträge aus dem Design vom 2026-10-19** (offen, niemand; Details in den Docs und
-  im Scribble vom 2026-10-19). Fassen den Spieler und Bifrons an, also vorher claimen:
+  im Scribble vom 2026-10-19; ihre Branches seit 2026-10-31 auf `main`). Fassen den Spieler und
+  Bifrons an, also vorher claimen:
   - [x] Dash-Parry: Controller-Belegung bequemer machen (@Nicho). Funktioniert nach Kays Umbau
     wie beschrieben (Test `test_player.test_dash_parry`). Statt einer neuen festen Belegung jetzt
     drei zur Wahl im Hauptmenü (P): Standard, Sekiro (R1 Angriff, L1 Block, Viereck Dash),
