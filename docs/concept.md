@@ -30,6 +30,18 @@ Each attack is telegraphed by color so players can read what's coming and coordi
 The players' own colors (light and shadow on the mirrored screen) say **whom** something is for,
 never **what** to do (Kay's "who and what apart", `scribbles.md`, 2026-10-02).
 
+Checked against every boss (2026-10-31): the Kultist's bolt marks its width green (a pale column,
+posts and a band on the floor); the
+HUD's meter is pink in the sync mode (it was gold); the Acrobat's ring parried to the partner
+draws a pink trail; the try-out boss's open flank no longer flashes pale yellow (the window is the
+partner's pink sword point). Left as they are, colliding but no telegraph or no fight of the
+playtest's: white for "nothing to parry" (his shove) and for his parry's flash; the try-out boss's
+two-sword strike and leap in pep, green though each parries their own blade (only together does
+he reel); his body warming toward orange in the reactive mode; orange and yellow parry sparks; the
+Hitter's heads red while he rages or is provoked; the HUD's orange low posture and red chaos; P2's
+orange on the one-sided screen; the yellow of the bolt's energy on a parrier's blade; the demonic
+purple (unused).
+
 ---
 
 ## Blade rules: additions (2026-10-19)

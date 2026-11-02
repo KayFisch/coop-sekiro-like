@@ -170,6 +170,23 @@ func test_lightning_parried_by_both_goes_back_into_him():
 	near(rules.team, team, 0.01, "...and the players lose no sync")
 
 
+# The colors (docs/concept.md): the bolt is for both, so it shows green, the other bosses' green for
+# "together" (its width on the floor), while the crackle stays yellow.
+func test_bolt_shows_green():
+	await _setup()
+	var middle = KultistFireAndLightning.middle()
+	_place(middle - 20.0, middle + 20.0)
+	var seen = [false, true]  # a bolt seen; all of it marked green
+	await _run("FIRE_AND_LIGHTNING", func(a):
+		if a.phase == KultistFireAndLightning.Phase.BOLT and is_instance_valid(a._bolt):
+			seen[0] = true
+			seen[1] = seen[1] and a._bolt.mark_color() == StrikePattern.COLOR_TOGETHER)
+	check(seen[0], "the bolt crackles")
+	check(seen[1], "...its width marked in green, for both")
+	check(KultistElement.tell(KultistElement.LIGHTNING).g > KultistElement.tell(KultistElement.LIGHTNING).b + 0.3,
+		"...the crackle itself still yellow")
+
+
 func test_fire_hits_who_stays_out_and_lightning_who_doesnt_parry():
 	await _setup()
 	var middle = KultistFireAndLightning.middle()

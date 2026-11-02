@@ -191,3 +191,14 @@ func test_dash_slash_through_him():
 		await wait(0.6)
 		var through = p1.global_position.x > boss.global_position.x
 		check(through == sync, "dash-slash at him, sync mode %s: %s" % [sync, "through" if sync else "stopped"])
+
+
+# The colors (docs/concept.md): the sync mode is pink, the sync energy's color, in the HUD too.
+func test_hud_pink_in_the_sync_mode():
+	await _setup("off")
+	var hud = get_tree().current_scene.get_node("HUD")
+	await frames(2)
+	check(hud._duel.team_fill.color == SyncWave.COLOR, "the sync mode: the players' meter pink")
+	rules._set_team(rules.team_max() * 0.5)
+	await frames(2)
+	check(hud._duel.team_fill.color != SyncWave.COLOR, "...and not out of it")

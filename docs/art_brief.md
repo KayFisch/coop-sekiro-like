@@ -82,7 +82,7 @@ BOSS: COLUMNA BIFRONS ("two-faced column")
   strike landed: out from the flank, tip on the floor, almost level
   his own parry: guard blade flicked outward, orange sparks #FFB24D
   recoil: thrown back up by a player's parry
-  guard broken: blade knocked outward, flank flashing pale yellow #FFF299 ("hit here, now")
+  guard broken: blade knocked outward, its plate gone ("hit here, now"; the flank isn't lit)
   staggered: both blades limp on the floor, dark #73737F, body flashing grey #8C8C9E
   sweep: blade held low out to the side, then cutting level at head height through to the far side
   charge: blade lowered and drawn far back level, body rearing back, then thrust out

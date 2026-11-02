@@ -14,8 +14,15 @@ const SEGMENT = 18.0  # px: the jagged line's steps...
 const JAG = 9.0  # ...and how far each strays sideways
 const CRACKLE_TIME = 0.05  # s between two shapes of the jag
 const STRIKE_TIME = 0.35  # s the strike's light takes to fade
-const MARK_HEIGHT = 28.0  # px: the marks at its width's edges
+const MARK_HEIGHT = 48.0  # px: the marks at its width's edges...
+const MARK_WIDTH = 4.0  # ...this thick
+const BAND_HEIGHT = 6.0  # px: the band along the floor between them
 const ABSORB_JAG = 4.0  # px: the energy crackling along a parrier's blade
+# Its width marked green, a pale column over all of it and the marks on the floor: it's for both,
+# parried together (docs/concept.md, "The colors": every attack for both shows green), whatever the
+# crackle's color.
+const COLOR_TOGETHER = Color(0.25, 1.0, 0.45)  # as the other bosses' green
+const COLUMN_ALPHA = Vector2(0.08, 0.2)  # the green column, from the tell's start to its cue
 
 var boss  # the Kultist: it runs from his feet
 var width = 120.0  # px wide, round his x
@@ -101,6 +108,11 @@ func _process(delta):
 	queue_redraw()
 
 
+# The color its width is marked in on the floor while it crackles and flashes: green, for both.
+func mark_color() -> Color:
+	return COLOR_TOGETHER
+
+
 func _roll():
 	_jag = PackedFloat32Array()
 	for i in 64:
@@ -134,12 +146,16 @@ func _draw():
 			var cue = _mode == Mode.CUE
 			var color = cue_color if cue else tell_color
 			var alpha = 1.0 if cue else 0.3 + 0.6 * _progress
+			# Its width: where it will strike, green (parry it together), under the crackle.
+			var green = mark_color()
+			if bottom.y - top.y > 1.0:
+				var column = lerpf(COLUMN_ALPHA.x, COLUMN_ALPHA.y, 1.0 if cue else _progress)
+				draw_rect(Rect2(top.x - half, top.y, width, bottom.y - top.y), Color(green, column))
+			for x in [top.x - half, top.x + half]:
+				draw_rect(Rect2(x - MARK_WIDTH / 2.0, floor_y - MARK_HEIGHT, MARK_WIDTH, MARK_HEIGHT), Color(green, 0.6 + 0.4 * alpha))
+			draw_rect(Rect2(top.x - half, floor_y - BAND_HEIGHT, width, BAND_HEIGHT), Color(green, 0.4 + 0.5 * alpha))
 			if bottom.y - top.y > 1.0:
 				draw_polyline(_line(top, bottom, JAG), Color(color, alpha), 4.0 if cue else 2.0, true)
-			# Its width on the floor: where it will strike.
-			for x in [top.x - half, top.x + half]:
-				draw_rect(Rect2(x - 1.0, floor_y - MARK_HEIGHT, 2.0, MARK_HEIGHT), Color(color, 0.4 + 0.5 * alpha))
-			draw_rect(Rect2(top.x - half, floor_y - 3.0, width, 3.0), Color(color, 0.25 * alpha))
 		Mode.STRUCK:
 			var fade = clampf(1.0 - _since / STRIKE_TIME, 0.0, 1.0)
 			if fade <= 0.0:

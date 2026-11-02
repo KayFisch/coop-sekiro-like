@@ -24,13 +24,19 @@ const MISSED = "missed"
 
 const CHEST = Vector2(0.0, -8.0)  # where it flies at, from a player's center
 const STRUCK_TIME = 0.15  # struck back: at him in this long
-const SPIN_SPEED = 14.0  # radians/s it turns round its own axis in the air
+const SPIN_SPEED = 14.0  # radians/s it turns round its own axis stuck in the line (flying, it doesn't)
 const MARK_RADIUS = 18.0  # the arrival's mark: a circle closing in on it
 const FLASH_TIME = 0.2  # through the mirror: the line lit under it this long
 const FLASH_WIDTH = 30.0
 const FADE_TIME = 0.2
 const COLOR_MARK = Color.YELLOW  # yours to parry
 const COLOR_CUE = Color.RED  # it comes
+# Parried, on its way to the partner who can strike it: a parry's energy running to the partner, so
+# a pink trail behind it (docs/concept.md, "The colors"), the ring itself in the partner's color.
+const COLOR_ENERGY = SyncWave.COLOR
+const ENERGY_EDGE = SyncWave.EDGE  # a dark rim, for the light half
+const TRAIL_POINTS = 10  # frames of its way the trail reaches back
+const TRAIL_WIDTH = 5.0
 
 var boss  # the Acrobat
 var hand = 1  # the hand that threw it, and catches it
@@ -51,6 +57,7 @@ var _to = Vector2.ZERO  # where it's flying
 var _flight = 0.35
 var _flash_x = 0.0
 var _flash = 0.0
+var _trail = PackedVector2Array()  # where it was, the last frames, while it shows the energy
 
 
 # A ring of `hand`'s, aimed at `target` (null: at the line, at `line_x`).
@@ -130,6 +137,11 @@ func can_strike(player) -> bool:
 	return stage == Stage.ARC and strikable and player != null and player.player_id == layer
 
 
+# True while it carries a parry's energy to the partner (its pink trail): parried, strikable.
+func shows_energy() -> bool:
+	return stage == Stage.ARC and strikable
+
+
 # Struck back by `player`: straight at him.
 func strike_back(player):
 	struck_by = player
@@ -203,6 +215,12 @@ func _physics_process(delta):
 			if _age >= FADE_TIME:
 				queue_free()
 				return
+	if shows_energy():
+		_trail.append(_at)
+		if _trail.size() > TRAIL_POINTS:
+			_trail.remove_at(0)
+	else:
+		_trail.clear()
 	queue_redraw()
 
 
@@ -229,10 +247,17 @@ func _draw():
 		draw_arc(_to, MARK_RADIUS * (0.6 + 0.4 * closing), 0.0, TAU, 24, Color(COLOR_MARK, 0.7), 2.0, true)
 	if stage == Stage.AIMING:
 		return  # still in his hand: the hand draws it
+	# The energy's trail, fading toward its tail, under the ring.
+	for i in range(1, _trail.size()):
+		var k = float(i) / (_trail.size() - 1)
+		draw_line(_trail[i - 1], _trail[i], Color(ENERGY_EDGE, ENERGY_EDGE.a * k), TRAIL_WIDTH + 3.0, true)
+		draw_line(_trail[i - 1], _trail[i], Color(COLOR_ENERGY, k), TRAIL_WIDTH * (0.4 + 0.6 * k), true)
 	var color: Color = boss.ring_color(layer)
 	if stage == Stage.ARC and not strikable:
 		color = Color(color, 0.6)  # nobody can strike it: it goes home
-	var spin = absf(cos(boss.anim_time * SPIN_SPEED))
+	# Flying (out, its arc, struck back) it doesn't turn round its own axis (Nicho, 2026-11-02): only
+	# the dive's cut, stuck in the line, spins.
+	var spin = absf(cos(boss.anim_time * SPIN_SPEED)) if stage == Stage.STUCK else 1.0
 	var count = 2 if pair else 1
 	for i in count:
 		_ellipse(_at + Vector2(0.0, 3.0 * (i - (count - 1) / 2.0)), boss.RING_RADIUS * maxf(spin, 0.1), boss.RING_RADIUS, color, boss.RING_WIDTH)

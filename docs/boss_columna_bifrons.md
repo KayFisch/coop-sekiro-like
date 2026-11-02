@@ -343,7 +343,9 @@ hitboxes sit closer together, and the one behind in ppe gets nearer to him.
 - **Blade held out to the side, low, drawn back** (pep): the sweep. It comes down level and goes
   through to the other side.
 - **A guard blade flashing white and flicking outward, orange sparks:** he parried your hit.
-- **A flank flashing pale yellow, a plate gone, its blade knocked outward:** hit here, now.
+- **A plate gone, its blade knocked outward:** hit here, now. The flank isn't lit (it flashed pale
+  yellow until 2026-10-31, Nicho: yellow says "parry", and the window is already the partner's
+  pink sword point).
 - **A blade planted out to the side, his shoulder on it:** he's propping himself up. No guard
   from that sword.
 - **A dark blade lying on the far side:** knocked off its course. No guard from that sword.
@@ -580,7 +582,8 @@ than the parrier was in reach, costs them 1. He wins none back.
   He, split, has no guard, and the next hit that lands kills him; as he wins no sync back, it
   lasts: breaking his posture is the deathblow of Sekiro.
 - **Full sync is the sync mode**, the players' second phase, until their sync falls below 70 %.
-  The meter turns gold. What happens in it: "The sync mode", below.
+  The meter turns pink (gold until 2026-10-31: pink is the sync energy's color, `docs/concept.md`,
+  "The colors"). What happens in it: "The sync mode", below.
 - **The beat:** a parry's energy runs over to the partner (`actors/player/sync_wave.gd`): hot
   pink, from the parrier's sword down through them into the floor, along it (on the mirrored
   screen: along the line), and up the partner from their feet into their sword, arriving as the

@@ -60,7 +60,6 @@ const EDGE_WIDTH = 4.0  # a blade's cutting edge, in the color of the player it 
 const COLOR_SWORD = Color(0.8, 0.82, 0.86)  # silver
 const COLOR_SWORD_LIMP = Color(0.45, 0.45, 0.5)
 const COLOR_PLATE = Color(0.62, 0.64, 0.7)
-const COLOR_OPEN = Color(1.0, 0.95, 0.6)  # "hit here, now": a broken guard's flank, flashing
 const COLOR_PARRY = Color(1.0, 0.7, 0.3)  # sparks off his own parry
 const COLOR_PLAYER_PARRY = Color(1.0, 0.85, 0.4)  # sparks off a player's
 const COLOR_PROVOKED = Color(0.75, 0.33, 0.16)  # his body, the closer he is to striking back
@@ -455,7 +454,6 @@ func _update_pose():
 	if state in [State.IDLE, State.RECOVER]:
 		body.color = COLOR_IDLE.lerp(COLOR_PROVOKED, _body_heat())
 	var tints = {LEFT: Color(1, 1, 1, 0), RIGHT: Color(1, 1, 1, 0)}  # side -> the strongest tint there
-	var flashing = {LEFT: false, RIGHT: false}  # side -> a guard is open there
 	for blade in BLADES:
 		var side = blade_side(blade)
 		var across = reaches_across(blade)
@@ -515,8 +513,8 @@ func _update_pose():
 		var lane = PLATE_WIDTH if across else 0.0
 		plate.visible = is_guarding(blade)
 		plate.position.x = -PLATE_WIDTH - lane if side == LEFT else body.size.x + lane
-		if open:
-			flashing[side] = true
+		# An open guard isn't lit: that its blade is knocked off the flank, and its plate gone, says
+		# so, and the partner's sword shows the window (cue_sync(), the sync energy's pink).
 		if _side_tints[blade].a > tints[side].a:
 			tints[side] = _side_tints[blade]
 	for side in SIDES:
@@ -524,8 +522,6 @@ func _update_pose():
 			_halves[side].color = Color(1, 1, 1, 0)  # the body's own stagger flash shows
 		elif anim_time < _break_flash_until:
 			_halves[side].color = Color.WHITE  # a motif's end broke his guard: all of him
-		elif flashing[side]:
-			_halves[side].color = COLOR_OPEN if fmod(anim_time, 0.1) < 0.05 else Color.WHITE
 		else:
 			_halves[side].color = tints[side]
 	_raise_walls()

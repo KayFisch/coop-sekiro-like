@@ -231,7 +231,9 @@ What's built, and the choices made where the design left them open:
   has moved out of the mark (44 px) isn't met: it missed, and comes back like a blocked one.
 - **The arc:** back to his hand (wherever he has gone meanwhile) in 1.2 s, up 90 px over the straight
   way, slow at first ("acrobat_arc_ease"). Parried, the line flashes under it and it's in the
-  partner's color, and their swing within 48 px of it strikes it back (each swing tries once): at
+  partner's color with a pink trail behind it (the parry's energy running to the partner:
+  `docs/concept.md`, "The colors"; 2026-10-31), and their swing within 48 px of it strikes it back
+  (each swing tries once): at
   him in 0.15 s, a normal hit; in their window, a sync hit. Blocked, hit or missed, it's drawn
   fainter: nobody can strike it.
 - **Strikes:** reach 100 px from his center (110 up or down: a kick from over their head). Out of

@@ -47,6 +47,20 @@ func test_window_timing():
 	check(boss.window_for(p1) == 0, "...not the parrier's")
 
 
+# Open, his flank isn't lit: the blade knocked off it and the plate gone say so, and the window is
+# the partner's sword's pink (cue_sync()).
+func test_an_open_guard_isnt_lit():
+	await _setup(true)
+	boss.break_guard(LEFT, 0.4, 0.0, p1)
+	var lit = 0.0
+	for i in 20:
+		await get_tree().physics_frame
+		for half in boss._halves.values():
+			lit = maxf(lit, half.color.a)
+	check(boss.is_open(LEFT) and not boss.is_guarding(LEFT), "the guard is open")
+	check(lit < 0.01, "...and no half of him lights up (alpha %.2f)" % lit)
+
+
 func test_guard_falls_or_holds():
 	await _setup(true)
 	boss.break_guard(LEFT, 0.5, 0.0, p1)

@@ -188,6 +188,9 @@ func test_the_arc():
 				parried_seen = true
 				check(r.can_strike(p1), "on its way back, P1 (the partner) can strike it")
 				check(not r.can_strike(p2), "...P2, who parried it, can't")
+				check(r.shows_energy(), "...carrying the parry's energy (its pink trail)")
+				await frames(5)
+				check(r._trail.size() > 1, "...drawn behind it (%d points)" % r._trail.size())
 		if parried_seen or boss.state == BaseBoss.State.RECOVER:
 			break
 	check(parried_seen, "the parried ring flew back")

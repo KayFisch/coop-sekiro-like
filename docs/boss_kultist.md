@@ -119,7 +119,10 @@ Bifrons's fight. New:
   2026-10-02), the beat-ring's violet shard and the pink of the sync energy.
 - The lightning bolt wants both players' parries. It stays a **yellow** crackle (it's lightning;
   its look will be reworked anyway), but like every attack for both it shows **green** somewhere
-  (Nicho, 2026-10-31; `docs/concept.md`, "The colors"). Where: not built yet.
+  (Nicho, 2026-10-31; `docs/concept.md`, "The colors"): **its width** is green, the other bosses'
+  green, from the crackle to the strike: a pale column over all of it, the two posts at its edges
+  and the band along the floor between them (`lightning_bolt.gd`, `mark_color()`; the column since
+  2026-11-02, Nicho: the marks alone didn't stand out).
 - **The spells** follow "Wer und Was getrennt" (Kay's scribble of 2026-10-02): a yellow crackle
   (*what*: parry), round a core in **A's color** (*whom*: it's for A), ringed in B's (to read on
   either ground).

@@ -80,7 +80,10 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   mode" and "The two screen halves", each "Built"). In your code, three lines: the Kultist's
   `layer_bit()`, `spell.gd` and `lightning_bolt.gd` now ask `MirrorView.half_bit()` instead of the
   player's visibility layer, so merged both his images are drawn one over the other, as on the
-  one-sided screen.
+  one-sided screen. **B2, the colors** (`docs/concept.md`, "The colors"): your bolt marks its width
+  green, a pale column and marks on the floor (`lightning_bolt.gd`, `mark_color()`: the only change
+  in your code), the crackle stays yellow; the HUD's meter is pink in the sync mode. The Acrobat's
+  rings no longer spin as they fly.
 
 ## The project
 
