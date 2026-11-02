@@ -168,6 +168,31 @@ func test_lightning_parried_by_both_goes_back_into_him():
 	check(attack.reflected, "both parried: the bolt goes back into him")
 	near(sync - rules.boss_sync, Tuning.value("their_heavy_damage"), 0.01, "...a heavy hit on him")
 	near(rules.team, team, 0.01, "...and the players lose no sync")
+	check(not boss._windows.has(p1) and not boss._windows.has(p2), "...its parries opened no window: going back into him is their reward")
+
+
+# THE PARTNER'S HIT, as with every boss: a parry of his blow sends its energy to the partner and
+# opens their window; their hit landing in it is a sync hit, whatever his guard does.
+func test_a_parry_opens_the_partners_window():
+	await _setup()
+	_place(boss.global_position.x - 100.0, boss.global_position.x + 140.0)
+	rules._set_team(rules.team_max() * 0.5)
+	boss.staff_windup = 1.2  # striking at P1, the nearer: his staff in P1's half busy, not guarding
+	boss.dev_next = "STAFF"
+	boss.timer = 0.0
+	await wait(0.3)
+	hold(p2, "block")
+	await frames(2)
+	check(boss.land_on(p2, KultistElement.STAFF) == KultistElement.PARRIED, "P2 parries a blow of his")
+	hold(p2, "block", false)
+	var waves = get_tree().current_scene.get_children().filter(func(n): return n.get_script() == SyncWave)
+	check(waves.size() == 1 and waves[0].to == p1, "...its energy runs to the partner, P1")
+	check(not boss.window_for(p1), "...whose window opens a moment later")
+	await wait(Tuning.value("sync_window_delay") + 0.02)
+	check(boss.window_for(p1) and not boss.window_for(p2), "...P1's open, not the parrier's")
+	var team = rules.team
+	boss.take_damage(10.0, p1)
+	near(rules.team - team, Tuning.value("sync_hit_gain"), 0.01, "P1's hit in it: a sync hit, on the beat")
 
 
 # The colors (docs/concept.md): the bolt is for both, so it shows green, the other bosses' green for

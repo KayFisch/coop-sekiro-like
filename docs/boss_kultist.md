@@ -155,7 +155,14 @@ All of the above marked **open**, and:
 
 - Moving between attacks is a placeholder: up to the nearer player, or the middle between two
   on either side; no drift, no making room as Bifrons has.
-- A parry of his strike opens no window for the partner (Bifrons's rule 4).
+- When his guard falls (Nicho, 2026-11-02: open). Since that day a parry of his staff or a spell
+  opens the partner's window as with every boss: its energy runs over (the pink wave), and their
+  hit landing in it is a sync hit (`kultist.gd`, "THE PARTNER'S HIT"; an unused window costs sync,
+  as with the others, within `window_reach`). The window doesn't open his guard: a hit his staff
+  meets is met as ever. The bolt's parry opens none: parried by both, going back into him is its
+  reward (Nicho).
+- The parrier's blade holding the bolt's energy (`absorb_time`, lit yellow) is only a look: it
+  does nothing (Nicho, 2026-11-02, wondered what it's for: Kay's call).
 - Nothing of his own for the players' sync mode (bound, they strike as against Bifrons).
 - The stand-in only defends: no hits of its own, no binding in the sync mode.
 - His body blocks as Bifrons's does (TASKS.md: "Durchgang durch Bosse klären").

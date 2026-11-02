@@ -16,9 +16,12 @@ extends KultistBody
 ## - FLIGHT: the flight alone, for the lab (F5).
 ## TODO(design): they come in a set order (attack_order), round and round: a placeholder. A boss's
 ## attacks are to come in chains, with a finale and a breath (docs/concept.md, "Boss design
-## principles"). He has nothing of his own for the players' sync mode (he fights on as ever), and
-## a parry of his strike opens no window for the partner, as one of Bifrons's does: the players
-## land their hits while he strikes, casts or flies, and with the bolt sent back.
+## principles"). He has nothing of his own for the players' sync mode (he fights on as ever).
+## THE PARTNER'S HIT (as every boss's): a parry of a blow of his (the staff's, a spell's) opens the
+## partner's window, the parry's energy running over to them (SyncWave), and a hit of theirs that
+## lands in it is a sync hit. The window is the parry's, whatever he does: when his guard falls is
+## another question (TODO(design)); a hit his staff meets is met as ever. Not the bolt's: parried
+## by both, its reward is going back into him.
 ##
 ## His numbers (times, distances, how hard a blow is) are exports, set in the inspector of
 ## kultist.tscn. TODO(design): not on F2, as every other fight's are (core/tuning.gd): F2 changes
@@ -158,7 +161,13 @@ const RANGE_RECHECK = 0.2  # an attack that needs someone in reach, and nobody i
 ## It stands this far from him (px, center to center), on its side of him.
 @export var stand_in_distance = 120.0
 
+@export_group("The partner's hit")
+## A window a parry opened for the partner, left unused while they were this near him (px), costs
+## the players sync, as with the other bosses (its times are the sync rules', on F2).
+@export var window_reach = 220.0
+
 var _order_at = 0  # the next attack in attack_order
+var _windows = {}  # player -> their window: {from, until, by, used, shown, judged} (THE PARTNER'S HIT)
 
 
 func _ready():
@@ -235,6 +244,8 @@ func _physics_process(delta):
 		if next != null and next.needs_reach() and not get_players().any(in_reach):
 			timer = RANGE_RECHECK
 	super(delta)
+	if hp > 0.0:
+		update_windows()
 
 
 func _die():
@@ -344,8 +355,10 @@ func _flank(side: int, y: float) -> Vector2:
 # says: parried, blocked or hit. `heavy`: a heavy attack for the sync rules. `knockback`: how a hit
 # throws them (null: away from him, hit_knockback; a block, block_knockback). `strong`: the
 # heavier kind of parry, as a blow that wants both players' parries. `answerable` false: it hits,
-# whatever the rule. Returns what came of it (KultistElement.PARRIED, BLOCKED or HIT).
-func land_on(p, element: int, heavy = false, knockback = null, strong = false, answerable = true) -> String:
+# whatever the rule. `opens_window` false: a parry of it opens no window for the partner (the bolt:
+# its reward is going back into him). Returns what came of it (KultistElement.PARRIED, BLOCKED or
+# HIT).
+func land_on(p, element: int, heavy = false, knockback = null, strong = false, answerable = true, opens_window = true) -> String:
 	if rules != null:
 		rules.landing_heavy = heavy  # the players' hooks lead to the rules while it lands
 	var outcome = KultistElement.judge(element, p) if answerable else KultistElement.HIT
@@ -353,6 +366,8 @@ func land_on(p, element: int, heavy = false, knockback = null, strong = false, a
 		KultistElement.PARRIED:
 			p.on_perfect_parry(strong)
 			spawn_sparks(p.blade_point(0.8), 10, COLOR_PLAYER_PARRY)
+			if opens_window:
+				open_window(p.partner(), p)
 		KultistElement.BLOCKED:
 			var blocked = knockback * block_knockback / maxf(hit_knockback, 1.0) if knockback != null \
 				else knockback_for(p, block_knockback)
@@ -402,11 +417,69 @@ func _struck_by_rules(source):
 			spawn_sparks(at, 6, COLOR_BLOCK)
 			rules.boss_blocked()
 		return
-	Sfx.play("sync_hit", -6.0)
-	shake(3.0)
-	spawn_sparks(at, 8, COLOR_EXECUTE)
+	var window = open_window_of(source)
+	if window != null:
+		# In the window their partner's parry opened: a sync hit.
+		window.used = true
+		var on_beat = anim_time - window.from <= Tuning.value("sync_beat_time")
+		rules.sync_hit(on_beat)
+		Dev.sync_hit(source, anim_time - window.from, on_beat)
+		Sfx.play("sync_hit")
+		shake(6.0)
+		spawn_sparks(at, 16, SyncWave.COLOR)  # the parry's energy, passed on into him
+		if on_beat:
+			Sfx.play("on_beat", -4.0)
+			spawn_sparks(at, 14, SyncWave.CORE)
+	else:
+		Sfx.play("sync_hit", -6.0)
+		shake(3.0)
+		spawn_sparks(at, 8, COLOR_EXECUTE)
 	var lethal = rules.boss_struck()
 	super.take_damage(hp if lethal else 0.0, source)
+
+
+# --- The partner's hit (see THE PARTNER'S HIT; as the Acrobat's and the Heavy Hitter's) ---
+
+# A parry of `by`'s opens `player`'s window: after the sync rules' delay, for its time, the parry's
+# energy running over to them meanwhile.
+func open_window(player, by):
+	if player == null or rules == null:
+		return
+	var delay = Tuning.value("sync_window_delay")
+	var from = anim_time + delay
+	_windows[player] = {"from": from, "until": from + Tuning.value("sync_beat_time") + Tuning.value("sync_window_late"),
+		"by": by, "used": false, "shown": false, "judged": false}
+	SyncWave.send(by, player, delay, Tuning.value("sync_beat_time"), ARENA_FLOOR_Y, get_parent())
+	update_windows()
+
+
+# True while that player's window is open.
+func window_for(player) -> bool:
+	var window = _windows.get(player)
+	return window != null and anim_time >= window.from and anim_time < window.until
+
+
+# The window of `player`'s that's open just now, or null.
+func open_window_of(player):
+	return _windows[player] if window_for(player) else null
+
+
+# Each window opening (its cue on its player's blade, as the energy arrives) and closing: unused,
+# with its player near enough to have used it, it costs the players sync.
+func update_windows():
+	for p in _windows:
+		var window = _windows[p]
+		if not is_instance_valid(p):
+			window.judged = true
+			continue
+		if not window.shown and anim_time >= window.from:
+			window.shown = true
+			p.cue_sync(Tuning.value("sync_beat_time"), SyncWave.COLOR)
+		if not window.judged and anim_time >= window.until:
+			window.judged = true
+			if not window.used and distance_to(p) <= window_reach:
+				rules.missed_window()
+				Dev.window_missed()
 
 
 # A blow of his own sent back into him (the bolt both players parried): it lands whatever he's

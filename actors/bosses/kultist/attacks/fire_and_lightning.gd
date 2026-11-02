@@ -148,7 +148,8 @@ func _strike():
 	var under = everyone.filter(func(p): return absf(p.global_position.x - x) <= boss.bolt_width / 2.0)
 	var parriers = []
 	for p in under:
-		if boss.land_on(p, KultistElement.LIGHTNING, boss.bolt_heavy, null, true) == KultistElement.PARRIED:
+		# (A parry of it opens no window for the partner: parried by both, it goes back into him.)
+		if boss.land_on(p, KultistElement.LIGHTNING, boss.bolt_heavy, null, true, true, false) == KultistElement.PARRIED:
 			parriers.append(p)
 			# The parrier holds its energy for a moment: their blade lit, and crackling.
 			p.cue_sync(boss.absorb_time, KultistElement.tell(KultistElement.LIGHTNING))

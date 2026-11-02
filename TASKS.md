@@ -81,6 +81,12 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     Was bleibt, wie es ist: `docs/concept.md` → „The colors“. Nicho hat angespielt: alles gut bis auf
     das Grün (fiel nicht auf, jetzt mit Säule: **noch mal ansehen**). Offen: Doppelhieb und Sprung
     des Try-out-Bosses in pep sind grün, obwohl jeder seine eigene Klinge pariert.
+  - [x] **Kultist: Sync-Hits** (Nicho beim Anspielen, 2026-11-02: keine pinke Welle). Eine Parade
+    von Stab oder Zauber öffnet jetzt wie bei jedem Boss das Fenster des Partners (Welle, Sync-Hit,
+    ungenutzt kostet es Sync); die des Blitzes nicht (sein Lohn ist der Rückschlag). Seine Deckung
+    bleibt, wie sie ist. **Anspielen.**
+  - [ ] **Kultist: wann fällt seine Deckung?** (offen, Frage an Kay). Dazu Nichos Scribble vom
+    2026-11-02: im Feuer-Angriff fliegt er ungedeckt, man landet sehr viele Treffer.
   - [ ] **B3 Wächter-Raum und Auswahl:** eigener Raum für den Wächter; Try-out-Boss und Test-Räume
     per F1 ausgeblendet.
   - [ ] **B4 Tutorial:** geführter Kampf gegen einen Dummy.

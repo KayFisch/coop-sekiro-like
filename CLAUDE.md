@@ -84,6 +84,13 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   green, a pale column and marks on the floor (`lightning_bolt.gd`, `mark_color()`: the only change
   in your code), the crackle stays yellow; the HUD's meter is pink in the sync mode. The Acrobat's
   rings no longer spin as they fly.
+- **Your Kultist and the partner's hit** (Nicho, 2026-11-02): a parry of his staff or a spell now
+  opens the partner's window, as with every boss (the pink wave, a sync hit in it; an unused one
+  costs sync, F2 "missed_window_loss"). The bolt's parry opens none: going back into him is its
+  reward. His guard is untouched: when it falls is still open (`TASKS.md`). In `kultist.gd`:
+  `open_window()`, `update_windows()`, the export `window_reach`, the sync hit in
+  `_struck_by_rules()`, and `land_on(..., opens_window)`. Nicho wondered what the parrier's yellow
+  blade after the bolt is for (only a look): your call.
 
 ## The project
 
@@ -306,7 +313,8 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `kultist/` (since 2026-10-21, Kay, `docs/boss_kultist.md`): a boss for the mirrored screen,
   in two parts: `kultist_body.gd` (an image of him in each half, a staff per half that faces its
   player and guards against them, the flight: `fly_to()`, `land()`) and `kultist.gd` (his attack
-  order, where he stands, the sync rules' hooks: `land_on()` judges a blow by its element). The
+  order, where he stands, the sync rules' hooks: `land_on()` judges a blow by its element; a parry
+  opens the partner's window, `open_window()`, as with every boss). The
   elements (staff, lightning, fire, demonic) and what answers each are one table,
   `kultist_element.gd`; the fire, the bolt and the spells draw themselves (`magic/`). His
   numbers are exports in the inspector of `kultist.tscn`, not on F2. `stand_in.gd`: a defensive
