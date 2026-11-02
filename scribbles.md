@@ -926,3 +926,10 @@ halves“) und `TASKS.md`, die Aufträge in der Übergabe vom 2026-10-31. Hier d
 - **Dev-Modus:** F1 bis F5 erst, wenn man „kek“ tippt.
 - **Vorher alle Branches nach `main`.** Danach tunen Kay und ich die Stats, damit es sich wenigstens
   richtig spielen lässt.
+
+## 2026-11-02 (Nicho): Anspielen der Playtest-Vorbereitung, der Kultist
+
+- Der Kultist fliegt beim Feuer-Angriff ungedeckt, und man kann sehr viele Treffer landen.
+- Feuer und Blitz ist als Grundlage gut, aber die Patterns an sich sollten ausgebaut werden (wie,
+  glaube ich, schon gewollt): Dem Feuer muss man ausweichen, der Blitz kommt, während der Kultist
+  umherfliegt.

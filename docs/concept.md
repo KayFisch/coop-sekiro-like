@@ -178,10 +178,11 @@ same way in the merged picture:** one rule for all, not one per boss.
 
 Built (2026-10-31, `ui/mirror_view.gd` → "MERGED", F1 "sync_merge_view", on by default now):
 - In one movement with the pair's (same start, length and curve): the line sinks from the middle
-  to a strip (F2 "sync_merge_strip", 40 px), the light half taking the rest **at the same scale**
-  (more of the room above; the rooms are 600 px high, so above the ceiling stays a dark band, as
-  beside the walls). P2 flows up through the line: their reflection drains into it while they
-  fill the light half from the feet up (with a pale outline there).
+  to a strip (F2 "sync_merge_strip", 125 px: Nicho, 2026-11-02, after playing it; built with 40),
+  the light half taking the rest **at the same scale** (more of the room above; the rooms are
+  600 px high, so the ceiling comes just inside the top edge). P2 flows up through the line: their
+  reflection drains into it while they fill the light half from the feet up (with a pale outline
+  there).
 - Merged, P2 is in the light half only. **The strip** shows the world's reflection, dimmed: the
   floor, his lower body and weapons, sparks; no player.
 - **The one rule** (`MirrorView.half_bit()`): what is aimed at a player is drawn in that player's

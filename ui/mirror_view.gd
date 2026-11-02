@@ -95,7 +95,7 @@ var _marks = {}  # player -> the Callable marking what they add later
 static func tuning_entries() -> Array:
 	return [
 		{"page": "sync", "title": "Sync Rules", "scenes": ["levels/threshold/"], "header": "SYNC MODE: MERGED (MIRRORED SCREEN)", "tab": "sync mode"},
-		{"key": "sync_merge_strip", "label": "merged: the shadow half a strip this high (px)", "default": 40.0, "step": 5.0},
+		{"key": "sync_merge_strip", "label": "merged: the shadow half a strip this high (px)", "default": 125.0, "step": 5.0},
 	]
 
 
