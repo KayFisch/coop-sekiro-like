@@ -10,7 +10,9 @@ extends Node
 ## The log: each fight's events, counted for the overlay and, with F1 → Dev "fight_log", written
 ## to user://fight_log.jsonl (one JSON line per event; the file starts over with each fight).
 ## Code tells it what happened: defended() from the player, note() and the others below from a
-## boss or the sync rules.
+## boss or the sync rules. Each event goes out as `noted` too (the tutorial counts by it).
+
+signal noted(kind: String, data: Dictionary)  # an event of the log: its kind and what's known of it
 
 const LOG_PATH = "user://fight_log.jsonl"
 const NO_PRESS = 0.6  # s: a block press longer ago than this when a strike lands is no try at it
@@ -300,6 +302,7 @@ func note(kind: String, data = {}):
 	var entry = {"t": snappedf(GameManager.elapsed_time, 0.001), "kind": kind}
 	entry.merge(data)
 	_log.append(entry)
+	noted.emit(kind, data)
 	if _file:
 		_file.store_line(JSON.stringify(entry))
 		_file.flush()

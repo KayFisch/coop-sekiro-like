@@ -6,6 +6,7 @@ extends Control
 ## switch at once.
 
 const FIGHTS = [
+	{"name": "Tutorial", "arena": "the training dummy: start here", "scene": "res://levels/tutorial/tutorial.tscn"},
 	{"name": "Columna Bifrons", "arena": "the Warden of the Threshold", "scene": "res://levels/warden/warden.tscn"},
 	{"name": "Heavy Hitter", "arena": "the Ettin (phase 1)", "scene": "res://levels/heavy_hitter/hitter_room.tscn"},
 	{"name": "Kultist", "arena": "The Threshold, mirrored", "scene": "res://levels/kultist/kultist_room.tscn"},

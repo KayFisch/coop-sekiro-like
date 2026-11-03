@@ -86,7 +86,9 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   rings no longer spin as they fly. **B3:** the Warden has a room of his own
   (`levels/warden/`, `docs/boss_bifrons_warden.md`); the select screen shows the four bosses and
   your Horologium (Nicho: it stays), the try-out boss and the other test rooms only with F1 → Dev
-  "select_all" (`Moves.VERSION` 7).
+  "select_all" (`Moves.VERSION` 7). **B4, the tutorial** (`docs/tutorial.md`): first on the
+  select screen, against the try-out boss as a training dummy; it touches `core/dev.gd`
+  (`Dev.noted`), `sync_rules.gd` (`spared`) and Bifrons's stand-in (`perfect`, `plays`).
 - **Your Kultist and the partner's hit** (Nicho, 2026-11-02): a parry of his staff or a spell now
   opens the partner's window, as with every boss (the pink wave, a sync hit in it; an unused one
   costs sync, F2 "missed_window_loss"). The bolt's parry opens none: going back into him is its
@@ -119,7 +121,7 @@ docs/                                design docs: concept.md, boss_*.md (one per
                                      heavy_hitter, kultist, acrobat), attack_pool.md (attacks no
                                      boss has yet), level_*.md (one per level), parkour_gyms.md,
                                      art_brief.md (sizes, colors, poses: for generating sprites),
-                                     beat_runner.md, beat_ring.md,
+                                     beat_runner.md, beat_ring.md, tutorial.md,
                                      dev_tools.md (F3-F5, tests, F2 numbers, measuring, a new boss)
 core/                                autoloads: GameManager, Sfx, Moves, Pads, Beat, Tuning, Dev;
                                      sync_rules.gd (sync as life, Bifrons), sync_bond.gd (sync mode)
@@ -128,7 +130,8 @@ actors/player/                       player.gd (+ scene) and the four parts it e
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              threshold/ (Bifrons's room; the room itself, threshold_stage.tscn,
                                      is a scene of its own), warden/ (the Warden's: the try-out boss
-                                     there, set up as him), heavy_hitter/ (the Heavy Hitter's),
+                                     there, set up as him), tutorial/ (a guided fight against the
+                                     try-out boss as a dummy), heavy_hitter/ (the Heavy Hitter's),
                                      kultist/ and acrobat/ (theirs: the same stage),
                                      gym/ (movement test rooms), kit/ (level kit: rooms built in
                                      the editor), horologium/ (coop platformer level, kit rooms),
@@ -306,7 +309,7 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   the boss design principles tried out (`attacks/chain.gd`: a motif repeated, a finale, then a
   pause that's the players', "THE CHAINS"); and
   `stand_in.gd`, which plays one of the players for testing alone, by pressing that player's
-  buttons.
+  buttons (`perfect` for the tutorial; `plays` lets a test run one per player).
   `heavy_hitter/` (`docs/boss_heavy_hitter.md`, phase 1 since 2026-10-20, the rage and phase 2 since
   2026-10-21): the Ettin, in two parts:
   `hitter_weapon.gd` (`HitterWeapon`: one weapon, a halberd, pointing its own way in each player's layer,
@@ -345,6 +348,10 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   pieces (`KitBlock`, `KitSpikes`, `KitSwitch` wired to `KitDoor`, `KitShaft`, ...); the ones on
   the clock extend `Clockwork` and work out their state from `Beat` alone (in the editor, from a
   stand-in clock at the room's BPM). `horologium/`: the coop platformer's rooms.
+- `levels/tutorial/` (`docs/tutorial.md`): the tutorial, six steps against the try-out boss in a
+  dummy's look (`dummy_look.gd`), each attack sent by `tutorial.gd` (`dev_next`), its switches
+  held (`Moves.fix()`), nobody losing (`SyncRules.spared`), the steps counted by the fight's log
+  (`Dev.noted`), a line for each player in their half (`tutorial_text.gd`).
 - `levels/runner/runner.gd` (`BeatRunner`, `docs/beat_runner.md`): a prototype for between the
   bosses. The mirrored screen, players running on the spot (`Player.running_on`), and things
   coming at them on a beat (orbs to parry, shards to hit, blocks to jump), planned from

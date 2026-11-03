@@ -40,8 +40,15 @@ extends Node
 ## "sync_mode_exit": they can bind and strike together (core/sync_bond.gd), and he slows down
 ## ("sync_mode_tempo") and strikes with both swords at once.
 ##
+## SPARED (the tutorial, levels/tutorial/): nobody loses. The players' sync never falls below
+## SPARED_TEAM, his below SPARED_BOSS, and no posture below SPARED_POSTURE, so nobody breaks and
+## nobody falls into chaos; everything else as ever.
+##
 ## Every number is in Tuning (F2).
 
+const SPARED_TEAM = 0.5  # shares of the most there is
+const SPARED_BOSS = 0.3
+const SPARED_POSTURE = 0.3
 const POSTURE_SIZES = ["posture_small", "posture_medium", "posture_large"]  # the players'
 const BOSS_POSTURE_SIZES = ["boss_posture_small", "boss_posture_medium", "boss_posture_large"]
 const SMALL = 0
@@ -63,6 +70,7 @@ var landing_heavy = false
 # posture.
 var landing_share = -1.0
 var landing_posture = 1.0
+var spared = false  # SPARED: nobody loses (the tutorial)
 
 var _posture = {}  # player or boss -> 0..posture_max()
 var _busy_at = {}  # player or boss -> when something last landed on them, or they last attacked
@@ -338,6 +346,8 @@ func _lose_posture(actor, size: int, can_break: bool, times = 1.0):
 		return
 	var sizes = BOSS_POSTURE_SIZES if actor == boss else POSTURE_SIZES
 	var left = minf(_posture[actor], posture_max(actor)) - Tuning.value(sizes[size]) * times
+	if spared:
+		left = maxf(left, posture_max(actor) * SPARED_POSTURE)
 	if left <= 0.0 and can_break:
 		_break(actor)
 	else:
@@ -358,6 +368,8 @@ func _break(actor):
 
 
 func _set_team(v: float):
+	if spared:
+		v = maxf(v, team_max() * SPARED_TEAM)
 	team = clampf(v, 0.0, team_max())
 	if team <= 0.0 and not team_chaos:
 		team_chaos = true
@@ -375,6 +387,8 @@ func _set_team(v: float):
 
 # He only ever loses sync: once it's gone, his chaos lasts.
 func _set_boss(v: float):
+	if spared:
+		v = maxf(v, boss_max() * SPARED_BOSS)
 	boss_sync = clampf(v, 0.0, boss_max())
 	if boss_sync <= 0.0 and not boss_chaos:
 		boss_chaos = true

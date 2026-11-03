@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://levels/threshold/threshold.tscn" id="1_threshold"]
+[ext_resource type="Script" path="res://levels/tutorial/tutorial.gd" id="2_tutorial"]
+
+[node name="Tutorial" instance=ExtResource("1_threshold")]
+script = ExtResource("2_tutorial")

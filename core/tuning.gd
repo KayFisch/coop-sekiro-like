@@ -23,6 +23,7 @@ const SOURCES = [
 	"res://actors/bosses/acrobat/acrobat.gd",  # page "acrobat"
 	"res://levels/runner/runner.gd",  # page "runner"
 	"res://levels/ring/ring.gd",  # page "ring"
+	"res://levels/tutorial/tutorial.gd",  # page "tutorial"
 ]
 const PANEL_MARGIN = Vector2(48, 16)
 const PANEL_FONT_SIZE = 16

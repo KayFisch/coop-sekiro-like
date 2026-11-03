@@ -93,7 +93,10 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     Bifrons“), seine sieben Schalter fest im Raum (`Moves.fix()`), F2 geteilt mit dem
     Try-out-Boss; Auswahl: die vier Bosse und Horologium, der Rest nur mit F1 → Dev „select_all“.
     `docs/boss_bifrons_warden.md` → „His room“. **Anspielen.**
-  - [ ] **B4 Tutorial:** geführter Kampf gegen einen Dummy.
+  - [x] **B4 Tutorial:** geführter Kampf gegen einen Dummy.
+    Gebaut (2026-11-03, `nicho/playtest`): `levels/tutorial/`, `docs/tutorial.md`; Auswahl ganz
+    oben. Sechs Schritte, keine Niederlage, Überspringen mit Tab / Pad-Start, danach weiter zum
+    Wächter. Texte auf Englisch wie der Rest des Spiels (für die Freunde Deutsch?). **Anspielen.**
   - [ ] **B5 Dev-Modus:** F1 bis F5 erst nach „kek“.
   - [ ] **Stats tunen** (Nicho und Kay, nach B1 bis B5), damit es sich wenigstens richtig spielen
     lässt. Für Hitter, Kultist und Akrobat ist das zugleich der erste gemeinsame Test (ihre

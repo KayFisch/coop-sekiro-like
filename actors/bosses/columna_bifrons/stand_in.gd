@@ -8,6 +8,9 @@ extends Node
 ## In the players' sync mode (core/sync_bond.gd) it plays along perfectly: it goes to its partner
 ## to bind (with him between them, by a dash-slash through him), parries every strike, and bound it draws its sabre back when its partner does and
 ## lets go right on the big cue (or when its partner lets go early).
+## THE TUTORIAL'S (levels/tutorial/) sets it up to get through every step, `perfect`: every strike
+## parried (but for the next `block_next`: it only blocks those), every window used, and bound it
+## draws back by itself. A test can have it play a player of its own choosing (`plays`).
 
 enum Plan { NOTHING, PARRY, BLOCK }
 
@@ -34,8 +37,14 @@ const DISTANCE_BEHIND = 22.0  # from its partner: right behind them (a player is
 const SLACK = 12.0
 const DASH_THROUGH_FROM = 70.0  # sync mode, him between it and its partner: it dash-slashes through from this close
 const LET_GO_WITHIN = 0.02  # s from a beat that it lets its dash-slash's charge go (Player._release_charge())
+const PERFECT_REDRAW = 0.8  # s after letting go that a perfect one, bound, draws back again
+const PERFECT_SAFE = 0.7  # s: a perfect one strikes in a window only if his next strike at it is further off
 
 var boss  # the ColumnaBifrons it belongs to
+var plays = 0  # the player_id it plays whatever Moves "bifrons_stand_in" says (a test playing both); 0: the switch's
+var perfect = false  # THE TUTORIAL'S: no chance in it (see above)
+var block_next = 0  # perfect: it blocks this many strikes more before it parries again
+var _let_go_at = 0.0  # perfect, bound: when it last let go (it draws back again a moment later)
 
 var _player = null  # the player it's playing right now
 var _buttons = ""  # that player's input set ("p1_" or "p2_")
@@ -78,6 +87,11 @@ func _played():
 	if boss == null or boss.hp <= 0.0 or GameManager.state != GameManager.GameState.PLAYING:
 		return null
 	var player = boss.stand_in_player()
+	if plays != 0:
+		player = null
+		for p in GameManager.players:
+			if is_instance_valid(p) and p.player_id == plays:
+				player = p
 	return player if player != null and not player.is_dead() else null
 
 
@@ -85,8 +99,11 @@ func _played():
 func _defend(player):
 	var due = boss.time_to_strike(player)
 	if due != INF and (_last_due == INF or due > _last_due):
-		var roll = -1.0 if boss.in_sync_mode() else randf()  # in sync mode: always a parry
+		var roll = -1.0 if boss.in_sync_mode() or perfect else randf()  # in sync mode: always a parry
 		_plan = Plan.PARRY if roll < PARRY_CHANCE else (Plan.BLOCK if roll < PARRY_CHANCE + BLOCK_CHANCE else Plan.NOTHING)
+		if perfect and block_next > 0 and not boss.in_sync_mode():
+			_plan = Plan.BLOCK
+			block_next -= 1
 		_hold(player, "block", false)
 	_last_due = due
 	var lead = -1.0
@@ -108,8 +125,11 @@ func _strike(player, delta: float):
 		return
 	_hold(player, "attack", false)
 	var window = boss.window_for(player)
-	if window != 0 and window != _window and randf() < SYNC_HIT_CHANCE:
-		_strike_in = randf() * REACT_TIME
+	if window != 0 and window != _window and (perfect or randf() < SYNC_HIT_CHANCE):
+		# (Perfect, it leaves a window that a strike of his at it follows too soon: mid-swing it
+		# couldn't parry that.)
+		if not (perfect and boss.time_to_strike(player) < PERFECT_SAFE):
+			_strike_in = randf() * REACT_TIME
 	_window = window
 	if _strike_in < 0.0:
 		return
@@ -124,6 +144,10 @@ func _strike_bound(player):
 	var bond = boss.rules.bond
 	var partner = player.partner()
 	var drawing = partner != null and partner.is_drawing()
+	if perfect:
+		drawing = true  # it starts the pair's strike itself, and again a moment after each
+		if _let_go and Time.get_ticks_msec() / 1000.0 - _let_go_at > PERFECT_REDRAW:
+			_let_go = false
 	if not drawing:
 		_let_go = false
 	var hold = drawing and not _let_go
@@ -133,6 +157,7 @@ func _strike_bound(player):
 		hold = false
 	if not hold and player.is_drawing():
 		_let_go = drawing  # let go while the partner still draws: not again until they have too
+		_let_go_at = Time.get_ticks_msec() / 1000.0
 	_hold(player, "attack", hold)
 
 

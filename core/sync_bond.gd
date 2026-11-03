@@ -290,6 +290,7 @@ func _strike_together(players: Array):
 		return
 	_flash_left = 0.2
 	boss.take_pair_strike(near[0])
+	Dev.note("pair_strike", {"player": near[0].player_id})
 
 
 func _ring(p, at, color: Color, radius: float):
