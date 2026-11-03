@@ -159,4 +159,5 @@ times a second in the editor (`Clockwork.EDITOR_FPS`).
 5. Tests for his rules (`tests/test_<name>.gd`).
 6. To test alone, a stand-in that presses a player's buttons (Bifrons's `stand_in.gd`, the Heavy
    Hitter's `hitter_stand_in.gd`, the Acrobat's `acrobat_stand_in.gd`).
-7. `docs/boss_<name>.md`, and an entry in `ui/boss_select.gd`.
+7. `docs/boss_<name>.md`, and an entry in `ui/boss_select.gd` (`"test": true` while he's only for
+   trying out: hidden unless F1 → Dev "select_all").

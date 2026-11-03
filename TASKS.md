@@ -87,8 +87,12 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     bleibt, wie sie ist. **Anspielen.**
   - [ ] **Kultist: wann fällt seine Deckung?** (offen, Frage an Kay). Dazu Nichos Scribble vom
     2026-11-02: im Feuer-Angriff fliegt er ungedeckt, man landet sehr viele Treffer.
-  - [ ] **B3 Wächter-Raum und Auswahl:** eigener Raum für den Wächter; Try-out-Boss und Test-Räume
+  - [x] **B3 Wächter-Raum und Auswahl:** eigener Raum für den Wächter; Try-out-Boss und Test-Räume
     per F1 ausgeblendet.
+    Gebaut (2026-11-03, `nicho/playtest`): `levels/warden/` (Auswahl Eintrag 1, „Columna
+    Bifrons“), seine sieben Schalter fest im Raum (`Moves.fix()`), F2 geteilt mit dem
+    Try-out-Boss; Auswahl: die vier Bosse und Horologium, der Rest nur mit F1 → Dev „select_all“.
+    `docs/boss_bifrons_warden.md` → „His room“. **Anspielen.**
   - [ ] **B4 Tutorial:** geführter Kampf gegen einen Dummy.
   - [ ] **B5 Dev-Modus:** F1 bis F5 erst nach „kek“.
   - [ ] **Stats tunen** (Nicho und Kay, nach B1 bis B5), damit es sich wenigstens richtig spielen
@@ -263,6 +267,7 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
   Torsprung (F5: GATE_LEAP), Klingenregeln, gemeinsame Fenster (`bifrons_coop_windows`).
   Danach `docs/boss_bifrons_warden.md` → „Open“ weiter klären.
   Stand 2026-10-31: bekommt einen eigenen Raum (B3 der Übergabe vom 2026-10-31).
+  Seit 2026-11-03: `levels/warden/`, Auswahl Eintrag 1; die Schalter oben hält der Raum fest.
 - [ ] **Neuer Boss „Kultist“** (@Kay), Branch `kay/kultist` (seit 2026-10-31 auf `main`). Feuer,
   Blitz, dämonische Magie; Bifrons' Raum (die Bühne wird dafür eine eigene Szene,
   `levels/threshold/threshold_stage.tscn`) und Spiegel-Bildschirm. Ein Stab pro Bildhälfte, der dem Spieler seiner Farbe zugewandt ist,

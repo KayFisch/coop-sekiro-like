@@ -4,13 +4,16 @@ extends Node
 ## (or Page Up / Down) to change tabs, up/down to pick, left/right or Enter to change, F1 again
 ## to close. Settings are saved to user://moves.cfg and survive restarts.
 ## Code asks Moves.on("pogo") for a switch, or Moves.value("wall") for a multi-way one.
+## A room can fix some switches for as long as it's there (fix() / unfix(): the Warden's room, a
+## boss that is the try-out boss set up just so): they read as it says, whatever F1 holds; nothing
+## is saved, and F1 shows them fixed.
 
 signal changed
 
 const SAVE_PATH = "user://moves.cfg"
 # Bumped whenever the defaults change: a save from an older version is dropped once, so the new
 # defaults reach it (see _ready()).
-const VERSION = 6
+const VERSION = 7
 # The panel's text: shrunk as far as it takes for the whole tab to fit on screen.
 const PANEL_MARGIN = Vector2(80, 16)
 const PANEL_FONT_SIZE = 17
@@ -87,11 +90,13 @@ const ENTRIES = [
 	{"key": "audio_calibration", "tab": "Sound", "label": "Audio calibration: measure it", "action": "_open_calibration"},
 	# Dev: developer tools (core/dev.gd: F3 overlay, F4 hitboxes, F5 boss lab)
 	{"key": "fight_log", "tab": "Dev", "label": "Write each fight's log to user://fight_log.jsonl (from the next start)", "default": false},
+	{"key": "select_all", "tab": "Dev", "label": "Select screen: show the try-out boss and the test rooms (gyms, kit, prototypes) too", "default": false},
 ]
 
 var panel_open = false
 
 var _values = {}
+var _fixed = {}  # key -> the value a room holds it at, over _values (fix())
 var _tab = 0  # index into TABS
 var _selected = 0  # row on the open tab
 var _was_paused = false
@@ -127,12 +132,32 @@ static func read_saved(e: Dictionary, saved):
 
 # True if a switch is on (for a multi-way one: anything but "off").
 func on(key: String) -> bool:
-	var v = _values.get(key, false)
+	var v = value(key)
+	if v == null:
+		return false
 	return v if v is bool else v != "off"
 
 
 func value(key: String):
-	return _values.get(key)
+	return _fixed[key] if _fixed.has(key) else _values.get(key)
+
+
+# A room holds these switches ({key: value}) as they are while it's there, whatever F1 says; the
+# saved ones are left as they were. unfix() lets go of them.
+func fix(values: Dictionary):
+	_fixed = values.duplicate()
+	changed.emit()
+
+
+func unfix():
+	if _fixed.is_empty():
+		return
+	_fixed = {}
+	changed.emit()
+
+
+func is_fixed(key: String) -> bool:
+	return _fixed.has(key)
 
 
 func set_value(key: String, v):
@@ -238,6 +263,8 @@ func _change(step: int):
 		reset_defaults()
 		return
 	var e = entries[_selected]
+	if is_fixed(e.get("key", "")):
+		return  # this room holds it
 	if e.has("action"):
 		if step > 0:
 			call(e.action)
@@ -293,8 +320,10 @@ func _refresh():
 	var entries = _tab_entries()
 	for i in entries.size():
 		var e = entries[i]
-		var v = _values.get(e.key)
+		var v = value(e.key) if e.has("key") else null
 		var shown = ("ON" if v else "off") if v is bool else str(v).to_upper()
+		if is_fixed(e.get("key", "")):
+			shown += "   (fixed in this room)"
 		if e.has("action"):
 			shown = "[Enter]"
 		elif e.get("slider", false):  # a bar, filled up to the value

@@ -131,7 +131,7 @@ Bifrons's fight. New:
 
 ## Trying him out
 
-- **Start**: select screen entry 2, or open `levels/kultist/kultist_room.tscn` and F6.
+- **Start**: select screen entry 3, or open `levels/kultist/kultist_room.tscn` and F6.
 - **Alone**: F1 → Fights → "Stand-in": left plays P1, right plays P2 (off by default; the same
   switch as Bifrons's). The stand-in (`stand_in.gd`) only defends, by pressing that player's
   buttons: each blow at it (his staff, the bolt, a spell) it parries, blocks or lets through by

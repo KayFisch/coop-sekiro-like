@@ -83,7 +83,10 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   one-sided screen. **B2, the colors** (`docs/concept.md`, "The colors"): your bolt marks its width
   green, a pale column and marks on the floor (`lightning_bolt.gd`, `mark_color()`: the only change
   in your code), the crackle stays yellow; the HUD's meter is pink in the sync mode. The Acrobat's
-  rings no longer spin as they fly.
+  rings no longer spin as they fly. **B3:** the Warden has a room of his own
+  (`levels/warden/`, `docs/boss_bifrons_warden.md`); the select screen shows the four bosses and
+  your Horologium (Nicho: it stays), the try-out boss and the other test rooms only with F1 → Dev
+  "select_all" (`Moves.VERSION` 7).
 - **Your Kultist and the partner's hit** (Nicho, 2026-11-02): a parry of his staff or a spell now
   opens the partner's window, as with every boss (the pink wave, a sync hit in it; an unused one
   costs sync, F2 "missed_window_loss"). The bolt's parry opens none: going back into him is its
@@ -124,7 +127,8 @@ actors/player/                       player.gd (+ scene) and the four parts it e
                                      sync_wave.gd (the parry's energy to the partner)
 actors/bosses/                       base_boss.gd, base_attack.gd, one folder per boss with attacks/
 levels/                              threshold/ (Bifrons's room; the room itself, threshold_stage.tscn,
-                                     is a scene of its own), heavy_hitter/ (the Heavy Hitter's),
+                                     is a scene of its own), warden/ (the Warden's: the try-out boss
+                                     there, set up as him), heavy_hitter/ (the Heavy Hitter's),
                                      kultist/ and acrobat/ (theirs: the same stage),
                                      gym/ (movement test rooms), kit/ (level kit: rooms built in
                                      the editor), horologium/ (coop platformer level, kit rooms),
@@ -219,7 +223,10 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   `Sfx.play("name")`), `Moves` (F1 panel toggling movement abilities, in tabs by theme, saved to
   `user://moves.cfg` with a `VERSION`: bump it when defaults change; code asks
   `Moves.on("pogo")`). Every move is on by default, everywhere (no level switches any on); the
-  switches are for comparing. `Pads` gives
+  switches are for comparing. A room can hold some switches as it needs them while it's there
+  (`Moves.fix()` / `unfix()`, nothing saved, F1 shows them fixed): the Warden's room
+  (`levels/warden/warden.gd`). The select screen (`ui/boss_select.gd`, `FIGHTS`) hides the
+  try-out boss and the test rooms (`"test": true`) unless Moves "select_all" (F1 → Dev). `Pads` gives
   each connected gamepad to one player (rebinding the `p1_*` / `p2_*` pad events per device),
   with the pad's buttons from one of its `LAYOUTS` (standard, Sekiro, dash left, Sekiro swapped), chosen on the
   title screen (P) and saved to `user://pads.cfg`.

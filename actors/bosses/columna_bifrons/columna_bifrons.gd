@@ -204,7 +204,7 @@ var _eye: ColorRect
 # weights' defaults are ATTACKS' own.
 static func tuning_entries() -> Array:
 	var entries = [
-		{"page": "bifrons", "title": "Columna Bifrons", "scenes": ["levels/threshold/"], "header": "TEMPO", "tab": "tempo"},
+		{"page": "bifrons", "title": "Columna Bifrons", "scenes": ["levels/threshold/", "levels/warden/"], "header": "TEMPO", "tab": "tempo"},
 		{"key": "bifrons_time_unit", "label": "a unit of his waits (s): a strike's wait is 2-6 of them", "default": 0.2, "step": 0.01},
 		{"key": "bifrons_fall_time", "label": "a strike's drop: the cue to parry (s)", "default": 0.28, "step": 0.01},
 		{"key": "bifrons_recover_time", "label": "after a series of strikes, recovering (s)", "default": 0.6, "step": 0.05},

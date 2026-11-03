@@ -2,7 +2,8 @@
 
 Nicho's second idea for between the bosses (2026-10-17), after the beat-runner
 (`docs/beat_runner.md`) felt "meh" in principle. The runner is left as it was; this is a level
-of its own: `levels/ring/` (`ring.gd`, `ring.tscn`), entry 7 on the select screen, branch
+of its own: `levels/ring/` (`ring.gd`, `ring.tscn`), on the select screen with F1 → Dev
+"select_all" (a test room since 2026-11-03), branch
 `nicho/beat-runner`. Since round 4 it's **Columna Bifrons's fight without him**: his patterns,
 his tempo, his sides, his partner's hit.
 

@@ -5,7 +5,8 @@ and the scribbles of 2026-10-02 ("Was ist der Rest des Spiels?") and 2026-10-15 
 gespiegelt"). A warm-up that plays like the boss fight without a boss: the same answers (parry,
 hit, the partner's hit after your parry, parrying together), on the same tempo.
 
-Code: `levels/runner/` (`runner.gd`, `runner.tscn`). Select screen: entry 6. Branch
+Code: `levels/runner/` (`runner.gd`, `runner.tscn`). Select screen: with F1 → Dev "select_all" (a
+test room since 2026-11-03). Branch
 `nicho/beat-runner` (it needs the mirrored screen from `nicho/pep-test`).
 
 ## What it is

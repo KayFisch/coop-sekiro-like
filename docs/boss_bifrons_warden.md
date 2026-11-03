@@ -90,6 +90,24 @@ is in the ground it is a wall.
 - If he's been off-centre too long, he vaults over the players into the middle (like the gate
   leap).
 
+## His room, until he's built (2026-11-03)
+
+`levels/warden/warden.tscn`, entry 1 on the select screen as "Columna Bifrons": the try-out boss
+on Bifrons's stage (an inherited scene of `levels/threshold/threshold.tscn`), set up as the Warden
+by the switches his room holds while it's there (`warden.gd` → `SWITCHES`, `Moves.fix()`),
+whatever F1 says; the saved ones are left alone, and F1 shows them "fixed in this room":
+
+- `bifrons_mode` chains: a motif repeated, a finale by what he sees (pep: the crossing; ppe: the
+  gate leap, else the leap; pressed or his change failed: the double strike), a breath;
+- `bifrons_guard_break` motif_end: his guard breaks only at a motif's end, all of it parried;
+- on, as by default: `bifrons_coop_windows`, `bifrons_blade_parries`, `bifrons_throw_by_outcome`,
+  `bifrons_chain_stagger`, `bifrons_face`.
+
+Not held: the stand-in, the mirrored screen and its blades, and the switches every fight shares.
+**His numbers on F2 are the try-out boss's** (page "bifrons"; it opens there in his room too):
+tuning one tunes both. For the playtest that's fine (the try-out boss is hidden); the real Warden
+gets numbers of his own with his own code. No code of his own yet.
+
 ## Open
 
 - **The three motifs:** sequence, tempo, where a push fits, and their stances.
