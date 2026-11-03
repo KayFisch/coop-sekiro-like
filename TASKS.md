@@ -97,7 +97,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     Gebaut (2026-11-03, `nicho/playtest`): `levels/tutorial/`, `docs/tutorial.md`; Auswahl ganz
     oben. Sechs Schritte, keine Niederlage, Überspringen mit Tab / Pad-Start, danach weiter zum
     Wächter. Texte auf Englisch wie der Rest des Spiels (für die Freunde Deutsch?). **Anspielen.**
-  - [ ] **B5 Dev-Modus:** F1 bis F5 erst nach „kek“.
+  - [x] **B5 Dev-Modus:** F1 bis F5 erst nach „kek“.
+    Gebaut (2026-11-04, `nicho/playtest`): „kek“ öffnet, noch mal „kek“ sperrt (was offen ist, geht
+    zu); nicht gespeichert, jeder Start gesperrt; „DEV“ unten links, solange offen.
+    `docs/dev_tools.md` → „In the game“. Mitgesperrt (Nicho): M (Klick) und Pad-Back (Steuerung
+    tauschen, außer in der Auswahl).
   - [ ] **Stats tunen** (Nicho und Kay, nach B1 bis B5), damit es sich wenigstens richtig spielen
     lässt. Für Hitter, Kultist und Akrobat ist das zugleich der erste gemeinsame Test (ihre
     Einträge unten).

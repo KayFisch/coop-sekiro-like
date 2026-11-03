@@ -164,3 +164,73 @@ func test_tuning_steps():
 	near(Tuning.value(key), 0.0, 0.001, "never below 0")
 	Tuning._set_panel(false)
 	Tuning.saving = true
+
+
+# THE LOCK: F1 to F5 open nothing until "kek" is typed; then all of them; typed again, locked,
+# and what was open shuts.
+func test_the_keys_locked_until_kek():
+	await _setup()
+	Dev.set_keys_open(false)
+	for f in Dev.KEYS_LOCKED:
+		await _key(f, f)
+	check(not Moves.panel_open and not Tuning.panel_open, "locked: F1 and F2 open no panel")
+	check(not Dev.overlay_on and not Dev.hitboxes_on and not Dev.lab_on, "...F3 to F5 nothing")
+	check(not Dev._sign.visible, "...and no sign of dev mode")
+	for k in [KEY_K, KEY_E, KEY_K]:
+		await _key(k, k)
+	check(Dev.keys_open and Dev._sign.visible, "\"kek\" typed: open, and its sign in the corner")
+	await _key(KEY_F3, KEY_F3)
+	await _key(KEY_F4, KEY_F4)
+	await _key(KEY_F5, KEY_F5)
+	check(Dev.overlay_on and Dev.hitboxes_on and Dev.lab_on, "...F3, F4 and F5 work")
+	await _key(KEY_F1, KEY_F1)
+	check(Moves.panel_open, "...F1 opens its panel")
+	await _key(KEY_F1, KEY_F1)
+	await _key(KEY_F2, KEY_F2)
+	check(Tuning.panel_open, "...and F2 its")
+	for k in [KEY_K, KEY_E, KEY_K]:
+		await _key(k, k)
+	check(not Dev.keys_open and not Tuning.panel_open, "typed again: locked, and the panel shut")
+	check(not Dev.overlay_on and not Dev.hitboxes_on and not Dev.lab_on, "...the overlay, hitboxes and lab too")
+
+
+# Typing it changes nothing in the game: none of its letters is a player's, and the saved switches
+# and numbers count locked as open.
+func test_typing_it_changes_nothing():
+	await _setup()
+	for action in InputMap.get_actions():
+		if action.begins_with("p1_") or action.begins_with("p2_"):
+			for event in InputMap.action_get_events(action):
+				if event is InputEventKey:
+					var key = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+					check(not key in [KEY_K, KEY_E], "%s isn't on K or E" % action)
+	set_move("bifrons_mode", "chains")
+	set_number("bifrons_time_unit", 0.3)
+	for open in [false, true]:
+		Dev.set_keys_open(open)
+		check(Moves.value("bifrons_mode") == "chains" and is_equal_approx(Tuning.value("bifrons_time_unit"), 0.3),
+			"%s: F1's and F2's values count" % ("open" if open else "locked"))
+	Dev.set_keys_open(false)
+
+
+# The other dev keys under THE LOCK: M (the click) and, in a fight, pad Back (swapping the controls).
+# (Pad Back open isn't pressed here: it would save the switch.)
+func test_m_and_pad_back_locked_too():
+	await _setup()
+	Dev.set_keys_open(false)
+	var click = Beat.click_on
+	await _key(KEY_M, KEY_M)
+	check(Beat.click_on == click, "locked: M leaves the click as it is")
+	var swap = Moves.value("swap_controls")
+	for down in [true, false]:
+		var back = InputEventJoypadButton.new()
+		back.button_index = JOY_BUTTON_BACK
+		back.pressed = down
+		Input.parse_input_event(back)
+		await frames(2)
+	check(Moves.value("swap_controls") == swap, "...in a fight, pad Back swaps nothing")
+	Dev.set_keys_open(true)
+	await _key(KEY_M, KEY_M)
+	check(Beat.click_on != click, "open: M switches the click")
+	await _key(KEY_M, KEY_M)
+	Dev.set_keys_open(false)

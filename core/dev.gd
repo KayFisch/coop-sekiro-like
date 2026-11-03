@@ -11,6 +11,15 @@ extends Node
 ## to user://fight_log.jsonl (one JSON line per event; the file starts over with each fight).
 ## Code tells it what happened: defended() from the player, note() and the others below from a
 ## boss or the sync rules. Each event goes out as `noted` too (the tutorial counts by it).
+##
+## THE LOCK (dev mode): F1 to F5 do nothing until someone types UNLOCK_WORD ("kek") on the
+## keyboard, anywhere (the select screen, a fight); typed again, they're locked again, and what was
+## open shuts. Not saved: every start is locked. While open, a small "DEV" in the corner. Only the
+## keys are locked: the saved F1 switches and F2 numbers count either way, and the panels' and the
+## lab's functions work for the tests. Typing it takes no key from anyone: none of its letters is a
+## player's, and Dev sees every key before the panels do (it's the last autoload). Locked with
+## them: M, the click (core/beat.gd), and pad Back swapping the controls but on the select screen
+## (core/moves.gd).
 
 signal noted(kind: String, data: Dictionary)  # an event of the log: its kind and what's known of it
 
@@ -25,6 +34,9 @@ const COLOR_BLOCK = Color(1.0, 0.3, 0.3, 0.8)
 const COLOR_BACK = Color(0.0, 0.0, 0.0, 0.62)
 const PANEL_TOP = 104.0  # under the HUD's meters
 const PANEL_MARGIN = 12.0
+const UNLOCK_WORD = "KEK"  # THE LOCK: typed, F1 to F5 open (or shut again)
+const KEYS_LOCKED = [KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5]
+const SIGN_COLOR = Color(0.85, 1.0, 0.85, 0.45)  # the "DEV" in the corner, while open
 # The lab's keys: none of them is a player's (P1: A D W S Space Shift F Enter Up Down, R, Esc).
 # Q / E pick, as they pick the tab on F1 and F2. M is the click's (core/beat.gd) while the lab is shut.
 const LAB_KEYS = """Q/E pick · Z run · X loop · H his attacks · M his moving · T speed
@@ -36,6 +48,10 @@ var overlay_on = false
 var hitboxes_on = false
 var lab_on = false
 var invincible = false
+var keys_open = false  # THE LOCK: F1 to F5 work
+
+var _typed = ""  # the last letters typed (THE LOCK)
+var _sign: Label
 
 var _layer: CanvasLayer
 var _overlay: Label
@@ -59,6 +75,15 @@ func _ready():
 	add_child(_layer)
 	_overlay = _label()
 	_lab = _label()
+	_sign = Label.new()
+	_sign.text = "DEV"
+	_sign.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sign.add_theme_font_size_override("font_size", FONT_SIZE)
+	_sign.add_theme_color_override("font_color", SIGN_COLOR)
+	_sign.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	_sign.position += Vector2(6.0, -22.0)
+	_sign.visible = false
+	_layer.add_child(_sign)
 	_world = Node2D.new()
 	_world.top_level = true
 	_world.z_index = 100
@@ -114,8 +139,11 @@ func _process(_delta):
 func _input(event):
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
+	_watch_typing(event)
 	if Moves.panel_open or Tuning.panel_open:
 		return
+	if not keys_open and event.physical_keycode in KEYS_LOCKED:
+		return  # locked (THE LOCK)
 	match event.physical_keycode:
 		KEY_F3:
 			overlay_on = not overlay_on
@@ -128,6 +156,33 @@ func _input(event):
 				return
 	_refresh_visibility()
 	get_viewport().set_input_as_handled()
+
+
+# THE LOCK: the letters typed, as the keyboard says them (a German Z is a Z); the word opens the
+# keys, or shuts them again. The key goes on to whoever wants it.
+func _watch_typing(event: InputEventKey):
+	var key = Tuning.key_of(event)
+	if key < KEY_A or key > KEY_Z:
+		return
+	_typed = (_typed + char(key)).right(UNLOCK_WORD.length())
+	if _typed == UNLOCK_WORD:
+		_typed = ""
+		set_keys_open(not keys_open)
+
+
+# F1 to F5 open, or locked again: then whatever they had open shuts.
+func set_keys_open(open: bool):
+	keys_open = open
+	_sign.visible = open
+	if open:
+		return
+	overlay_on = false
+	lab_on = false
+	if hitboxes_on:
+		_set_hitboxes(false)
+	_refresh_visibility()
+	Moves._set_panel(false)
+	Tuning._set_panel(false)
 
 
 # The lab's keys (LAB_KEYS); true if it was one.

@@ -6,6 +6,17 @@ tests and a performance probe run from the command line.
 
 ## In the game
 
+**Locked until "kek"** (since 2026-11-04, for the playtest): F1 to F5 do nothing until someone
+types k e k on the keyboard, anywhere (the select screen, a fight); a small "DEV" in the bottom
+left corner says they're open. Typed again, they're locked again, and the panels, the overlay,
+the hitboxes and the lab shut. Not saved: every start is locked. Only the keys are locked: the
+saved F1 switches and F2 numbers count either way, and the tests call the functions directly
+(`Dev.set_keys_open()` opens the keys in a test). Typing it takes no key from the players (K and E
+are none of theirs); with the lab open, K and E are still its own keys meanwhile. Locked with
+them (Nicho, 2026-11-04): M, the click (`core/beat.gd`), and pad Back swapping the controls
+(`core/moves.gd`) everywhere but on the select screen. Left free: C and P on the select screen,
+R to restart, Tab and R in the gyms and kit rooms. Code: `core/dev.gd`, "THE LOCK".
+
 | Key | What |
 |---|---|
 | F1 | Switches (`core/moves.gd`), in tabs: Q / E. Tab "Dev": write the fight log to a file. |

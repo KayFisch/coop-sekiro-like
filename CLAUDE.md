@@ -89,6 +89,9 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   "select_all" (`Moves.VERSION` 7). **B4, the tutorial** (`docs/tutorial.md`): first on the
   select screen, against the try-out boss as a training dummy; it touches `core/dev.gd`
   (`Dev.noted`), `sync_rules.gd` (`spared`) and Bifrons's stand-in (`perfect`, `plays`).
+  **B5:** F1 to F5 only after typing "kek" on the keyboard (again: locked), a small "DEV" in the
+  corner while open; not saved, so every start is locked (`docs/dev_tools.md`, "In the game").
+  Locked with them: M (the click), and pad Back (swapping the controls) but on the select screen.
 - **Your Kultist and the partner's hit** (Nicho, 2026-11-02): a parry of his staff or a spell now
   opens the partner's window, as with every boss (the pink wave, a sync hit in it; an unused one
   costs sync, F2 "missed_window_loss"). The bolt's parry opens none: going back into him is its
@@ -234,7 +237,7 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   with the pad's buttons from one of its `LAYOUTS` (standard, Sekiro, dash left, Sekiro swapped), chosen on the
   title screen (P) and saved to `user://pads.cfg`.
   `Beat` is the one clock for everything in time (150 BPM; a level starts it, it's never reset
-  inside one; signals `beat` / `bar`, `offset_to_downbeat()` etc.; click on M, off at start;
+  inside one; signals `beat` / `bar`, `offset_to_downbeat()` etc.; click on M (in dev mode), off at start;
   plays a level's music looped in time with it, `TRACKS`; F1 → Sound: volume, and how far
   ahead the audio plays, for a late headset: music and click go early, the clock stays).
   `Tuning` (F2 panel of numbers to tune while playing, saved to `user://tuning.cfg`; code asks
@@ -245,7 +248,10 @@ it fails to compile. `load()` the script, or compare `get_script().resource_path
   (frame time, the boss's state and attack, the players', this fight in numbers), F4 hitboxes,
   F5 boss lab (run or loop one attack, stop his attacks or his moving, slow the game, set meters
   and positions; F1 and F2 come first), and
-  the fight log (`Dev.defended()`, `Dev.note()`; with F1 → Dev "fight_log" to a file).
+  the fight log (`Dev.defended()`, `Dev.note()`, each event also as the signal `Dev.noted`; with
+  F1 → Dev "fight_log" to a file). **F1 to F5 are locked until "kek" is typed** (THE LOCK in
+  `dev.gd`, `Dev.keys_open`, not saved; only the keys: the values count, and tests call the
+  functions or `Dev.set_keys_open(true)`).
 - `core/sync_rules.gd` (`SyncRules`): sync as life, the rules of Bifrons's fight and the Heavy
   Hitter's (no health anywhere in the game, no potions): a shared sync for the players and one for the boss,
   a posture each, chaos at no sync, sync mode at full. Attacks are normal or heavy (his: both

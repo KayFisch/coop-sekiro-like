@@ -1,6 +1,7 @@
 extends Node
 ## Autoload: switches for the movement abilities, to experiment with which ones the game wants.
-## F1 opens a panel anywhere (the game pauses), with the switches grouped in tabs: Tab / Q / E
+## F1 opens a panel anywhere (the game pauses; only once "kek" has been typed: Dev, THE LOCK; the
+## saved switches count either way), with the switches grouped in tabs: Tab / Q / E
 ## (or Page Up / Down) to change tabs, up/down to pick, left/right or Enter to change, F1 again
 ## to close. Settings are saved to user://moves.cfg and survive restarts.
 ## Code asks Moves.on("pogo") for a switch, or Moves.value("wall") for a multi-way one.
@@ -187,8 +188,10 @@ func reset_defaults():
 # --- The F1 panel ---
 
 func _input(event):
-	# Pad Back / Select swaps the players' controls, anywhere (e.g. to take P1 onto the pad).
-	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_BACK:
+	# Pad Back / Select swaps the players' controls (e.g. to take P1 onto the pad): on the select
+	# screen always, elsewhere only once "kek" has been typed (Dev, THE LOCK): mid-fight, a slip.
+	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_BACK \
+			and (Dev.keys_open or _on_select_screen()):
 		set_value("swap_controls", not on("swap_controls"))
 		if panel_open:
 			_refresh()
@@ -197,6 +200,8 @@ func _input(event):
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	if event.physical_keycode == KEY_F1:
+		if not Dev.keys_open:
+			return  # locked until "kek" (Dev, THE LOCK)
 		if not Tuning.panel_open:  # one panel at a time (F2: Tuning)
 			_set_panel(not panel_open)
 		get_viewport().set_input_as_handled()
@@ -221,6 +226,11 @@ func _input(event):
 			_change(1)
 	get_viewport().set_input_as_handled()
 	_refresh()
+
+
+func _on_select_screen() -> bool:
+	var scene = get_tree().current_scene
+	return scene != null and scene.scene_file_path == GameManager.SELECT_SCENE
 
 
 func _set_panel(open: bool):

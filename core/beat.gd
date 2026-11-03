@@ -220,7 +220,8 @@ func _strike(index: int):
 
 
 func _unhandled_input(event):
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_M:
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_M \
+			and Dev.keys_open:  # a dev key: locked until "kek" (Dev, THE LOCK)
 		click_on = not click_on
 
 

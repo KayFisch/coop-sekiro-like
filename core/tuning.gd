@@ -1,5 +1,6 @@
 extends Node
-## Autoload: numbers to tune while playing. F2 opens a panel anywhere (the game pauses): Z / C for
+## Autoload: numbers to tune while playing. F2 opens a panel anywhere (the game pauses; only once
+## "kek" has been typed: Dev, THE LOCK; the saved numbers count either way): Z / C for
 ## the page, Q / E (or Tab) for the tab, up/down to pick, left/right to change by a step (Shift:
 ## ten steps, Ctrl: a tenth of one), F2 again to close. Laid out as the F1 panel: page, keys,
 ## tabs, then the numbers. No number has a limit but 0. Values are saved to user://tuning.cfg and
@@ -161,6 +162,8 @@ func _input(event):
 	if not event is InputEventKey or not event.pressed:
 		return
 	if event.physical_keycode == KEY_F2 and not event.echo:
+		if not Dev.keys_open:
+			return  # locked until "kek" (Dev, THE LOCK)
 		if not Moves.panel_open:
 			_set_panel(not panel_open)
 		get_viewport().set_input_as_handled()
