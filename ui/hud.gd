@@ -21,9 +21,19 @@ const POSTURE_GAP = 3.0
 const POSTURE_COLOR = Color(0.75, 0.75, 0.8)
 const POSTURE_LOW_COLOR = Color(1.0, 0.55, 0.2)  # a quarter left: the next blocks break it
 
+const PULSE_COLOR = Color(1.0, 1.0, 1.0)  # a frame round a meter someone points out (pulse())
+const PULSE_HZ = 1.5
+
 var _overlay: ColorRect
 var _overlay_label: Label
 var _duel = {}  # team_fill, boss_fill, ticks, labels
+var _pulse = ""  # the meter pointed out (pulse()): "team", "posture" or none
+
+
+# Points out one of the players' meters, a frame round it pulsing (the tutorial): "team" (their
+# sync), "posture" (their postures), or "" for none.
+func pulse(part: String):
+	_pulse = part
 
 
 func _ready():
@@ -50,6 +60,12 @@ func _process(_delta):
 func _build_sync_duel(root):
 	var w = DUEL_HALF_WIDTH
 	var box = _anchored_box(root, 0.5, -w, w)
+	var posture_y = 24.0 + DUEL_HEIGHT + POSTURE_GAP
+	var rows = maxi(GameManager.players.size(), 1)
+	_duel.frames = {  # under everything else (pulse())
+		"team": _rect(box, Vector2(-4, 20), Vector2(w + 4, DUEL_HEIGHT + 8), Color(PULSE_COLOR, 0.0)),
+		"posture": _rect(box, Vector2(-4, posture_y - 3), Vector2(w + 4, rows * (POSTURE_HEIGHT + POSTURE_GAP) + 3), Color(PULSE_COLOR, 0.0)),
+	}
 	_label(box, Vector2(0, 0), "P1 + P2")
 	var boss_name = _label(box, Vector2(w, 0), "")
 	boss_name.size = Vector2(w, 20)
@@ -91,6 +107,9 @@ func _build_sync_duel(root):
 
 func _update_sync_duel(rules):
 	var w = DUEL_HALF_WIDTH
+	var glow = 0.6 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * TAU * PULSE_HZ))
+	for part in _duel.frames:
+		_duel.frames[part].color.a = glow if part == _pulse else 0.0
 	var team = w * rules.team_share()
 	_duel.team_fill.position.x = w - team
 	_duel.team_fill.size.x = team

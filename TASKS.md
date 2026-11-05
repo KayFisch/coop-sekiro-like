@@ -102,6 +102,12 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     gemeinsamen Säbel, Ausholen: einer allein ein Stück, beide ganz); Auswahl mit den Titeln
     (Bifrons, the Warden; Ettin, the Discorder; Kultist, the Enlightened; Acrobat, the Unresting;
     die Namen von Kultist und Akrobat noch offen). **Anspielen.**
+  - [x] **Nichos Test, Runde 2** (2026-11-06): Tutorial erklärt Sync: vorne Laufen/Springen und
+    Dash, neu Dash-Parry und „Sync ist euer Leben“ (Sync startet niedrig, mit Sync-Hits auf die
+    Hälfte füllen; Chaos im Text), Haltung im Text des Parier-Schritts, das HUD pulsiert beim
+    jeweiligen Balken. Neue Regel: Haltung gebrochen = taumeln, erst ein Treffer darin nimmt den
+    ganzen Sync (vorher nahm ihn der Bruch selbst). Die Texte stehen nur einmal da: kurze oben,
+    längere oben angefangen und unten weiter. **Anspielen.**
   - [x] **B5 Dev-Modus:** F1 bis F5 erst nach „kek“.
     Gebaut (2026-11-04, `nicho/playtest`): „kek“ öffnet, noch mal „kek“ sperrt (was offen ist, geht
     zu); nicht gespeichert, jeder Start gesperrt; „DEV“ unten links, solange offen.

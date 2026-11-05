@@ -117,8 +117,18 @@ func test_breaking():
 	_fresh()
 	rules._posture[p1] = 1.0
 	_strike(p1, false, "block")
-	near(rules.team, 0.0, 0.01, "a block breaks: all sync gone")
-	check(rules.team_chaos, "...and chaos")
+	near(rules.team, 50.0, 0.01, "a block breaks the blocker's posture: no sync lost by that")
+	check(rules.is_broken(p1) and p1.is_staggered() and not p1.is_blocking(), "...but broken: staggered, no blocking")
+	_strike(p1, false, "hit")
+	near(rules.team, 0.0, 0.01, "a hit while broken: all sync gone")
+	check(rules.team_chaos and not rules.is_broken(p1), "...and chaos")
+	_fresh()
+	rules._posture[p1] = 1.0
+	_strike(p1, false, "block")
+	rules._time += Tuning.value("player_break_stagger") + 0.01
+	p1._stagger_timer = 0.0
+	_strike(p1, false, "hit")
+	near(rules.team, 50.0 - NUMBERS.his_heavy_damage * NUMBERS.his_normal_share, 0.01, "broken, but through it unhit: the next hit only a normal one")
 	_fresh()
 	rules._posture[boss] = 1.0
 	_strike(p1, false, "parry")

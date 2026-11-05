@@ -93,7 +93,7 @@ motif_end). The sync hit doesn't need it.
 
 ## Sync as life
 
-Nobody has health. The two players share one **sync**, the boss has his own, and each of the three has a posture, by the same rules on both sides. Playing together (a sync hit in the window the partner's parry opened; parrying together) wins the players sync back; the boss can't win his back. At full sync the players are in the sync mode (see "The sync mode" below); at none, in chaos, the next hit ends it. Details: `docs/boss_columna_bifrons.md` ("Sync as life"), `core/sync_rules.gd`.
+Nobody has health. The two players share one **sync**, the boss has his own, and each of the three has a posture, by the same rules on both sides. Playing together (a sync hit in the window the partner's parry opened; parrying together) wins the players sync back; the boss can't win his back. At full sync the players are in the sync mode (see "The sync mode" below); at none, in chaos, the next hit ends it. A player's posture broken: they reel (no blocking), and a hit that lands then takes all the sync, into chaos (Nicho, 2026-11-06: the hit, not the break itself). Details: `docs/boss_columna_bifrons.md` ("Sync as life"), `core/sync_rules.gd`.
 
 ---
 

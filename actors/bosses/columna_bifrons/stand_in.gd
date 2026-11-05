@@ -82,6 +82,11 @@ func _exit_tree():
 	_release_all()  # a held button would outlast the fight
 
 
+# The player it's playing just now, or null (the tutorial counts for it what it can't do).
+func playing():
+	return _player
+
+
 # The player it plays, while there's a fight to play them in.
 func _played():
 	if boss == null or boss.hp <= 0.0 or GameManager.state != GameManager.GameState.PLAYING:

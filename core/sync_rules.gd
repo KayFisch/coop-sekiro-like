@@ -32,8 +32,11 @@ extends Node
 ## holding block meanwhile gets it back
 ## "block_regen_factor" times as fast. How fast follows sync, as in Sekiro: at full sync its full
 ## rate, at 75 % half of it, at "posture_regen_none_at" (50 %) and below hardly any
-## ("posture_regen_least"). Broken: staggered, and all sync is gone (for him: whatever his
-## BaseBoss.on_posture_broken() says; how much posture he has is his max_posture()). No sync is
+## ("posture_regen_least"). BROKEN (a player's posture): staggered, so no blocking or parrying,
+## for "player_break_stagger"; a hit that lands meanwhile takes all their sync, into chaos (Nicho,
+## 2026-11-06: not the break itself). Got through it unhit, they've lost nothing but the time.
+## His: whatever his BaseBoss.on_posture_broken() says (how much posture he has is his
+## max_posture()). No sync is
 ## chaos: no blocking (for him: no guard), and the next hit that isn't parried kills. The players
 ## get out of it once their sync is back to "chaos_exit" (a revive); he can't, as he wins no sync
 ## back. Full sync is the players' sync mode, their second phase, until their sync falls below
@@ -41,8 +44,9 @@ extends Node
 ## ("sync_mode_tempo") and strikes with both swords at once.
 ##
 ## SPARED (the tutorial, levels/tutorial/): nobody loses. The players' sync never falls below
-## SPARED_TEAM, his below SPARED_BOSS, and no posture below SPARED_POSTURE, so nobody breaks and
-## nobody falls into chaos; everything else as ever.
+## `spared_team` (SPARED_TEAM, unless the tutorial lowers it), his below SPARED_BOSS, and no
+## posture below SPARED_POSTURE, so nobody breaks and nobody falls into chaos; everything else as
+## ever.
 ##
 ## Every number is in Tuning (F2).
 
@@ -71,8 +75,10 @@ var landing_heavy = false
 var landing_share = -1.0
 var landing_posture = 1.0
 var spared = false  # SPARED: nobody loses (the tutorial)
+var spared_team = SPARED_TEAM  # ...the players' sync never below this share
 
 var _posture = {}  # player or boss -> 0..posture_max()
+var _broken_until = {}  # player -> when their posture's break is over (BROKEN): a hit before takes all
 var _busy_at = {}  # player or boss -> when something last landed on them, or they last attacked
 var _swings = {}  # player -> their swing_serial when last seen: a new one is a new attack
 var _time = 0.0
@@ -104,7 +110,7 @@ static func tuning_entries() -> Array:
 		{"key": "player_posture_max", "label": "a player's posture", "default": 100.0, "step": 10.0},
 		{"key": "boss_posture_max", "label": "his posture (Bifrons's; the Heavy Hitter's is on his page)", "default": 200.0, "step": 10.0},
 		{"header": "BROKEN"},
-		{"key": "player_break_stagger", "label": "player's posture broken: their stagger (s)", "default": 0.8, "step": 0.1},
+		{"key": "player_break_stagger", "label": "player's posture broken: their stagger (s), a hit meanwhile takes all sync", "default": 0.8, "step": 0.1},
 		{"key": "boss_break_stagger", "label": "his posture broken: his stagger (s)", "default": 2.5, "step": 0.1},
 		{"header": "POSTURE HE LOSES (THERE ARE TWO OF YOU)", "column": 1},
 		{"key": "boss_posture_small", "label": "small: a normal attack parried (both) or blocked", "default": 5.0, "step": 1.0},
@@ -218,6 +224,10 @@ func player_hit(p) -> bool:
 	_busy_at[p] = _time
 	if team_chaos:
 		return true
+	if is_broken(p):
+		_broken_until.erase(p)
+		_set_team(0.0)  # BROKEN: this hit takes it all
+		return false
 	_set_team(team - _damage("his", landing_heavy, landing_share))
 	_lose_posture(p, LARGE if landing_heavy else MEDIUM, true)
 	return false
@@ -354,8 +364,8 @@ func _lose_posture(actor, size: int, can_break: bool, times = 1.0):
 		_posture[actor] = maxf(left, 0.0)
 
 
-# Posture broken: staggered, all sync gone (his: as his on_posture_broken() says). It comes back
-# full.
+# Posture broken: a player staggered, and a hit meanwhile takes all their sync (BROKEN); his, as
+# his on_posture_broken() says. It comes back full.
 func _break(actor):
 	_posture[actor] = posture_max(actor)
 	Sfx.play("posture_break")
@@ -363,13 +373,19 @@ func _break(actor):
 		if boss.on_posture_broken():
 			_set_boss(0.0)
 	else:
-		actor.stagger(Tuning.value("player_break_stagger"))
-		_set_team(0.0)
+		var stagger = Tuning.value("player_break_stagger")
+		actor.stagger(stagger)
+		_broken_until[actor] = _time + stagger
+
+
+# True while that player's posture is broken (BROKEN): staggered, and the next hit takes all.
+func is_broken(p) -> bool:
+	return _time < _broken_until.get(p, -1.0)
 
 
 func _set_team(v: float):
 	if spared:
-		v = maxf(v, team_max() * SPARED_TEAM)
+		v = maxf(v, team_max() * spared_team)
 	team = clampf(v, 0.0, team_max())
 	if team <= 0.0 and not team_chaos:
 		team_chaos = true

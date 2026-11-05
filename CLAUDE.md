@@ -96,7 +96,10 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   into P1, P2's hands on P1's sabre; `docs/concept.md`, "One character"), the tutorial's words
   stay when a hit gets through, and the select screen names the bosses by their titles: Bifrons,
   the Warden; Ettin, the Discorder; your Kultist, the Enlightened; the Acrobat, the Unresting
-  (the last two names still open).
+  (the last two names still open). After my second (2026-11-06): **a rule changed for every
+  fight**: a player's posture broken no longer takes the sync itself; they reel, and a hit that
+  lands meanwhile takes all of it (`sync_rules.gd`, BROKEN). The tutorial now starts with moving
+  and tells how sync works (`docs/tutorial.md`).
 - **Your Kultist and the partner's hit** (Nicho, 2026-11-02): a parry of his staff or a spell now
   opens the partner's window, as with every boss (the pink wave, a sync hit in it; an unused one
   costs sync, F2 "missed_window_loss"). The bolt's parry opens none: going back into him is its

@@ -577,7 +577,9 @@ than the parrier was in reach, costs them 1. He wins none back.
   doesn't come back, its bar is dimmed. Holding block meanwhile doubles it. How fast follows sync, as in Sekiro: at full sync the full rate (players 20 per second, him
   30), at 75 % half of it, at 50 % and below hardly any (5 %); "regen" next to the posture bars
   says how much just now.
-- **Broken:** staggered (players 0.8 s, him 2.5 s), all sync gone; posture comes back full.
+- **Broken:** staggered (players 0.8 s, him 2.5 s); posture comes back full. A player: a hit that
+  lands while staggered so takes all their sync, into chaos (Nicho, 2026-11-06; before, the break
+  itself took it). Him: as his `on_posture_broken()` says (by default all his sync gone).
 - **No sync is chaos.** The players can't block (parries still work), and the next hit that
   isn't parried ends the fight. It's over, like a revive, once their sync is back to a quarter.
   He, split, has no guard, and the next hit that lands kills him; as he wins no sync back, it
