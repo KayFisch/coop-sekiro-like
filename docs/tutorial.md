@@ -53,8 +53,9 @@ All the words are in English, as the rest of the game's.
 
 - **Nobody loses** (`SyncRules.spared`): the players' sync never falls below half, his below 30 %,
   no posture below 30 %: no chaos, nothing breaks. A hit that gets through starts the step's
-  count over ("Hit: once more."). Before step 6 their sync stays under 90 % (no sync mode yet);
-  in step 6 it's full, and falling out of the sync mode starts the step over, full again.
+  count over; its words stay (the progress under them shows it). Before step 6 their sync stays
+  under 90 % (no sync mode yet); in step 6 it's full, and falling out of the sync mode starts the
+  step over, full again.
 - **Skip a step**: hold Tab or Start on a pad a moment (F2 "tutorial_skip_hold", 1 s). Not a dev
   key: those are locked from B5 on.
 - **Alone**: the stand-in (F1 → Fights → "Stand-in") plays the partner, and here it gets through
@@ -67,7 +68,7 @@ All the words are in English, as the rest of the game's.
 Steps: `tutorial_parries` 2, `tutorial_blocks` 1, `tutorial_colors` 3, `tutorial_halves` 3,
 `tutorial_sync_hits` 2, `tutorial_staggers` 2, `tutorial_pair_strikes` 2. Pace:
 `tutorial_read_time` (a step's words alone before his first attack) 2.5 s, `tutorial_pause`
-(between two of his attacks) 0.9 s, `tutorial_again_time` 1.5 s, `tutorial_skip_hold` 1 s. His own
+(between two of his attacks) 0.9 s, `tutorial_skip_hold` 1 s. His own
 numbers are the try-out boss's (page "bifrons").
 
 ## Outside its folder

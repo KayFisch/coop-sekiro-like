@@ -19,8 +19,9 @@ extends Node2D
 ## Then "done": Enter / pad A on to the first boss, Esc the select screen.
 ##
 ## NO DEFEAT: the sync rules spare everyone (SyncRules.spared: no chaos, no posture broken), and a
-## hit that gets through starts the step's count over. Out of the sync mode in step 6, it starts
-## over too, the sync full again. Before step 6 their sync stays short of full (no sync mode yet).
+## hit that gets through starts the step's count over (its words stay: the progress under them shows
+## it). Out of the sync mode in step 6, it starts over too, the sync full again. Before step 6
+## their sync stays short of full (no sync mode yet).
 ## SKIP: Tab on the keyboard or Start on a pad, held a moment. ALONE: the stand-in (F1 Fights
 ## "Stand-in") plays the partner, and here it gets through every step (BifronsStandIn.perfect).
 
@@ -53,7 +54,6 @@ const TEXTS = {
 const PARRY_NOW = "Parry him."  # SYNC HIT: in the half he's about to strike...
 const STRIKE_ON_PINK = "Wait for the pink, then strike."  # ...and in the other one
 const GET_TOGETHER = "He'll bring you both to one side of him."  # TOGETHER, apart (pep)
-const AGAIN = "Hit: once more."
 const SKIP_HINT = "Hold Tab or pad Start: skip this step"
 
 var step = Step.PARRY
@@ -63,7 +63,6 @@ var _text  # tutorial_text.gd
 var _counts = {}  # this step's: "<kind>:<player_id>" (0: theirs together) -> how many
 var _wait = 0.0  # s before he's sent his next attack (counted while he's idle)
 var _skip_held = 0.0
-var _again = 0.0  # s "once more" is still shown
 var _staggered = false
 var _next_halves = "TRIPLE"
 
@@ -82,7 +81,6 @@ static func tuning_entries() -> Array:
 		{"header": "PACE", "column": 1},
 		{"key": "tutorial_read_time", "label": "a step's words alone before his first attack (s)", "default": 2.5, "step": 0.25},
 		{"key": "tutorial_pause", "label": "between two of his attacks (s)", "default": 0.9, "step": 0.1},
-		{"key": "tutorial_again_time", "label": "a hit got through: \"once more\" shown (s)", "default": 1.5, "step": 0.1},
 		{"key": "tutorial_skip_hold", "label": "Tab / pad Start held this long skips a step (s)", "default": 1.0, "step": 0.1},
 	]
 
@@ -143,7 +141,6 @@ func _physics_process(delta):
 	if stagger and not _staggered and step == Step.TOGETHER:
 		_count("stagger", 0)
 	_staggered = stagger
-	_again = maxf(_again - delta, 0.0)
 	_skip(delta)
 	if _done():
 		_begin(step + 1)
@@ -205,7 +202,6 @@ func count(kind: String, id: int) -> int:
 # A hit got through (or the sync mode was lost): the step's count starts over.
 func _fail():
 	_counts.clear()
-	_again = Tuning.value("tutorial_again_time")
 
 
 # What the step asks, and whether it's there: [kind, player_id (0: together), how many].
@@ -266,17 +262,17 @@ func _show():
 	var texts = {}
 	var progress = {}
 	for id in [1, 2]:
-		texts[id] = AGAIN if _again > 0.0 else TEXTS[step]
+		texts[id] = TEXTS[step]
 		progress[id] = _progress_of(id)
-	if _again <= 0.0 and step == Step.SYNC_HIT:
+	if step == Step.SYNC_HIT:
 		for p in GameManager.players:
 			if is_instance_valid(p) and p.partner() != null:
 				var at_them = boss.time_to_strike(p) != INF
 				texts[p.player_id] = TEXTS[step] + "\n" + (PARRY_NOW if at_them else STRIKE_ON_PINK)
-	if _again <= 0.0 and step == Step.TOGETHER and not boss.is_ppe():
+	if step == Step.TOGETHER and not boss.is_ppe():
 		for id in [1, 2]:
 			texts[id] = TEXTS[step] + "\n" + GET_TOGETHER
-	_text.show_lines(texts, progress, _again > 0.0)
+	_text.show_lines(texts, progress)
 	_text.show_hint("" if step == Step.DONE else SKIP_HINT)
 
 

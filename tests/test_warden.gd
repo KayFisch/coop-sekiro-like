@@ -40,7 +40,7 @@ func test_the_select_screen_shows_and_hides():
 	var names = select._levels.map(func(b): return b.text)
 	check(select._levels.size() == BossSelect.FIGHTS.size() - hidden.size(), "select_all off: the test rooms hidden (%d shown)" % select._levels.size())
 	check(names[0].contains("Tutorial"), "...first the tutorial")
-	check(names[1].contains("Columna Bifrons") and BossSelect.shown()[1].scene == WARDEN, "...then the Warden, as Columna Bifrons")
+	check(names[1].contains("Bifrons") and names[1].contains("the Warden") and BossSelect.shown()[1].scene == WARDEN, "...then the Warden, as Bifrons, the Warden")
 	check(not names.any(func(n): return n.contains("Try-out boss")), "...the try-out boss not among them")
 	# A hidden one's number starts nothing.
 	var key = InputEventKey.new()

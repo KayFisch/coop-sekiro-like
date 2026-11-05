@@ -92,7 +92,7 @@ is in the ground it is a wall.
 
 ## His room, until he's built (2026-11-03)
 
-`levels/warden/warden.tscn`, entry 1 on the select screen as "Columna Bifrons": the try-out boss
+`levels/warden/warden.tscn`, entry 2 on the select screen as "Bifrons, the Warden": the try-out boss
 on Bifrons's stage (an inherited scene of `levels/threshold/threshold.tscn`), set up as the Warden
 by the switches his room holds while it's there (`warden.gd` → `SWITCHES`, `Moves.fix()`),
 whatever F1 says; the saved ones are left alone, and F1 shows them "fixed in this room":

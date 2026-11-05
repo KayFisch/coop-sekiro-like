@@ -202,3 +202,29 @@ func test_hud_pink_in_the_sync_mode():
 	rules._set_team(rules.team_max() * 0.5)
 	await frames(2)
 	check(hud._duel.team_fill.color != SyncWave.COLOR, "...and not out of it")
+
+
+# ONE BODY: bound all the way with one steering, P2 is gone into P1: one character, P1's, P2's
+# hands on P1's sabre; the sabre drawn back a little by one alone, all the way by both.
+func test_one_body():
+	await _setup("off")
+	boss.set_physics_process(false)
+	await _bind_here()
+	await wait(0.1)
+	check(p2.merged_into() == p1 and p1.merged_into() == null, "bound all the way: P2 gone into P1")
+	check(p1.body.visible and not p2.body.visible and not p2.sword_pivot.visible, "...one character to see, P1's, and one sabre")
+	var grip = p1.sword_pivot.to_global(Vector2(p1.sword.position.x + p1.sword.size.x * p1.SHARED_HAND_GRIPS[0],
+		p1.sword.position.y + p1.sword.size.y / 2.0))
+	var hand = p2._hands[0]
+	near((hand.global_position + hand.size / 2.0).distance_to(grip), 0.0, 1.0, "...P2's hands on P1's sabre")
+	hold(p2, "attack")
+	await wait(Tuning.value("sync_charge_time") + 0.1)
+	near(p1.shared_draw(), p1.SHARED_DRAW_ALONE, 0.01, "P2 alone draws back: the shared sabre a little way")
+	hold(p1, "attack")
+	await wait(Tuning.value("sync_charge_time") + 0.05)
+	near(p1.shared_draw(), 1.0, 0.01, "...both: all the way")
+	hold(p1, "attack", false)
+	hold(p2, "attack", false)
+	rules._set_team(rules.team_max() * 0.5)
+	await wait(0.2)
+	check(p2.merged_into() == null and p2.body.visible and p2.sword_pivot.visible, "the sync mode over: P2 back")

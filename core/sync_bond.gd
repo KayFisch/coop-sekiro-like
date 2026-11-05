@@ -9,11 +9,12 @@ extends Node
 ## other's side, and on the mirrored screen the halves merge with it (ui/mirror_view.gd).
 ##
 ## ONE STEERS (Moves "sync_steer"): bound, one of the two moves the pair (walking, jumping,
-## dashing) and carries the other at their side, the two narrow halves side by side as one square;
-## the carried one's stick, jump and dash do nothing (Player.carried_by). Both still parry, block
-## and draw back for themselves. Against walls and his body the pair is one body; a blow that
-## throws either throws both. "each": both move themselves, as before, and moving apart (past
-## "sync_break_distance") unbinds them too.
+## dashing) and carries the other with them, on the same spot; the carried one's stick, jump and
+## dash do nothing (Player.carried_by). Both still parry, block and draw back for themselves.
+## Against walls and his body the pair is one body; a blow that throws either throws both. Bound
+## all the way, they're one character too (Player, "ONE BODY": P2 gone into P1, P2's color at P1's
+## feet, P2's hands on P1's sabre, drawn back as far as both draw it). "each": both move
+## themselves, as before, and moving apart (past "sync_break_distance") unbinds them too.
 ##
 ## THE PAIR'S STRIKE: each holds attack to draw their sabre back (Player._process_draw()); fully
 ## drawn, a small cue. Once both are, "sync_cue_delay" after the later one, the big cue: both let
@@ -317,7 +318,7 @@ func _draw_mark(mark: Node2D, p):
 			mark.draw_circle(at, 2.5, Color(SIGN_COLOR, 1.0 - rise))
 	if bound:
 		var partner = _partner_of(p)
-		if partner != null:
+		if partner != null and p.merged_into() == null:  # (gone into the partner: no body to fill)
 			var size = p.body.size * p.body.scale
 			var height = size.y * BLEND_SHARE * clampf((_time - _bound_at) / BLEND_TIME, 0.0, 1.0)
 			var color = partner.body.color

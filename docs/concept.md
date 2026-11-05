@@ -121,7 +121,7 @@ fighting, and **not a quicktime event**. It asks for the same kind of sync actio
 - No deliberate unbinding for now.
 
 **Moving while bound** (2026-10-31, for now): **one of the two steers** (walking, jumping,
-dashing) and carries the other along at their side; both still parry, block and draw back for
+dashing) and carries the other along with them; both still parry, block and draw back for
 themselves, and the pair's strike stays as it is (both let go on the big cue). Candidates for
 later, per boss: one moves the pair and the other starts the cue; or the verbs are split (one
 walks, the other jumps / dashes). Ruled out: steering together (frustrating and unresponsive;
@@ -131,13 +131,20 @@ sense of control), free movement with an elastic tether, switching roles after e
 
 Built (2026-10-31, `core/sync_bond.gd` → "ONE STEERS", `actors/player/player.gd` → carrying): F1
 "sync_steer", **upper** (P1, the default), **lower** (P2) or **each** (both move themselves, as
-before). Binding is one movement (F2 "sync_merge_time", 0.5 s): the carried one comes to the
-other's side, the two narrow halves (20 x 40) side by side as one square, and the halves merge
-with it. The carried one's stick, jump and dash do nothing. Against walls and his body the pair is
-one body; a blow that throws either throws both (of two at once, the harder). One steering, they
-can't come apart, so the bond lasts until the sync mode ends ("sync_break_distance" counts only
-with "each"). The dash-slash and the dash-parry are the steering one's, the carried one going
-through him too. The stand-ins: steering, they move as ever, their partner at their side.
+before). Binding is one movement (F2 "sync_merge_time", 0.5 s): the carried one comes onto the
+other's spot, and the halves merge with it. The carried one's stick, jump and dash do nothing.
+Against walls and his body the pair is one body; a blow that throws either throws both (of two
+at once, the harder). One steering, they can't come apart, so the bond lasts until the sync mode
+ends ("sync_break_distance" counts only with "each"). The dash-slash and the dash-parry are the
+steering one's, the carried one going through him too. The stand-ins: steering, they move as
+ever, their partner with them.
+
+**One character** (Nicho, 2026-11-05, after playing it; `player.gd` → "ONE BODY"): bound all the
+way, P2 is gone into P1, whoever steers. To see is P1 alone, light with P2's dark flowing up from
+the feet, and one sabre, P1's, which P2's hands hold too. It's drawn back as far as both draw it:
+one alone draws it a little way (30 %), both all the way. (Built first, 2026-10-31: the two narrow
+halves side by side as a square, each with the other's color at the feet: it read as a
+chessboard.)
 
 ---
 

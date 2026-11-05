@@ -79,7 +79,7 @@ func test_a_hit_starts_the_step_over():
 	_event("hit", 2)
 	check(tutorial.count("parry", 1) == 0, "a hit through: the count starts over")
 	await frames(2)
-	check(tutorial._text.line_of(1) == tutorial.AGAIN, "...and it says so")
+	check(tutorial._text.line_of(1) == tutorial.TEXTS[Step.PARRY], "...its words stay, for whoever hasn't read them yet")
 	check(not rules.team_chaos and rules.spared, "nobody loses: no chaos")
 
 

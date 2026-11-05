@@ -97,6 +97,11 @@ Aus dem Playtest vom 2026-09-29. Bis die geklärt sind, keine großen Features d
     Gebaut (2026-11-03, `nicho/playtest`): `levels/tutorial/`, `docs/tutorial.md`; Auswahl ganz
     oben. Sechs Schritte, keine Niederlage, Überspringen mit Tab / Pad-Start, danach weiter zum
     Wächter. Texte auf Englisch wie der Rest des Spiels (für die Freunde Deutsch?). **Anspielen.**
+  - [x] **Nichos Test, Runde 1** (2026-11-05): Tutorial-Text bleibt bei einem Treffer (kein
+    Treffer-Text mehr); Sync-Modus verbunden **ein Charakter** (P2 geht in P1 auf, seine Hände am
+    gemeinsamen Säbel, Ausholen: einer allein ein Stück, beide ganz); Auswahl mit den Titeln
+    (Bifrons, the Warden; Ettin, the Discorder; Kultist, the Enlightened; Acrobat, the Unresting;
+    die Namen von Kultist und Akrobat noch offen). **Anspielen.**
   - [x] **B5 Dev-Modus:** F1 bis F5 erst nach „kek“.
     Gebaut (2026-11-04, `nicho/playtest`): „kek“ öffnet, noch mal „kek“ sperrt (was offen ist, geht
     zu); nicht gespeichert, jeder Start gesperrt; „DEV“ unten links, solange offen.

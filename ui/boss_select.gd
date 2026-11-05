@@ -7,10 +7,10 @@ extends Control
 
 const FIGHTS = [
 	{"name": "Tutorial", "arena": "the training dummy: start here", "scene": "res://levels/tutorial/tutorial.tscn"},
-	{"name": "Columna Bifrons", "arena": "the Warden of the Threshold", "scene": "res://levels/warden/warden.tscn"},
-	{"name": "Heavy Hitter", "arena": "the Ettin (phase 1)", "scene": "res://levels/heavy_hitter/hitter_room.tscn"},
-	{"name": "Kultist", "arena": "The Threshold, mirrored", "scene": "res://levels/kultist/kultist_room.tscn"},
-	{"name": "Acrobat", "arena": "the juggler (phase 1)", "scene": "res://levels/acrobat/acrobat_room.tscn"},
+	{"name": "Bifrons", "arena": "the Warden", "scene": "res://levels/warden/warden.tscn"},
+	{"name": "Ettin", "arena": "the Discorder", "scene": "res://levels/heavy_hitter/hitter_room.tscn"},
+	{"name": "Kultist", "arena": "the Enlightened", "scene": "res://levels/kultist/kultist_room.tscn"},
+	{"name": "Acrobat", "arena": "the Unresting", "scene": "res://levels/acrobat/acrobat_room.tscn"},
 	{"name": "Horologium", "arena": "2 players", "scene": "res://levels/horologium/horologium1.tscn"},
 	{"name": "Try-out boss", "arena": "The Threshold (workbench)", "scene": "res://levels/threshold/threshold.tscn", "test": true},
 	{"name": "Movement Gym", "arena": "1 player", "scene": "res://levels/gym/movement_gym.tscn", "test": true},

@@ -11,7 +11,6 @@ const TOP = 58.0  # px from the top: under the HUD's meters
 const BOTTOM = 92.0  # px from the bottom, the shadow half's
 const WIDTH = 900.0
 const COLOR = Color(1.0, 1.0, 1.0)
-const AGAIN_COLOR = Color(1.0, 0.45, 0.4)
 
 var _lines = {}  # player_id -> {"text": Label, "progress": Label}
 var _hint: Label
@@ -43,10 +42,10 @@ func _label(font_size: int) -> Label:
 
 
 # What each player reads ({player_id: text}), and how far each has got ({player_id: text}).
-func show_lines(texts: Dictionary, progress: Dictionary, again = false):
+func show_lines(texts: Dictionary, progress: Dictionary):
 	for id in _lines:
 		_lines[id].text.text = texts.get(id, "")
-		_lines[id].text.add_theme_color_override("font_color", AGAIN_COLOR if again else COLOR)
+		_lines[id].text.add_theme_color_override("font_color", COLOR)
 		_lines[id].progress.text = progress.get(id, "")
 
 

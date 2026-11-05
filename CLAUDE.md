@@ -92,6 +92,11 @@ Notes from one person to the other, under `### For <name>, from <name> (<date>)`
   **B5:** F1 to F5 only after typing "kek" on the keyboard (again: locked), a small "DEV" in the
   corner while open; not saved, so every start is locked (`docs/dev_tools.md`, "In the game").
   Locked with them: M (the click), and pad Back (swapping the controls) but on the select screen.
+  After my first test (2026-11-05): bound in the sync mode the two are **one character** (P2 gone
+  into P1, P2's hands on P1's sabre; `docs/concept.md`, "One character"), the tutorial's words
+  stay when a hit gets through, and the select screen names the bosses by their titles: Bifrons,
+  the Warden; Ettin, the Discorder; your Kultist, the Enlightened; the Acrobat, the Unresting
+  (the last two names still open).
 - **Your Kultist and the partner's hit** (Nicho, 2026-11-02): a parry of his staff or a spell now
   opens the partner's window, as with every boss (the pink wave, a sync hit in it; an unused one
   costs sync, F2 "missed_window_loss"). The bolt's parry opens none: going back into him is its

@@ -25,7 +25,7 @@ Code: `actors/bosses/columna_bifrons/` (boss, `stand_in.gd`, `attacks/strike_pat
 `levels/threshold/`; the players'
 half of the rules is in `actors/player/` ("THE SWORD" in `player_sword.gd`, "DASH-PARRY" in
 `player_body.gd`). Select screen: "Try-out boss", with F1 → Dev "select_all" (since 2026-11-03;
-entry 1, "Columna Bifrons", is the Warden: this boss set up as him). Everything below that can be
+entry 2, "Bifrons, the Warden", is this boss set up as the Warden). Everything below that can be
 switched is on the F1 panel.
 
 ---

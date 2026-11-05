@@ -35,11 +35,16 @@ const SABRE_WIDTH = 11.0  # ...this broad at the hilt (px)...
 const SABRE_CURVE = 12.0  # ...its point curving back by this much (px)
 const SABRE_LIGHT = Color(0.95, 0.94, 0.9)
 const SABRE_DARK = Color(0.07, 0.07, 0.09)
-# ONE STEERS (sync mode, core/sync_bond.gd): bound, one moves the pair and carries the other at
-# their side (`carrying` / `carried_by`), the two narrow halves side by side as one square: one
-# body against walls and his block, thrown as one. The carried one's stick, jump and dash do
-# nothing; their block, parry and drawing back are their own.
-const CARRY_GAP = BODY_SIZE.x  # px from the steering one's middle to the carried one's: touching
+# ONE STEERS (sync mode, core/sync_bond.gd): bound, one moves the pair and carries the other with
+# them (`carrying` / `carried_by`): one body against walls and his block, thrown as one. The
+# carried one's stick, jump and dash do nothing; their block, parry and drawing back are their own.
+# ONE BODY: once bound all the way (SyncBond.flow()), the lower (P2) is gone into the upper (P1):
+# one character, P1's, with P2's color flowing up from the feet (SyncBond), and one sabre, P1's,
+# that P2's hands hold too (merged_into()). It's drawn back as far as both draw it: one alone
+# draws it a little way (SHARED_DRAW_ALONE), both all the way.
+const CARRY_GAP = 0.0  # px from the steering one's middle to the carried one's: on the same spot
+const SHARED_HAND_GRIPS = [0.175, 0.375]  # where P2's hands hold the shared sabre (see HAND_GRIPS)
+const SHARED_DRAW_ALONE = 0.3  # one drawing back alone: the shared sabre this share of the way
 
 var is_clashing = false  # blades locked with a boss's or an obstacle's, held in place
 var invincible = false  # testing: hits still land (flash, knockback) but cost nothing (see SyncRules)
@@ -59,9 +64,8 @@ var _draw_time = 0.0
 var _sabre: Node2D  # the sword's look while bound (set_sabre())
 var carrying = null  # ONE STEERS: the partner this one carries...
 var carried_by = null  # ...or the one carrying this one
-var _carry_side = 1.0  # which side of this one the carried one is on
+var _carry_side = 1.0  # which side of this one the carried one came from
 var _carry_from = CARRY_GAP  # px they stood apart as the carrying began (easing to CARRY_GAP)
-var _own_shape: Shape2D  # the collision shape before carrying (the pair's is wider)
 
 
 # --- Setup and the frame -------------------------------------------------------------
@@ -208,13 +212,14 @@ func set_clashing(clashing: bool):
 func _sword_angle() -> float:
 	if is_clashing or is_held():
 		return 0.0  # held flat against the other blade
-	if _drawing:
-		return lerpf(SWORD_REST_ANGLE, DRAW_ANGLE, ease(draw_share(), 0.6))  # drawing back
+	var drawn = shared_draw()
+	if drawn > 0.0:
+		return lerpf(SWORD_REST_ANGLE, DRAW_ANGLE, ease(drawn, 0.6))  # drawing back
 	return super()
 
 
 func _blade_taken() -> bool:
-	return _drawing or is_clashing or is_held()
+	return shared_draw() > 0.0 or is_clashing or is_held()
 
 
 func _update_visuals():
@@ -292,6 +297,10 @@ func _update_visuals():
 	elif is_blocking():
 		color = body_color.darkened(0.3)
 	body.color = color
+	# ONE BODY: gone into the partner, only the hands are left, on the shared sabre.
+	var into = merged_into()
+	body.visible = into == null
+	sword_pivot.visible = into == null
 	_update_hands()
 
 
@@ -347,6 +356,9 @@ func _setup_sword():
 # A point on the blade, from where it starts at the hilt (0) to its point (1), in global
 # coordinates (the sync wave runs along it).
 func blade_point(along: float) -> Vector2:
+	var into = merged_into()
+	if into != null:
+		return into.blade_point(along)  # ONE BODY: the shared sabre
 	var length = sword.size.x + SWORD_POINT
 	var middle = sword.position.y + sword.size.y / 2.0
 	if sabre_on():
@@ -448,19 +460,15 @@ func set_sabre(on: bool):
 
 # --- Carrying (see ONE STEERS) ---
 
-# Starts carrying `other` at this one's side, or with null stops: the pair one body (a collision
-# shape as wide as both), the carried one run after this one each frame.
+# Starts carrying `other` with this one, or with null stops: the carried one run after this one
+# each frame, coming in to its spot as they bind.
 func carry(other):
 	if carrying != null and is_instance_valid(carrying):
 		carrying.carried_by = null
 		carrying.process_physics_priority = 0
 		carrying._update_player_collision()
 	carrying = other
-	var shape: CollisionShape2D = $CollisionShape2D
 	if other == null:
-		if _own_shape != null:
-			shape.shape = _own_shape
-		shape.position.x = 0.0
 		_update_player_collision()
 		return
 	var gap = other.global_position.x - global_position.x
@@ -471,17 +479,11 @@ func carry(other):
 	other.interrupt_movement()
 	other.velocity = Vector2.ZERO
 	other._update_player_collision()
-	if _own_shape == null:
-		_own_shape = shape.shape
-	var pair = RectangleShape2D.new()
-	pair.size = Vector2(BODY_SIZE.x * 2.0, BODY_SIZE.y)
-	shape.shape = pair
-	shape.position.x = _carry_side * BODY_SIZE.x / 2.0
 	_update_player_collision()
 
 
-# Where the carried one stands, from this one's middle (px, signed): easing in to their side as
-# the two bind (SyncBond.flow()).
+# Where the carried one stands, from this one's middle (px, signed): easing in to this one's spot
+# as the two bind (SyncBond.flow()).
 func carry_offset() -> float:
 	var flow = bond.flow() if bond != null else 1.0
 	return _carry_side * lerpf(_carry_from, CARRY_GAP, flow)
@@ -508,6 +510,25 @@ func _body_rect() -> Rect2:
 
 func _in_pair() -> bool:
 	return carrying != null or carried_by != null
+
+
+# ONE BODY: the partner this one is gone into, or null. The lower (P2) into the upper, whoever
+# steers, once they're bound all the way with one steering.
+func merged_into():
+	if player_id != 2 or bond == null or bond.steerer() == null or bond.flow() < 1.0:
+		return null
+	var other = partner()
+	return other if other != null and other.bond != null else null
+
+
+# How far the sabre this one shows is drawn back, 0 to 1: their own, or, holding the shared one
+# (ONE BODY), as far as both draw it (one alone: SHARED_DRAW_ALONE of the way).
+func shared_draw() -> float:
+	var other = partner()
+	if other == null or other.merged_into() != self:
+		return draw_share()
+	var drawn = [draw_share(), other.draw_share()]
+	return lerpf(drawn.min(), drawn.max(), SHARED_DRAW_ALONE)
 
 
 # A blow that throws either of a pair throws both: the carried one's goes to the one carrying, and
@@ -540,15 +561,19 @@ func _setup_hands():
 	_update_hands()
 
 
-# The hands grip the hilt and follow every swing and guard.
+# The hands grip the hilt and follow every swing and guard; gone into the partner (ONE BODY),
+# their sabre's.
 func _update_hands():
-	var hilt = sword.position.x
-	var length = sword.size.x
-	var blade_y = sword.position.y + sword.size.y / 2
+	var into = merged_into()
+	var holder = into if into != null else self
+	var grips = SHARED_HAND_GRIPS if into != null else HAND_GRIPS
+	var hilt = holder.sword.position.x
+	var length = holder.sword.size.x
+	var blade_y = holder.sword.position.y + holder.sword.size.y / 2
 	for i in _hands.size():
 		var hand = _hands[i]
-		var grip = sword_pivot.to_global(Vector2(hilt + length * HAND_GRIPS[i], blade_y))
+		var grip = holder.sword_pivot.to_global(Vector2(hilt + length * grips[i], blade_y))
 		hand.global_position = grip - hand.size / 2
-		hand.rotation = sword_pivot.rotation
+		hand.rotation = holder.sword_pivot.rotation
 		hand.color = body.color.darkened(HAND_DARKEN)
 	_crossguard.color = body.color.darkened(HAND_DARKEN)
